@@ -1,0 +1,1 @@
+{"status":"success","message":"تم إنشاء حسابك بنجاح في تطبيق أبشر","user":{"id":1784452456,"name":"Test User Agent","email":"agent@example.com","phone":"01234567890","uni":"SEU","is_guest":false}}

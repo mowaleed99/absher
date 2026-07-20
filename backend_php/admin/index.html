@@ -1,0 +1,903 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>أبشر - لوحة الإدارة الذكية</title>
+    <!-- Google Fonts: Cairo / Outfit -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body class="dark-mode">
+
+    <!-- Header / Navbar -->
+    <header class="admin-header">
+        <div class="logo-area">
+            <div class="logo-icon"><i class="fa-solid fa-graduation-cap"></i></div>
+            <div class="logo-text">
+                <h1>أبشر <span class="badge">PRO ADMIN</span></h1>
+                <p>بوابة التحكم الشاملة في الخدمات والشقق والحسابات</p>
+            </div>
+        </div>
+        <div class="header-actions">
+            <button id="langToggleBtn" class="action-btn" title="تبديل اللغة / Switch Language" onclick="toggleLanguage()"><i
+                    class="fa-solid fa-language"></i></button>
+            <button id="themeToggleBtn" class="action-btn" title="تبديل المظهر"><i
+                    class="fa-solid fa-moon"></i></button>
+            <div class="admin-profile">
+                <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80"
+                    alt="Admin">
+                <span>المدير العام</span>
+            </div>
+        </div>
+    </header>
+
+    <div class="main-layout">
+        <!-- Sidebar Navigation -->
+        <aside class="sidebar">
+            <nav class="nav-links">
+                <a href="#stats" class="nav-item active" data-tab="stats"><i class="fa-solid fa-chart-pie"></i>
+                    الإحصائيات العامة</a>
+                <a href="#chats" class="nav-item" data-tab="chats"><i class="fa-solid fa-headset"></i> شات خدمة العملاء
+                    <span class="notify-badge" id="chatCountBadge">3</span></a>
+                <a href="#requests" class="nav-item" data-tab="requests"><i class="fa-solid fa-bell"></i> الحجوزات
+                    وطلبات السكن <span class="notify-badge" id="reqCountBadge">4</span></a>
+                <a href="#apartments" class="nav-item" data-tab="apartments"><i class="fa-solid fa-building"></i> إدارة
+                    الشقق (مع السعة)</a>
+                <a href="#services" class="nav-item" data-tab="services"><i class="fa-solid fa-screwdriver-wrench"></i>
+                    الخدمات الطلابية</a>
+                <a href="#universities" class="nav-item" data-tab="universities"><i class="fa-solid fa-university"></i>
+                    الجامعات</a>
+                <a href="#districts" class="nav-item" data-tab="districts"><i class="fa-solid fa-map-location-dot"></i>
+                    الأحياء السكنية</a>
+                <a href="#reviews" class="nav-item" data-tab="reviews"><i class="fa-solid fa-star"></i> تقييمات وآراء
+                    الطلاب</a>
+                <a href="#students" class="nav-item" data-tab="students"><i class="fa-solid fa-users"></i> بيانات
+                    وحسابات الطلاب</a>
+                <a href="#news" class="nav-item" data-tab="news"><i class="fa-solid fa-newspaper"></i> أخبار جورجيا 📰</a>
+                <a href="#notifications" class="nav-item" data-tab="notifications"><i class="fa-solid fa-bell"></i> التنبيهات والإشعارات 🔔</a>
+            </nav>
+            <div class="sidebar-footer">
+                <p><i class="fa-solid fa-server"></i> الاتصال بالخادم: <span id="serverStatus"
+                        class="status-online">متصل (المحاكاة نشطة)</span></p>
+            </div>
+        </aside>
+
+        <!-- Main Content Area -->
+        <main class="content-area">
+
+            <!-- Tab 1: Stats & Overview -->
+            <section id="tab-stats" class="tab-pane active">
+                <div class="section-title">
+                    <h2><i class="fa-solid fa-gauge-high"></i> نظرة عامة على نشاط الموقع والتطبيق</h2>
+                    <p>ملخص فوري للبيانات المسجلة والحجوزات النشطة</p>
+                </div>
+
+                <div class="stats-grid">
+                    <div class="stat-card card-purple">
+                        <div class="stat-icon"><i class="fa-solid fa-building"></i></div>
+                        <div class="stat-info">
+                            <h3>الشقق السكنية</h3>
+                            <h4 id="statAptCount">3</h4>
+                            <span>متاحة للطلاب حالياً</span>
+                        </div>
+                    </div>
+                    <div class="stat-card card-blue">
+                        <div class="stat-icon"><i class="fa-solid fa-briefcase"></i></div>
+                        <div class="stat-info">
+                            <h3>الخدمات المتاحة</h3>
+                            <h4 id="statSvcCount">6</h4>
+                            <span>خدمة طلابية ولوجستية</span>
+                        </div>
+                    </div>
+                    <div class="stat-card card-green">
+                        <div class="stat-icon"><i class="fa-solid fa-user-graduate"></i></div>
+                        <div class="stat-info">
+                            <h3>الطلاب والعملاء</h3>
+                            <h4 id="statStdCount">1</h4>
+                            <span>حساب مسجل بالمنصة</span>
+                        </div>
+                    </div>
+                    <div class="stat-card card-amber">
+                        <div class="stat-icon"><i class="fa-solid fa-clock"></i></div>
+                        <div class="stat-info">
+                            <h3>طلبات قيد المراجعة</h3>
+                            <h4 id="statReqCount">1</h4>
+                            <span>تحتاج لمتابعة الإدارة</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="quick-actions-banner">
+                    <div class="banner-content">
+                        <h3>⚡ أضف جديداً إلى التطبيق في ثوانٍ!</h3>
+                        <p>أي إضافة تقوم بها هنا تنعكس مباشرة في متصفح الموقع وتطبيق الهاتف المحمول فلاتر.</p>
+                    </div>
+                    <div class="banner-buttons">
+                        <button class="btn btn-primary" onclick="switchTab('apartments'); openModal('aptModal');"><i
+                                class="fa-solid fa-plus"></i> إضافة شقة جديدة</button>
+                        <button class="btn btn-secondary" onclick="switchTab('services'); openModal('svcModal');"><i
+                                class="fa-solid fa-plus"></i> إضافة خدمة جديدة</button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Tab 2: Apartments -->
+            <section id="tab-apartments" class="tab-pane">
+                <div class="section-header">
+                    <div class="section-title">
+                        <h2><i class="fa-solid fa-building"></i> إدارة الشقق السكنية</h2>
+                        <p>إضافة، تعديل، أو حذف الشقق المعروضة للطلاب في تبليسي</p>
+                    </div>
+                    <button class="btn btn-glow" onclick="openModal('aptModal')"><i class="fa-solid fa-plus-circle"></i>
+                        إضافة شقة جديدة</button>
+                </div>
+
+                <div style="margin: 0 0 20px 0; display: flex; gap: 10px; align-items: center;">
+                    <input type="text" id="aptSearchInput"
+                        placeholder="🔍 ابحث برقم الشقة (مثال: 1 أو #1) أو عنوان الشقة..." oninput="renderApartments()"
+                        style="flex: 1; padding: 12px 18px; border-radius: 12px; border: 1px solid var(--border-color); background: var(--bg-card); color: var(--text-main); font-size: 1rem;">
+                </div>
+
+                <div class="grid-container" id="apartmentsList">
+                    <!-- Dynamic Apartment Cards -->
+                </div>
+            </section>
+
+            <!-- Tab 3: Services -->
+            <section id="tab-services" class="tab-pane">
+                <div class="section-header">
+                    <div class="section-title">
+                        <h2><i class="fa-solid fa-screwdriver-wrench"></i> إدارة الخدمات الطلابية</h2>
+                        <p>التحكم في خدمات الصيانة والإقامة والاستقبال</p>
+                    </div>
+                    <button class="btn btn-glow" onclick="openModal('svcModal')"><i class="fa-solid fa-plus-circle"></i>
+                        إضافة خدمة جديدة</button>
+                </div>
+
+                <div class="grid-container services-grid" id="servicesList">
+                    <!-- Dynamic Service Cards -->
+                </div>
+            </section>
+
+            <!-- Tab: Universities -->
+            <section id="tab-universities" class="tab-pane">
+                <div class="section-header">
+                    <div class="section-title">
+                        <h2><i class="fa-solid fa-university"></i> إدارة الجامعات</h2>
+                        <p>إضافة أو حذف الجامعات التي سيتم استخدامها في فلاتر التطبيق</p>
+                    </div>
+                    <button class="btn btn-glow" onclick="openModal('uniModal')"><i class="fa-solid fa-plus-circle"></i>
+                        إضافة جامعة جديدة</button>
+                </div>
+
+                <div class="grid-container services-grid" id="universitiesList">
+                    <!-- Dynamic University Cards -->
+                </div>
+            </section>
+
+            <!-- Tab: Districts -->
+            <section id="tab-districts" class="tab-pane">
+                <div class="section-header">
+                    <div class="section-title">
+                        <h2><i class="fa-solid fa-map-location-dot"></i> إدارة الأحياء السكنية</h2>
+                        <p>إضافة أو حذف الأحياء السكنية المتاحة في تبليسي والتي سيتم استخدامها في فلتر السكن</p>
+                    </div>
+                    <button class="btn btn-glow" onclick="openModal('districtModal')"><i class="fa-solid fa-plus-circle"></i>
+                        إضافة حي جديد</button>
+                </div>
+
+                <div class="grid-container services-grid" id="districtsList">
+                    <!-- Dynamic District Cards -->
+                </div>
+            </section>
+
+            <!-- Tab: Customer Service Chats -->
+            <section id="tab-chats" class="tab-pane">
+                <div class="section-title">
+                    <h2><i class="fa-brands fa-whatsapp" style="color: #25D366;"></i> شات خدمة العملاء (نظام محادثات
+                        فوري)</h2>
+                    <p>المحادثات مرتبة تحت بعضها بشكل عمودي حسب الأحدث وقتاً للرد المباشر والسريع على استفسارات وحجوزات
+                        الطلاب</p>
+                </div>
+                <div class="whatsapp-layout"
+                    style="display: flex; gap: 0; height: 650px; background: var(--bg-card); border-radius: 16px; border: 1px solid var(--border-color); overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.3);">
+                    <!-- Chats Column (List sorted by time vertically) -->
+                    <div
+                        style="width: 380px; background: var(--bg-main); border-left: 1px solid var(--border-color); display: flex; flex-direction: column;">
+                        <div
+                            style="padding: 16px; background: rgba(255,255,255,0.03); border-bottom: 1px solid var(--border-color); font-weight: bold; display: flex; justify-content: space-between; align-items: center; color: var(--text-main);">
+                            <span><i class="fa-solid fa-comments" style="color: #25D366;"></i> <span>المحادثات النشطة</span> (<span
+                                    id="waChatCount">0</span>)</span>
+                            <span
+                                style="font-size: 0.8rem; background: rgba(37,211,102,0.15); color: #25D366; padding: 4px 10px; border-radius: 12px; font-weight: bold;"><i
+                                    class="fa-solid fa-circle" style="font-size: 0.6rem;"></i> مباشر</span>
+                        </div>
+                        <div id="chatsListColumn"
+                            style="flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 1px; background: var(--border-color);">
+                            <!-- Dynamic WhatsApp list items stacked vertically under each other -->
+                        </div>
+                    </div>
+
+                    <!-- Active Chat Window (WhatsApp Web Box) -->
+                    <div id="waChatWindow"
+                        style="flex: 1; display: flex; flex-direction: column; background: #0b141a; position: relative;">
+                        <!-- Placeholder when no chat selected -->
+                        <div id="waNoSelection"
+                            style="flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; color: var(--text-muted); text-align: center; padding: 20px;">
+                            <i class="fa-brands fa-whatsapp"
+                                style="font-size: 5.5rem; color: #25D366; opacity: 0.8; margin-bottom: 20px;"></i>
+                            <h3 style="color: #fff; font-size: 1.6rem; margin-bottom: 10px;">أبشر لخدمة العملاء</h3>
+                            <p style="max-width: 400px; line-height: 1.6;">اختر محادثة من القائمة الجانبية (المرتبة حسب
+                                الوقت) لعرض استفسارات وحجوزات الطالب والرد عليها فوراً بأسلوب الواتساب.</p>
+                        </div>
+
+                        <!-- Active Chat Header -->
+                        <div id="waHeader"
+                            style="display: none; padding: 12px 20px; background: #202c33; border-bottom: 1px solid rgba(255,255,255,0.1); justify-content: space-between; align-items: center;">
+                            <div style="display: flex; align-items: center; gap: 12px;">
+                                <div id="waAvatar" onclick="showWaStudentProfile()"
+                                    title="اضغط لعرض صورة وبيانات الطالب"
+                                    style="width: 45px; height: 45px; border-radius: 50%; background: #25D366; display: flex; align-items: center; justify-content: center; color: #fff; font-weight: bold; font-size: 1.3rem; cursor: pointer; border: 2px solid #fff; transition: transform 0.2s;">
+                                </div>
+                                <div>
+                                    <h4 id="waStudentName"
+                                        style="color: #e9edef; margin: 0; font-size: 1.1rem; font-weight: bold;"></h4>
+                                    <span id="waStudentUni" style="color: #8696a0; font-size: 0.85rem;"></span>
+                                </div>
+                            </div>
+                            <div style="display: flex; gap: 10px; align-items: center;">
+                                <span id="waPhone" dir="ltr"
+                                    style="color: #25D366; font-weight: bold; font-size: 0.95rem; background: rgba(37,211,102,0.15); padding: 6px 14px; border-radius: 12px;"></span>
+                                <a id="waDirectBtn" href="#" target="_blank" class="btn btn-primary"
+                                    style="background: #25D366; border-color: #25D366; padding: 6px 14px; font-size: 0.85rem; font-weight: bold;">
+                                    <i class="fa-brands fa-whatsapp"></i> وتساب فوري
+                                </a>
+                                <button type="button" onclick="blockWaStudent()" class="btn btn-secondary"
+                                    style="background: rgba(239,68,68,0.15); color: #ef4444; border: 1px solid #ef4444; padding: 6px 12px; font-size: 0.85rem; font-weight: bold;"
+                                    title="حظر الطالب والشات">
+                                    <i class="fa-solid fa-ban"></i> حظر
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Messages Thread Area -->
+                        <div id="waMessagesThread"
+                            style="display: none; flex: 1; overflow-y: auto; padding: 20px; background-color: #0b141a; background-image: radial-gradient(rgba(255,255,255,0.04) 1px, transparent 0); background-size: 24px 24px; flex-direction: column; gap: 12px;">
+                            <!-- Messages -->
+                        </div>
+
+
+
+                        <!-- Quoted Reply Preview Bar -->
+                        <div id="waQuoteBar"
+                            style="display: none; padding: 8px 16px; background: #1f2c34; border-left: 4px solid #25D366; justify-content: space-between; align-items: center; border-top: 1px solid rgba(255,255,255,0.05);">
+                            <div style="overflow: hidden;">
+                                <strong style="font-size: 0.8rem; color: #25D366; display: block;">↩️ الرد على
+                                    رسالة:</strong>
+                                <span id="waQuoteText"
+                                    style="font-size: 0.85rem; color: #d1d7db; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block;"></span>
+                            </div>
+                            <button type="button" onclick="cancelWaQuote()"
+                                style="background: none; border: none; color: #8696a0; cursor: pointer; font-size: 1.1rem;"><i
+                                    class="fa-solid fa-xmark"></i></button>
+                        </div>
+
+                        <!-- Input Area Form (Stacked layout: input full width on top, buttons row below) -->
+                        <form id="waInputForm" onsubmit="handleSendWaReply(event)"
+                            style="display: none; flex-direction: column; padding: 14px 18px; background: #202c33; gap: 12px; border-top: 1px solid rgba(255,255,255,0.05);">
+                            <input type="hidden" id="waActiveChatId">
+                            <input type="file" id="waImageFileInput" accept="image/*" style="display: none;" onchange="handleWaImageUpload(this)">
+
+                            <!-- Row 1: Full width text input -->
+                            <input type="text" id="waReplyInput"
+                                placeholder="اكتب رسالتك و ردك على استفسار وحجز الطالب هنا..."
+                                style="width: 100%; box-sizing: border-box; padding: 14px 20px; border-radius: 14px; border: 1px solid rgba(255,255,255,0.15); background: #2a3942; color: #fff; font-size: 1rem; outline: none; transition: border-color 0.2s;">
+
+                            <!-- Row 2: Actions & Send Button below input -->
+                            <div
+                                style="display: flex; justify-content: space-between; align-items: center; width: 100%; flex-wrap: wrap; gap: 10px;">
+                                <!-- Left side: Attachment buttons -->
+                                <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+                                    <button type="button" onclick="document.getElementById('waImageFileInput').click()" class="btn btn-secondary"
+                                        style="background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15); color: #e9edef; padding: 8px 14px; border-radius: 10px; cursor: pointer; display: flex; align-items: center; gap: 6px; font-size: 0.85rem; font-weight: bold; transition: background 0.2s;"
+                                        title="تحميل صورة من جهازك وإرسالها للطالب">
+                                        <i class="fa-solid fa-image" style="color: #fbbf24; font-size: 1rem;"></i>
+                                        تحميل صورة 📷
+                                    </button>
+                                    <button type="button" onclick="triggerWaAttachmentUrl()" class="btn btn-secondary"
+                                        style="background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15); color: #e9edef; padding: 8px 14px; border-radius: 10px; cursor: pointer; display: flex; align-items: center; gap: 6px; font-size: 0.85rem; font-weight: bold; transition: background 0.2s;"
+                                        title="إرفاق رابط مباشر (موقع، مستند، أو خرائط)">
+                                        <i class="fa-solid fa-link" style="color: #a855f7; font-size: 1rem;"></i>
+                                        إرفاق رابط
+                                    </button>
+                                    <button type="button" onclick="triggerWaVideoAttachment()" class="btn btn-secondary"
+                                        style="background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15); color: #e9edef; padding: 8px 14px; border-radius: 10px; cursor: pointer; display: flex; align-items: center; gap: 6px; font-size: 0.85rem; font-weight: bold; transition: background 0.2s; opacity: 0.8;"
+                                        title="ميزة إرفاق الفيديو قيد التطوير حالياً">
+                                        <i class="fa-solid fa-video" style="color: #38bdf8; font-size: 1rem;"></i>
+                                        إرفاق فيديو (تحت التطوير 🚧)
+                                    </button>
+                                </div>
+                                <!-- Right side: Send Button -->
+                                <button type="submit" class="btn btn-primary"
+                                    style="background: #00a884; border: none; padding: 8px 24px; border-radius: 10px; color: #fff; font-weight: bold; cursor: pointer; display: flex; align-items: center; gap: 10px; font-size: 0.95rem; box-shadow: 0 4px 12px rgba(0,168,132,0.3); transition: transform 0.2s, background 0.2s;">
+                                    <span>إرسال الرد</span> <i class="fa-solid fa-paper-plane"
+                                        style="transform: scaleX(-1); font-size: 1.1rem;"></i>
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Tab 4: Service & Booking Requests -->
+            <section id="tab-requests" class="tab-pane">
+                <div class="section-title">
+                    <h2><i class="fa-solid fa-bell"></i> إدارة الحجوزات وطلبات السكن وتجميع الشباب</h2>
+                    <p>متابعة وتحديث حالات طلبات الطلاب الجامعيين مع تفاصيل الحجز الكاملة وإمكانية الرد عبر الواتساب</p>
+                </div>
+
+                <div style="margin: 0 0 20px 0; display: flex; gap: 10px; align-items: center;">
+                    <input type="text" id="reqSearchInput"
+                        placeholder="🔍 ابحث برقم الطلب، اسم الطالب، أو رقم الواتساب..." oninput="filterRequests()"
+                        style="flex: 1; padding: 12px 18px; border-radius: 12px; border: 1px solid var(--border-color); background: var(--bg-card); color: var(--text-main); font-size: 1rem;">
+                </div>
+                <div class="table-container">
+                    <table class="custom-table">
+                        <thead>
+                            <tr>
+                                <th># الطلب</th>
+                                <th>اسم الطالب</th>
+                                <th>الجامعة والجنسية</th>
+                                <th>الواتساب</th>
+                                <th style="max-width: 300px;">نوع الخدمة والتفاصيل</th>
+                                <th>الحالة</th>
+                                <th>إجراءات</th>
+                            </tr>
+                        </thead>
+                        <tbody id="requestsTableBody">
+                            <!-- Dynamic Requests Rows -->
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- Tab: Reviews -->
+            <section id="tab-reviews" class="tab-pane">
+                <div class="section-title">
+                    <h2><i class="fa-solid fa-star"></i> تقييمات وآراء الطلاب في الخدمات والتطبيق</h2>
+                    <p>عرض آراء وانطباعات الطلاب الجامعيين في تبليسي</p>
+                </div>
+                <div class="grid-container" id="reviewsList">
+                    <!-- Dynamic Reviews -->
+                </div>
+            </section>
+
+            <!-- Tab 5: Students Accounts -->
+            <section id="tab-students" class="tab-pane">
+                <div class="section-header">
+                    <div class="section-title">
+                        <h2><i class="fa-solid fa-users"></i> حسابات الطلاب والعملاء</h2>
+                        <p>قائمة الحسابات المسجلة في منصة وتطبيق أبشر مع التفاصيل الكاملة</p>
+                    </div>
+                    <button class="btn btn-glow" onclick="openModal('addStudentModal')"><i class="fa-solid fa-user-plus"></i> إضافة حساب طالب</button>
+                </div>
+
+                <div class="table-container">
+                    <table class="custom-table">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>الاسم الكامل</th>
+                                <th>البريد الإلكتروني</th>
+                                <th>رقم الهاتف</th>
+                                <th>الجامعة والتخصص</th>
+                                <th>الجنسية</th>
+                                <th>تاريخ التسجيل</th>
+                                <th>نقاط المحفظة</th>
+                                <th>إدارة النقاط</th>
+                                <th>حذف</th>
+                            </tr>
+                        </thead>
+                        <tbody id="studentsTableBody">
+                            <!-- Dynamic Students -->
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- Tab: Georgia News -->
+            <section id="tab-news" class="tab-pane">
+                <div class="section-header">
+                    <div class="section-title">
+                        <h2><i class="fa-solid fa-newspaper"></i> إدارة أخبار جورجيا</h2>
+                        <p>نشر وإدارة الأخبار والمستجدات والمقالات المفيدة للطلاب في جورجيا</p>
+                    </div>
+                    <button class="btn btn-glow" onclick="openModal('newsModal')"><i class="fa-solid fa-plus-circle"></i>
+                        نشر خبر جديد</button>
+                </div>
+
+                <div class="table-container">
+                    <table class="custom-table">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>الصورة المرفقة</th>
+                                <th>العنوان</th>
+                                <th>المحتوى والتفاصيل</th>
+                                <th>تاريخ النشر</th>
+                                <th>حذف</th>
+                            </tr>
+                        </thead>
+                        <tbody id="newsTableBody">
+                            <!-- Dynamic News Articles -->
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- Tab: Georgia Notifications -->
+            <section id="tab-notifications" class="tab-pane">
+                <div class="section-header">
+                    <div class="section-title">
+                        <h2><i class="fa-solid fa-bell"></i> إدارة التنبيهات والإشعارات العاجلة</h2>
+                        <p>نشر التنبيهات العاجلة للطلاب (انقطاع مياه/كهرباء، تفاصيل الصلاة والأنشطة). تختفي تلقائياً بعد مرور 48 ساعة.</p>
+                    </div>
+                    <button class="btn btn-glow" style="background: var(--accent-amber); border-color: var(--accent-amber); color: var(--text-dark);" onclick="openModal('notificationModal')">
+                        <i class="fa-solid fa-bullhorn"></i> نشر تنبيه عاجل جديد 🔔
+                    </button>
+                </div>
+
+                <div class="table-container">
+                    <table class="custom-table">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>عنوان التنبيه</th>
+                                <th>محتوى التنبيه والتفاصيل</th>
+                                <th>تاريخ النشر</th>
+                                <th>حالة التنبيه</th>
+                                <th>حذف</th>
+                            </tr>
+                        </thead>
+                        <tbody id="notificationsTableBody">
+                            <!-- Dynamic Notifications -->
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+        </main>
+    </div>
+
+    <!-- Modal: Add Apartment -->
+    <div id="aptModal" class="modal-overlay">
+        <div class="modal-box">
+            <div class="modal-header">
+                <h3><i class="fa-solid fa-house-circle-check"></i> إضافة شقة سكنية جديدة</h3>
+                <button class="close-btn" onclick="closeModal('aptModal')"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <form id="aptForm" onsubmit="handleAddApartment(event)">
+                <div class="form-group">
+                    <label>عنوان الشقة الأساسي:</label>
+                    <input type="text" id="aptTitle" required placeholder="مثال: شقة طلابية فاخرة - شارع بيكيني">
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>السعر الشهري:</label>
+                        <input type="text" id="aptPrice" required placeholder="مثال: 450 دولار / شهر">
+                    </div>
+                    <div class="form-group">
+                        <label>الحي السكني (المنطقة في تبليسي):</label>
+                        <select id="aptLocation" required
+                            style="width:100%; padding:10px; border-radius:8px; border:1px solid var(--border-color); background:var(--bg-card); color:var(--text-main);">
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label style="color: #ef4444; font-weight: bold;">🔒 رقم هاتف صاحب الشقة (سري للإدارة
+                            فقط):</label>
+                        <input type="text" id="aptOwnerPhone"
+                            placeholder="مثال: +995555123456 (لا يظهر للعميل نهائياً)">
+                    </div>
+                    <div class="form-group">
+                        <label>نوع الإيجار:</label>
+                        <select id="aptRentalType" onchange="toggleRoommateFields(this.value)"
+                            style="width:100%; padding:10px; border-radius:8px; border:1px solid var(--border-color); background:var(--bg-card); color:var(--text-main);">
+                            <option value="شقة">شقة</option>
+                            <option value="غرفة في شقة">غرفة في شقة</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div id="roommateSection"
+                    style="display: none; background: rgba(251, 191, 36, 0.08); border: 1px dashed #fbbf24; padding: 14px; border-radius: 12px; margin: 10px 0;">
+                    <h4 style="color: #fbbf24; margin-bottom: 10px; font-size: 0.95rem;"><i
+                            class="fa-solid fa-user-group"></i> بيانات وشروط شريك السكن:</h4>
+                    <div class="form-group">
+                        <label style="font-size: 0.85rem;">المواصفات والشروط المطلوبة في الشريك:</label>
+                        <input type="text" id="aptRoommateReqs"
+                            placeholder="مثال: غير مدخن ، طالب هادئ ومحترم ، يحافظ على النظافة العامة">
+                    </div>
+                    <div class="form-group" style="margin-top: 8px;">
+                        <label style="font-size: 0.85rem;">المرافق والمساحة المتاحة للشريك:</label>
+                        <input type="text" id="aptRoommateFacilities"
+                            placeholder="مثال: غرفة نوم منفصلة ومفروشة ، حمام ومطبخ مشترك ، شرفة (بلكونة)">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>وصف عام للموقع والقرب:</label>
+                    <input type="text" id="aptProximity" required
+                        placeholder="مثال: قريبة جداً من التبليسي الطبية TSMU (مشياً)">
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>عدد غرف الشقة (مثال: 3 غرف):</label>
+                        <input type="text" id="aptCapacity" required placeholder="مثال: 3 غرف">
+                    </div>
+                    <div class="form-group">
+                        <label>عدد الحمامات:</label>
+                        <select id="aptBathrooms"
+                            style="width:100%; padding:10px; border-radius:8px; border:1px solid var(--border-color); background:var(--bg-card); color:var(--text-main);">
+                            <option value="1 حمام">1 حمام</option>
+                            <option value="2 حمام">2 حمام</option>
+                            <option value="3+ حمامات">3+ حمامات</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>الجامعات القريبة (اختر الجامعات التي تظهر في الفلتر لهذه الشقة):</label>
+                    <div id="aptUniversitiesCheckboxes" style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 6px; padding: 10px; border: 1px solid var(--border-color); border-radius: 8px; background: var(--bg-main);">
+                        <!-- Dynamic checkboxes generated by script.js -->
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>المميزات الرئيسية (افصل بينها بفاصلة ،):</label>
+                    <input type="text" id="aptFeatures" required
+                        placeholder="3 غرف واسعة ، تدفئة مركزية ، إنترنت سريع ، بلكونة">
+                </div>
+                <div class="form-group">
+                    <label>🖼️ صور الشقة (يمكنك تحديد عدة صور من جهازك):</label>
+                    <div style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 6px;">
+                        <input type="file" id="aptFileInput" accept="image/*" onchange="handleAptFileSelect(this)" multiple required
+                            style="padding: 10px; border: 1px solid var(--border-color); border-radius: 12px; background: var(--bg-main); color: var(--text-main);">
+                        <div id="aptImgPreviewsContainer" style="display: flex; gap: 8px; flex-wrap: wrap;"></div>
+                    </div>
+                    <input type="hidden" id="aptImage" value='["assets/images/apt1.png"]'>
+                </div>
+                <div class="form-group">
+                    <label>وصف تفصيلي للشقة:</label>
+                    <textarea id="aptDesc" rows="3" required
+                        placeholder="اكتب تفاصيل الشقة والفرش وشروط الدفع..."></textarea>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('aptModal')">إلغاء</button>
+                    <button type="submit" class="btn btn-primary">حفظ ونشر في التطبيق</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal: Add Service -->
+    <div id="svcModal" class="modal-overlay">
+        <div class="modal-box">
+            <div class="modal-header">
+                <h3><i class="fa-solid fa-toolbox"></i> إضافة خدمة طلابية جديدة</h3>
+                <button class="close-btn" onclick="closeModal('svcModal')"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <form id="svcForm" onsubmit="handleAddService(event)">
+                <div class="form-group">
+                    <label>اسم الخدمة:</label>
+                    <input type="text" id="svcTitle" required placeholder="مثال: فني تكييف وتبريد">
+                </div>
+                <div class="form-group">
+                    <label>وصف مختصر للخدمة:</label>
+                    <input type="text" id="svcDesc" required placeholder="مثال: صيانة وغسيل أجهزة التكييف والشتاء">
+                </div>
+                <div class="form-group">
+                    <label>🖼️ صورة الخدمة (اختياري - من جهازك):</label>
+                    <div style="display: flex; gap: 10px; align-items: center; margin-bottom: 6px;">
+                        <input type="file" id="svcFileInput" accept="image/*" onchange="handleSvcFileSelect(this)"
+                            style="padding: 6px; border: 1px solid var(--border-color); border-radius: 8px; background: var(--bg-main); color: var(--text-main); flex: 1;">
+                        <img id="svcImgPreview" src="" style="width: 50px; height: 50px; border-radius: 8px; object-fit: cover; display: none; border: 1px solid var(--accent-amber);">
+                    </div>
+                    <input type="hidden" id="svcImg" value="https://images.unsplash.com/photo-1581092160607-ee22621dd758?auto=format&fit=crop&w=500&q=80">
+                </div>
+                <div class="form-group" style="margin-top: 10px; background: rgba(37,211,102,0.08); padding: 12px; border-radius: 10px; border: 1px dashed #25D366;">
+                    <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; color: #25D366; font-weight: bold; margin: 0;">
+                        <input type="checkbox" id="svcHasForm" checked style="width: 18px; height: 18px;">
+                        📝 تفعيل نموذج طلب مخصص لهذه الخدمة (يتيح للطالب الاختيار وتعبئة الفورم)
+                    </label>
+                </div>
+                <div class="modal-actions" style="margin-top: 15px;">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('svcModal')">إلغاء</button>
+                    <button type="submit" class="btn btn-primary">إضافة الخدمة فوراً</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal: Add University -->
+    <div id="uniModal" class="modal-overlay">
+        <div class="modal-box">
+            <div class="modal-header">
+                <h3><i class="fa-solid fa-university"></i> إضافة جامعة جديدة</h3>
+                <button class="close-btn" onclick="closeModal('uniModal')"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <form id="uniForm" onsubmit="handleAddUniversity(event)">
+                <div class="form-group">
+                    <label>اسم الجامعة:</label>
+                    <input type="text" id="uniName" required placeholder="مثال: جامعة تبليسي الطبية (TSMU)">
+                </div>
+                <div class="modal-actions" style="margin-top: 15px;">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('uniModal')">إلغاء</button>
+                    <button type="submit" class="btn btn-primary">إضافة الجامعة</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal: Add District -->
+    <div id="districtModal" class="modal-overlay">
+        <div class="modal-box" style="max-width: 400px;">
+            <div class="modal-header">
+                <h3><i class="fa-solid fa-map-location-dot"></i> إضافة حي سكني جديد</h3>
+                <button class="close-btn" onclick="closeModal('districtModal')"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <form id="districtForm" onsubmit="handleAddDistrict(event)">
+                <div class="form-group">
+                    <label>اسم الحي السكني (مثال: سابورتالو):</label>
+                    <input type="text" id="districtName" required>
+                </div>
+                <div class="modal-actions" style="margin-top: 15px;">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('districtModal')">إلغاء</button>
+                    <button type="submit" class="btn btn-primary">حفظ إضافة الحي</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal: Chat Reply & Customer Service Interaction -->
+    <div id="chatReplyModal" class="modal-overlay">
+        <div class="modal-box" style="max-width: 650px;">
+            <div class="modal-header">
+                <h3><i class="fa-solid fa-headset"></i> الرد على استفسار وحجز الطالب <span id="chatModalStudentName"
+                        style="color:var(--accent-amber);"></span></h3>
+                <button class="close-btn" onclick="closeModal('chatReplyModal')"><i
+                        class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div
+                style="background: var(--bg-main); padding: 12px 16px; border-radius: 10px; margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center; border: 1px solid var(--border-color);">
+                <div>
+                    <span id="chatModalStudentUni"
+                        style="font-size: 0.9rem; color: var(--text-muted); display: block;"></span>
+                    <strong id="chatModalStudentPhone" dir="ltr"
+                        style="color: var(--accent-green); font-size: 1rem;"></strong>
+                </div>
+                <a id="whatsappDirectLink" href="#" target="_blank" class="btn btn-primary"
+                    style="background: #25D366; border-color: #25D366; padding: 6px 14px; font-size: 0.9rem;">
+                    <i class="fa-brands fa-whatsapp"></i> مراسلة وتساب مباشر
+                </a>
+            </div>
+
+            <!-- Chat History Thread -->
+            <div id="chatMessagesThread"
+                style="max-height: 300px; overflow-y: auto; padding: 12px; background: rgba(0,0,0,0.25); border-radius: 12px; margin-bottom: 15px; display: flex; flex-direction: column; gap: 12px;">
+                <!-- Messages will load dynamically -->
+            </div>
+
+            <!-- Custom Reply Input & Media Buttons -->
+            <form id="chatReplyForm" onsubmit="handleSendChatReply(event)" style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center;">
+                <input type="hidden" id="activeChatId">
+                <input type="file" id="modalImageFileInput" accept="image/*" style="display: none;" onchange="handleModalImageUpload(this)">
+                <input type="text" id="customReplyInput" placeholder="اكتب ردك المخصص للطالب هنا..."
+                    style="flex: 1; padding: 10px 14px; border-radius: 10px; border: 1px solid var(--border-color); background: var(--bg-main); color: var(--text-main); min-width: 220px;">
+                <button type="button" onclick="document.getElementById('modalImageFileInput').click()" class="btn btn-secondary"
+                    style="background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15); color: #e9edef; padding: 10px 14px; border-radius: 10px; cursor: pointer; display: flex; align-items: center; gap: 6px; font-size: 0.85rem; font-weight: bold;"
+                    title="تحميل صورة من جهازك وإرسالها للطالب">
+                    <i class="fa-solid fa-image" style="color: #fbbf24; font-size: 1rem;"></i>
+                    تحميل صورة 📷
+                </button>
+                <button type="button" onclick="triggerWaAttachmentUrl()" class="btn btn-secondary"
+                    style="background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15); color: #e9edef; padding: 10px 14px; border-radius: 10px; cursor: pointer; display: flex; align-items: center; gap: 6px; font-size: 0.85rem; font-weight: bold;"
+                    title="إرفاق رابط مباشر">
+                    <i class="fa-solid fa-link" style="color: #a855f7; font-size: 1rem;"></i>
+                    إرفاق رابط 📎
+                </button>
+                <button type="button" onclick="triggerModalVideoAttachment()" class="btn btn-secondary"
+                    style="background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15); color: #e9edef; padding: 10px 14px; border-radius: 10px; cursor: pointer; display: flex; align-items: center; gap: 6px; font-size: 0.85rem; font-weight: bold; opacity: 0.8;"
+                    title="ميزة إرفاق الفيديو قيد التطوير حالياً">
+                    <i class="fa-solid fa-video" style="color: #38bdf8; font-size: 1rem;"></i>
+                    إرفاق فيديو (تحت التطوير 🚧)
+                </button>
+                <button type="submit" class="btn btn-primary" style="padding: 10px 20px;"><i
+                        class="fa-solid fa-paper-plane"></i> إرسال الرد</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Lightbox Modal for Chat Images -->
+    <div id="imageLightboxModal" class="modal-overlay" onclick="if(event.target === this) closeModal('imageLightboxModal')" style="z-index: 10000; background: rgba(0,0,0,0.85); display: none; align-items: center; justify-content: center; position: fixed; inset: 0;">
+        <div style="position: relative; max-width: 90vw; max-height: 90vh; text-align: center;">
+            <button onclick="closeModal('imageLightboxModal')" style="position: absolute; top: -45px; right: 0; background: none; border: none; color: #fff; font-size: 2rem; cursor: pointer; z-index: 10001;" title="إغلاق"><i class="fa-solid fa-xmark"></i></button>
+            <img id="lightboxImg" src="" style="max-width: 90vw; max-height: 85vh; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.7); object-fit: contain; border: 2px solid rgba(255,255,255,0.2);">
+        </div>
+    </div>
+
+    <!-- Modal: Student Photo & Profile -->
+    <div id="studentProfileModal" class="modal-overlay">
+        <div class="modal-box" style="max-width: 450px; text-align: center;">
+            <div class="modal-header">
+                <h3><i class="fa-solid fa-id-card"></i> بطاقة وبيانات الطالب</h3>
+                <button class="close-btn" onclick="closeModal('studentProfileModal')"><i
+                        class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div style="padding: 20px;">
+                <img id="profileModalImg"
+                    src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80"
+                    style="width: 150px; height: 150px; border-radius: 50%; object-fit: cover; border: 4px solid #25D366; box-shadow: 0 5px 15px rgba(0,0,0,0.3); margin-bottom: 15px;">
+                <h3 id="profileModalName" style="color: var(--text-main); font-size: 1.4rem; margin-bottom: 5px;"></h3>
+                <p id="profileModalUni" style="color: var(--accent-amber); font-size: 0.95rem; margin-bottom: 15px;">
+                </p>
+                <div
+                    style="background: var(--bg-main); padding: 14px; border-radius: 12px; text-align: right; border: 1px solid var(--border-color); font-size: 0.95rem;">
+                    <p style="margin: 8px 0; color: var(--text-main);"><strong>📱 رقم الواتساب:</strong> <span
+                            id="profileModalPhone" dir="ltr" style="color: #25D366; font-weight: bold;"></span></p>
+                    <p style="margin: 8px 0; color: var(--text-main);"><strong>🌍 الجنسية:</strong> <span
+                            style="color: var(--text-main);">مسجل في بوابة الطلاب المقيمين</span></p>
+                    <p style="margin: 8px 0; color: var(--text-main);"><strong>📋 حالة الحساب:</strong> <span
+                            style="color: #25D366; font-weight: bold;">نشط وموثق لدى التطبيق ✔️</span></p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Add News Article -->
+    <div id="newsModal" class="modal-overlay">
+        <div class="modal-box" style="max-width: 550px;">
+            <div class="modal-header">
+                <h3><i class="fa-solid fa-newspaper"></i> إضافة خبر جديد</h3>
+                <button class="close-btn" onclick="closeModal('newsModal')"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <form id="newsForm" onsubmit="handleAddNews(event)">
+                <div class="form-group">
+                    <label>عنوان الخبر:</label>
+                    <input type="text" id="newsTitle" required placeholder="مثال: افتتاح مركز الخدمات الطلابية الجديد بتبليسي 🏫">
+                </div>
+                <div class="form-group">
+                    <label>تفاصيل ومحتوى الخبر:</label>
+                    <textarea id="newsContent" rows="5" required placeholder="اكتب هنا تفاصيل الخبر والمقالة كاملة للطلاب..."></textarea>
+                </div>
+                <div class="form-group">
+                    <label>🖼️ صورة الخبر (من جهازك - اختياري):</label>
+                    <div style="display: flex; gap: 10px; align-items: center; margin-bottom: 6px;">
+                        <input type="file" id="newsFileInput" accept="image/*" onchange="handleNewsFileSelect(this)"
+                            style="padding: 6px; border: 1px solid var(--border-color); border-radius: 8px; background: var(--bg-main); color: var(--text-main); flex: 1;">
+                        <img id="newsImgPreview" src="" style="width: 50px; height: 50px; border-radius: 8px; object-fit: cover; display: none; border: 1px solid var(--accent-amber);">
+                    </div>
+                    <input type="hidden" id="newsImage" placeholder="رابط صورة للخبر (أو اترك فارغاً)">
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('newsModal')">إلغاء</button>
+                    <button type="submit" class="btn btn-primary">حفظ ونشر الخبر 📰</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal: Add Notification Alert -->
+    <div id="notificationModal" class="modal-overlay">
+        <div class="modal-box" style="max-width: 500px;">
+            <div class="modal-header">
+                <h3><i class="fa-solid fa-bell"></i> نشر تنبيه عاجل جديد</h3>
+                <button class="close-btn" onclick="closeModal('notificationModal')"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <form id="notificationForm" onsubmit="handleAddNotification(event)">
+                <div class="form-group">
+                    <label>عنوان التنبيه:</label>
+                    <input type="text" id="notifTitle" required placeholder="مثال: انقطاع الكهرباء غداً في ديدوبي ⚡">
+                </div>
+                <div class="form-group">
+                    <label>تفاصيل ومحتوى التنبيه:</label>
+                    <textarea id="notifContent" rows="4" required placeholder="مثال: نسترعي انتباه طلابنا الكرام بأنه سيتم فصل التيار..."></textarea>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('notificationModal')">إلغاء</button>
+                    <button type="submit" class="btn btn-primary" style="background: var(--accent-amber); border-color: var(--accent-amber); color: var(--text-dark);">
+                        نشر وإرسال الإشعار 🔔
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal: Add Student Account -->
+    <div id="addStudentModal" class="modal-overlay">
+        <div class="modal-box" style="max-width: 500px;">
+            <div class="modal-header">
+                <h3><i class="fa-solid fa-user-plus"></i> إضافة حساب طالب جديد</h3>
+                <button class="close-btn" onclick="closeModal('addStudentModal')"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <form id="addStudentForm" onsubmit="handleAddStudent(event)">
+                <div class="form-group">
+                    <label>الاسم الكامل:</label>
+                    <input type="text" id="addStdName" required placeholder="الاسم الكامل">
+                </div>
+                <div class="form-group">
+                    <label>البريد الإلكتروني:</label>
+                    <input type="email" id="addStdEmail" required placeholder="البريد الإلكتروني">
+                </div>
+                <div class="form-group">
+                    <label>رقم الهاتف:</label>
+                    <input type="text" id="addStdPhone" required placeholder="رقم الهاتف مع الرمز">
+                </div>
+                <div class="form-group">
+                    <label>الجامعة والتخصص:</label>
+                    <input type="text" id="addStdUni" required placeholder="مثال: جامعة جورجيا (UG)">
+                </div>
+                <div class="form-group">
+                    <label>كلمة المرور الافتراضية:</label>
+                    <input type="text" id="addStdPass" required placeholder="كلمة المرور للدخول">
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('addStudentModal')">إلغاء</button>
+                    <button type="submit" class="btn btn-primary">إضافة الطالب</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal: Points Management -->
+    <div id="pointsModal" class="modal-overlay">
+        <div class="modal-box" style="max-width: 450px;">
+            <div class="modal-header">
+                <h3><i class="fa-solid fa-coins"></i> إدارة نقاط المحفظة للطالب</h3>
+                <button class="close-btn" onclick="closeModal('pointsModal')"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div style="background: rgba(251, 191, 36, 0.1); padding: 16px; border-radius: 12px; margin-bottom: 20px; border: 1px dashed var(--accent-amber); text-align: center;">
+                <h4 id="pointsModalStudentName" style="color: var(--accent-amber); font-size: 1.2rem; margin-bottom: 5px;">اسم الطالب</h4>
+                <div style="color: var(--text-main); font-size: 0.9rem;">الرصيد الحالي: <strong id="pointsModalCurrentPoints" style="font-size: 1.3rem; color: var(--accent-green);">0</strong> نقطة</div>
+            </div>
+            <form id="pointsForm" onsubmit="handlePointsSubmit(event)">
+                <input type="hidden" id="pointsStudentId">
+                <div class="form-group">
+                    <label>نوع العملية:</label>
+                    <div style="display: flex; gap: 10px;">
+                        <label style="flex: 1; padding: 10px; background: rgba(37,211,102,0.1); border: 1px solid #25D366; border-radius: 8px; cursor: pointer; text-align: center; color: #25D366; font-weight: bold;">
+                            <input type="radio" name="pointsOperation" value="add" checked> إضافة نقاط ➕
+                        </label>
+                        <label style="flex: 1; padding: 10px; background: rgba(239,68,68,0.1); border: 1px solid #ef4444; border-radius: 8px; cursor: pointer; text-align: center; color: #ef4444; font-weight: bold;">
+                            <input type="radio" name="pointsOperation" value="withdraw"> سحب نقاط ➖
+                        </label>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>المبلغ / عدد النقاط:</label>
+                    <input type="number" id="pointsAmount" required min="1" placeholder="مثال: 50" style="font-size: 1.2rem; font-weight: bold; text-align: center;">
+                </div>
+                <div class="form-group">
+                    <label>السبب أو الوصف (يظهر للطالب في الإشعارات):</label>
+                    <input type="text" id="pointsReason" required placeholder="مثال: مكافأة تسجيل أو سداد رسوم خدمة...">
+                </div>
+                <div class="modal-actions" style="margin-top: 15px;">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('pointsModal')">إلغاء</button>
+                    <button type="submit" class="btn btn-primary">تنفيذ العملية وتحديث الرصيد</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="lang.js"></script>
+    <script src="script.js"></script>
+</body>
+
+</html>
