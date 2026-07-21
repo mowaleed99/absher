@@ -3,6 +3,9 @@ import 'package:flutter/material.dart';
 import '../theme/app_colors.dart';
 import 'home_screen.dart';
 import '../services/language_service.dart';
+import '../services/api_service.dart';
+import '../models/student.dart';
+import 'admin/admin_shell.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -37,17 +40,41 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
     Timer(const Duration(seconds: 3), _navigateToHome);
   }
 
-  void _navigateToHome() {
-    if (mounted) {
+  Future<void> _navigateToHome() async {
+    await ApiService.initTokens();
+    if (!mounted) return;
+
+    if (ApiService.adminToken != null) {
       Navigator.of(context).pushReplacement(
-        MaterialPageRoute(
-          builder: (_) => HomeScreen(
-            user: {'name': LanguageService.tr('guest_name'), 'uni': LanguageService.tr('guest_uni'), 'is_guest': true},
-            isGuest: true,
-          ),
-        ),
+        MaterialPageRoute(builder: (_) => const AdminShell()),
       );
+      return;
     }
+
+    if (ApiService.authToken != null) {
+      Student? user = await ApiService.getCurrentUser();
+      if (!mounted) return;
+      if (user != null) {
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(
+            builder: (_) => HomeScreen(
+              user: user,
+              isGuest: false,
+            ),
+          ),
+        );
+        return;
+      }
+    }
+
+    Navigator.of(context).pushReplacement(
+      MaterialPageRoute(
+        builder: (_) => const HomeScreen(
+          user: null,
+          isGuest: true,
+        ),
+      ),
+    );
   }
 
   @override
@@ -137,7 +164,7 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
                     borderRadius: BorderRadius.circular(20),
                     border: Border.all(color: AppColors.accent.withValues(alpha: 0.5)),
                   ),
-                  child: const Text('✨ @absher_georgia ✨', style: TextStyle(color: AppColors.accentLight, fontSize: 14)),
+                  child: const Text('@absher_georgia', style: TextStyle(color: AppColors.accentLight, fontSize: 14)),
                 ),
                 const Spacer(),
                 const CircularProgressIndicator(valueColor: AlwaysStoppedAnimation<Color>(AppColors.accent)),

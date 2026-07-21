@@ -4,9 +4,10 @@ import '../services/api_service.dart';
 import 'chat_screen.dart';
 import 'login_screen.dart';
 import '../services/language_service.dart';
+import '../models/student.dart';
 
 class RoommateMatchScreen extends StatefulWidget {
-  final Map<String, dynamic> user;
+  final Student? user;
   const RoommateMatchScreen({super.key, required this.user});
 
   @override
@@ -30,9 +31,9 @@ class _RoommateMatchScreenState extends State<RoommateMatchScreen> {
   @override
   void initState() {
     super.initState();
-    _nameController = TextEditingController(text: widget.user['name'] ?? '');
-    _phoneController.text = widget.user['phone'] ?? '';
-    _loadUniversities(widget.user['uni'] ?? '');
+    _nameController = TextEditingController(text: widget.user?.fullName ?? '');
+    _phoneController.text = widget.user?.phone ?? '';
+    _loadUniversities((widget.user?.universityId != null && widget.user!.universityId! > 0) ? 'University #${widget.user!.universityId}' : '');
   }
 
   Future<void> _loadUniversities(String userUni) async {
@@ -40,7 +41,7 @@ class _RoommateMatchScreenState extends State<RoommateMatchScreen> {
     if (mounted) {
       setState(() {
         if (unis.isNotEmpty) {
-          _universities = unis.map((u) => u['name'].toString()).toList();
+          _universities = unis.map((u) => (u['name'] ?? '').toString()).where((n) => n.isNotEmpty).toList();
         }
         if (userUni.isNotEmpty) {
           if (!_universities.contains(userUni)) {
@@ -65,7 +66,7 @@ class _RoommateMatchScreenState extends State<RoommateMatchScreen> {
   }
 
   void _submitForm() {
-    final isGuest = widget.user['is_guest'] == true || widget.user['id'] == null || widget.user['name']?.toString().contains(LanguageService.tr('auto_trans_1249')) == true;
+    final isGuest = widget.user == null || widget.user!.id == 0 || widget.user!.fullName.contains(LanguageService.tr('auto_trans_1249'));
     if (isGuest) {
       showDialog(
         context: context,
@@ -100,24 +101,21 @@ class _RoommateMatchScreenState extends State<RoommateMatchScreen> {
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (_) => const AlertDialog(
+      builder: (_) => AlertDialog(
         content: Row(
           children: [
-            CircularProgressIndicator(color: AppColors.primary),
-            SizedBox(width: 20),
-            Expanded(child: Text(LanguageService.tr('auto_trans_1251'), style: TextStyle(fontFamily: 'Cairo'))),
+            const CircularProgressIndicator(color: AppColors.primary),
+            const SizedBox(width: 20),
+            Expanded(child: Text(LanguageService.tr('auto_trans_1251'), style: const TextStyle(fontFamily: 'Cairo'))),
           ],
         ),
       ),
     );
 
     ApiService.submitServiceRequest(
-      studentName: widget.user['name']?.toString() ?? LanguageService.tr('auto_trans_1252'),
-      studentPhone: widget.user['phone']?.toString() ?? '+995555000000',
-      studentUni: widget.user['uni']?.toString() ?? LanguageService.tr('auto_trans_1253'),
-      serviceTitle: LanguageService.tr('auto_trans_1254'),
-      details: matchMsg,
+      details: '${LanguageService.tr('auto_trans_1254')}\n$matchMsg',
     ).then((_) {
+      if (!context.mounted) return;
       Navigator.pop(context); // Dismiss loading spinner
       Navigator.pushReplacement(
         context,
@@ -126,9 +124,10 @@ class _RoommateMatchScreenState extends State<RoommateMatchScreen> {
         ),
       );
     }).catchError((e) {
+      if (!context.mounted) return;
       Navigator.pop(context); // Dismiss loading spinner
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('خطأ في إرسال الطلب: $e')),
+        SnackBar(content: Text('${LanguageService.tr('error_sending_request')}: $e')),
       );
     });
   }

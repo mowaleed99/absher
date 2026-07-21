@@ -4,10 +4,11 @@ import 'apartment_detail_screen.dart';
 import '../services/api_service.dart';
 import '../services/language_service.dart';
 import 'chat_screen.dart';
+import '../models/student.dart';
 
 class FlatsListScreen extends StatelessWidget {
   final List<Map<String, dynamic>> apartments;
-  final Map<String, dynamic> user;
+  final Student? user;
   final String title;
   final String subtitle;
   final bool filterSingleOnly;

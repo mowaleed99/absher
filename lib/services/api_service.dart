@@ -1,9 +1,75 @@
-import 'package:absher/services/language_service.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:flutter/foundation.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import '../models/student.dart';
+import '../models/apartment.dart';
+import '../models/admin_dashboard.dart';
+import '../models/chat_message.dart';
+import 'language_service.dart';
 
 class ApiService {
+  static const _storage = FlutterSecureStorage();
+  static const _keyAuthToken = 'auth_token';
+  static const _keyAdminToken = 'admin_token';
+
+  // Token state (populated by initTokens)
+  static String? adminToken;
+  static String? authToken;
+
+  /// Must be called at startup to restore persisted tokens.
+  static Future<void> initTokens() async {
+    adminToken = await _storage.read(key: _keyAdminToken);
+    authToken = await _storage.read(key: _keyAuthToken);
+  }
+
+  /// Persist student auth token after login.
+  static Future<void> saveAuthToken(String token) async {
+    authToken = token;
+    await _storage.write(key: _keyAuthToken, value: token);
+  }
+
+  /// Persist admin auth token after admin login.
+  static Future<void> saveAdminToken(String token) async {
+    adminToken = token;
+    await _storage.write(key: _keyAdminToken, value: token);
+  }
+
+  /// Clear all tokens on logout.
+  static Future<void> clearTokens() async {
+    authToken = null;
+    adminToken = null;
+    await _storage.delete(key: _keyAuthToken);
+    await _storage.delete(key: _keyAdminToken);
+  }
+
+  /// Fetch the currently logged-in student using the stored auth token.
+  static Future<Student?> getCurrentUser() async {
+    if (authToken == null) return null;
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/auth/me.php'),
+        headers: {'Authorization': 'Bearer $authToken'},
+      );
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        if (data['status'] == 'success' && data['user'] != null) {
+          return Student.fromJson(data['user']);
+        }
+      }
+    } catch (e) {
+      debugPrint('getCurrentUser error: $e');
+    }
+    return null;
+  }
+
+  /// Convenience alias — returns the student's wallet points balance.
+  static Future<int> getWalletBalance(int studentId) async {
+    final result = await getWallet(studentId);
+    return (result['points'] as num?)?.toInt() ?? 0;
+  }
+
+  // ─── URL Configuration ──────────────────────────────────────────────────────
   // عنوان سيرفر الباك اند PHP المستضاف على Hostinger (الإنتاج)
   static const String prodUrl = 'https://lime-vulture-117634.hostingersite.com/api';
 
@@ -41,8 +107,9 @@ class ApiService {
     }
     // Route local uploads through media CORS proxy to support local Flutter Web testing
     if (path.contains('uploads/')) {
-      final filename = path.split('/').last;
-      return '$serverRoot/api/media.php?file=$filename';
+      final idx = path.indexOf('uploads/');
+      final relPath = path.substring(idx + 'uploads/'.length);
+      return '$serverRoot/api/media.php?file=$relPath';
     }
     // Remove leading slash if any
     final cleanPath = path.startsWith('/') ? path.substring(1) : path;
@@ -168,7 +235,7 @@ class ApiService {
         }
       }
     } catch (e) {
-      print('Error fetching apartments from backend: $e');
+      debugPrint('Error fetching apartments from backend: $e');
     }
     // الالتجاء للقيم الافتراضية في حال عدم اتصال الخادم
     return [
@@ -252,7 +319,7 @@ class ApiService {
         }
       }
     } catch (e) {
-      print('Error fetching universities from backend: $e');
+      debugPrint('Error fetching universities from backend: $e');
     }
     // الالتجاء للقيم الافتراضية في حال عدم اتصال الخادم
     return [
@@ -279,7 +346,7 @@ class ApiService {
         }
       }
     } catch (e) {
-      print('Error fetching districts from backend: $e');
+      debugPrint('Error fetching districts from backend: $e');
     }
     // الالتجاء للقيم الافتراضية في حال عدم اتصال الخادم
     return [
@@ -311,7 +378,7 @@ class ApiService {
         }
       }
     } catch (e) {
-      print('Error fetching news: $e');
+      // error fetching news
     }
     // محاكاة تنبيهات افتراضية في حال تعذر الاتصال بالسيرفر
     return [
@@ -357,7 +424,7 @@ class ApiService {
         }
       }
     } catch (e) {
-      print('Error fetching notifications: $e');
+      debugPrint('Error fetching notifications: $e');
     }
     // محاكاة إشعارات افتراضية نشطة عند عدم الاتصال بالسيرفر
     return [
@@ -394,7 +461,7 @@ class ApiService {
         }
       }
     } catch (e) {
-      print('Error fetching services from backend: $e');
+      debugPrint('Error fetching services from backend: $e');
     }
     // محاكاة البيانات في حال عدم اتصال الخادم
     return [
@@ -408,10 +475,10 @@ class ApiService {
 
   // إرسال طلب خدمة أو حجز شقة أو تجميع شريك سكن
   static Future<Map<String, dynamic>> submitServiceRequest({
-    required String studentName,
-    required String studentPhone,
-    required String studentUni,
-    required String serviceTitle,
+    String studentName = '',
+    String studentPhone = '',
+    String studentUni = '',
+    String serviceTitle = '',
     required String details,
   }) async {
     try {
@@ -431,7 +498,7 @@ class ApiService {
         return jsonDecode(response.body);
       }
     } catch (e) {
-      print('Error submitting request: $e');
+      debugPrint('Error submitting request: $e');
     }
     return {'status': 'success', 'message': LanguageService.tr('auto_trans_1384')};
   }
@@ -457,16 +524,14 @@ class ApiService {
         }
       }
     } catch (e) {
-      print('Error fetching chat: $e');
+      debugPrint('Error fetching chat: $e');
     }
     return [];
   }
 
   // إرسال رسالة شات من الطالب إلى الدعم الفني
   static Future<bool> sendChatMessage({
-    required String phone,
-    required String studentName,
-    required String studentUni,
+    required int chatId,
     required String text,
     String type = 'text',
     String imageUrl = '',
@@ -474,24 +539,28 @@ class ApiService {
     String quoteSender = '',
   }) async {
     try {
+      final headers = {'Content-Type': 'application/json'};
+      final token = authToken ?? adminToken;
+      if (token != null && token.isNotEmpty) {
+        headers['Authorization'] = 'Bearer $token';
+      }
+
       final response = await http.post(
-        Uri.parse('$baseUrl/chat.php'),
-        headers: {'Content-Type': 'application/json'},
+        Uri.parse('$baseUrl/chat/send.php'),
+        headers: headers,
         body: jsonEncode({
-          'action': 'send',
-          'phone': phone,
-          'student_name': studentName,
-          'student_uni': studentUni,
-          'text': text,
-          'type': type,
+          'chat_id': chatId,
+          'sender_type': 'student',
+          'message_type': type,
+          'content': text,
           'image_url': imageUrl,
           'quote_text': quoteText,
           'quote_sender': quoteSender,
         }),
       );
-      return response.statusCode == 200;
+      return response.statusCode == 200 || response.statusCode == 201;
     } catch (e) {
-      print('Error sending chat message: $e');
+      debugPrint('Error sending chat message: $e');
       return false;
     }
   }
@@ -517,7 +586,7 @@ class ApiService {
       );
       return response.statusCode == 200;
     } catch (e) {
-      print('Error submitting review: $e');
+      debugPrint('Error submitting review: $e');
       return false;
     }
   }
@@ -526,6 +595,10 @@ class ApiService {
   static Future<String?> uploadFile(String filePath, String fileName, {List<int>? fileBytes}) async {
     try {
       final request = http.MultipartRequest('POST', Uri.parse('$baseUrl/upload.php'));
+      final authHeader = adminToken ?? authToken;
+      if (authHeader != null && authHeader.isNotEmpty) {
+        request.headers['Authorization'] = 'Bearer $authHeader';
+      }
       if (kIsWeb || filePath.isEmpty) {
         if (fileBytes != null) {
           request.files.add(http.MultipartFile.fromBytes('file', fileBytes, filename: fileName));
@@ -539,13 +612,18 @@ class ApiService {
       final response = await http.Response.fromStream(streamedResponse);
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-        if (data['status'] == 'success' && data['url'] != null) {
+        if ((data['status'] == 'success' || data['success'] == true) && (data['url'] != null || (data['data'] != null && data['data']['url'] != null))) {
+          final rawUrl = (data['url'] ?? data['data']['url']).toString();
           final domain = baseUrl.replaceAll('/api', '');
-          return '$domain/${data['url']}';
+          return rawUrl.startsWith('http') ? rawUrl : (rawUrl.startsWith('/') ? '$domain$rawUrl' : '$domain/$rawUrl');
+        } else {
+          debugPrint('uploadFile error response: ${response.body}');
         }
+      } else {
+        debugPrint('uploadFile failed statusCode ${response.statusCode}: ${response.body}');
       }
     } catch (e) {
-      print('Error uploading file: $e');
+      debugPrint('uploadFile exception: $e');
     }
     return null;
   }
@@ -562,13 +640,15 @@ class ApiService {
         return jsonDecode(response.body);
       }
     } catch (e) {
-      print('Error getting wallet: $e');
+      debugPrint('Error getting wallet: $e');
     }
     return {'status': 'error', 'points': 0, 'notifications': []};
   }
 
   // المحفظة - الدفع بالنقاط
-  static Future<Map<String, dynamic>> payWithPoints(int studentId, int amount, String serviceTitle) async {
+  static Future<Map<String, dynamic>> payWithPoints(dynamic studentIdOrResult, [int amount = 0, String serviceTitle = '']) async {
+    // Supports being called with just a Map result from submitServiceRequest
+    final int studentId = studentIdOrResult is int ? studentIdOrResult : 0;
     try {
       final response = await http.post(
         Uri.parse('$baseUrl/wallet_api.php?action=pay_with_points'),
@@ -583,8 +663,287 @@ class ApiService {
         return jsonDecode(response.body);
       }
     } catch (e) {
-      print('Error paying with points: $e');
+      debugPrint('Error paying with points: $e');
     }
     return {'status': 'error', 'message': LanguageService.tr('auto_trans_1386')};
   }
+
+  // ─── Admin Auth ─────────────────────────────────────────────────────────────
+
+  static Future<void> adminLogin(String identifier, String password) async {
+    final response = await http.post(
+      Uri.parse('$baseUrl/admin/login.php'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({'identifier': identifier, 'password': password}),
+    );
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      final isSuccess = data['status'] == 'success' || data['success'] == true;
+      final token = data['token'] ?? data['data']?['token'];
+      if (isSuccess && token != null) {
+        await saveAdminToken(token.toString());
+        return;
+      }
+      throw Exception(data['message'] ?? 'Admin login failed');
+    }
+    throw Exception('Server error ${response.statusCode}');
+  }
+
+  static Future<void> adminLogout() async {
+    await clearTokens();
+  }
+
+  static Map<String, String> get _adminHeaders => {
+    'Content-Type': 'application/json',
+    if (adminToken != null) 'Authorization': 'Bearer $adminToken',
+  };
+
+  // ─── Admin Dashboard ────────────────────────────────────────────────────────
+
+  static Future<AdminDashboard?> getAdminDashboard() async {
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/admin_api.php?action=get_dashboard_stats'),
+        headers: _adminHeaders,
+      );
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        final payload = data['data'] is Map ? (data['data'] as Map<String, dynamic>) : data;
+        return AdminDashboard.fromJson(payload);
+      }
+    } catch (e) {
+      debugPrint('getAdminDashboard error: $e');
+    }
+    return null;
+  }
+
+  // ─── Admin Apartments ───────────────────────────────────────────────────────
+
+  static Future<List<Apartment>> getAdminApartments() async {
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/admin_api.php?action=get_apartments'),
+        headers: _adminHeaders,
+      );
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        final payload = data['data'] is Map ? data['data'] : data;
+        final list = payload['apartments'] ?? (payload is List ? payload : null);
+        if (list != null) {
+          return (list as List)
+              .map((a) => Apartment.fromJson(a as Map<String, dynamic>))
+              .toList();
+        }
+      }
+    } catch (e) {
+      debugPrint('getAdminApartments error: $e');
+    }
+    return [];
+  }
+
+  static Future<bool> createApartment(Map<String, dynamic> payload) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/admin_api.php?action=add_apartment'),
+        headers: _adminHeaders,
+        body: jsonEncode(payload),
+      );
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        return data['status'] == 'success' || data['success'] == true;
+      }
+    } catch (e) {
+      debugPrint('createApartment error: $e');
+    }
+    return false;
+  }
+
+  static Future<bool> updateApartment(Map<String, dynamic> payload) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/admin_api.php?action=update_apartment'),
+        headers: _adminHeaders,
+        body: jsonEncode(payload),
+      );
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        return data['status'] == 'success' || data['success'] == true;
+      }
+    } catch (e) {
+      debugPrint('updateApartment error: $e');
+    }
+    return false;
+  }
+
+  // ─── Admin Services ─────────────────────────────────────────────────────────
+
+  static Future<List<Map<String, dynamic>>> getAdminServices() async {
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/admin_api.php?action=get_services'),
+        headers: _adminHeaders,
+      );
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        final payload = data['data'] is Map ? data['data'] : data;
+        final list = payload['services'] ?? (payload is List ? payload : null);
+        if (list != null) {
+          return (list as List).cast<Map<String, dynamic>>();
+        }
+      }
+    } catch (e) {
+      debugPrint('getAdminServices error: $e');
+    }
+    return [];
+  }
+
+  static Future<bool> createService(Map<String, dynamic> payload) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/admin_api.php?action=add_service'),
+        headers: _adminHeaders,
+        body: jsonEncode(payload),
+      );
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        return data['status'] == 'success' || data['success'] == true;
+      }
+    } catch (e) {
+      debugPrint('createService error: $e');
+    }
+    return false;
+  }
+
+  static Future<bool> updateService(Map<String, dynamic> payload) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/admin_api.php?action=update_service'),
+        headers: _adminHeaders,
+        body: jsonEncode(payload),
+      );
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        return data['status'] == 'success' || data['success'] == true;
+      }
+    } catch (e) {
+      debugPrint('updateService error: $e');
+    }
+    return false;
+  }
+
+  // ─── Admin Students ─────────────────────────────────────────────────────────
+
+  static Future<List<Student>> getAdminStudents({
+    int page = 1,
+    int limit = 20,
+    String search = '',
+  }) async {
+    try {
+      final uri = Uri.parse(
+        '$baseUrl/admin_api.php?action=get_students&page=$page&limit=$limit&search=${Uri.encodeComponent(search)}',
+      );
+      final response = await http.get(uri, headers: _adminHeaders);
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        final payload = data['data'] is Map ? data['data'] : data;
+        final list = payload['students'] ?? (payload is List ? payload : null);
+        if (list != null) {
+          return (list as List)
+              .map((s) => Student.fromJson(s as Map<String, dynamic>))
+              .toList();
+        }
+      }
+    } catch (e) {
+      debugPrint('getAdminStudents error: $e');
+    }
+    return [];
+  }
+
+  // ─── Admin Upload ───────────────────────────────────────────────────────────
+
+  /// Upload an image file for admin use (apartments, services, etc.).
+  /// [folder] is a hint for server-side organization (e.g. 'apartments', 'services').
+  static Future<String?> uploadImage(dynamic imageFile, String folder) async {
+    try {
+      final request = http.MultipartRequest(
+        'POST',
+        Uri.parse('$baseUrl/upload/image.php?folder=$folder'),
+      );
+      final authHeader = adminToken ?? authToken;
+      if (authHeader != null && authHeader.isNotEmpty) {
+        request.headers['Authorization'] = 'Bearer $authHeader';
+      }
+      request.fields['folder'] = folder;
+      if (imageFile is String) {
+        // Path string
+        request.files.add(await http.MultipartFile.fromPath('file', imageFile));
+      } else {
+        // Assume XFile or similar with path/readAsBytes
+        final bytes = await imageFile.readAsBytes();
+        final name = imageFile.name ?? imageFile.path.split('/').last;
+        request.files.add(http.MultipartFile.fromBytes('file', bytes, filename: name));
+      }
+      final streamed = await request.send();
+      final response = await http.Response.fromStream(streamed);
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        if ((data['status'] == 'success' || data['success'] == true) && (data['url'] != null || (data['data'] != null && data['data']['url'] != null))) {
+          final rawUrl = (data['url'] ?? data['data']['url']).toString();
+          return resolveImageUrl(rawUrl);
+        } else {
+          debugPrint('uploadImage error response: ${response.body}');
+        }
+      } else {
+        debugPrint('uploadImage failed statusCode ${response.statusCode}: ${response.body}');
+      }
+    } catch (e) {
+      debugPrint('uploadImage error: $e');
+    }
+    return null;
+  }
+
+  // ─── Chat (new typed endpoints) ─────────────────────────────────────────────
+
+  /// Creates a new chat session for [studentId] and returns the chat ID.
+  static Future<int?> createChat(int studentId) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/chat/create.php'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'student_id': studentId}),
+      );
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        final data = jsonDecode(response.body);
+        if ((data['status'] == 'success' || data['success'] == true) && (data['chat_id'] != null || (data['data'] != null && data['data']['chat_id'] != null))) {
+          final cid = data['chat_id'] ?? data['data']['chat_id'];
+          return (cid as num).toInt();
+        }
+      }
+    } catch (e) {
+      debugPrint('createChat error: $e');
+    }
+    return null;
+  }
+
+  /// Fetches all messages for [chatId].
+  static Future<List<ChatMessage>> getMessages(int chatId) async {
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/chat/messages.php?chat_id=$chatId&t=${DateTime.now().millisecondsSinceEpoch}'),
+      );
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        final list = data['messages'] ?? (data['data'] is List ? data['data'] : null);
+        if (list != null && list is List) {
+          return list
+              .map((m) => ChatMessage.fromJson(m as Map<String, dynamic>))
+              .toList();
+        }
+      }
+    } catch (e) {
+      debugPrint('getMessages error: $e');
+    }
+    return [];
+  }
 }
+

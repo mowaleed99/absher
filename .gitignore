@@ -43,3 +43,35 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+# PHP Backend - sensitive & generated files
+backend_php/.env
+backend_php/.env.*
+backend_php/.user.ini
+backend_php/api/.user.ini
+backend_php/uploads/upload_*
+backend_php/uploads/apartments/
+backend_php/uploads/general/
+backend_php/absher_georgia_db_backup*.sql
+
+# PHP debug/test scripts (not part of the app)
+backend_php/backend_evidence.php
+backend_php/check_db.php
+backend_php/describe_db.php
+backend_php/fetch_rows.php
+backend_php/inspect_db.php
+backend_php/inspect_schema.php
+backend_php/inspect_users.php
+backend_php/run_tests.php
+backend_php/run_tests_backend.php
+backend_php/verify2.php
+backend_php/verify_schema.php
+create_test_student.php
+db_count.php
+e2e_res.php
+e2e_tests.php
+e2e_upload.php
+test.php
+test2.php
+test_image.jpg
+fix_hygiene.py

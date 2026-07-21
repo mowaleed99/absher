@@ -3,9 +3,14 @@ import '../theme/app_colors.dart';
 import '../services/language_service.dart';
 import 'login_screen.dart';
 import 'wallet_screen.dart';
+import '../services/api_service.dart';
+import 'admin/admin_login_screen.dart';
+import 'admin/admin_shell.dart';
+
+import '../models/student.dart';
 
 class ProfileScreen extends StatelessWidget {
-  final Map<String, dynamic> user;
+  final Student? user;
   final bool isGuest;
   const ProfileScreen({super.key, required this.user, required this.isGuest});
 
@@ -25,7 +30,7 @@ class ProfileScreen extends StatelessWidget {
           children: [
             _buildLangOption(context, 'ar', LanguageService.tr('auto_trans_1203')),
             _buildLangOption(context, 'en', LanguageService.tr('auto_trans_1204')),
-            _buildLangOption(context, 'ka', '🇬🇪 ქართული (Under Development / تحت التطوير)'),
+            _buildLangOption(context, 'ka', LanguageService.tr('georgian_lang_label')),
           ],
         ),
       ),
@@ -92,12 +97,13 @@ class ProfileScreen extends StatelessWidget {
                           ],
                         ),
                         const SizedBox(height: 16),
-                        Text(user['name'] ?? LanguageService.tr('default_student_name'), style: const TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold)),
+                        Text(user?.fullName ?? LanguageService.tr('default_student_name'), style: const TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold)),
                         const SizedBox(height: 6),
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
                           decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(20)),
-                          child: Text(user['uni'] ?? LanguageService.tr('default_student_uni'), style: const TextStyle(color: AppColors.accentLight, fontSize: 13)),
+                          child: Text((user?.universityId != null && user!.universityId! > 0) ? 'University #${user!.universityId}' : LanguageService.tr('default_student_uni'), style: const TextStyle(color: AppColors.accentLight, fontSize: 13)),
+
                         ),
                       ],
                     ),
@@ -170,12 +176,42 @@ class ProfileScreen extends StatelessWidget {
                   ),
                   _buildProfileItem(context, Icons.phone_in_talk, LanguageService.tr('contact_support'), LanguageService.tr('support_subtitle')),
                   _buildProfileItem(context, Icons.info_outline, LanguageService.tr('about_app'), LanguageService.tr('about_subtitle')),
-                  const SizedBox(height: 20),
+                  const SizedBox(height: 12),
+                  Card(
+                    margin: const EdgeInsets.only(bottom: 20),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                    elevation: 2,
+                    color: AppColors.primaryDark,
+                    child: ListTile(
+                      leading: const CircleAvatar(
+                        backgroundColor: AppColors.accent,
+                        child: Icon(Icons.admin_panel_settings, color: AppColors.primaryDark),
+                      ),
+                      title: Text(LanguageService.tr('admin_portal_btn'), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: Colors.white)),
+                      subtitle: Text(LanguageService.tr('admin_portal_sub'), style: const TextStyle(fontSize: 12, color: AppColors.accentLight)),
+                      trailing: const Icon(Icons.arrow_forward_ios, size: 16, color: AppColors.accent),
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => ApiService.adminToken != null
+                                ? const AdminShell()
+                                : const AdminLoginScreen(),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
 
                   SizedBox(
                     width: double.infinity,
                     child: OutlinedButton.icon(
-                      onPressed: () => Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (_) => const LoginScreen())),
+                      onPressed: () async {
+                        await ApiService.clearTokens();
+                        if (context.mounted) {
+                          Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (_) => const LoginScreen()));
+                        }
+                      },
                       icon: const Icon(Icons.logout, color: AppColors.error),
                       label: Text(isGuest ? LanguageService.tr('guest_logout') : LanguageService.tr('logout'), style: const TextStyle(color: AppColors.error, fontWeight: FontWeight.bold, fontSize: 15)),
                       style: OutlinedButton.styleFrom(

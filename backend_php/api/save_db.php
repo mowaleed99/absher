@@ -1,4 +1,8 @@
 <?php
+// =========================================================================
+// DEPRECATED: This file is deprecated. 
+// Do not use. The application now uses MySQL database instead of database.json.
+// =========================================================================
 header("Access-Control-Allow-Origin: *");
 header("Access-Control-Allow-Headers: *");
 header("Access-Control-Allow-Methods: POST, OPTIONS");

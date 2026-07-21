@@ -5,9 +5,10 @@ import 'chat_screen.dart';
 import 'login_screen.dart';
 import 'flats_list_screen.dart';
 import '../services/language_service.dart';
+import '../models/student.dart';
 
 class RentFlatScreen extends StatefulWidget {
-  final Map<String, dynamic> user;
+  final Student? user;
   final List<Map<String, dynamic>> apartments;
 
   const RentFlatScreen({super.key, required this.user, required this.apartments});
@@ -34,10 +35,10 @@ class _RentFlatScreenState extends State<RentFlatScreen> {
   @override
   void initState() {
     super.initState();
-    final isGuest = widget.user['uni'] == LanguageService.tr('auto_trans_1209') || widget.user['name'] == LanguageService.tr('auto_trans_1210') || widget.user['is_guest'] == true || widget.user['id'] == null || widget.user['name']?.toString().contains(LanguageService.tr('auto_trans_1211')) == true;
-    _nameController = TextEditingController(text: !isGuest ? (widget.user['name'] ?? '') : '');
-    _wpController = TextEditingController(text: !isGuest ? (widget.user['phone'] ?? '') : '');
-    _loadUniversities(!isGuest ? (widget.user['uni'] ?? '') : '');
+    final isGuest = widget.user == null || widget.user!.id == 0 || widget.user!.fullName.contains(LanguageService.tr('auto_trans_1211'));
+    _nameController = TextEditingController(text: !isGuest ? (widget.user?.fullName ?? '') : '');
+    _wpController = TextEditingController(text: !isGuest ? (widget.user?.phone ?? '') : '');
+    _loadUniversities(!isGuest ? ((widget.user?.universityId != null && widget.user!.universityId! > 0) ? 'University #${widget.user!.universityId}' : '') : '');
   }
 
   Future<void> _loadUniversities(String userUni) async {
@@ -45,7 +46,7 @@ class _RentFlatScreenState extends State<RentFlatScreen> {
     if (mounted) {
       setState(() {
         if (unis.isNotEmpty) {
-          _universities = unis.map((u) => u['name'].toString()).toList();
+          _universities = unis.map((u) => (u['name'] ?? '').toString()).where((n) => n.isNotEmpty).toList();
         }
         if (userUni.isNotEmpty) {
           if (!_universities.contains(userUni)) {
@@ -70,7 +71,7 @@ class _RentFlatScreenState extends State<RentFlatScreen> {
   }
 
   bool _checkGuest() {
-    final isGuest = widget.user['uni'] == LanguageService.tr('auto_trans_1212') || widget.user['name'] == LanguageService.tr('auto_trans_1213') || widget.user['is_guest'] == true || widget.user['id'] == null || widget.user['name']?.toString().contains(LanguageService.tr('auto_trans_1214')) == true;
+    final isGuest = widget.user == null || widget.user!.id == 0 || widget.user!.fullName.contains(LanguageService.tr('auto_trans_1214'));
     if (isGuest) {
       showDialog(
         context: context,
@@ -129,12 +130,9 @@ class _RentFlatScreenState extends State<RentFlatScreen> {
     );
 
     ApiService.submitServiceRequest(
-      studentName: widget.user['name']?.toString() ?? LanguageService.tr('auto_trans_1219'),
-      studentPhone: widget.user['phone']?.toString() ?? '+995555000000',
-      studentUni: widget.user['uni']?.toString() ?? LanguageService.tr('auto_trans_1220'),
-      serviceTitle: LanguageService.tr('auto_trans_1221'),
-      details: msg,
+      details: '${LanguageService.tr('auto_trans_1221')}\n$msg',
     ).then((_) {
+      if (!context.mounted) return;
       Navigator.pop(context); // Dismiss loading spinner
       Navigator.pushReplacement(
         context,
@@ -143,9 +141,10 @@ class _RentFlatScreenState extends State<RentFlatScreen> {
         ),
       );
     }).catchError((e) {
+      if (!context.mounted) return;
       Navigator.pop(context); // Dismiss loading spinner
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('خطأ في إرسال الطلب: $e')),
+        SnackBar(content: Text('${LanguageService.tr('error_sending_request')}: $e')),
       );
     });
   }
@@ -171,12 +170,9 @@ class _RentFlatScreenState extends State<RentFlatScreen> {
     final aloneMsg = LanguageService.tr('auto_trans_1223');
 
     ApiService.submitServiceRequest(
-      studentName: widget.user['name']?.toString() ?? LanguageService.tr('auto_trans_1224'),
-      studentPhone: widget.user['phone']?.toString() ?? '+995555000000',
-      studentUni: widget.user['uni']?.toString() ?? LanguageService.tr('auto_trans_1225'),
-      serviceTitle: LanguageService.tr('auto_trans_1226'),
-      details: aloneMsg,
+      details: '${LanguageService.tr('auto_trans_1226')}\n$aloneMsg',
     ).then((_) {
+      if (!context.mounted) return;
       Navigator.pop(context); // Dismiss loading spinner
       Navigator.pushReplacement(
         context,
@@ -185,9 +181,10 @@ class _RentFlatScreenState extends State<RentFlatScreen> {
         ),
       );
     }).catchError((e) {
+      if (!context.mounted) return;
       Navigator.pop(context); // Dismiss loading spinner
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('خطأ في الاتصال: $e')),
+        SnackBar(content: Text('${LanguageService.tr('connection_error')}: $e')),
       );
     });
   }

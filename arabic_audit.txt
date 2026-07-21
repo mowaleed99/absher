@@ -1,34 +1,14 @@
-lib\main.dart:
-  'أبشر - Absher Georgia'
 lib\screens\apartment_detail_screen.dart:
-  '12:00 ظهراً'
-  'زائر'
-  'تنبيه هام'
-  'عفواً، يجب تسجيل الدخول أو إنشاء حساب طلابي أولاً لتتمكن من طلب حجز الشقق والسكن الطلابي!'
-  'إلغاء'
-  'تسجيل الدخول'
   'تحديد موعد لرؤية الشقة رقم (#${widget.apartment['
-  'أنت على وشك طلب رؤية ومعاينة: "
-  ". الدفع يتم نقداً عند الاستلام.'
-  'رقم هاتف التواصل (واتساب)'
-  'يوم المعاينة'
-  'الوقت المناسب'
-  'ملاحظات إضافية (مثال: نقطة التقاء محددة)'
-  'ملاحظة: أي تغيير أو تعديل في الموعد يتم بسهولة ومباشرة من خلال الشات مع خدمة العملاء.'
-  'جاري إرسال طلب الحجز... ⏳'
-  '🏠 طلب حجز ومعاينة شقة رقم (#${widget.apartment['
-  '🔹 الشقة: ${widget.apartment['
-  '🔹 السعر: ${widget.apartment['
+  '🏠 طلب حجز ومعاينة شقة رقم (#${widget.apartment["
+  '🔹 الشقة: ${widget.apartment["
+  '🔹 السعر: ${widget.apartment["
   '📅 موعد المعاينة المقترح: $_viewingDate\n'
   '⏰ الوقت المناسب لك: $_viewingTime\n'
   '📱 هاتف التواصل: ${_phoneController.text}\n'
-  '📝 ملاحظات: ${_notesController.text.isNotEmpty ? _notesController.text : "
-  '💡 ملاحظة: الطالب يرغب برؤية الشقة في هذا الموعد، وأي تغيير في الموعد يتم التنسيق له عبر هذا الشات.'
-  'طالب أبشر'
-  'جامعة في جورجيا'
+  '📝 ملاحظات: ${_notesController.text.isNotEmpty ? _notesController.text : LanguageService.tr("
   'حجز شقة رقم (#${widget.apartment['
   'خطأ في إرسال طلب الحجز: $e'
-  'تأكيد الطلب والانتقال للمحادثة الفورية 💬'
   '), style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
           iconTheme: const IconThemeData(color: Colors.white),
         ),
@@ -50,8 +30,6 @@ lib\screens\apartment_detail_screen.dart:
                             itemBuilder: (context, index) {
                               final String currentImg = images[index];
                               return currentImg.startsWith('
-  'تبليسي، جورجيا'
-  'شريك'
   ',
                             style: const TextStyle(fontSize: 14, color: AppColors.textMuted, height: 1.6),
                           ),
@@ -69,7 +47,7 @@ lib\screens\apartment_detail_screen.dart:
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
                 color: Colors.white,
-                boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.08), blurRadius: 15, offset: const Offset(0, -4))],
+                boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.08), blurRadius: 15, offset: const Offset(0, -4))],
               ),
               child: Row(
                 children: [
@@ -91,10 +69,58 @@ lib\screens\chat_screen.dart:
     // رسالة ترحيبية آلية من الإدارة
     _messages.add({
       '
-  'الآن'
-  'الآن'
-  'الآن'
-  'الآن'
+  '),
+    });
+
+    // تحميل الرسائل المباشرة السابقة
+    _loadMessages();
+
+    // بدء مؤقت جلب الرسائل الجديدة كل 3 ثوانٍ
+    _pollTimer = Timer.periodic(const Duration(seconds: 3), (timer) {
+      if (!_isDisposed) _loadMessages();
+    });
+
+    _initChat();
+  }
+
+  Future<void> _initChat() async {
+    if (widget.user != null) {
+      int? chatId = await ApiService.createChat(widget.user!.id);
+      if (chatId != null && mounted) {
+        setState(() => _currentChatId = chatId);
+        _loadMessages();
+      }
+    }
+  }
+
+  @override
+  void dispose() {
+    _isDisposed = true;
+    _pollTimer?.cancel();
+    _messageController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _loadMessages() async {
+    if (_isLoadingMessages) return;
+    _isLoadingMessages = true;
+
+    try {
+      if (_currentChatId == 0) return;
+
+      final serverMessages = await ApiService.getMessages(_currentChatId);
+      
+      if (serverMessages.isNotEmpty) {
+        final List<Map<String, dynamic>> newMessages = [];
+        newMessages.add({
+          '
+  '),
+          });
+        }
+
+        // تحديث الواجهة فقط في حالة وجود اختلاف
+        if (newMessages.length != _messages.length || 
+            _messages.last['
   ': quoteSender,
       });
       _replyingToMsg = null;
@@ -102,24 +128,27 @@ lib\screens\chat_screen.dart:
     _messageController.clear();
 
     // إرسال الرسالة لقاعدة البيانات في سيرفر الباك اند
-    ApiService.sendChatMessage(
-      phone: widget.user['
-  'طالب'
-  'جامعة في جورجيا'
-  'طالب أبشر'
-  'جامعة في جورجيا'
-  'تقييم ممتاز بدون ملاحظات إضافية'
-  'الآن'
-  'طالب'
-  'جامعة في جورجيا'
-  'إلغاء'
+    if (_currentChatId != 0) {
+      ApiService.sendChatMessage(
+        chatId: _currentChatId,
+        content: text,
+      );
+    }
+  }
+
+  void _showRatingDialog() {
+    int rating = 5;
+    final commentController = TextEditingController();
+    showDialog(
+      context: context,
+      builder: (_) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          title: Text(LanguageService.tr('
   '🎥 فيديو مرفق: $url'
   '🎥 فيديو مرفق: $url'
   '📷 صورة مرفقة: $url'
-  'إلغاء'
   '🎥 فيديو مرفق: $url'
-  '🎥 فيديو مرفق من الطالب'
-  '📷 صورة مرفقة من الطالب'
   'حدث خطأ: $e'
   ')))),
             ),
@@ -154,7 +183,7 @@ lib\screens\chat_screen.dart:
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
                 color: Colors.white,
-                boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, -2))],
+                boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 10, offset: const Offset(0, -2))],
               ),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
@@ -183,7 +212,7 @@ lib\screens\flats_list_screen.dart:
 
 class FlatsListScreen extends StatelessWidget {
   final List<Map<String, dynamic>> apartments;
-  final Map<String, dynamic> user;
+  final Student? user;
   final String title;
   final String subtitle;
   final bool filterSingleOnly;
@@ -205,12 +234,69 @@ class FlatsListScreen extends StatelessWidget {
             final titleStr = (apt['
   ';
             // التحقق مما إذا كانت الشقة تناسب شخص واحد (ستوديو، 1 غرفة، منفرد، بمفردك) أو إظهارها إذا لم تكن مشتركة بوضوح
-            return combined.contains('
-  'منفرد'
-  '1 غرفة'
-  'خاصة'
-  'مشتركة لـ 3'
-  'أبشر'
+            return combined.contains(LanguageService.tr('
+  '), style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18)),
+          iconTheme: const IconThemeData(color: Colors.white),
+          actions: [
+            Padding(
+              padding: const EdgeInsets.only(left: 12.0),
+              child: IconButton(
+                icon: const Icon(Icons.support_agent, color: Colors.white),
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => ChatScreen(user: user)),
+                  );
+                },
+              ),
+            ),
+          ],
+        ),
+        body: Column(
+          children: [
+            // هيدر توضيحي مميز
+            Container(
+              width: double.infinity,
+              margin: const EdgeInsets.all(16),
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(20),
+                gradient: const LinearGradient(
+                  colors: [AppColors.primary, AppColors.primaryDark],
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                ),
+                boxShadow: [BoxShadow(color: AppColors.primary.withValues(alpha: 0.25), blurRadius: 10, offset: const Offset(0, 4))],
+              ),
+              child: Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(color: AppColors.accent.withValues(alpha: 0.2), shape: BoxShape.circle),
+                    child: Icon(filterSingleOnly ? Icons.person : Icons.apartment, color: AppColors.accent, size: 32),
+                  ),
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(title, style: const TextStyle(color: AppColors.accent, fontWeight: FontWeight.bold, fontSize: 16)),
+                        const SizedBox(height: 4),
+                        Text(subtitle, style: const TextStyle(color: Colors.white, fontSize: 12, height: 1.4)),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            // شريط عدد الشقق المتاحة
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text('
   '), style: const TextStyle(color: Color(0xFF2E7D32), fontSize: 11, fontWeight: FontWeight.bold)),
                   ),
                 ],
@@ -227,117 +313,128 @@ class FlatsListScreen extends StatelessWidget {
                           const Icon(Icons.home_work_outlined, size: 64, color: Colors.grey),
                           const SizedBox(height: 16),
                           Text(LanguageService.tr('
-  'ميعاد'
-  'تاريخ'
-  'سبتمبر'
-lib\screens\georgia_news_screen.dart:
-  'آخر أخبار جورجيا 📰'
-  'تحديث الأخبار'
-  'لا توجد أخبار حالياً 📰'
-  'الآن'
 lib\screens\home_screen.dart:
   ';
   final PageController _adController = PageController();
-  int _currentAdPage = 0;
+  final ValueNotifier<int> _currentAdPage = ValueNotifier<int>(0);
   Timer? _adTimer;
 
   // إعلانات متحركة بصور حقيقية وأحداث وتخفيضات
   final List<Map<String, String>> _adBanners = [
     {
       '
-  'عروض الموسم الدراسي 🎓'
-  'احجز سكنك الطلابي الآن بسهولة وأمان!'
-  'دفع نقدي (Cash) آمن مباشرة عند استلام مفتاح شقتك في تبليسي.'
-  'عروض حصرية 🔥'
-  'سكن مشترك اقتصادي 🤝'
-  'تجميع الطلاب في شقق قريبة من الجامعات'
-  'وفر نصف القيمة الإيجارية وسجل اسمك ليقوم الدعم بمطابقتك مع زملاء متوافقين.'
-  'توفير 50% 💰'
-  'استقبال مطار ونقل جامعي 🚖'
-  'وصلت تبليسي حديثاً؟ نحن في استقبالك!'
-  'سيارات مريحة ومندوبين لمساعدتك في خطك الأول وتوصيلك حتى باب سكنك.'
-  'خدمة 24/7 ⚡'
-  'إقامات طلابية وتسجيل قانوني 🛂'
-  'تخليص كافة أوراقك الجامعية والقانونية'
-  'فريق متخصص لضمان سلامة وضعك القانوني وإقامتك في جورجيا بكل سهولة.'
-  'مضمون ومعتمد 📜'
-  'شقة طلابية فاخرة - شارع بيكيني (Pekini)'
-  '450 دولار / شهر'
-  'سابورتالو (Saburtalo)'
-  'التبليسي الطبية TSMU (10 دقائق مشياً) | جامعة جورجيا UG (20 دقيقة)'
-  'شقة بمفردك'
-  '3 أفراد (شقة كاملة)'
-  'شقة بمفردك'
-  '2 حمام'
-  '3 غرف واسعة'
-  'تدفئة مركزية دافئة'
-  'بلكونة بإطلالة مفتوحة'
-  'إنترنت ألياف ضوئية سريع'
-  'مفروشة بالكامل'
-  'شقة ممتازة للطلاب في قلب تبليسي بالقرب من محطة مترو التكنيكال. مجهزة بالكامل بالفرش والأجهزة الكهربائية مع إطلالة رائعة من البلكونة وتدفئة مركزية ممتازة للشتاء. الدفع يتم نقداً عند الاستلام.'
-  'ستوديو مودرن - بالقرب من جامعة جورجيا (UG)'
-  '380 دولار / شهر'
-  'فاكي (Vake)'
-  'جامعة جورجيا UG (10 دقائق مشياً) | إيليا ستيت (15 دقيقة)'
-  'شقة بمفردك'
-  '1 فرد (ستوديو منفرد)'
-  'شقة بمفردك'
-  '1 حمام'
-  'ستوديو منفرد هادئ'
-  'تكييف وتدفئة'
-  'أمن على مدار 24 ساعة'
-  'قريب من السوبرماركت'
-  'ستوديو مثالي للطالب المنفرد الباحث عن الهدوء والتركيز في الدراسة. يبعد دقائق مشياً عن حرم جامعة جورجيا. أثاث حديث ومطبخ مجهز بالكامل.'
-  'شقة مشتركة لـ 3 طلاب - إطلالة بنورامية'
-  '550 دولار (أو 180 دولار للشخص)'
-  'سابورتالو (Saburtalo)'
-  'إيليا ستيت Ilia (10 دقائق) | جامعة تبليسي الحكومية TSU (20 دقيقة)'
-  'استئجار مع شريك'
-  '3 أفراد (شقة مشتركة)'
-  'غير مدخن ، طالب هادئ ومحترم ، يحافظ على النظافة العامة والهدوء'
-  'غرفة نوم خاصة ومفروشة ، حمام ومطبخ مشترك ، شرفة (بلكونة واسعة)'
-  'استئجار مع شريك'
-  '2 حمام'
-  'غرف منفصلة ومريحة'
-  'صالة كبيرة للمذاكرة المشتركة'
-  'بلكونة واسعة جداً'
-  'مصعد يعمل 24/7'
-  'فرصة ممتازة لثلاثة أصدقاء طلاب أو لتجميع الطلاب. مساحة واسعة وتوزيع ممتاز للغرف يضمن الخصوصية لكل طالب.'
-  'ستوديو فاخر مستقل - شارع أغماشينيبلي'
-  '400 دولار / شهر'
-  'ديدوبي (Didube)'
-  'مشياً إلى محطة المترو والجامعات (10 دقائق)'
-  'شقة بمفردك'
-  '1 فرد'
-  'شقة بمفردك'
-  '1 حمام'
-  'ستوديو مستقل لشخص واحد'
-  'تكييف وتدفئة'
-  'إنترنت سريع'
-  'أثاث جديد'
-  'شقة ستوديو خاصة لشخص واحد بموقع ممتاز بالقرب من الخدمات والمواصلات.'
-  'شقة مع شريك - سابورتالو بالقرب من الطبية'
-  '220 دولار للشخص'
-  'سابورتالو (Saburtalo)'
-  'التبليسي الطبية TSMU (5 دقائق مشياً)'
-  'استئجار مع شريك'
-  'مطلوب شريك واحد سكن'
-  'طالب طب أو هندسة غير مدخن ومحافظ على الهدوء والنظافة'
-  'غرفة نوم كبيرة خاصة ومكيفة ، حمام ومطبخ مشترك مع طالب واحد فقط'
-  'استئجار مع شريك'
-  '1 حمام'
-  '1 غرفة نوم مستقلة للشريك'
-  'مطبخ مجهز'
-  'بلكونة هادئة'
-  'شقة ممتازة لطالب يبحث عن شريك سكن هادئ ومحترم على بعد خطوات من التبليسي الطبية.'
-  'الإشعارات والتنبيهات 🔔'
-  'لا توجد تنبيهات جديدة حالياً 🔕'
-  'الآن'
-  'الكل'
-  'التبليسي الطبية (TSMU)'
-  'جامعة جورجيا (UG)'
-  'إيليا ستيت (Ilia State)'
-  'جامعة تبليسي الحكومية (TSU)'
+  ')
+    },
+  ];
+
+  // الشقق السكنية المجهزة بالصور المرفقة بالظبط
+  List<Map<String, dynamic>> _apartments = [
+    {
+      '
+  ')
+    },
+  ];
+
+  List<Widget> _buildPages(Student? usr) => [
+        _buildHomeTab(usr),
+        ServicesScreen(user: usr),
+        ChatScreen(user: usr),
+        OffersScreen(user: usr, apartments: _apartments),
+        ProfileScreen(user: usr, isGuest: widget.isGuest),
+      ];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadApartments();
+    _loadNews();
+    _loadNotifications();
+    _loadUniversities();
+    _loadDistricts();
+
+    // تشغيل التمرير التلقائي للإعلانات كل 3.5 ثانية
+    _adTimer = Timer.periodic(const Duration(milliseconds: 3500), (timer) {
+      if (_adController.hasClients) {
+        int nextPage = _currentAdPage.value + 1;
+        final listLength = _newsList.isNotEmpty ? _newsList.length : _adBanners.length;
+        if (nextPage >= listLength) nextPage = 0;
+        _adController.animateToPage(
+          nextPage,
+          duration: const Duration(milliseconds: 600),
+          curve: Curves.easeInOut,
+        );
+      }
+    });
+  }
+
+  Future<void> _loadApartments() async {
+    final list = await ApiService.getApartments();
+    if (mounted) {
+      setState(() {
+        _apartments = list.map((a) => a.toJson()).toList();
+      });
+    }
+  }
+
+  Future<void> _loadNews() async {
+    final list = await ApiService.getNews();
+    if (mounted) {
+      setState(() {
+        _newsList = list;
+      });
+    }
+  }
+
+  Future<void> _loadNotifications() async {
+    final list = await ApiService.getNotifications();
+    if (mounted) {
+      setState(() {
+        _notificationsList = list;
+      });
+    }
+  }
+
+  Future<void> _loadUniversities() async {
+    final list = await ApiService.getUniversities();
+    if (mounted) {
+      setState(() {
+        _universitiesList = list;
+      });
+    }
+  }
+
+  Future<void> _loadDistricts() async {
+    final list = await ApiService.getDistricts();
+    if (mounted) {
+      setState(() {
+        _districtsList = list;
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    _adTimer?.cancel();
+    _adController.dispose();
+    super.dispose();
+  }
+
+  void _showNotificationsDialog(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+      isScrollControlled: true,
+      builder: (_) => Container(
+        padding: const EdgeInsets.all(20),
+        height: MediaQuery.of(context).size.height * 0.6,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                const Icon(Icons.notifications_active, color: AppColors.accent, size: 28),
+                const SizedBox(width: 10),
+                Text(LanguageService.tr('
   '), style: const TextStyle(color: Colors.white)),
           ),
         ],
@@ -348,7 +445,7 @@ lib\screens\home_screen.dart:
 
 
   // محتوى التبويب الرئيسي (Home)
-  Widget _buildHomeTab(Map<String, dynamic> usr) {
+  Widget _buildHomeTab(Student? usr) {
     List<Map<String, dynamic>> filteredApts = List.from(_apartments);
     final List<Map<String, dynamic>> carouselItems = _newsList.isNotEmpty 
         ? _newsList 
@@ -356,17 +453,23 @@ lib\screens\home_screen.dart:
 
     // 0. تصفية نوع الإيجار (جميع الشقق vs شقة vs غرفة في شقة)
     if (_rentalTypeFilter != '
-  'شقة'
-  'بمفردك'
-  'شقة'
-  'شريك'
-  'مشترك'
-  'غرفة في شقة'
-  'غرفة في شقة'
-  'شريك'
-  'غرفة في شقة'
-  'مشترك'
-  'سابورتالو'
+  '));
+        }
+        return true;
+      }).toList();
+    }
+
+    // 0.1 تصفية الحي
+    if (_districtFilter != '
+  ')
+        return loc.contains(shortDistrict) || tit.contains(shortDistrict) || desc.contains(shortDistrict);
+      }).toList();
+    }
+
+    // 1. تصفية الجامعات (اختيار جامعة أو أكثر)
+    if (_selectedUniversities.isNotEmpty) {
+      filteredApts = filteredApts.where((a) {
+        final aptUnis = (a['
   ')[0];
           return combined.contains(uni) || combined.contains(shortUni);
         });
@@ -392,10 +495,12 @@ lib\screens\home_screen.dart:
     if (_bathroomsFilter != '
   '$key حمام'
   '$key حمام'
-  'حمامات'
-  'الكل'
-  'وقت مفتوح'
-  'مشياً'
+  '));
+      }).toList();
+    }
+
+    // 5. تصفية كم دقيقة للجامعة (10 دقائق أو 20 أو 30 أو وقت مفتوح)
+    if (_minutesFilter != LanguageService.tr('
   '(\d+)\s*دقيقة'
   ') ?? 999;
           if (mVal <= targetMins) return true;
@@ -406,11 +511,12 @@ lib\screens\home_screen.dart:
 
 
 
-    return SingleChildScrollView(
-      padding: const EdgeInsets.only(bottom: 24),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
+    return CustomScrollView(
+      slivers: [
+        SliverToBoxAdapter(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
           // 1. App Bar علوي مخصص يحتوي على اللوجو وصورة الشخص واسمه
           Container(
             padding: const EdgeInsets.only(top: 16, bottom: 20, left: 20, right: 20),
@@ -436,8 +542,6 @@ lib\screens\home_screen.dart:
                     children: [
                       Text(
                         '
-  'طالب أبشر'
-  'جورجيا - تبليسي'
   ', fit: BoxFit.contain, errorBuilder: (_, __, ___) => const Icon(Icons.star, color: AppColors.accent))),
                 ),
               ],
@@ -452,14 +556,61 @@ lib\screens\home_screen.dart:
                 height: 165,
                 child: PageView.builder(
                   controller: _adController,
-                  onPageChanged: (idx) => setState(() => _currentAdPage = idx),
+                  onPageChanged: (idx) => _currentAdPage.value = idx,
                   itemCount: carouselItems.length,
                   itemBuilder: (context, idx) {
                     final ad = carouselItems[idx];
                     final String imgUrl = ad['
-  'أخبار جورجيا 📰'
-  'إعلان 📢'
-  'الآن'
+  ');
+
+                    return GestureDetector(
+                      onTap: () => _showNewsDetail(context, ad),
+                      child: Container(
+                        margin: const EdgeInsets.symmetric(horizontal: 20),
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(22),
+                          boxShadow: [BoxShadow(color: AppColors.primaryDark.withValues(alpha: 0.25), blurRadius: 15, offset: const Offset(0, 8))],
+                        ),
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(22),
+                          child: Stack(
+                            fit: StackFit.expand,
+                            children: [
+                              // صورة الإعلان الحقيقية
+                              Image.network(
+                                imgUrl.isNotEmpty ? imgUrl : fallbackImg,
+                                cacheWidth: 800,
+                                fit: BoxFit.cover,
+                                errorBuilder: (_, __, ___) => Container(
+                                  color: AppColors.primaryDark,
+                                  child: const Icon(Icons.newspaper, size: 50, color: AppColors.accent),
+                                ),
+                              ),
+                              // تدرج لوني داكن وذهبي لحماية النصوص
+                              Container(
+                                decoration: BoxDecoration(
+                                  gradient: LinearGradient(
+                                    begin: Alignment.bottomRight,
+                                    end: Alignment.topLeft,
+                                    colors: [
+                                      AppColors.primaryDark.withValues(alpha: 0.95),
+                                      AppColors.primaryDark.withValues(alpha: 0.6),
+                                      Colors.transparent,
+                                    ],
+                                  ),
+                                ),
+                              ),
+                              // محتوى الشريحة
+                              Padding(
+                                padding: const EdgeInsets.all(18),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Row(
+                                      mainAxisAlignment: MainAxisAlignment.end,
+                                      children: [
+                                        Text('
   ', style: const TextStyle(color: Colors.white70, fontSize: 11, fontWeight: FontWeight.bold)),
                                       ],
                                     ),
@@ -497,21 +648,26 @@ lib\screens\home_screen.dart:
               ),
               const SizedBox(height: 10),
               // نقاط المؤشر المؤكدة للحركة
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: List.generate(carouselItems.length, (index) {
-                  final isActive = index == _currentAdPage;
-                  return AnimatedContainer(
-                    duration: const Duration(milliseconds: 300),
-                    margin: const EdgeInsets.symmetric(horizontal: 3),
-                    width: isActive ? 22 : 8,
-                    height: 8,
-                    decoration: BoxDecoration(
-                      color: isActive ? AppColors.accent : Colors.grey.shade400,
-                      borderRadius: BorderRadius.circular(4),
-                    ),
+              ValueListenableBuilder<int>(
+                valueListenable: _currentAdPage,
+                builder: (context, currentPage, _) {
+                  return Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: List.generate(carouselItems.length, (index) {
+                      final isActive = index == currentPage;
+                      return AnimatedContainer(
+                        duration: const Duration(milliseconds: 300),
+                        margin: const EdgeInsets.symmetric(horizontal: 3),
+                        width: isActive ? 22 : 8,
+                        height: 8,
+                        decoration: BoxDecoration(
+                          color: isActive ? AppColors.accent : Colors.grey.shade400,
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                      );
+                    }),
                   );
-                }),
+                },
               ),
             ],
           ),
@@ -527,7 +683,7 @@ lib\screens\home_screen.dart:
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(22),
                   border: Border.all(color: AppColors.accent, width: 2),
-                  boxShadow: [BoxShadow(color: AppColors.primary.withOpacity(0.15), blurRadius: 15, offset: const Offset(0, 6))],
+                  boxShadow: [BoxShadow(color: AppColors.primary.withValues(alpha: 0.15), blurRadius: 15, offset: const Offset(0, 6))],
                 ),
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(20),
@@ -568,34 +724,41 @@ lib\screens\home_screen.dart:
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(20),
                 border: Border.all(color: Colors.grey.shade300, width: 1.5),
-                boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 10, offset: const Offset(0, 4))],
+                boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 10, offset: const Offset(0, 4))],
               ),
               child: Column(
                 children: [
                   if (_selectedUniversities.isNotEmpty || _maxPriceFilter != null || _rentalTypeFilter != '
-  '🎓 اختر الجامعات القريبة'
-  '💰 السعر بنفسك'
   '💰 حتى $_maxPriceFilter\$'
-  '🏘️ الحي السكني'
-  'سابورتالو (Saburtalo)'
-  'فاكي (Vake)'
-  'ديدوبي (Didube)'
-  '🤝 نوع السكن'
-  '🛏️ الغرف'
-  '🛁 الحمامات'
-  '1 حمام'
-  '2 حمام'
-  '3 حمامات فأكثر'
-  'انتقال فوري ⚡'
-  'ميعاد'
-  'تاريخ'
-  'سبتمبر'
-  'انقر لمعاينة الصور وحجز الشقة >>'
-  'زائر كريم'
-  'تصفح عام (ضيف)'
-  'الآن'
+  ')],
+                          onChanged: (val) => setState(() => _bathroomsFilter = val!),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 16),
+            ],
+          ),
+        ),
+
+        // 6. قائمة الشقق
+        SliverPadding(
+          padding: const EdgeInsets.symmetric(horizontal: 20),
+          sliver: SliverList(
+            delegate: SliverChildBuilderDelegate(
+              (context, idx) {
+              final apt = filteredApts[idx];
+              final imagesList = List<String>.from((apt['
 lib\screens\login_screen.dart:
-  ': true},
+  '));
+    Navigator.of(context).pushAndRemoveUntil(
+      MaterialPageRoute(
+        builder: (_) => HomeScreen(
+          user: guestUser,
           isGuest: true,
         ),
       ),
@@ -629,25 +792,40 @@ lib\screens\login_screen.dart:
                     child: ClipOval(
                       child: Image.asset(
                         '
-lib\screens\notifications_screen.dart:
-  'الآن'
-  'إغلاق'
-  'الإشعارات والتنبيهات 🔔'
-  'تحديث الإشعارات'
-  'لا توجد تنبيهات عاجلة حالياً 🔕'
-  'التنبيهات تتم إزالتها تلقائياً بعد مرور 48 ساعة'
-  'الآن'
 lib\screens\offers_screen.dart:
-  'الكل'
-  'الكل'
-  'عروض خاصة 🔥'
-  'قريب من التبليسي الطبية'
-  'ستوديو منفرد'
-  'غرف مشتركة'
-  'الكل'
-  'عروض'
-  'عروض السكن الطلابي الحصرية 🏢'
-  'لا توجد شقق تطابق هذا الفلتر حالياً'
+  '), style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+            ),
+            body: Column(
+              children: [
+                // شريط الفلاتر
+                Container(
+                  height: 60,
+                  padding: const EdgeInsets.symmetric(vertical: 10),
+                  child: ListView.builder(
+                    scrollDirection: Axis.horizontal,
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    itemCount: _filters.length,
+                    itemBuilder: (context, idx) {
+                      final f = _filters[idx];
+                      final isSelected = f == _selectedFilter;
+                      return Padding(
+                        padding: const EdgeInsets.only(left: 8),
+                        child: ChoiceChip(
+                          label: Text(f, style: TextStyle(color: isSelected ? AppColors.textDark : Colors.white, fontWeight: isSelected ? FontWeight.bold : FontWeight.normal)),
+                          selected: isSelected,
+                          selectedColor: AppColors.accent,
+                          backgroundColor: AppColors.primaryDark,
+                          onSelected: (_) => setState(() => _selectedFilter = f),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+
+                // قائمة العروض
+                Expanded(
+                  child: filtered.isEmpty
+                      ? Center(child: Text(LanguageService.tr('
   ';
                             return GestureDetector(
                               onTap: () => Navigator.of(context).push(
@@ -658,7 +836,7 @@ lib\screens\offers_screen.dart:
                                 decoration: BoxDecoration(
                                   color: Colors.white,
                                   borderRadius: BorderRadius.circular(20),
-                                  boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.06), blurRadius: 15, offset: const Offset(0, 5))],
+                                  boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.06), blurRadius: 15, offset: const Offset(0, 5))],
                                 ),
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -684,10 +862,8 @@ lib\screens\offers_screen.dart:
                                                 padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
                                                 decoration: BoxDecoration(color: AppColors.primaryDark, borderRadius: BorderRadius.circular(12)),
                                                 child: Text(apt['
-  'مفروشة ومجهزة ✨'
 lib\screens\profile_screen.dart:
-  '🇪🇬 العربية (Arabic)'
-  '🇬🇧 English (الإنجليزي)'
+  '🇬🇪 ქართული (Under Development / تحت التطوير)'
   '), style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
             ),
             body: SingleChildScrollView(
@@ -700,7 +876,7 @@ lib\screens\profile_screen.dart:
                     decoration: BoxDecoration(
                       gradient: const LinearGradient(colors: [AppColors.primaryDark, AppColors.primary]),
                       borderRadius: BorderRadius.circular(24),
-                      boxShadow: [BoxShadow(color: AppColors.primary.withOpacity(0.3), blurRadius: 20, offset: const Offset(0, 10))],
+                      boxShadow: [BoxShadow(color: AppColors.primary.withValues(alpha: 0.3), blurRadius: 20, offset: const Offset(0, 10))],
                     ),
                     child: Column(
                       children: [
@@ -724,7 +900,7 @@ lib\screens\profile_screen.dart:
                           ],
                         ),
                         const SizedBox(height: 16),
-                        Text(user['
+                        Text(user?.fullName ?? LanguageService.tr('
   '), style: const TextStyle(color: Colors.white, fontSize: 12)),
                                 ),
                               ],
@@ -753,8 +929,6 @@ lib\screens\profile_screen.dart:
                   // قائمة إعدادات ومتابعة الحجوزات
                   _buildProfileItem(context, Icons.bookmark_added, LanguageService.tr('
 lib\screens\register_screen.dart:
-  'جامعة تبليسي الطبية (TSMU)'
-  'جامعة تبليسي الطبية (TSMU)'
   '),
                     textAlign: TextAlign.center,
                     style: const TextStyle(fontSize: 14, color: AppColors.textMuted),
@@ -766,7 +940,7 @@ lib\screens\register_screen.dart:
                       padding: const EdgeInsets.all(12),
                       margin: const EdgeInsets.only(bottom: 20),
                       decoration: BoxDecoration(
-                        color: AppColors.error.withOpacity(0.1),
+                        color: AppColors.error.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(color: AppColors.error),
                       ),
@@ -783,7 +957,7 @@ lib\screens\register_screen.dart:
                       borderRadius: BorderRadius.circular(20),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withOpacity(0.05),
+                          color: Colors.black.withValues(alpha: 0.05),
                           blurRadius: 20,
                           offset: const Offset(0, 10),
                         ),
@@ -872,16 +1046,6 @@ lib\screens\register_screen.dart:
                       label: Text(
                         LanguageService.tr('
 lib\screens\rent_flat_screen.dart:
-  'جامعة تبليسي الطبية (TSMU)'
-  'جامعة تبليسي الطبية (TSMU)'
-  'تصفح عام (ضيف)'
-  'زائر كريم'
-  'زائر'
-  'تصفح عام (ضيف)'
-  'زائر كريم'
-  'زائر'
-  'تسجيل الدخول'
-  'طلب شريك سكن (Find Roommate):\n'
   'الاسم: ${_nameController.text}\n'
   'الجنسية: ${_nationalityController.text}\n'
   'النوع: $_selectedGender\n'
@@ -889,19 +1053,40 @@ lib\screens\rent_flat_screen.dart:
   'التخصص: ${_majorController.text}\n'
   'رقم الواتساب: ${_wpController.text}\n'
   'موعد النقل: $_moveInDate\n'
-  'ملاحظات: ${_noteController.text.isNotEmpty ? _noteController.text : "
-  'جاري إرسال طلب السكن... ⏳'
-  'طالب أبشر'
-  'جامعة في جورجيا'
-  'حجز سكن (شقة بمفردك)'
+  'ملاحظات: ${_noteController.text.isNotEmpty ? _noteController.text : LanguageService.tr('
   'خطأ في إرسال الطلب: $e'
-  'جاري الاتصال بخدمة العملاء... ⏳'
-  'مرحباً، أريد مساعدة خدمة العملاء في حجز سكن بمفردي (Rent Flat - Alone).'
-  'طالب أبشر'
-  'جامعة في جورجيا'
-  'تواصل مباشر لحجز سكن'
   'خطأ في الاتصال: $e'
-  'أبشر'
+  '), style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+          iconTheme: const IconThemeData(color: Colors.white),
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.support_agent, color: Colors.white),
+              onPressed: _contactCustomerServiceAlone,
+            ),
+          ],
+        ),
+        body: SingleChildScrollView(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // عنوان الشاشة والوصف
+              Container(
+                padding: const EdgeInsets.all(18),
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(colors: [AppColors.primaryDark, AppColors.primary]),
+                  borderRadius: BorderRadius.circular(20),
+                  boxShadow: [BoxShadow(color: AppColors.primary.withValues(alpha: 0.3), blurRadius: 15, offset: const Offset(0, 6))],
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.real_estate_agent, color: AppColors.accent, size: 40),
+                    const SizedBox(width: 14),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(LanguageService.tr('
   '), style: const TextStyle(color: Colors.white, fontSize: 13, height: 1.4)),
                         ],
                       ),
@@ -934,63 +1119,118 @@ lib\screens\rent_flat_screen.dart:
         // الخيار الأول: All Flats Sc
         _buildAloneCard(
           title: LanguageService.tr('
-  'جميع الشقق المتاحة'
-  'قائمة بكافة الشقق السكنية المتاحة للطلاب مع كافة التفاصيل والأسعار.'
-  'شقق تناسب شخص بمفرده'
-  'قائمة الشقق والاستوديوهات المخصصة والمناسبة لسكن طالب واحد فقط.'
-  'نموذج البحث عن شريك'
-  'قم بتعبئة بياناتك ليقوم فريق أبشر بمطابقتك مع الشريك الأنسب:'
-  'الاسم الكامل'
-  'مطلوب'
-  'الجنسية'
-  'مطلوب'
-  'الجامعة'
-  'التخصص الدراسي'
-  'مطلوب'
-  'رقم الواتساب'
-  'مطلوب'
-  'متى تريد الانتقال؟'
-  'مطلوب'
-  'ملاحظات إضافية'
-  'إرسال إلى خدمة العملاء'
+  '),
+                filterSingleOnly: false,
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(height: 14),
+
+        // الخيار الثاني: Flat Sc
+        _buildAloneCard(
+          title: LanguageService.tr('
+  '),
+                filterSingleOnly: true,
+              ),
+            ),
+          ),
+        ),
+
+      ],
+    );
+  }
+
+  Widget _buildAloneCard({required String title, required String subtitle, required IconData icon, required VoidCallback onTap, bool isPrimary = false}) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(20),
+      child: Container(
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: isPrimary ? [AppColors.primaryDark, AppColors.primary] : [Colors.white, const Color(0xFFF8F9FA)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: isPrimary ? AppColors.primary : Colors.grey.shade200, width: 1.5),
+          boxShadow: [
+            BoxShadow(color: isPrimary ? AppColors.primary.withValues(alpha: 0.3) : Colors.black.withValues(alpha: 0.06), blurRadius: 15, offset: const Offset(0, 5))
+          ],
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                color: isPrimary ? Colors.white.withValues(alpha: 0.2) : AppColors.primary.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Icon(icon, color: isPrimary ? Colors.white : AppColors.primary, size: 28),
+            ),
+            const SizedBox(width: 18),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(title, style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold, color: isPrimary ? Colors.white : AppColors.textDark)),
+                  const SizedBox(height: 6),
+                  Text(subtitle, style: TextStyle(fontSize: 13, color: isPrimary ? Colors.white.withValues(alpha: 0.8) : AppColors.textMuted, height: 1.5)),
+                ],
+              ),
+            ),
+            Icon(Icons.arrow_forward_ios, color: isPrimary ? Colors.white : Colors.grey.shade400, size: 18),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // 2. قسم نموذج البحث عن شريك سكن (Find Roommate -> Form -> Customer Service)
+  Widget _buildRoommateFormSection() {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 15, offset: const Offset(0, 5))],
+      ),
+      child: Form(
+        key: _formKey,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(LanguageService.tr('
 lib\screens\roommate_match_screen.dart:
-  'جامعة تبليسي الطبية (TSMU)'
-  'جامعة تبليسي الطبية (TSMU)'
-  'زائر'
-  'تسجيل الدخول'
   'طلب بحث عن شريك سكن (Roommate): الجامعة ($_selectedUni)، نوع السكن: $_selectedGender، الميزانية (${_budgetController.text})، موعد الانتقال: $_moveInDate. الملاحظات: ${_notesController.text}. التخصص: ${_majorController.text}. رقم التواصل: ${_phoneController.text}.'
-  'جاري إرسال طلب الشريك... ⏳'
-  'طالب أبشر'
-  'جامعة في جورجيا'
-  'بحث عن شريك سكن (Roommate)'
   'خطأ في إرسال الطلب: $e'
-  'تجميع الطلاب في شقة مشتركة 🤝'
-  'الاسم الكامل'
-  'مطلوب'
-  'الجامعة'
-  'التخصص'
-  'مطلوب'
-  'رقم هاتف التواصل (واتساب)'
-  'مطلوب'
-  'الميزانية الشهرية المقدرة للشخص (بالدولار USD)'
-  'مطلوب'
-  'ملاحظات إضافية (مثال: تفضيل التدخين، الهدوء، إلخ)'
-  'إرسال طلب التجميع لفريق الدعم'
+  '), style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+          iconTheme: const IconThemeData(color: Colors.white),
+        ),
+        body: SingleChildScrollView(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // كارت شرح الخدمة
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(colors: [AppColors.primary, AppColors.primaryDark]),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: AppColors.accent, width: 1.5),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.group_add, color: AppColors.accent, size: 36),
+                    const SizedBox(width: 14),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(LanguageService.tr('
 lib\screens\services_screen.dart:
-  'فني كهربائي'
-  'صيانة كافة الأعطال والتوصيلات الكهربائية'
-  'فني سباكة'
-  'إصلاح تسريبات المياه والصيانة الصحية'
-  'استخراج إقامة طلابية'
-  'تجهيز أوراق الإقامة لأول مرة أو التجديد'
-  'تسجيل العنوان القانوني'
-  'إصدار وثيقة العنوان المعتمدة في جورجيا'
-  'التسجيل والنقل الجامعي'
-  'إجراءات القبول وتحويل الساعات بين الجامعات'
-  'زائر'
-  'تسجيل الدخول'
-  'لم يتم التحديد'
-  'تنظيف'
   '), style: const TextStyle(fontSize: 12, color: AppColors.textMuted)),
                   const SizedBox(height: 12),
 
@@ -1054,31 +1294,89 @@ lib\screens\services_screen.dart:
                       onPressed: () => pickImage(setDialogState),
                       icon: Icon(hasAttachedImage ? Icons.check_circle : Icons.image, color: hasAttachedImage ? Colors.green : AppColors.primary),
                       label: Text(hasAttachedImage ? LanguageService.tr('
-  'إلغاء'
   'طلب خدمة ($selectedService):\n'
   'الاسم: ${nameCtrl.text}\n'
   'رقم الهاتف: ${phoneCtrl.text}\n'
-  'العنوان: ${addressCtrl.text.isNotEmpty ? addressCtrl.text : "
+  'العنوان: ${addressCtrl.text.isNotEmpty ? addressCtrl.text : LanguageService.tr('
   'موعد التنفيذ: ${dateCtrl.text}\n'
-  'إرفاق صورة: ${hasAttachedImage ? "
-  "لا"
-  'التفاصيل: ${detailsCtrl.text.isNotEmpty ? detailsCtrl.text : "
+  'إرفاق صورة: ${hasAttachedImage ? LanguageService.tr('
+  'التفاصيل: ${detailsCtrl.text.isNotEmpty ? detailsCtrl.text : LanguageService.tr('
   '\n[تفاصيل التنظيف: ${roomsCtrl.text} غرف، مساحة ${metersCtrl.text} متر، التكلفة التقديرية $calcPrice لاري].'
   '\n[كود الخصم: ${promoCtrl.text}].'
-  '\n[طريقة الدفع: ${payWithPoints ? "
-  "الدفع نقداً 💵"
-  'فشل الخصم من النقاط'
+  '\n[طريقة الدفع: ${payWithPoints ? LanguageService.tr('
   '\n\n[رابط الصورة المرفقة: $uploadedUrl]'
-  'طالب أبشر'
-  'جامعة في جورجيا'
-  'خدمة ($selectedService)'
+  'خدمة ($selectedService)\n$finalDetails'
 lib\screens\splash_screen.dart:
-  ': true},
-            isGuest: true,
-          ),
-        ),
+  ';
+
+class SplashScreen extends StatefulWidget {
+  const SplashScreen({super.key});
+
+  @override
+  State<SplashScreen> createState() => _SplashScreenState();
+}
+
+class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _fadeAnimation;
+  late Animation<Offset> _slideAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1500),
+    );
+
+    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeIn),
+    );
+
+    _slideAnimation = Tween<Offset>(begin: const Offset(0, 0.3), end: Offset.zero).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeOutBack),
+    );
+
+    _controller.forward();
+
+    Timer(const Duration(seconds: 3), _navigateToHome);
+  }
+
+  Future<void> _navigateToHome() async {
+    await ApiService.initTokens();
+    if (!mounted) return;
+
+    if (ApiService.adminToken != null) {
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(builder: (_) => const AdminShell()),
       );
+      return;
     }
+
+    if (ApiService.authToken != null) {
+      Student? user = await ApiService.getCurrentUser();
+      if (!mounted) return;
+      if (user != null) {
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(
+            builder: (_) => HomeScreen(
+              user: user,
+              isGuest: false,
+            ),
+          ),
+        );
+        return;
+      }
+    }
+
+    Navigator.of(context).pushReplacement(
+      MaterialPageRoute(
+        builder: (_) => const HomeScreen(
+          user: null,
+          isGuest: true,
+        ),
+      ),
+    );
   }
 
   @override
@@ -1122,7 +1420,7 @@ lib\screens\splash_screen.dart:
                     border: Border.all(color: AppColors.accent, width: 3),
                     boxShadow: [
                       BoxShadow(
-                        color: AppColors.accent.withOpacity(0.3),
+                        color: AppColors.accent.withValues(alpha: 0.3),
                         blurRadius: 35,
                         spreadRadius: 8,
                       ),
@@ -1131,247 +1429,6 @@ lib\screens\splash_screen.dart:
                   child: ClipOval(
                     child: Image.asset(
                       '
-lib\screens\wallet_screen.dart:
-  'إضافة'
-lib\services\api_service.dart:
-  ';
-
-class ApiService {
-  // عنوان سيرفر الباك اند PHP المستضاف على Hostinger (الإنتاج)
-  static const String prodUrl = '
-  ';
-
-  // تحديد العنوان ديناميكياً لتسهيل التطوير والافتبار المحلي
-  static String get baseUrl {
-    if (kReleaseMode) {
-      return prodUrl;
-    }
-    // في وضع التطوير المحلي (Debug Mode)
-    if (kIsWeb) {
-      return '
-  ';
-  }
-
-  // تسجيل الدخول
-  static Future<Map<String, dynamic>> login(String identifier, String password) async {
-    try {
-      final response = await http.post(
-        Uri.parse('
-  ': identifier, // البريد الإلكتروني أو رقم الهاتف
-          '
-  'خطأ في الاتصال بالخادم (${response.statusCode})'
-  'طالب تجريبي (أبشر)'
-  'جامعة تبليسي الطبية (TSMU)'
-  'فشل الاتصال بالخادم: $e'
-  'خطأ في الاتصال بالخادم (${response.statusCode})'
-  'تم تسجيل الحساب بنجاح'
-  ': false
-        }
-      };
-    }
-  }
-
-  // جلب كافة الشقق السكنية المتاحة
-  static Future<List<Map<String, dynamic>>> getApartments() async {
-    try {
-      final response = await http.get(
-        Uri.parse('
-  'شقة طلابية ممتازة'
-  'شقة سكنية'
-  'سعر مميز'
-  'تبليسي'
-  'موقع ممتاز'
-  '3 غرف'
-  'شقة'
-  'فوري'
-  'انتقال فوري ⚡'
-  ');
-    }
-    // الالتجاء للقيم الافتراضية في حال عدم اتصال الخادم
-    return [
-      {
-        '
-  'شقة طلابية فاخرة - شارع بيكيني (Pekini)'
-  '450 دولار / شهر'
-  'تبليسي - საბურთალო (سابورتالو)'
-  'قريبة جداً من التبليسي الطبية TSMU (مشياً)'
-  '3 غرف'
-  'شقة'
-  'فوري'
-  'انتقال فوري ⚡'
-  '3 غرف واسعة'
-  'تدفئة مركزية دافئة'
-  'بلكونة بإطلالة مفتوحة'
-  'إنترنت ألياف ضوئية سريع'
-  'مفروشة بالكامل'
-  'جامعة تبليسي الطبية (TSMU)'
-  'شقة ممتازة للطلاب في قلب تبليسي بالقرب من محطة مترو التكنيكال. مجهزة بالكامل بالفرش والأجهزة الكهربائية مع إطلالة رائعة من البلكونة وتدفئة مركزية ممتازة للشتاء. الدفع يتم نقداً عند الاستلام.'
-  'ستوديو مودرن - بالقرب من جامعة جورجيا (UG)'
-  '380 دولار / شهر'
-  'تبليسي - شارع كوستافا'
-  'جامعة جورجيا UG وستيت UT'
-  '1 غرفة'
-  'شقة'
-  'فوري'
-  'انتقال فوري ⚡'
-  'ستوديو منفرد هادئ'
-  'تكييف وتدفئة'
-  'أمن على مدار 24 ساعة'
-  'قريب من السوبرماركت'
-  'ستوديو مثالي للطالب المنفرد الباحث عن الهدوء والتركيز في الدراسة. يبعد دقائق مشياً عن حرم جامعة جورجيا. أثاث حديث ومطبخ مجهز بالكامل.'
-  'شقة مشتركة لـ 3 طلاب - إطلالة بنورامية'
-  '550 دولار (أو 180 دولار للشخص)'
-  'تبليسي - فاكي (Vake)'
-  'قريبة من جامعة إيليا والطبية'
-  '3 غرف'
-  'غرفة في شقة'
-  'فوري'
-  'انتقال فوري ⚡'
-  'غرف منفصلة ومريحة'
-  'صالة كبيرة للمذاكرة المشتركة'
-  'بلكونة واسعة جداً'
-  'مصعد يعمل 24/7'
-  'جامعة إيليا الحكومية (Ilia)'
-  'فرصة ممتازة لثلاثة أصدقاء طلاب أو لتجميع الطلاب. مساحة واسعة وتوزيع ممتاز للغرف يضمن الخصوصية لكل طالب.'
-  ');
-    }
-    // الالتجاء للقيم الافتراضية في حال عدم اتصال الخادم
-    return [
-      {'
-  'جامعة تبليسي الطبية (TSMU)'
-  'جامعة جورجيا (UG)'
-  'جامعة إيليا الحكومية (Ilia)'
-  'جامعة تبليسي الحكومية (TSU)'
-  ');
-    }
-    // الالتجاء للقيم الافتراضية في حال عدم اتصال الخادم
-    return [
-      {'
-  'سابورتالو (Saburtalo)'
-  'فاكي (Vake)'
-  'ديدوبي (Didube)'
-  'متاتسميندا (Mtatsminda)'
-  'إساني (Isani)'
-  'جلَداني (Gldani)'
-  'الآن'
-  ');
-    }
-    // محاكاة تنبيهات افتراضية في حال تعذر الاتصال بالسيرفر
-    return [
-      {
-        '
-  '💧 انقطاع المياه غداً الأحد في سابورتالو'
-  'تعلن شركة المياه الوطنية عن قطع مؤقت لإمدادات المياه غداً الأحد من الساعة 10:00 صباحاً وحتى الساعة 04:00 عصراً لإجراء أعمال الصيانة السنوية لخطوط الإمداد المغذية للمنطقة.'
-  'منذ ساعة'
-  '🕌 تعديل موعد صلاة الجمعة في مسجد تبليسي'
-  'تقرر بدء الخطبة الأولى لصلاة الجمعة المباركة في مسجد تبليسي المركزي في تمام الساعة 01:30 ظهراً بدلاً من الساعة 01:00 ظهراً لتسهيل انضمام المصلين من الجامعات المختلفة.'
-  'منذ 3 ساعات'
-  '⚡ قطع الكهرباء المجدول يوم الثلاثاء القادم'
-  'فصل مبرمج للتيار الكهربائي عن أجزاء من حي ديدوبي Didube يوم الثلاثاء القادم من الساعة 09:00 صباحاً إلى الساعة 11:00 صباحاً لتوصيل محولات شبكية جديدة وتحسين استقرار الطاقة.'
-  'أمس'
-  'الآن'
-  ');
-    }
-    // محاكاة إشعارات افتراضية نشطة عند عدم الاتصال بالسيرفر
-    return [
-      {
-        '
-  '💧 تنبيه انقطاع المياه في سابورتالو'
-  'نسترعي انتباه الطلاب الكرام في سابورتالو بأنه سيتم قطع المياه غداً الأحد من الساعة 10:00 صباحاً وحتى الساعة 04:00 عصراً.'
-  'منذ ساعة'
-  '🕌 صلاة الجمعة في مسجد تبليسي'
-  'تقرر بدء خطبة صلاة الجمعة المباركة في تمام الساعة 01:30 ظهراً لتسهيل انضمام الطلاب من مختلف الجامعات.'
-  'منذ 3 ساعات'
-  'خدمة طلابية'
-  ');
-    }
-    // محاكاة البيانات في حال عدم اتصال الخادم
-    return [
-      {'
-  'فني كهربائي'
-  'صيانة كافة الأعطال والتوصيلات الكهربائية'
-  'فني سباكة'
-  'إصلاح تسريبات المياه والصيانة الصحية'
-  'استخراج إقامة طلابية'
-  'تجهيز أوراق الإقامة لأول مرة أو التجديد'
-  'تسجيل العنوان القانوني'
-  'إصدار وثيقة العنوان المعتمدة في جورجيا'
-  'التسجيل والنقل الجامعي'
-  'إجراءات القبول وتحويل الساعات بين الجامعات'
-  ': true},
-    ];
-  }
-
-  // إرسال طلب خدمة أو حجز شقة أو تجميع شريك سكن
-  static Future<Map<String, dynamic>> submitServiceRequest({
-    required String studentName,
-    required String studentPhone,
-    required String studentUni,
-    required String serviceTitle,
-    required String details,
-  }) async {
-    try {
-      final response = await http.post(
-        Uri.parse('
-  'تم إرسال الطلب وحفظه مؤقتاً في التطبيق'
-  'الآن'
-  ');
-    }
-    return [];
-  }
-
-  // إرسال رسالة شات من الطالب إلى الدعم الفني
-  static Future<bool> sendChatMessage({
-    required String phone,
-    required String studentName,
-    required String studentUni,
-    required String text,
-    String type = '
-  ');
-      return false;
-    }
-  }
-
-  // إرسال تقييم من الطالب للتطبيق ولخدمة العملاء
-  static Future<bool> submitReview({
-    required String studentName,
-    required String uni,
-    required int rating,
-    required String comment,
-  }) async {
-    try {
-      final response = await http.post(
-        Uri.parse('
-  ');
-      return false;
-    }
-  }
-
-  // رفع ملف (صورة أو فيديو) إلى السيرفر
-  static Future<String?> uploadFile(String filePath, String fileName, {List<int>? fileBytes}) async {
-    try {
-      final request = http.MultipartRequest('
-  ');
-    }
-    return null;
-  }
-
-  // المحفظة - جلب الرصيد والإشعارات
-  static Future<Map<String, dynamic>> getWallet(int studentId) async {
-    try {
-      final response = await http.post(
-        Uri.parse('
-  ': []};
-  }
-
-  // المحفظة - الدفع بالنقاط
-  static Future<Map<String, dynamic>> payWithPoints(int studentId, int amount, String serviceTitle) async {
-    try {
-      final response = await http.post(
-        Uri.parse('
-  'حدث خطأ في الاتصال بالخادم'
-lib\services\web_helper_stub.dart:
-  'معاينة الفيديو (YouTube / Drive) متاحة على الويب'
 lib\services\web_helper_web.dart:
   ';
   

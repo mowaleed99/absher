@@ -3,9 +3,10 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../theme/app_colors.dart';
 import '../services/api_service.dart';
 import '../services/language_service.dart';
+import '../models/student.dart';
 
 class NotificationsScreen extends StatefulWidget {
-  final Map<String, dynamic>? user;
+  final Student? user;
   const NotificationsScreen({super.key, this.user});
 
   @override

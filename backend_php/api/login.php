@@ -10,9 +10,10 @@ if (!empty($data->identifier) && !empty($data->password)) {
 
     try {
         // البحث بالبريد الإلكتروني أو رقم الهاتف
-        $query = "SELECT id, full_name, email, phone, university, password FROM students WHERE email = :identifier OR phone = :identifier LIMIT 1";
+        $query = "SELECT id, full_name, email, phone, university, password FROM students WHERE email = :ident1 OR phone = :ident2 LIMIT 1";
         $stmt = $conn->prepare($query);
-        $stmt->bindParam(':identifier', $identifier);
+        $stmt->bindParam(':ident1', $identifier);
+        $stmt->bindParam(':ident2', $identifier);
         $stmt->execute();
 
         if ($stmt->rowCount() > 0) {

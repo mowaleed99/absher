@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../theme/app_colors.dart';
 import '../services/api_service.dart';
 import '../services/language_service.dart';
+import '../models/news.dart';
 
 class GeorgiaNewsScreen extends StatefulWidget {
   final Map<String, dynamic>? user;
@@ -12,7 +13,7 @@ class GeorgiaNewsScreen extends StatefulWidget {
 }
 
 class _GeorgiaNewsScreenState extends State<GeorgiaNewsScreen> {
-  List<Map<String, dynamic>> _newsList = [];
+  List<News> _newsList = [];
   bool _isLoading = true;
 
   @override
@@ -26,7 +27,7 @@ class _GeorgiaNewsScreenState extends State<GeorgiaNewsScreen> {
     final list = await ApiService.getNews();
     if (mounted) {
       setState(() {
-        _newsList = list;
+        _newsList = list.map((n) => News.fromJson(n)).toList();
         _isLoading = false;
       });
     }
@@ -75,7 +76,7 @@ class _GeorgiaNewsScreenState extends State<GeorgiaNewsScreen> {
                           itemCount: _newsList.length,
                           itemBuilder: (context, index) {
                             final news = _newsList[index];
-                            final imgUrl = news['image_url']?.toString() ?? '';
+                            final imgUrl = news.imageUrl ?? '';
                             const fallbackImg = 'https://images.unsplash.com/photo-1504711434969-e33886168f5c?auto=format&fit=crop&w=500&q=80';
 
                             return Card(
@@ -119,7 +120,7 @@ class _GeorgiaNewsScreenState extends State<GeorgiaNewsScreen> {
                                       left: 16,
                                       right: 16,
                                       child: Text(
-                                        news['title']?.toString() ?? '',
+                                        news.title,
                                         style: const TextStyle(
                                           fontSize: 16,
                                           fontWeight: FontWeight.bold,
@@ -148,8 +149,8 @@ class _GeorgiaNewsScreenState extends State<GeorgiaNewsScreen> {
     );
   }
 
-  void _showNewsDetail(BuildContext context, Map<String, dynamic> news) {
-    final imgUrl = news['image_url']?.toString() ?? '';
+  void _showNewsDetail(BuildContext context, News news) {
+    final imgUrl = news.imageUrl ?? '';
     const fallbackImg = 'https://images.unsplash.com/photo-1504711434969-e33886168f5c?auto=format&fit=crop&w=500&q=80';
 
     showModalBottomSheet(
@@ -199,19 +200,19 @@ class _GeorgiaNewsScreenState extends State<GeorgiaNewsScreen> {
                                 const Icon(Icons.schedule, color: AppColors.accent, size: 18),
                                 const SizedBox(width: 6),
                                 Text(
-                                  news['date']?.toString() ?? LanguageService.tr('auto_trans_1050'),
+                                  news.date ?? LanguageService.tr('auto_trans_1050'),
                                   style: const TextStyle(fontSize: 12, color: AppColors.textMuted, fontWeight: FontWeight.bold),
                                 ),
                               ],
                             ),
                             const SizedBox(height: 12),
                             Text(
-                              news['title']?.toString() ?? '',
+                              news.title,
                               style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.primaryDark, height: 1.4),
                             ),
                             const Divider(height: 24, thickness: 1.2),
                             Text(
-                              news['content']?.toString() ?? '',
+                              news.content,
                               style: const TextStyle(fontSize: 14, color: AppColors.textDark, height: 1.6),
                             ),
                             const SizedBox(height: 20),

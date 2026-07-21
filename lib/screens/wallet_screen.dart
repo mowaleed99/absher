@@ -2,9 +2,10 @@ import 'package:flutter/material.dart';
 import '../theme/app_colors.dart';
 import '../services/api_service.dart';
 import '../services/language_service.dart';
+import '../models/student.dart';
 
 class WalletScreen extends StatefulWidget {
-  final Map<String, dynamic> user;
+  final Student? user;
   const WalletScreen({super.key, required this.user});
 
   @override
@@ -23,11 +24,11 @@ class _WalletScreenState extends State<WalletScreen> {
   }
 
   Future<void> _loadWallet() async {
-    final data = await ApiService.getWallet(widget.user['id']);
+    final points = await ApiService.getWalletBalance(widget.user?.id ?? 0);
     if (mounted) {
       setState(() {
-        _points = data['points'] ?? 0;
-        _notifications = data['notifications'] ?? [];
+        _points = points;
+        _notifications = [];
         _isLoading = false;
       });
     }
@@ -99,7 +100,7 @@ class _WalletScreenState extends State<WalletScreen> {
                                   ),
                                 ),
                                 title: Text(notif['title'], style: const TextStyle(color: AppColors.textDark, fontWeight: FontWeight.bold)),
-                                subtitle: Text(notif['content'] + '\n' + (notif['created_at'] ?? ''), style: const TextStyle(color: AppColors.textMuted, fontSize: 12)),
+                                subtitle: Text("${notif['content']}\n${notif['created_at'] ?? ''}", style: const TextStyle(color: AppColors.textMuted, fontSize: 12)),
                                 isThreeLine: true,
                               ),
                             );

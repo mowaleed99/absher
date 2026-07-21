@@ -4,6 +4,7 @@ import '../services/api_service.dart';
 import 'login_screen.dart';
 import 'home_screen.dart';
 import '../services/language_service.dart';
+import '../models/student.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -38,7 +39,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
     if (mounted) {
       setState(() {
         if (unis.isNotEmpty) {
-          _universities = unis.map((u) => u['name'].toString()).toList();
+          _universities = unis.map((u) => (u['name'] ?? '').toString()).where((n) => n.isNotEmpty).toList();
           _universities.add(LanguageService.tr('other_uni_manual'));
           if (!_universities.contains(_selectedUni)) {
             _selectedUni = _universities.first;
@@ -60,37 +61,46 @@ class _RegisterScreenState extends State<RegisterScreen> {
       _errorMessage = '';
     });
 
-    final result = await ApiService.register(
-      fullName: _nameController.text.trim(),
-      email: _emailController.text.trim(),
-      phone: _phoneController.text.trim(),
-      university: _selectedUni == LanguageService.tr('other_uni_manual') ? _customUniController.text.trim() : _selectedUni,
-      password: _passwordController.text,
-    );
+    try {
+      final result = await ApiService.register(
+        fullName: _nameController.text.trim(),
+        email: _emailController.text.trim(),
+        phone: _phoneController.text.trim(),
+        university: _selectedUni == LanguageService.tr('other_uni_manual') ? _customUniController.text.trim() : _selectedUni,
+        password: _passwordController.text,
+      );
 
-    setState(() => _isLoading = false);
+      setState(() => _isLoading = false);
 
-    if (result['status'] == 'success') {
-      if (mounted) {
-        Navigator.of(context).pushAndRemoveUntil(
-          MaterialPageRoute(
-            builder: (_) => HomeScreen(user: result['user'], isGuest: false),
-          ),
-          (route) => false,
-        );
+      if (result['status'] == 'success' && result['user'] != null) {
+        final student = Student.fromJson(result['user'] as Map<String, dynamic>);
+        if (mounted) {
+          Navigator.of(context).pushAndRemoveUntil(
+            MaterialPageRoute(
+              builder: (_) => HomeScreen(user: student, isGuest: false),
+            ),
+            (route) => false,
+          );
+        }
+      } else {
+        setState(() {
+          _errorMessage = result['message']?.toString() ?? LanguageService.tr('register_fail');
+        });
       }
-    } else {
+    } catch (e) {
       setState(() {
-        _errorMessage = result['message'] ?? LanguageService.tr('register_fail');
+        _isLoading = false;
+        _errorMessage = e.toString();
       });
     }
   }
 
   void _enterAsGuest() {
+    final guestUser = Student(id: 0, fullName: LanguageService.tr('guest_name'));
     Navigator.of(context).pushAndRemoveUntil(
       MaterialPageRoute(
         builder: (_) => HomeScreen(
-          user: {'name': LanguageService.tr('guest_name'), 'uni': LanguageService.tr('guest_uni'), 'is_guest': true},
+          user: guestUser,
           isGuest: true,
         ),
       ),

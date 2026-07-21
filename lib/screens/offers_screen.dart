@@ -2,10 +2,11 @@ import 'package:flutter/material.dart';
 import '../theme/app_colors.dart';
 import '../services/language_service.dart';
 import '../services/api_service.dart';
+import '../models/student.dart';
 import 'apartment_detail_screen.dart';
 
 class OffersScreen extends StatefulWidget {
-  final Map<String, dynamic> user;
+  final Student? user;
   final List<Map<String, dynamic>> apartments;
   const OffersScreen({super.key, required this.user, required this.apartments});
 

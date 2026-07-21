@@ -10,9 +10,12 @@ import 'offers_screen.dart';
 import 'profile_screen.dart';
 import 'notifications_screen.dart';
 import '../services/api_service.dart';
+import '../models/student.dart';
+import '../models/news.dart';
+import '../models/university.dart';
 
 class HomeScreen extends StatefulWidget {
-  final Map<String, dynamic>? user;
+  final Student? user;
   final bool isGuest;
   const HomeScreen({super.key, this.user, this.isGuest = false});
 
@@ -22,10 +25,10 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   int _currentIndex = 0;
-  List<Map<String, dynamic>> _newsList = [];
+  List<News> _newsList = [];
   List<Map<String, dynamic>> _notificationsList = [];
-  List<Map<String, dynamic>> _universitiesList = [];
-  List<Map<String, dynamic>> _districtsList = [];
+  List<University> _universitiesList = [];
+  List<String> _districtsList = [];
   List<String> _selectedUniversities = [];
   int? _maxPriceFilter;
   String _rentalTypeFilter = 'all_flats';
@@ -157,7 +160,7 @@ class _HomeScreenState extends State<HomeScreen> {
     },
   ];
 
-  List<Widget> _buildPages(Map<String, dynamic> usr) => [
+  List<Widget> _buildPages(Student? usr) => [
         _buildHomeTab(usr),
         ServicesScreen(user: usr),
         ChatScreen(user: usr),
@@ -202,7 +205,7 @@ class _HomeScreenState extends State<HomeScreen> {
     final list = await ApiService.getNews();
     if (mounted) {
       setState(() {
-        _newsList = list;
+        _newsList = list.map((n) => News.fromJson(n)).toList();
       });
     }
   }
@@ -220,7 +223,7 @@ class _HomeScreenState extends State<HomeScreen> {
     final list = await ApiService.getUniversities();
     if (mounted) {
       setState(() {
-        _universitiesList = list;
+        _universitiesList = list.map((u) => University.fromJson(u)).toList();
       });
     }
   }
@@ -229,7 +232,7 @@ class _HomeScreenState extends State<HomeScreen> {
     final list = await ApiService.getDistricts();
     if (mounted) {
       setState(() {
-        _districtsList = list;
+        _districtsList = list.map((d) => d['name'].toString()).toList();
       });
     }
   }
@@ -273,9 +276,9 @@ class _HomeScreenState extends State<HomeScreen> {
                       itemBuilder: (context, index) {
                         final n = _newsList[index];
                         return _buildNotificationItem(
-                          n['title']?.toString() ?? '',
-                          n['content']?.toString() ?? '',
-                          n['date']?.toString() ?? LanguageService.tr('auto_trans_1138'),
+                          n.title,
+                          n.content,
+                          n.date ?? LanguageService.tr('auto_trans_1138'),
                         );
                       },
                     ),
@@ -356,10 +359,11 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
           dropdownColor: Colors.white,
           items: items.map((item) {
+            final bool isAllItem = item == 'all' || item == 'all_flats' || item == 'all_districts' || item == LanguageService.tr('auto_trans_1139');
             return DropdownMenuItem(
               value: item,
               child: Text(
-                item == LanguageService.tr('auto_trans_1139') ? label : item,
+                isAllItem ? label : LanguageService.tr(item),
                 overflow: TextOverflow.ellipsis,
                 style: const TextStyle(fontSize: 12, color: AppColors.textDark, fontWeight: FontWeight.normal),
               ),
@@ -421,7 +425,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void _showUniversitiesDialog() {
-    final allUnis = _universitiesList.map((u) => u['name'] as String).toList();
+    final allUnis = _universitiesList.map((u) => u.name).toList();
     if (allUnis.isEmpty) {
       allUnis.addAll([
         LanguageService.tr('auto_trans_1140'),
@@ -535,10 +539,10 @@ class _HomeScreenState extends State<HomeScreen> {
 
 
   // محتوى التبويب الرئيسي (Home)
-  Widget _buildHomeTab(Map<String, dynamic> usr) {
+  Widget _buildHomeTab(Student? usr) {
     List<Map<String, dynamic>> filteredApts = List.from(_apartments);
     final List<Map<String, dynamic>> carouselItems = _newsList.isNotEmpty 
-        ? _newsList 
+        ? _newsList.map((n) => {'title': n.title, 'content': n.content, 'image_url': n.imageUrl}).toList()
         : _adBanners.map((e) => Map<String, dynamic>.from(e)).toList();
 
     // 0. تصفية نوع الإيجار (جميع الشقق vs شقة vs غرفة في شقة)
@@ -661,12 +665,12 @@ class _HomeScreenState extends State<HomeScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        '${LanguageService.tr('welcome')} ${usr['name'] ?? LanguageService.tr('auto_trans_1160')} 👋',
+                        '${LanguageService.tr('welcome')} ${usr?.fullName ?? LanguageService.tr('auto_trans_1160')}',
                         style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        usr['uni'] ?? LanguageService.tr('auto_trans_1161'),
+                        (usr?.universityId != null && usr!.universityId! > 0) ? 'University #${usr.universityId}' : LanguageService.tr('auto_trans_1161'),
                         style: const TextStyle(color: AppColors.accentLight, fontSize: 13),
                       ),
                     ],
@@ -721,7 +725,6 @@ class _HomeScreenState extends State<HomeScreen> {
                     final ad = carouselItems[idx];
                     final String imgUrl = ad['image_url']?.toString() ?? ad['img']?.toString() ?? '';
                     const String fallbackImg = 'https://images.unsplash.com/photo-1504711434969-e33886168f5c?auto=format&fit=crop&w=500&q=80';
-                    final String badge = _newsList.isNotEmpty ? LanguageService.tr('auto_trans_1162') : (ad['badge']?.toString() ?? LanguageService.tr('auto_trans_1163'));
                     final String title = ad['title']?.toString() ?? '';
                     final String desc = ad['content']?.toString() ?? ad['desc']?.toString() ?? '';
                     final String sub = ad['date']?.toString() ?? ad['sub']?.toString() ?? LanguageService.tr('auto_trans_1164');
@@ -937,7 +940,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       Expanded(
                         flex: 6,
                         child: _buildCustomFilterChip(
-                          label: _selectedUniversities.isEmpty ? LanguageService.tr('auto_trans_1165') : '🎓 ${_selectedUniversities.join(" + ")}',
+                          label: _selectedUniversities.isEmpty ? LanguageService.tr('auto_trans_1165') : _selectedUniversities.join(" + "),
                           isSelected: _selectedUniversities.isNotEmpty,
                           onTap: _showUniversitiesDialog,
                         ),
@@ -946,7 +949,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       Expanded(
                         flex: 5,
                         child: _buildCustomFilterChip(
-                          label: _maxPriceFilter == null ? LanguageService.tr('auto_trans_1166') : '💰 حتى $_maxPriceFilter\$',
+                          label: _maxPriceFilter == null ? LanguageService.tr('auto_trans_1166') : '${LanguageService.tr("up_to_price")} $_maxPriceFilter\$',
                           isSelected: _maxPriceFilter != null,
                           onTap: _showPriceDialog,
                         ),
@@ -960,7 +963,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         child: _buildFilterChipDropdown(
                           label: LanguageService.tr('auto_trans_1167'),
                           value: _districtFilter,
-                          items: ['all_districts', LanguageService.tr('auto_trans_1168'), LanguageService.tr('auto_trans_1169'), LanguageService.tr('auto_trans_1170')],
+                          items: ['all_districts', ..._districtsList.isNotEmpty ? _districtsList : [LanguageService.tr('auto_trans_1168'), LanguageService.tr('auto_trans_1169'), LanguageService.tr('auto_trans_1170')]],
                           onChanged: (val) => setState(() => _districtFilter = val!),
                         ),
                       ),
@@ -1197,7 +1200,7 @@ class _HomeScreenState extends State<HomeScreen> {
           child: Scaffold(
             backgroundColor: AppColors.background,
             body: SafeArea(
-              child: _buildPages(widget.user ?? {'name': LanguageService.tr('auto_trans_1182'), 'uni': LanguageService.tr('auto_trans_1183')})[_currentIndex],
+              child: _buildPages(widget.user ?? Student(id: 0, fullName: LanguageService.tr('auto_trans_1182')))[_currentIndex],
             ),
             bottomNavigationBar: Container(
               decoration: BoxDecoration(

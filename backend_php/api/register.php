@@ -10,6 +10,8 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') == 'OPTIONS') {
     exit();
 }
 
+require_once __DIR__ . '/../config/db.php';
+
 $data = json_decode(file_get_contents("php://input"));
 
 if (!empty($data->full_name) && !empty($data->email) && !empty($data->phone) && !empty($data->password)) {
@@ -17,63 +19,53 @@ if (!empty($data->full_name) && !empty($data->email) && !empty($data->phone) && 
     $email = trim($data->email);
     $phone = trim($data->phone);
     $university = !empty($data->university) ? trim($data->university) : 'جامعة في جورجيا';
-    
-    $jsonFile = __DIR__ . '/../admin/database.json';
-    if (!file_exists($jsonFile)) {
-        // Create an empty database template
-        file_put_contents($jsonFile, json_encode([
-            "apartments" => [],
-            "services" => [],
-            "students" => [],
-            "requests" => [],
-            "reviews" => [],
-            "chats" => [],
-            "news" => [],
-            "notifications" => [],
-            "universities" => [],
-            "districts" => []
-        ], JSON_UNESCAPED_UNICODE));
-    }
-    
-    $dbData = json_decode(file_get_contents($jsonFile), true);
-    if (!isset($dbData['students'])) $dbData['students'] = [];
-    
-    // Check existing
-    foreach ($dbData['students'] as $student) {
-        if ($student['email'] == $email || $student['phone'] == $phone) {
+    $password = trim($data->password);
+
+    try {
+        $checkQuery = "SELECT id, email, phone FROM students WHERE email = :email OR phone = :phone LIMIT 1";
+        $checkStmt = $conn->prepare($checkQuery);
+        $checkStmt->execute([':email' => $email, ':phone' => $phone]);
+
+        if ($checkStmt->rowCount() > 0) {
             echo json_encode([
                 "status" => "error",
                 "message" => "البريد الإلكتروني أو رقم الهاتف مسجل بالفعل في نظام أبشر"
             ], JSON_UNESCAPED_UNICODE);
             exit();
         }
-    }
-    
-    // Add new
-    $new_id = time(); // Use timestamp as ID
-    $dbData['students'][] = [
-        "id" => $new_id,
-        "full_name" => $full_name,
-        "email" => $email,
-        "phone" => $phone,
-        "university" => $university,
-        "created_at" => date("Y-m-d H:i")
-    ];
-    
-    file_put_contents($jsonFile, json_encode($dbData, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
 
-    echo json_encode([
-        "status" => "success",
-        "message" => "تم إنشاء حسابك بنجاح في تطبيق أبشر",
-        "user" => [
-            "id" => $new_id,
-            "name" => $full_name,
-            "email" => $email,
-            "phone" => $phone,
-            "uni" => $university,
-            "is_guest" => false
-        ]
-    ], JSON_UNESCAPED_UNICODE);
+        $hashed_password = password_hash($password, PASSWORD_DEFAULT);
+        $insertQuery = "INSERT INTO students (full_name, email, phone, university, password, points) VALUES (:full_name, :email, :phone, :university, :password, 0)";
+        $insertStmt = $conn->prepare($insertQuery);
+        $insertStmt->execute([
+            ':full_name' => $full_name,
+            ':email' => $email,
+            ':phone' => $phone,
+            ':university' => $university,
+            ':password' => $hashed_password
+        ]);
+
+        $new_id = (int)$conn->lastInsertId();
+
+        echo json_encode([
+            "status" => "success",
+            "message" => "تم إنشاء حسابك بنجاح في تطبيق أبشر",
+            "user" => [
+                "id" => $new_id,
+                "name" => $full_name,
+                "email" => $email,
+                "phone" => $phone,
+                "uni" => $university,
+                "is_guest" => false
+            ]
+        ], JSON_UNESCAPED_UNICODE);
+
+    } catch (PDOException $e) {
+        echo json_encode([
+            "status" => "error",
+            "message" => "خطأ في قاعدة البيانات"
+        ], JSON_UNESCAPED_UNICODE);
+    }
 } else {
     echo json_encode([
         "status" => "error",

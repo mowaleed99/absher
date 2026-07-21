@@ -3,50 +3,57 @@ header("Access-Control-Allow-Origin: *");
 header("Access-Control-Allow-Headers: *");
 header("Content-Type: application/json; charset=UTF-8");
 
+require_once __DIR__ . '/../config/db.php';
+
 $input = json_decode(file_get_contents("php://input"), true) ?? $_POST;
 $action = $_GET['action'] ?? ($input['action'] ?? '');
 $student_id = $input['student_id'] ?? $_GET['student_id'] ?? null;
-
-$jsonFile = __DIR__ . '/../admin/database.json';
-if (!file_exists($jsonFile)) {
-    echo json_encode(["status" => "error", "message" => "Database not found"], JSON_UNESCAPED_UNICODE);
-    exit();
-}
-$dbData = json_decode(file_get_contents($jsonFile), true);
 
 if ($action === 'get_wallet') {
     if (!$student_id) {
         echo json_encode(["status" => "error", "message" => "student_id is required"], JSON_UNESCAPED_UNICODE);
         exit();
     }
+    
     $points = 0;
-    foreach ($dbData['students'] as $s) {
-        if ((string)$s['id'] === (string)$student_id) {
-            $points = $s['points'] ?? 0;
-            break;
+    try {
+        $stmt = $conn->prepare("SELECT points FROM students WHERE id = ?");
+        $stmt->execute([$student_id]);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+        if ($row) {
+            $points = (int)$row['points'];
         }
-    }
 
-    $notifications = [];
-    if (isset($dbData['notifications'])) {
-        foreach ($dbData['notifications'] as $n) {
-            if (!isset($n['student_id']) || (string)$n['student_id'] === (string)$student_id) {
-                $notifications[] = $n;
-            }
-        }
-    }
+        $notifStmt = $conn->prepare("SELECT id, title, body AS content, DATE_FORMAT(created_at, '%Y-%m-%d %H:%i') AS date FROM notifications WHERE student_id = ? ORDER BY created_at DESC");
+        $notifStmt->execute([$student_id]);
+        $notifications = $notifStmt->fetchAll(PDO::FETCH_ASSOC);
 
-    echo json_encode(["status" => "success", "points" => $points, "notifications" => array_values($notifications)], JSON_UNESCAPED_UNICODE);
+        echo json_encode(["status" => "success", "points" => $points, "notifications" => $notifications], JSON_UNESCAPED_UNICODE);
+    } catch (PDOException $e) {
+        echo json_encode(["status" => "error", "points" => 0, "notifications" => []], JSON_UNESCAPED_UNICODE);
+    }
     exit();
 }
 
 if ($action === 'get_universities') {
-    echo json_encode(["status" => "success", "universities" => $dbData['universities'] ?? []], JSON_UNESCAPED_UNICODE);
+    try {
+        $stmt = $conn->query("SELECT id, name FROM universities ORDER BY id DESC");
+        $universities = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        echo json_encode(["status" => "success", "universities" => $universities], JSON_UNESCAPED_UNICODE);
+    } catch (PDOException $e) {
+        echo json_encode(["status" => "error", "universities" => []], JSON_UNESCAPED_UNICODE);
+    }
     exit();
 }
 
 if ($action === 'get_districts') {
-    echo json_encode(["status" => "success", "districts" => $dbData['districts'] ?? []], JSON_UNESCAPED_UNICODE);
+    try {
+        $stmt = $conn->query("SELECT id, name FROM districts ORDER BY id DESC");
+        $districts = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        echo json_encode(["status" => "success", "districts" => $districts], JSON_UNESCAPED_UNICODE);
+    } catch (PDOException $e) {
+        echo json_encode(["status" => "error", "districts" => []], JSON_UNESCAPED_UNICODE);
+    }
     exit();
 }
 
@@ -63,35 +70,40 @@ if ($action === 'pay_with_points') {
         exit();
     }
 
-    $success = false;
-    foreach ($dbData['students'] as &$s) {
-        if ((string)$s['id'] === (string)$student_id) {
-            $currentPoints = $s['points'] ?? 0;
-            if ($currentPoints >= $amount) {
-                $s['points'] = $currentPoints - $amount;
-                $success = true;
-                
-                $notifTitle = 'سحب نقاط ➖';
-                $notifText = "تم خصم {$amount} نقطة من محفظتك. السبب: سداد رسوم {$serviceTitle}";
-                
-                if (!isset($dbData['notifications'])) $dbData['notifications'] = [];
-                array_unshift($dbData['notifications'], [
-                    "id" => time(),
-                    "student_id" => $student_id,
-                    "title" => $notifTitle,
-                    "content" => $notifText,
-                    "date" => 'الآن'
-                ]);
-            }
-            break;
-        }
-    }
+    try {
+        $conn->beginTransaction();
 
-    if ($success) {
-        file_put_contents($jsonFile, json_encode($dbData, JSON_UNESCAPED_UNICODE));
-        echo json_encode(["status" => "success", "message" => "تم الخصم والدفع بنجاح"], JSON_UNESCAPED_UNICODE);
-    } else {
-        echo json_encode(["status" => "error", "message" => "رصيد النقاط غير كافٍ"], JSON_UNESCAPED_UNICODE);
+        $updateStmt = $conn->prepare("UPDATE students SET points = points - ? WHERE id = ? AND points >= ?");
+        $updateStmt->execute([$amount, $student_id, $amount]);
+
+        if ($updateStmt->rowCount() > 0) {
+            $notifTitle = 'سحب نقاط';
+            $notifText = "تم خصم {$amount} نقطة من محفظتك. السبب: سداد رسوم {$serviceTitle}";
+            
+            $insertNotif = $conn->prepare("INSERT INTO notifications (student_id, title, body, created_at) VALUES (?, ?, ?, NOW())");
+            $insertNotif->execute([$student_id, $notifTitle, $notifText]);
+
+            $insertTx = $conn->prepare("INSERT INTO wallet_transactions (student_id, amount, type, description, created_at) VALUES (?, ?, 'خصم', ?, NOW())");
+            $insertTx->execute([$student_id, $amount, $notifText]);
+
+            $conn->commit();
+            echo json_encode(["status" => "success", "message" => "تم الخصم والدفع بنجاح"], JSON_UNESCAPED_UNICODE);
+        } else {
+            $conn->rollBack();
+            // Check if student doesn't exist or just insufficient balance
+            $checkStmt = $conn->prepare("SELECT id FROM students WHERE id = ?");
+            $checkStmt->execute([$student_id]);
+            if ($checkStmt->rowCount() > 0) {
+                echo json_encode(["status" => "error", "message" => "رصيد النقاط غير كافٍ"], JSON_UNESCAPED_UNICODE);
+            } else {
+                echo json_encode(["status" => "error", "message" => "الطالب غير موجود"], JSON_UNESCAPED_UNICODE);
+            }
+        }
+    } catch (PDOException $e) {
+        if ($conn->inTransaction()) {
+            $conn->rollBack();
+        }
+        echo json_encode(["status" => "error", "message" => "حدث خطأ أثناء الدفع"], JSON_UNESCAPED_UNICODE);
     }
     exit();
 }

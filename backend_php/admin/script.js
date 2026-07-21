@@ -1,8 +1,69 @@
 const API_URL = '../api/admin_api.php';
+const LOGIN_URL = '../api/admin/login.php';
+
+let adminToken = localStorage.getItem('adminToken') || null;
+
+async function checkAuth() {
+    if (!adminToken) {
+        showLoginOverlay();
+        return false;
+    }
+    return true;
+}
+
+function showLoginOverlay() {
+    if (document.getElementById('loginOverlay')) return;
+    const overlay = document.createElement('div');
+    overlay.id = 'loginOverlay';
+    overlay.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:#111827;z-index:9999;display:flex;align-items:center;justify-content:center;';
+    overlay.innerHTML = `
+        <div style="background:#1f2937;padding:30px;border-radius:12px;width:300px;text-align:center;">
+            <h2 style="color:white;margin-bottom:15px;">تسجيل الدخول للإدارة</h2>
+            <input type="text" id="adminIdent" placeholder="اسم المستخدم أو الإيميل" style="width:100%;padding:10px;margin-bottom:15px;background:#374151;color:white;border:1px solid #4b5563;border-radius:6px;">
+            <input type="password" id="adminPass" placeholder="كلمة المرور" style="width:100%;padding:10px;margin-bottom:15px;background:#374151;color:white;border:1px solid #4b5563;border-radius:6px;">
+            <button onclick="doAdminLogin()" class="btn btn-primary" style="width:100%;padding:10px;background:#fbbf24;color:black;font-weight:bold;border-radius:6px;cursor:pointer;">دخول</button>
+        </div>
+    `;
+    document.body.appendChild(overlay);
+}
+
+window.doAdminLogin = async function() {
+    const ident = document.getElementById('adminIdent').value.trim();
+    const pass = document.getElementById('adminPass').value;
+    const res = await fetch(LOGIN_URL, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({identifier: ident, password: pass})
+    });
+    const data = await res.json();
+    if (data.status === 'success' || data.success) {
+        adminToken = data.data ? data.data.token : data.token;
+        localStorage.setItem('adminToken', adminToken);
+        document.getElementById('loginOverlay').remove();
+        loadDashboardData();
+    } else {
+        alert('بيانات الدخول خاطئة!');
+    }
+}
+
+window.authFetch = async function(url, options = {}) {
+    if (!await checkAuth()) return null;
+    if (!options.headers) options.headers = {};
+    options.headers['Authorization'] = 'Bearer ' + adminToken;
+    const res = await fetch(url, options);
+    if (res.status === 401) {
+        localStorage.removeItem('adminToken');
+        adminToken = null;
+        showLoginOverlay();
+        return null;
+    }
+    return res;
+}
+
 
 function formatChatMediaUrl(url) {
-    if (!url) return '';
-    if (url.startsWith('uploads/')) return '../' + url;
+    if (!url) return'';
+    if (url.startsWith('uploads/')) return'../'+ url;
     return url;
 }
 
@@ -13,9 +74,9 @@ function isEmbeddableVideo(url) {
 }
 
 function getEmbedUrl(url) {
-    if (!url) return '';
+    if (!url) return'';
     if (url.includes('youtube.com') || url.includes('youtu.be')) {
-        let videoId = '';
+        let videoId ='';
         if (url.includes('v=')) {
             const parts = url.split('v=');
             if (parts.length > 1) {
@@ -34,7 +95,7 @@ function getEmbedUrl(url) {
         }
         return videoId ? `https://www.youtube.com/embed/${videoId}` : url;
     } else if (url.includes('drive.google.com')) {
-        let driveId = '';
+        let driveId ='';
         if (url.includes('/d/')) {
             const parts = url.split('/d/');
             if (parts.length > 1) {
@@ -56,120 +117,117 @@ const MOCK_DATA = {
     apartments: [
         {
             id: 1,
-            title: 'شقة طلابية فاخرة - شارع بيكيني (Pekini)',
-            price: '450 دولار / شهر',
-            location: 'سابورتالو (Saburtalo)',
-            proximity: 'التبليسي الطبية TSMU (10 دقائق مشياً) | جامعة جورجيا UG (20 دقيقة)',
-            capacity: '3 غرف',
-            rental_type: 'شقة',
-            owner_phone: '+995555111222',
-            features: ['شقة بمفردك', '2 حمام', '3 غرف واسعة', 'تدفئة مركزية دافئة', 'بلكونة بإطلالة مفتوحة', 'إنترنت ألياف ضوئية سريع', 'مفروشة بالكامل'],
-            images: ['assets/images/apt1.png', 'assets/images/apt2.png'],
-            description: 'شقة ممتازة للطلاب في قلب تبليسي بالقرب من محطة مترو التكنيكال. مجهزة بالكامل بالفرش والأجهزة الكهربائية وتضم 2 حمام مع إطلالة رائعة من البلكونة. الدفع يتم نقداً عند الاستلام.'
-        },
+            title:'شقة طلابية فاخرة - شارع بيكيني (Pekini)',
+            price:'450 دولار / شهر',
+            location:'سابورتالو (Saburtalo)',
+            proximity:'التبليسي الطبية TSMU (10 دقائق مشياً) | جامعة جورجيا UG (20 دقيقة)',
+            capacity:'3 غرف',
+            rental_type:'شقة',
+            owner_phone:'+995555111222',
+            features: ['شقة بمفردك','2 حمام','3 غرف واسعة','تدفئة مركزية دافئة','بلكونة بإطلالة مفتوحة','إنترنت ألياف ضوئية سريع','مفروشة بالكامل'],
+            images: ['assets/images/apt1.png','assets/images/apt2.png'],
+            description:'شقة ممتازة للطلاب في قلب تبليسي بالقرب من محطة مترو التكنيكال. مجهزة بالكامل بالفرش والأجهزة الكهربائية وتضم 2 حمام مع إطلالة رائعة من البلكونة. الدفع يتم نقداً عند الاستلام.'},
         {
             id: 2,
-            title: 'ستوديو مودرن - بالقرب من جامعة جورجيا (UG)',
-            price: '380 دولار / شهر',
-            location: 'فاكي (Vake)',
-            proximity: 'جامعة جورجيا UG (10 دقائق مشياً) | إيليا ستيت (15 دقيقة)',
-            capacity: '1 غرفة',
-            rental_type: 'شقة',
-            owner_phone: '+995555333444',
-            features: ['شقة بمفردك', '1 حمام', 'ستوديو منفرد هادئ', 'تكييف وتدفئة', 'أمن على مدار 24 ساعة', 'قريب من السوبرماركت'],
+            title:'ستوديو مودرن - بالقرب من جامعة جورجيا (UG)',
+            price:'380 دولار / شهر',
+            location:'فاكي (Vake)',
+            proximity:'جامعة جورجيا UG (10 دقائق مشياً) | إيليا ستيت (15 دقيقة)',
+            capacity:'1 غرفة',
+            rental_type:'شقة',
+            owner_phone:'+995555333444',
+            features: ['شقة بمفردك','1 حمام','ستوديو منفرد هادئ','تكييف وتدفئة','أمن على مدار 24 ساعة','قريب من السوبرماركت'],
             images: ['assets/images/apt4.png'],
-            description: 'ستوديو مثالي للطالب المنفرد الباحث عن الهدوء والتركيز في الدراسة ويحتوي على 1 حمام مستقل. يبعد 10 دقائق مشياً عن حرم جامعة جورجيا.'
-        },
+            description:'ستوديو مثالي للطالب المنفرد الباحث عن الهدوء والتركيز في الدراسة ويحتوي على 1 حمام مستقل. يبعد 10 دقائق مشياً عن حرم جامعة جورجيا.'},
         {
             id: 3,
-            title: 'شقة مشتركة لـ 3 طلاب - إطلالة بنورامية',
-            price: '550 دولار (أو 180 دولار للشخص)',
-            location: 'سابورتالو (Saburtalo)',
-            proximity: 'إيليا ستيت Ilia (10 دقائق) | جامعة تبليسي الحكومية TSU (20 دقيقة)',
-            capacity: '3 غرف',
-            rental_type: 'غرفة في شقة',
-            owner_phone: '+995555888999',
-            roommate_reqs: 'غير مدخن ، طالب هادئ ومحترم ، يحافظ على النظافة العامة والهدوء',
-            roommate_facilities: 'غرفة نوم خاصة ومفروشة ، حمام ومطبخ مشترك ، شرفة (بلكونة واسعة)',
-            features: ['استئجار مع شريك', '2 حمام', 'غرف منفصلة ومريحة', 'صالة كبيرة للمذاكرة المشتركة', 'بلكونة واسعة جداً', 'مصعد يعمل 24/7'],
+            title:'شقة مشتركة لـ 3 طلاب - إطلالة بنورامية',
+            price:'550 دولار (أو 180 دولار للشخص)',
+            location:'سابورتالو (Saburtalo)',
+            proximity:'إيليا ستيت Ilia (10 دقائق) | جامعة تبليسي الحكومية TSU (20 دقيقة)',
+            capacity:'3 غرف',
+            rental_type:'غرفة في شقة',
+            owner_phone:'+995555888999',
+            roommate_reqs:'غير مدخن ، طالب هادئ ومحترم ، يحافظ على النظافة العامة والهدوء',
+            roommate_facilities:'غرفة نوم خاصة ومفروشة ، حمام ومطبخ مشترك ، شرفة (بلكونة واسعة)',
+            features: ['استئجار مع شريك','2 حمام','غرف منفصلة ومريحة','صالة كبيرة للمذاكرة المشتركة','بلكونة واسعة جداً','مصعد يعمل 24/7'],
             images: ['assets/images/apt3.png'],
-            description: 'فرصة ممتازة لثلاثة أصدقاء طلاب. مساحة واسعة وتضم 2 حمام وتوزيع ممتاز للغرف يضمن الخصوصية لكل طالب.'
-        }
+            description:'فرصة ممتازة لثلاثة أصدقاء طلاب. مساحة واسعة وتضم 2 حمام وتوزيع ممتاز للغرف يضمن الخصوصية لكل طالب.'}
     ],
     services: [
-        { id: 1, title: 'فني كهربائي', description: 'صيانة كافة الأعطال والتوصيلات الكهربائية', image_url: 'https://images.unsplash.com/photo-1621905251189-08b45d6a269e?auto=format&fit=crop&w=500&q=80' },
-        { id: 2, title: 'فني سباكة', description: 'إصلاح تسريبات المياه والصيانة الصحية', image_url: 'https://images.unsplash.com/photo-1585704032915-c3400ca199e7?auto=format&fit=crop&w=500&q=80' },
-        { id: 3, title: 'استخراج إقامة طلابية', description: 'تجهيز أوراق الإقامة لأول مرة أو التجديد', image_url: 'https://images.unsplash.com/photo-1544717305-2782549b5136?auto=format&fit=crop&w=500&q=80' },
-        { id: 4, title: 'تسجيل العنوان القانوني', description: 'إصدار وثيقة العنوان المعتمدة في جورجيا', image_url: 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&w=500&q=80' },
-        { id: 5, title: 'التسجيل والنقل الجامعي', description: 'إجراءات القبول وتحويل الساعات بين الجامعات', image_url: 'https://images.unsplash.com/photo-1562774053-701939374585?auto=format&fit=crop&w=500&q=80' },
-        { id: 6, title: 'الاستقبال والنقل من المطار', description: 'توفير سيارات مريحة لاستقبالك فور وصولك تبليسي', image_url: 'https://images.unsplash.com/photo-1436491865332-7a61a109cc05?auto=format&fit=crop&w=500&q=80' }
+        { id: 1, title:'فني كهربائي', description:'صيانة كافة الأعطال والتوصيلات الكهربائية', image_url:'https://images.unsplash.com/photo-1621905251189-08b45d6a269e?auto=format&fit=crop&w=500&q=80'},
+        { id: 2, title:'فني سباكة', description:'إصلاح تسريبات المياه والصيانة الصحية', image_url:'https://images.unsplash.com/photo-1585704032915-c3400ca199e7?auto=format&fit=crop&w=500&q=80'},
+        { id: 3, title:'استخراج إقامة طلابية', description:'تجهيز أوراق الإقامة لأول مرة أو التجديد', image_url:'https://images.unsplash.com/photo-1544717305-2782549b5136?auto=format&fit=crop&w=500&q=80'},
+        { id: 4, title:'تسجيل العنوان القانوني', description:'إصدار وثيقة العنوان المعتمدة في جورجيا', image_url:'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&w=500&q=80'},
+        { id: 5, title:'التسجيل والنقل الجامعي', description:'إجراءات القبول وتحويل الساعات بين الجامعات', image_url:'https://images.unsplash.com/photo-1562774053-701939374585?auto=format&fit=crop&w=500&q=80'},
+        { id: 6, title:'الاستقبال والنقل من المطار', description:'توفير سيارات مريحة لاستقبالك فور وصولك تبليسي', image_url:'https://images.unsplash.com/photo-1436491865332-7a61a109cc05?auto=format&fit=crop&w=500&q=80'}
     ],
     students: [
-        { id: 1, full_name: 'مصطفى علي', email: 'mostafa@absher.ge', phone: '+995555112233', university: 'جامعة تبليسي الطبية (TSMU) - الطب البشري', nationality: 'مصر 🇪🇬', created_at: '2026-06-29 10:30' },
-        { id: 2, full_name: 'سارة محمد', email: 'sara@absher.ge', phone: '+995555445566', university: 'جامعة جورجيا (UG) - إدارة أعمال', nationality: 'الأردن 🇯🇴', created_at: '2026-06-28 14:15' },
-        { id: 3, full_name: 'أحمد جمال', email: 'ahmed@absher.ge', phone: '+995555123456', university: 'جامعة إيليا الحكومية - هندسة حاسبات', nationality: 'السعودية 🇸🇦', created_at: '2026-06-27 09:00' }
+        { id: 1, full_name:'مصطفى علي', email:'mostafa@absher.ge', phone:'+995555112233', university:'جامعة تبليسي الطبية (TSMU) - الطب البشري', nationality:'مصر 🇪🇬', created_at:'2026-06-29 10:30'},
+        { id: 2, full_name:'سارة محمد', email:'sara@absher.ge', phone:'+995555445566', university:'جامعة جورجيا (UG) - إدارة أعمال', nationality:'الأردن 🇯🇴', created_at:'2026-06-28 14:15'},
+        { id: 3, full_name:'أحمد جمال', email:'ahmed@absher.ge', phone:'+995555123456', university:'جامعة إيليا الحكومية - هندسة حاسبات', nationality:'السعودية 🇸🇦', created_at:'2026-06-27 09:00'}
     ],
     requests: [
-        { id: 1, type: '🤝 تجميع شباب (شريك سكن)', student_name: 'مصطفى علي', student_phone: '+995555112233', student_info: 'الجامعة: TSMU | التخصص: الطب البشري | الجنسية: مصر | النوع: ذكر', details: 'موعد الانتقال: فوري | إرفاق صورة: نعم ✔️ | الملاحظات: أبحث عن شريك هادئ ومحترم لمشاركة شقة 2 غرفة قريبة من الجامعة الميديكال.', status: 'قيد المراجعة' },
-        { id: 2, type: '🏠 حجز شقة مباشرة', student_name: 'سارة محمد', student_phone: '+995555445566', student_info: 'الجامعة: جامعة جورجيا (UG) | التخصص: إدارة أعمال | الجنسية: الأردن | النوع: أنثى', details: 'الشقة المحجوزة: ستوديو مودرن - شارع كوستافا (380$) | طريقة الدفع: نقداً عند معاينة واستلام الشقة.', status: 'جاري التنفيذ' },
-        { id: 3, type: '🛠️ طلب خدمة طلابية', student_name: 'أحمد جمال', student_phone: '+995555123456', student_info: 'الجامعة: جامعة إيليا | التخصص: هندسة حاسبات | الجنسية: السعودية | النوع: ذكر', details: 'الخدمة المطلوبة: الاستقبال والنقل من المطار | موعد الوصول: يوم الخميس الساعة 3 فجراً، عدد 2 حقيبة.', status: 'مكتمل' }
+        { id: 1, type:'تجميع شباب (شريك سكن)', student_name:'مصطفى علي', student_phone:'+995555112233', student_info:'الجامعة: TSMU | التخصص: الطب البشري | الجنسية: مصر | النوع: ذكر', details:'موعد الانتقال: فوري | إرفاق صورة: نعم ️ | الملاحظات: أبحث عن شريك هادئ ومحترم لمشاركة شقة 2 غرفة قريبة من الجامعة الميديكال.', status:'قيد المراجعة'},
+        { id: 2, type:'حجز شقة مباشرة', student_name:'سارة محمد', student_phone:'+995555445566', student_info:'الجامعة: جامعة جورجيا (UG) | التخصص: إدارة أعمال | الجنسية: الأردن | النوع: أنثى', details:'الشقة المحجوزة: ستوديو مودرن - شارع كوستافا (380$) | طريقة الدفع: نقداً عند معاينة واستلام الشقة.', status:'جاري التنفيذ'},
+        { id: 3, type:'️ طلب خدمة طلابية', student_name:'أحمد جمال', student_phone:'+995555123456', student_info:'الجامعة: جامعة إيليا | التخصص: هندسة حاسبات | الجنسية: السعودية | النوع: ذكر', details:'الخدمة المطلوبة: الاستقبال والنقل من المطار | موعد الوصول: يوم الخميس الساعة 3 فجراً، عدد 2 حقيبة.', status:'مكتمل'}
     ],
     chats: [
         {
             id: 1,
-            student_name: 'مصطفى علي',
-            student_uni: 'الطب البشري - TSMU',
-            phone: '+995555112233',
-            last_msg: 'مرحباً، قمت بتعبئة نموذج البحث عن شريك سكن، هل يوجد طالب متوافق معي حالياً؟',
-            time: 'منذ 10 دقائق',
-            status: 'رسالة جديدة 🟢',
+            student_name:'مصطفى علي',
+            student_uni:'الطب البشري - TSMU',
+            phone:'+995555112233',
+            last_msg:'مرحباً، قمت بتعبئة نموذج البحث عن شريك سكن، هل يوجد طالب متوافق معي حالياً؟',
+            time:'منذ 10 دقائق',
+            status:'رسالة جديدة',
             messages: [
-                { sender: 'student', text: 'مرحباً خدمة العملاء، قمت بتعبئة نموذج البحث عن شريك سكن لشقة في شارع بيكيني.', time: '10:15 صباحاً' },
-                { sender: 'student', text: 'هل يوجد طالب متوافق معي حالياً جاهز للانتقال الفوري؟', time: '10:16 صباحاً' }
+                { sender:'student', text:'مرحباً خدمة العملاء، قمت بتعبئة نموذج البحث عن شريك سكن لشقة في شارع بيكيني.', time:'10:15 صباحاً'},
+                { sender:'student', text:'هل يوجد طالب متوافق معي حالياً جاهز للانتقال الفوري؟', time:'10:16 صباحاً'}
             ]
         },
         {
             id: 2,
-            student_name: 'سارة محمد',
-            student_uni: 'إدارة أعمال - UG',
-            phone: '+995555445566',
-            last_msg: 'شكراً لكم، تم تأكيد موعد معاينة الاستوديو غداً صباحاً.', time: 'منذ ساعتين',
-            status: 'تم الرد ✔️',
+            student_name:'سارة محمد',
+            student_uni:'إدارة أعمال - UG',
+            phone:'+995555445566',
+            last_msg:'شكراً لكم، تم تأكيد موعد معاينة الاستوديو غداً صباحاً.', time:'منذ ساعتين',
+            status:'تم الرد ️',
             messages: [
-                { sender: 'student', text: 'مرحباً، أود حجز الاستوديو المودرن في شارع كوستافا بسعر 380$.', time: 'أمس' },
-                { sender: 'admin', text: 'أهلاً بك سارة في أبشر! الاستوديو متاح حالياً ومفروش بالكامل. هل يناسبك معاينته غداً؟', time: 'أمس' },
-                { sender: 'student', text: 'شكراً لكم، تم تأكيد موعد معاينة الاستوديو غداً صباحاً.', time: 'منذ ساعتين' }
+                { sender:'student', text:'مرحباً، أود حجز الاستوديو المودرن في شارع كوستافا بسعر 380$.', time:'أمس'},
+                { sender:'admin', text:'أهلاً بك سارة في أبشر! الاستوديو متاح حالياً ومفروش بالكامل. هل يناسبك معاينته غداً؟', time:'أمس'},
+                { sender:'student', text:'شكراً لكم، تم تأكيد موعد معاينة الاستوديو غداً صباحاً.', time:'منذ ساعتين'}
             ]
         },
         {
             id: 3,
-            student_name: 'خالد عبد الله',
-            student_uni: 'جامعة تبليسي الحكومية TSU',
-            phone: '+995555778899',
-            last_msg: 'شكراً جزيلاً على سرعة الرد والمساعدة في الإقامة!', time: 'أمس',
-            status: 'مكتمل',
+            student_name:'خالد عبد الله',
+            student_uni:'جامعة تبليسي الحكومية TSU',
+            phone:'+995555778899',
+            last_msg:'شكراً جزيلاً على سرعة الرد والمساعدة في الإقامة!', time:'أمس',
+            status:'مكتمل',
             messages: [
-                { sender: 'student', text: 'استفسار بخصوص أوراق تجديد الإقامة الطلابية المطلوبة هذا العام.', time: 'أمس' },
-                { sender: 'admin', text: 'مرحباً خالد، المطلوب شهادة طالب حديثة وكشف حساب بنكي وعقد السكن القانوني. يمكننا تجهيز كافة الملفات لك.', time: 'أمس' },
-                { sender: 'student', text: 'شكراً جزيلاً على سرعة الرد والمساعدة في الإقامة!', time: 'أمس' }
+                { sender:'student', text:'استفسار بخصوص أوراق تجديد الإقامة الطلابية المطلوبة هذا العام.', time:'أمس'},
+                { sender:'admin', text:'مرحباً خالد، المطلوب شهادة طالب حديثة وكشف حساب بنكي وعقد السكن القانوني. يمكننا تجهيز كافة الملفات لك.', time:'أمس'},
+                { sender:'student', text:'شكراً جزيلاً على سرعة الرد والمساعدة في الإقامة!', time:'أمس'}
             ]
         }
     ],
     reviews: [
-        { id: 1, student_name: 'د. عمر خالد', uni: 'جامعة تبليسي الطبية TSMU', rating: 5, comment: 'تطبيق أبشر رائع جداً! ساعدني في العثور على سكن ومطابقة شريك سكن محترم خلال أيام قليلة وبكل سهولة، خدمة ممتازة.', date: '2026-06-29' },
-        { id: 2, student_name: 'ريم أحمد', uni: 'جامعة جورجيا UG', rating: 5, comment: 'فريق خدمة العملاء سريع جداً في الرد على الشات، والاستقبال من المطار كان في الموعد المحدد بكل احترافية وأمان.', date: '2026-06-28' },
-        { id: 3, student_name: 'يوسف محمود', uni: 'جامعة إيليا الحكومية', rating: 4, comment: 'خيارات الشقق ممتازة ومفروشة بالكامل والأسعار مناسبة جداً لميزانية الطلاب في تبليسي.', date: '2026-06-26' }
+        { id: 1, student_name:'د. عمر خالد', uni:'جامعة تبليسي الطبية TSMU', rating: 5, comment:'تطبيق أبشر رائع جداً! ساعدني في العثور على سكن ومطابقة شريك سكن محترم خلال أيام قليلة وبكل سهولة، خدمة ممتازة.', date:'2026-06-29'},
+        { id: 2, student_name:'ريم أحمد', uni:'جامعة جورجيا UG', rating: 5, comment:'فريق خدمة العملاء سريع جداً في الرد على الشات، والاستقبال من المطار كان في الموعد المحدد بكل احترافية وأمان.', date:'2026-06-28'},
+        { id: 3, student_name:'يوسف محمود', uni:'جامعة إيليا الحكومية', rating: 4, comment:'خيارات الشقق ممتازة ومفروشة بالكامل والأسعار مناسبة جداً لميزانية الطلاب في تبليسي.', date:'2026-06-26'}
     ],
     news: [],
     notifications: [],
-    universities: [{ id: 1, name: 'جامعة تبليسي الطبية (TSMU)' }],
+    universities: [{ id: 1, name:'جامعة تبليسي الطبية (TSMU)'}],
     districts: [
-        { id: 1, name: 'سابورتالو (Saburtalo)' },
-        { id: 2, name: 'فاكي (Vake)' },
-        { id: 3, name: 'ديدوبي (Didube)' },
-        { id: 4, name: 'متاتسميندا (Mtatsminda)' },
-        { id: 5, name: 'إساني (Isani)' },
-        { id: 6, name: 'جلَداني (Gldani)' }
+        { id: 1, name:'سابورتالو (Saburtalo)'},
+        { id: 2, name:'فاكي (Vake)'},
+        { id: 3, name:'ديدوبي (Didube)'},
+        { id: 4, name:'متاتسميندا (Mtatsminda)'},
+        { id: 5, name:'إساني (Isani)'},
+        { id: 6, name:'جلَداني (Gldani)'}
     ]
 };
 
@@ -177,13 +235,13 @@ let appData = { ...MOCK_DATA };
 let useSimulation = false;
 
 // Initialize
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
     initNavigation();
     initThemeToggle();
-    loadDashboardData();
-    
-    // Polling: reload dashboard data every 4 seconds to get new messages and requests in real-time
-    setInterval(loadDashboardData, 4000);
+    if (await checkAuth()) {
+        loadDashboardData();
+        setInterval(loadDashboardData, 4000);
+    }
 });
 
 // Navigation & Tabs
@@ -216,89 +274,53 @@ function initThemeToggle() {
         document.body.classList.toggle('light-mode');
         const icon = btn.querySelector('i');
         if (document.body.classList.contains('light-mode')) {
-            icon.className = 'fa-solid fa-sun';
+            icon.className ='fa-solid fa-sun';
         } else {
-            icon.className = 'fa-solid fa-moon';
+            icon.className ='fa-solid fa-moon';
         }
     });
 }
 
 // Fetch or Load Data
 async function loadDashboardData() {
-    useSimulation = true;
+    if (!adminToken) return;
     try {
-        const res = await fetch('../admin/database.json?t=' + Date.now());
-        let dbData = {};
-        if (res.ok) {
-            dbData = await res.json();
+        const res = await window.authFetch(API_URL + '?action=get_all');
+        if (!res) return;
+        const result = await res.json();
+        
+        if (result.status === 'success') {
+            appData = {
+                apartments: result.apartments || [],
+                services: result.services || [],
+                students: result.students || [],
+                requests: result.requests || [],
+                reviews: result.reviews || [],
+                chats: result.chats || [],
+                news: result.news || [],
+                notifications: result.notifications || [],
+                universities: result.universities || [],
+                districts: result.districts || []
+            };
+            document.getElementById('serverStatus').textContent = 'متصل (قاعدة البيانات المباشرة MySQL)';
+            document.getElementById('serverStatus').className = 'status-online';
         }
-        
-        // Merge from localStorage if dbData doesn't have it (prevents data loss)
-        ['apartments', 'services', 'news', 'notifications', 'universities', 'districts'].forEach(key => {
-            if (!dbData[key] || dbData[key].length === 0) {
-                const local = localStorage.getItem('absher_' + key);
-                if (local) dbData[key] = JSON.parse(local);
-            }
-        });
-
-        appData = {
-            apartments: dbData.apartments || [],
-            services: dbData.services || [],
-            students: dbData.students || [],
-            requests: dbData.requests || [],
-            reviews: dbData.reviews || [],
-            chats: dbData.chats || [],
-            news: dbData.news || [],
-            notifications: dbData.notifications || [],
-            universities: dbData.universities || [],
-            districts: dbData.districts || []
-        };
-        
-        document.getElementById('serverStatus').textContent = 'متصل (وضع JSON)';
-        document.getElementById('serverStatus').className = 'status-online';
-        
     } catch (err) {
-        document.getElementById('serverStatus').textContent = 'متصل (وضع التخزين المحلي التفاعلي)';
-        
-        // Load from localStorage if available
-        const localApts = localStorage.getItem('absher_apartments');
-        const localSvcs = localStorage.getItem('absher_services');
-        const localNews = localStorage.getItem('absher_news');
-        const localNotifs = localStorage.getItem('absher_notifications');
-        const localUnis = localStorage.getItem('absher_universities');
-        const localDistricts = localStorage.getItem('absher_districts');
-        if (localApts) appData.apartments = JSON.parse(localApts);
-        if (localSvcs) appData.services = JSON.parse(localSvcs);
-        if (localNews) appData.news = JSON.parse(localNews);
-        if (localNotifs) appData.notifications = JSON.parse(localNotifs);
-        if (localUnis) appData.universities = JSON.parse(localUnis);
-        if (localDistricts) appData.districts = JSON.parse(localDistricts);
+        console.error(err);
+        document.getElementById('serverStatus').textContent = 'غير متصل';
+        document.getElementById('serverStatus').className = 'status-offline';
     }
     renderAll();
 }
 
 function saveLocalData() {
-    if (useSimulation) {
-        localStorage.setItem('absher_apartments', JSON.stringify(appData.apartments));
-        localStorage.setItem('absher_services', JSON.stringify(appData.services));
-        localStorage.setItem('absher_news', JSON.stringify(appData.news));
-        localStorage.setItem('absher_notifications', JSON.stringify(appData.notifications));
-        localStorage.setItem('absher_universities', JSON.stringify(appData.universities));
-        localStorage.setItem('absher_districts', JSON.stringify(appData.districts));
-        
-        // Sync to server JSON file
-        fetch('../api/save_db.php', {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify(appData)
-        }).catch(e => console.log(e));
-    }
+    // No-op for direct MySQL API
 }
 
 function resolveImgUrl(url) {
-    if (!url) return '';
-    if (url.startsWith('uploads/')) return '../' + url;
-    if (url.startsWith('assets/')) return '../../' + url;
+    if (!url) return'';
+    if (url.startsWith('uploads/')) return'../'+ url;
+    if (url.startsWith('assets/')) return'../../'+ url;
     return url;
 }
 
@@ -322,7 +344,7 @@ function renderStats() {
     document.getElementById('statSvcCount').textContent = appData.services.length;
     document.getElementById('statStdCount').textContent = appData.students.length;
     
-    const pendingReqs = appData.requests.filter(r => r.status === 'قيد المراجعة');
+    const pendingReqs = appData.requests.filter(r => r.status ==='قيد المراجعة');
     document.getElementById('statReqCount').textContent = pendingReqs.length;
     const reqBadge = document.getElementById('reqCountBadge');
     if (reqBadge) reqBadge.textContent = appData.requests.length;
@@ -331,28 +353,28 @@ function renderStats() {
     if (chatBadge && appData.chats) {
         const unreplied = appData.chats.filter(c => !c.status.includes('تم الرد') && !c.status.includes('مكتمل')).length;
         chatBadge.textContent = unreplied;
-        chatBadge.style.display = unreplied > 0 ? 'inline-block' : 'none';
+        chatBadge.style.display = unreplied > 0 ?'inline-block':'none';
     }
 
-    if (typeof walkAndTranslate === 'function' && currentLang === 'en') walkAndTranslate(document.body);
+    if (typeof walkAndTranslate ==='function'&& currentLang ==='en') walkAndTranslate(document.body);
 }
 
 function renderApartments() {
     const container = document.getElementById('apartmentsList');
-    const searchVal = (document.getElementById('aptSearchInput')?.value || '').trim().toLowerCase();
+    const searchVal = (document.getElementById('aptSearchInput')?.value ||'').trim().toLowerCase();
     
     const filtered = appData.apartments.filter(apt => {
         if (!searchVal) return true;
         const idMatch = apt.id?.toString() === searchVal || `#${apt.id}` === searchVal || `رقم ${apt.id}` === searchVal;
-        const titleMatch = (apt.title || '').toLowerCase().includes(searchVal);
-        const descMatch = (apt.description || '').toLowerCase().includes(searchVal);
+        const titleMatch = (apt.title ||'').toLowerCase().includes(searchVal);
+        const descMatch = (apt.description ||'').toLowerCase().includes(searchVal);
         return idMatch || titleMatch || descMatch;
     });
 
     container.innerHTML = filtered.map(apt => `
         <div class="item-card">
             <div class="card-img-wrap">
-                <img src="${resolveImgUrl(Array.isArray(apt.images) ? apt.images[0] : apt.images)}" onerror="this.src='https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&w=500&q=80'" alt="Apartment">
+                <img src="${resolveImgUrl(Array.isArray(apt.images) ? apt.images[0] : apt.images)}"onerror="this.src='https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&w=500&q=80'"alt="Apartment">
                 <span class="price-tag">${apt.price}</span>
             </div>
             <div class="card-body">
@@ -360,59 +382,59 @@ function renderApartments() {
                     <span style="background: rgba(37, 211, 102, 0.18); color: #25D366; border: 1px solid #25D366; padding: 4px 12px; border-radius: 12px; font-weight: bold; font-size: 0.85rem;">
                         رقم الشقة: #${apt.id}
                     </span>
-                    ${apt.owner_phone ? `<span style="background: rgba(239, 68, 68, 0.15); color: #ef4444; border: 1px solid #ef4444; padding: 4px 10px; border-radius: 12px; font-weight: bold; font-size: 0.82rem; cursor: pointer;" onclick="navigator.clipboard.writeText('${apt.owner_phone}'); showToast('تم نسخ رقم المالك بنجاح 📋')"><i class="fa-solid fa-lock"></i> هاتف المالك: ${apt.owner_phone}</span>` : ''}
-                    ${apt.rental_type ? `<span style="background: rgba(251, 191, 36, 0.18); color: #fbbf24; border: 1px solid #fbbf24; padding: 4px 10px; border-radius: 12px; font-weight: bold; font-size: 0.82rem;">${apt.rental_type}</span>` : ''}
+                    ${apt.owner_phone ? `<span style="background: rgba(239, 68, 68, 0.15); color: #ef4444; border: 1px solid #ef4444; padding: 4px 10px; border-radius: 12px; font-weight: bold; font-size: 0.82rem; cursor: pointer;"onclick="navigator.clipboard.writeText('${apt.owner_phone}'); showToast('تم نسخ رقم المالك بنجاح')"><i class="fa-solid fa-lock"></i> هاتف المالك: ${apt.owner_phone}</span>` :''}
+                    ${apt.rental_type ? `<span style="background: rgba(251, 191, 36, 0.18); color: #fbbf24; border: 1px solid #fbbf24; padding: 4px 10px; border-radius: 12px; font-weight: bold; font-size: 0.82rem;">${apt.rental_type}</span>` :''}
                 </div>
                 <h3 class="card-title">${apt.title}</h3>
                 <p class="card-loc"><i class="fa-solid fa-location-dot"></i> الحي السكني: ${apt.location}</p>
                 <div style="margin: 8px 0; display: flex; gap: 8px; flex-wrap: wrap;">
                     <span style="background:var(--primary); color:#fff; padding:4px 10px; border-radius:12px; font-size:0.85rem; font-weight:bold; display:inline-block;">
-                        🚪 عدد الغرف: ${apt.capacity || '3 غرف'}
+                         عدد الغرف: ${apt.capacity ||'3 غرف'}
                     </span>
                 </div>
                 ${apt.roommate_reqs || apt.roommate_facilities ? `
                 <div style="background: rgba(251, 191, 36, 0.08); border: 1px dashed #fbbf24; padding: 10px; border-radius: 10px; margin: 8px 0; font-size: 0.85rem;">
-                    ${apt.roommate_reqs ? `<div style="margin-bottom: 4px;"><strong style="color: #fbbf24;">👤 شروط الشريك:</strong> ${apt.roommate_reqs}</div>` : ''}
-                    ${apt.roommate_facilities ? `<div><strong style="color: #fbbf24;">🏠 المتاح للشريك:</strong> ${apt.roommate_facilities}</div>` : ''}
-                </div>` : ''}
+                    ${apt.roommate_reqs ? `<div style="margin-bottom: 4px;"><strong style="color: #fbbf24;"> شروط الشريك:</strong> ${apt.roommate_reqs}</div>` :''}
+                    ${apt.roommate_facilities ? `<div><strong style="color: #fbbf24;"> المتاح للشريك:</strong> ${apt.roommate_facilities}</div>` :''}
+                </div>` :''}
                 <div class="features-list">
                     ${(Array.isArray(apt.features) ? apt.features : [apt.features]).map(f => `<span class="feature-pill">${f}</span>`).join('')}
                 </div>
                 <p class="card-desc">${apt.description}</p>
                 <div class="card-actions">
-                    <button class="btn btn-danger" onclick="deleteApartment(${apt.id})"><i class="fa-solid fa-trash"></i> حذف الشقة</button>
-                    <span style="font-size:0.8rem; color:var(--accent-green); align-self:center;">نشطة في التطبيق ✅</span>
+                    <button class="btn btn-danger"onclick="deleteApartment(${apt.id})"><i class="fa-solid fa-trash"></i> حذف الشقة</button>
+                    <span style="font-size:0.8rem; color:var(--accent-green); align-self:center;">نشطة في التطبيق </span>
                 </div>
             </div>
         </div>
     `).join('');
 
-    if (typeof walkAndTranslate === 'function' && currentLang === 'en') walkAndTranslate(document.body);
+    if (typeof walkAndTranslate ==='function'&& currentLang ==='en') walkAndTranslate(document.body);
 }
 
 function renderServices() {
     const container = document.getElementById('servicesList');
     container.innerHTML = appData.services.map(svc => `
         <div class="item-card">
-            <div class="card-img-wrap" style="height:140px;">
-                <img src="${resolveImgUrl(svc.image_url)}" onerror="this.src='https://images.unsplash.com/photo-1581092160607-ee22621dd758?auto=format&fit=crop&w=500&q=80'" alt="Service">
+            <div class="card-img-wrap"style="height:140px;">
+                <img src="${resolveImgUrl(svc.image_url)}"onerror="this.src='https://images.unsplash.com/photo-1581092160607-ee22621dd758?auto=format&fit=crop&w=500&q=80'"alt="Service">
             </div>
             <div class="card-body">
                 <h3 class="card-title">${svc.title}</h3>
-                <p class="card-desc" style="margin-bottom:0.5rem;">${svc.description}</p>
-                ${(svc.has_form == 1 || svc.has_form === undefined || svc.has_form === true) ? `<div style="margin-bottom:0.8rem;"><span style="background: rgba(37,211,102,0.15); color: #25D366; border: 1px solid #25D366; padding: 4px 10px; border-radius: 12px; font-size: 0.78rem; font-weight: bold;">📝 يتضمن نموذج طلب للعميل (Form)</span></div>` : ''}
+                <p class="card-desc"style="margin-bottom:0.5rem;">${svc.description}</p>
+                ${(svc.has_form == 1 || svc.has_form === undefined || svc.has_form === true) ? `<div style="margin-bottom:0.8rem;"><span style="background: rgba(37,211,102,0.15); color: #25D366; border: 1px solid #25D366; padding: 4px 10px; border-radius: 12px; font-size: 0.78rem; font-weight: bold;"> يتضمن نموذج طلب للعميل (Form)</span></div>` :''}
                 <div class="card-actions">
-                    <button class="btn btn-danger" onclick="deleteService(${svc.id})"><i class="fa-solid fa-trash"></i> حذف الخدمة</button>
-                    <span style="font-size:0.8rem; color:var(--accent-blue); align-self:center;">متاحة للطلب ⚡</span>
+                    <button class="btn btn-danger"onclick="deleteService(${svc.id})"><i class="fa-solid fa-trash"></i> حذف الخدمة</button>
+                    <span style="font-size:0.8rem; color:var(--accent-blue); align-self:center;">متاحة للطلب </span>
                 </div>
             </div>
         </div>
     `).join('');
 
-    if (typeof walkAndTranslate === 'function' && currentLang === 'en') walkAndTranslate(document.body);
+    if (typeof walkAndTranslate ==='function'&& currentLang ==='en') walkAndTranslate(document.body);
 }
 
-function renderRequests(filterText = '') {
+function renderRequests(filterText ='') {
     const tbody = document.getElementById('requestsTableBody');
     if (!tbody || !appData.requests) return;
     
@@ -430,46 +452,46 @@ function renderRequests(filterText = '') {
     
     let countPending = 0;
     appData.requests.forEach(r => {
-        if (r.status === 'قيد المراجعة') countPending++;
+        if (r.status ==='قيد المراجعة') countPending++;
     });
 
     tbody.innerHTML = filteredReqs.map((req) => {
         // Parse student info tags
         let infoChips = req.student_info ? req.student_info.split('|').map(s => s.trim()) : [];
-        let uniStr = '';
-        let natStr = '';
+        let uniStr ='';
+        let natStr ='';
         infoChips.forEach(c => {
-            if (c.includes('الجامعة:')) uniStr = c.replace('الجامعة:', '').trim();
-            if (c.includes('الجنسية:')) natStr = c.replace('الجنسية:', '').trim();
+            if (c.includes('الجامعة:')) uniStr = c.replace('الجامعة:','').trim();
+            if (c.includes('الجنسية:')) natStr = c.replace('الجنسية:','').trim();
         });
 
         // Status style
-        let statusColor = '#fbbf24';
-        if (req.status === 'جاري التنفيذ') statusColor = '#38bdf8';
-        if (req.status === 'مكتمل') statusColor = '#25D366';
+        let statusColor ='#fbbf24';
+        if (req.status ==='جاري التنفيذ') statusColor ='#38bdf8';
+        if (req.status ==='مكتمل') statusColor ='#25D366';
 
         return `
         <tr>
             <td style="font-weight: bold; color: var(--text-main);">#${req.id}</td>
             <td style="font-weight: bold; color: var(--primary); font-size: 1.05rem;">${req.student_name}</td>
             <td>
-                <div style="font-size: 0.85rem; color: #d1d7db; margin-bottom: 6px;"><i class="fa-solid fa-building-columns" style="color:var(--primary); width:16px;"></i> ${uniStr}</div>
-                <div style="font-size: 0.85rem; color: #d1d7db;"><i class="fa-solid fa-earth-americas" style="color:var(--primary); width:16px;"></i> ${natStr}</div>
+                <div style="font-size: 0.85rem; color: #d1d7db; margin-bottom: 6px;"><i class="fa-solid fa-building-columns"style="color:var(--primary); width:16px;"></i> ${uniStr}</div>
+                <div style="font-size: 0.85rem; color: #d1d7db;"><i class="fa-solid fa-earth-americas"style="color:var(--primary); width:16px;"></i> ${natStr}</div>
             </td>
-            <td dir="ltr" style="font-family: monospace; color: #25D366; font-weight: bold; font-size: 1rem;">${req.student_phone}</td>
+            <td dir="ltr"style="font-family: monospace; color: #25D366; font-weight: bold; font-size: 1rem;">${req.student_phone}</td>
             <td>
-                <div style="font-weight: bold; color: var(--accent-amber); margin-bottom: 6px; font-size: 0.95rem;">${req.type || 'طلب خدمة'}</div>
+                <div style="font-weight: bold; color: var(--accent-amber); margin-bottom: 6px; font-size: 0.95rem;">${req.type ||'طلب خدمة'}</div>
                 <div style="font-size: 0.85rem; color: var(--text-muted); line-height: 1.5; background: rgba(0,0,0,0.2); padding: 8px; border-radius: 8px;">${req.details}</div>
             </td>
             <td>
-                <select onchange="updateRequestStatus(${req.id}, this.value)" style="padding: 6px 12px; border-radius: 8px; background: #1e293b; color: ${statusColor}; border: 1px solid rgba(255,255,255,0.1); font-weight: bold; font-size: 0.95rem; cursor: pointer; outline: none; box-shadow: 0 2px 8px rgba(0,0,0,0.2);">
-                    <option value="قيد المراجعة" style="color:#fbbf24;" ${req.status === 'قيد المراجعة' ? 'selected' : ''}>⏳ قيد المراجعة</option>
-                    <option value="جاري التنفيذ" style="color:#38bdf8;" ${req.status === 'جاري التنفيذ' ? 'selected' : ''}>⚡ جاري التنفيذ</option>
-                    <option value="مكتمل" style="color:#25D366;" ${req.status === 'مكتمل' ? 'selected' : ''}>✅ مكتمل</option>
+                <select onchange="updateRequestStatus(${req.id}, this.value)"style="padding: 6px 12px; border-radius: 8px; background: #1e293b; color: ${statusColor}; border: 1px solid rgba(255,255,255,0.1); font-weight: bold; font-size: 0.95rem; cursor: pointer; outline: none; box-shadow: 0 2px 8px rgba(0,0,0,0.2);">
+                    <option value="قيد المراجعة"style="color:#fbbf24;"${req.status ==='قيد المراجعة'?'selected':''}>⏳ قيد المراجعة</option>
+                    <option value="جاري التنفيذ"style="color:#38bdf8;"${req.status ==='جاري التنفيذ'?'selected':''}> جاري التنفيذ</option>
+                    <option value="مكتمل"style="color:#25D366;"${req.status ==='مكتمل'?'selected':''}> مكتمل</option>
                 </select>
             </td>
             <td>
-                <button onclick="jumpToChat('${req.student_phone}', '${req.student_name}')" class="btn btn-primary" style="background: rgba(37,211,102,0.15); border: 1px solid #25D366; color: #25D366; padding: 8px 16px; border-radius: 10px; font-size: 0.9rem; transition: transform 0.2s;" title="فتح المحادثة مع الطالب">
+                <button onclick="jumpToChat('${req.student_phone}','${req.student_name}')"class="btn btn-primary"style="background: rgba(37,211,102,0.15); border: 1px solid #25D366; color: #25D366; padding: 8px 16px; border-radius: 10px; font-size: 0.9rem; transition: transform 0.2s;"title="فتح المحادثة مع الطالب">
                     <i class="fa-solid fa-comments"></i> شات
                 </button>
             </td>
@@ -480,7 +502,7 @@ function renderRequests(filterText = '') {
     const statReqCount = document.getElementById('statReqCount');
     if (statReqCount) statReqCount.innerText = countPending;
 
-    if (typeof walkAndTranslate === 'function' && currentLang === 'en') walkAndTranslate(document.body);
+    if (typeof walkAndTranslate ==='function'&& currentLang ==='en') walkAndTranslate(document.body);
 }
 
 function filterRequests() {
@@ -489,19 +511,19 @@ function filterRequests() {
 }
 
 function jumpToChat(phone, name) {
-    const cleanPhone = phone.replace(/[^0-9+]/g, '');
-    let chat = appData.chats.find(c => c.phone.replace(/[^0-9+]/g, '') === cleanPhone || c.student_name === name);
+    const cleanPhone = phone.replace(/[^0-9+]/g,'');
+    let chat = appData.chats.find(c => c.phone.replace(/[^0-9+]/g,'') === cleanPhone || c.student_name === name);
     
     if (!chat) {
         // Create mock chat if not found
         chat = {
             id: Date.now(),
             student_name: name,
-            student_uni: 'غير محدد',
+            student_uni:'غير محدد',
             phone: phone,
-            last_msg: 'مرحباً',
-            time: 'الآن',
-            status: 'رسالة جديدة 🟢',
+            last_msg:'مرحباً',
+            time:'الآن',
+            status:'رسالة جديدة',
             messages: []
         };
         appData.chats.unshift(chat);
@@ -520,23 +542,23 @@ function renderStudents() {
     tbody.innerHTML = appData.students.map((std, idx) => `
         <tr>
             <td>${idx + 1}</td>
-            <td style="font-weight:bold; color:var(--text-main); font-size:1rem;">👤 ${std.full_name}</td>
+            <td style="font-weight:bold; color:var(--text-main); font-size:1rem;"> ${std.full_name}</td>
             <td>${std.email}</td>
-            <td dir="ltr" style="color:var(--accent-green); font-weight:bold;">${std.phone}</td>
+            <td dir="ltr"style="color:var(--accent-green); font-weight:bold;">${std.phone}</td>
             <td style="font-weight:600;">${std.university}</td>
-            <td><span style="background:rgba(236,72,153,0.15); color:var(--secondary); padding:4px 10px; border-radius:12px; font-weight:bold;">${std.nationality || 'غير محدد'}</span></td>
-            <td dir="ltr">${std.created_at || 'الآن'}</td>
-            <td dir="ltr" style="font-weight:bold; color:var(--accent);">${std.points || 0}</td>
+            <td><span style="background:rgba(236,72,153,0.15); color:var(--secondary); padding:4px 10px; border-radius:12px; font-weight:bold;">${std.nationality ||'غير محدد'}</span></td>
+            <td dir="ltr">${std.created_at ||'الآن'}</td>
+            <td dir="ltr"style="font-weight:bold; color:var(--accent);">${std.points || 0}</td>
             <td>
-                <button class="btn btn-primary" style="padding:4px 8px; font-size:0.8rem;" onclick="openPointsModal(${std.id}, '${std.full_name}', ${std.points || 0})"><i class="fa-solid fa-coins"></i> إدارة</button>
+                <button class="btn btn-primary"style="padding:4px 8px; font-size:0.8rem;"onclick="openPointsModal(${std.id},'${std.full_name}', ${std.points || 0})"><i class="fa-solid fa-coins"></i> إدارة</button>
             </td>
             <td>
-                <button class="btn btn-danger" style="padding:6px 10px;" onclick="deleteStudent(${std.id})"><i class="fa-solid fa-user-xmark"></i></button>
+                <button class="btn btn-danger"style="padding:6px 10px;"onclick="deleteStudent(${std.id})"><i class="fa-solid fa-user-xmark"></i></button>
             </td>
         </tr>
     `).join('');
 
-    if (typeof walkAndTranslate === 'function' && currentLang === 'en') walkAndTranslate(document.body);
+    if (typeof walkAndTranslate ==='function'&& currentLang ==='en') walkAndTranslate(document.body);
 }
 
 function renderChats() {
@@ -551,20 +573,20 @@ function renderChats() {
 
     // Sort chats by active / time
     container.innerHTML = appData.chats.map(chat => `
-        <div class="wa-chat-item" id="waItem-${chat.id}" onclick="selectWaChat(${chat.id})" style="padding: 14px 16px; background: var(--bg-main); border-bottom: 1px solid var(--border-color); cursor: pointer; display: flex; gap: 12px; align-items: center; transition: background 0.2s;">
+        <div class="wa-chat-item"id="waItem-${chat.id}"onclick="selectWaChat(${chat.id})"style="padding: 14px 16px; background: var(--bg-main); border-bottom: 1px solid var(--border-color); cursor: pointer; display: flex; gap: 12px; align-items: center; transition: background 0.2s;">
             <div style="width: 46px; height: 46px; border-radius: 50%; background: #25D366; display: flex; align-items: center; justify-content: center; color: #fff; font-weight: bold; font-size: 1.3rem; flex-shrink: 0;">
                 ${chat.student_name.charAt(0)}
             </div>
             <div style="flex: 1; overflow: hidden;">
                 <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 4px;">
                     <h4 style="margin: 0; font-size: 1.05rem; font-weight: bold; color: var(--text-main); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${chat.student_name}</h4>
-                    <span style="font-size: 0.75rem; color: #25D366; font-weight: bold;">${chat.time && chat.time !== 'الآن' ? chat.time : ''}</span>
+                    <span style="font-size: 0.75rem; color: #25D366; font-weight: bold;">${chat.time && chat.time !=='الآن'? chat.time :''}</span>
                 </div>
                 <div style="display: flex; justify-content: space-between; align-items: center;">
                     <p style="margin: 0; font-size: 0.85rem; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 180px;">
                         ${chat.last_msg}
                     </p>
-                    <span style="font-size: 0.75rem; background: ${chat.status.includes('جديدة') ? '#25D366' : 'rgba(255,255,255,0.1)'}; color: ${chat.status.includes('جديدة') ? '#fff' : 'var(--text-muted)'}; padding: 2px 8px; border-radius: 10px; font-weight: bold;">
+                    <span style="font-size: 0.75rem; background: ${chat.status.includes('جديدة') ?'#25D366':'rgba(255,255,255,0.1)'}; color: ${chat.status.includes('جديدة') ?'#fff':'var(--text-muted)'}; padding: 2px 8px; border-radius: 10px; font-weight: bold;">
                         ${chat.status}
                     </span>
                 </div>
@@ -585,18 +607,18 @@ function renderChats() {
         }
     }
 
-    if (typeof walkAndTranslate === 'function' && currentLang === 'en') walkAndTranslate(document.body);
+    if (typeof walkAndTranslate ==='function'&& currentLang ==='en') walkAndTranslate(document.body);
 }
 
 function renderReviews() {
     const container = document.getElementById('reviewsList');
     if (!container || !appData.reviews) return;
     container.innerHTML = appData.reviews.map(rev => `
-        <div class="item-card" style="background: linear-gradient(145deg, var(--bg-card), rgba(99,102,241,0.05));">
-            <div class="card-body" style="padding: 1.5rem;">
+        <div class="item-card"style="background: linear-gradient(145deg, var(--bg-card), rgba(99,102,241,0.05));">
+            <div class="card-body"style="padding: 1.5rem;">
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
                     <h3 style="font-size:1.1rem; font-weight:bold; color:var(--accent-amber);">
-                        ${'★'.repeat(rev.rating)}${'☆'.repeat(5 - rev.rating)}
+                        ${''.repeat(rev.rating)}${''.repeat(5 - rev.rating)}
                     </h3>
                     <span style="font-size:0.8rem; color:var(--text-muted);">${rev.date}</span>
                 </div>
@@ -614,12 +636,12 @@ function renderReviews() {
         </div>
     `).join('');
 
-    if (typeof walkAndTranslate === 'function' && currentLang === 'en') walkAndTranslate(document.body);
+    if (typeof walkAndTranslate ==='function'&& currentLang ==='en') walkAndTranslate(document.body);
 }
 
 // Modals Handling
 function openModal(modalId) {
-    if (modalId === 'aptModal') {
+    if (modalId ==='aptModal') {
         populateAptUniversitiesCheckboxes();
         populateAptLocationSelect();
     }
@@ -637,7 +659,7 @@ function deleteStudent(id) {
         saveLocalData();
         renderStudents();
         renderStats();
-        showToast('تم حذف الطالب بنجاح! 🗑️');
+        showToast('تم حذف الطالب بنجاح! ️');
     }
 }
 
@@ -656,8 +678,8 @@ function handleAddStudent(e) {
         phone: phone,
         university: uni,
         password: pass,
-        nationality: 'غير محدد',
-        created_at: new Date().toISOString().slice(0,16).replace('T', ' '),
+        nationality:'غير محدد',
+        created_at: new Date().toISOString().slice(0,16).replace('T',''),
         points: 0
     };
 
@@ -667,15 +689,15 @@ function handleAddStudent(e) {
     renderStats();
     closeModal('addStudentModal');
     document.getElementById('addStudentForm').reset();
-    showToast('تم إضافة الطالب بنجاح! ✅');
+    showToast('تم إضافة الطالب بنجاح!');
 }
 
 function openPointsModal(studentId, studentName, currentPoints) {
     document.getElementById('pointsStudentId').value = studentId;
     document.getElementById('pointsModalStudentName').textContent = studentName;
     document.getElementById('pointsModalCurrentPoints').textContent = currentPoints || 0;
-    document.getElementById('pointsAmount').value = '';
-    document.getElementById('pointsReason').value = '';
+    document.getElementById('pointsAmount').value ='';
+    document.getElementById('pointsReason').value ='';
     document.querySelector('input[name="pointsOperation"][value="add"]').checked = true;
     openModal('pointsModal');
 }
@@ -696,11 +718,11 @@ function handlePointsSubmit(e) {
     if (studentIndex !== -1) {
         let currentPoints = parseInt(appData.students[studentIndex].points) || 0;
         
-        if (operation === 'add') {
+        if (operation ==='add') {
             currentPoints += amount;
         } else {
             if (currentPoints < amount) {
-                showToast('عفواً، رصيد الطالب غير كافٍ لهذه العملية ❌');
+                showToast('عفواً، رصيد الطالب غير كافٍ لهذه العملية');
                 return;
             }
             currentPoints -= amount;
@@ -709,33 +731,32 @@ function handlePointsSubmit(e) {
         appData.students[studentIndex].points = currentPoints;
         
         // Add a notification for the student
-        const notifTitle = operation === 'add' ? 'إضافة نقاط ➕' : 'سحب نقاط ➖';
-        const notifText = operation === 'add' ? `تم إضافة ${amount} نقطة إلى محفظتك. السبب: ${reason}` : `تم خصم ${amount} نقطة من محفظتك. السبب: ${reason}`;
+        const notifTitle = operation ==='add'?'إضافة نقاط':'سحب نقاط';
+        const notifText = operation ==='add'? `تم إضافة ${amount} نقطة إلى محفظتك. السبب: ${reason}` : `تم خصم ${amount} نقطة من محفظتك. السبب: ${reason}`;
         
         const newNotif = {
             id: Date.now(),
             student_id: studentId, // Associate this notif with the student
             title: notifTitle,
             content: notifText,
-            date: 'الآن'
-        };
+            date:'الآن'};
         appData.notifications.unshift(newNotif);
 
         saveLocalData();
         renderStudents();
         closeModal('pointsModal');
-        showToast(operation === 'add' ? 'تم إضافة النقاط بنجاح! ➕' : 'تم خصم النقاط بنجاح! ➖');
+        showToast(operation ==='add'?'تم إضافة النقاط بنجاح!':'تم خصم النقاط بنجاح!');
     }
 }
 
 function toggleRoommateFields(val) {
     const sec = document.getElementById('roommateSection');
-    if (sec) sec.style.display = val && val.includes('غرفة') ? 'block' : 'none';
+    if (sec) sec.style.display = val && val.includes('غرفة') ?'block':'none';
 }
 
 function toggleMoveInDateInput(val) {
     const grp = document.getElementById('moveInDateGroup');
-    if (grp) grp.style.display = (val === 'ميعاد') ? 'block' : 'none';
+    if (grp) grp.style.display = (val ==='ميعاد') ?'block':'none';
 }
 
 function compressImageClientSide(file, maxDimension = 1100, quality = 0.80) {
@@ -767,7 +788,7 @@ function compressImageClientSide(file, maxDimension = 1100, quality = 0.80) {
                 const dataUrl = canvas.toDataURL('image/jpeg', quality);
                 canvas.toBlob((blob) => {
                     resolve({ blob: blob || file, dataUrl: dataUrl });
-                }, 'image/jpeg', quality);
+                },'image/jpeg', quality);
             };
             img.onerror = () => resolve({ blob: file, dataUrl: e.target.result });
             img.src = e.target.result;
@@ -784,19 +805,19 @@ async function handleSvcFileSelect(input) {
     
     const compressed = await compressImageClientSide(file, 1100, 0.80);
     const formData = new FormData();
-    formData.append('file', compressed.blob, file.name.replace(/\.[^/.]+$/, "") + '.jpg');
+    formData.append('file', compressed.blob, file.name.replace(/\.[^/.]+$/,"") +'.jpg');
     
     try {
-        const res = await fetch('../api/upload.php', { method: 'POST', body: formData });
+        const res = await fetch('../api/upload.php', { method:'POST', body: formData });
         const data = await res.json();
-        if (data.status === 'success') {
+        if (data.status ==='success') {
             document.getElementById('svcImg').value = data.url;
             const prev = document.getElementById('svcImgPreview');
             if (prev) {
-                prev.src = '../' + data.url;
-                prev.style.display = 'block';
+                prev.src ='../'+ data.url;
+                prev.style.display ='block';
             }
-            showToast('تم رفع صورة الخدمة بنجاح! 🖼️');
+            showToast('تم رفع صورة الخدمة بنجاح! ️');
             return;
         }
         console.warn('Upload API returned error, falling back to compressed DataURL:', data.message);
@@ -810,16 +831,16 @@ async function handleSvcFileSelect(input) {
         const prev = document.getElementById('svcImgPreview');
         if (prev) {
             prev.src = fallbackUrl;
-            prev.style.display = 'block';
+            prev.style.display ='block';
         }
-        showToast('تم اختيار الصورة ومُعاينتها بنجاح! 🖼️');
+        showToast('تم اختيار الصورة ومُعاينتها بنجاح! ️');
     }
 }
 
 async function handleAptFileSelect(input) {
     if (!input.files || input.files.length === 0) return;
     const container = document.getElementById('aptImgPreviewsContainer');
-    if (container) container.innerHTML = '';
+    if (container) container.innerHTML ='';
     
     let uploadedUrls = [];
     showToast(`⏳ جاري ضغط ورفع ${input.files.length} صورة شقة...`);
@@ -828,21 +849,21 @@ async function handleAptFileSelect(input) {
         const file = input.files[i];
         const compressed = await compressImageClientSide(file, 1100, 0.80);
         const formData = new FormData();
-        formData.append('file', compressed.blob, file.name.replace(/\.[^/.]+$/, "") + '.jpg');
+        formData.append('file', compressed.blob, file.name.replace(/\.[^/.]+$/,"") +'.jpg');
         
         try {
-            const res = await fetch('../api/upload.php', { method: 'POST', body: formData });
+            const res = await fetch('../api/upload.php', { method:'POST', body: formData });
             const data = await res.json();
-            if (data.status === 'success') {
+            if (data.status ==='success') {
                 uploadedUrls.push(data.url);
                 if (container) {
                     const img = document.createElement('img');
-                    img.src = '../' + data.url;
-                    img.style.width = '60px';
-                    img.style.height = '60px';
-                    img.style.borderRadius = '8px';
-                    img.style.objectFit = 'cover';
-                    img.style.border = '1px solid var(--accent-amber)';
+                    img.src ='../'+ data.url;
+                    img.style.width ='60px';
+                    img.style.height ='60px';
+                    img.style.borderRadius ='8px';
+                    img.style.objectFit ='cover';
+                    img.style.border ='1px solid var(--accent-amber)';
                     container.appendChild(img);
                 }
             } else if (compressed.dataUrl) {
@@ -850,11 +871,11 @@ async function handleAptFileSelect(input) {
                 if (container) {
                     const img = document.createElement('img');
                     img.src = compressed.dataUrl;
-                    img.style.width = '60px';
-                    img.style.height = '60px';
-                    img.style.borderRadius = '8px';
-                    img.style.objectFit = 'cover';
-                    img.style.border = '1px solid var(--accent-amber)';
+                    img.style.width ='60px';
+                    img.style.height ='60px';
+                    img.style.borderRadius ='8px';
+                    img.style.objectFit ='cover';
+                    img.style.border ='1px solid var(--accent-amber)';
                     container.appendChild(img);
                 }
             }
@@ -864,11 +885,11 @@ async function handleAptFileSelect(input) {
                 if (container) {
                     const img = document.createElement('img');
                     img.src = compressed.dataUrl;
-                    img.style.width = '60px';
-                    img.style.height = '60px';
-                    img.style.borderRadius = '8px';
-                    img.style.objectFit = 'cover';
-                    img.style.border = '1px solid var(--accent-amber)';
+                    img.style.width ='60px';
+                    img.style.height ='60px';
+                    img.style.borderRadius ='8px';
+                    img.style.objectFit ='cover';
+                    img.style.border ='1px solid var(--accent-amber)';
                     container.appendChild(img);
                 }
             }
@@ -877,7 +898,7 @@ async function handleAptFileSelect(input) {
     
     if (uploadedUrls.length > 0) {
         document.getElementById('aptImage').value = JSON.stringify(uploadedUrls);
-        showToast(`تم رفع ${uploadedUrls.length} صورة بنجاح! 🖼️`);
+        showToast(`تم رفع ${uploadedUrls.length} صورة بنجاح! ️`);
     }
 }
 
@@ -888,18 +909,18 @@ async function handleNewsFileSelect(input) {
     formData.append('file', file);
     try {
         showToast('⏳ جاري رفع صورة الخبر...');
-        const res = await fetch('../api/upload.php', { method: 'POST', body: formData });
+        const res = await fetch('../api/upload.php', { method:'POST', body: formData });
         const data = await res.json();
-        if (data.status === 'success') {
+        if (data.status ==='success') {
             document.getElementById('newsImage').value = data.url;
             const prev = document.getElementById('newsImgPreview');
             if (prev) {
-                prev.src = '../' + data.url;
-                prev.style.display = 'block';
+                prev.src ='../'+ data.url;
+                prev.style.display ='block';
             }
-            showToast('تم رفع صورة الخبر بنجاح! 🖼️');
+            showToast('تم رفع صورة الخبر بنجاح! ️');
         } else {
-            showToast('فشل الرفع: ' + (data.message || 'خطأ غير معروف'));
+            showToast('فشل الرفع:'+ (data.message ||'خطأ غير معروف'));
         }
     } catch (err) {
         const reader = new FileReader();
@@ -908,9 +929,9 @@ async function handleNewsFileSelect(input) {
             const prev = document.getElementById('newsImgPreview');
             if (prev) {
                 prev.src = e.target.result;
-                prev.style.display = 'block';
+                prev.style.display ='block';
             }
-            showToast('تم استخدام المعاينة المحلية للصورة! 🖼️');
+            showToast('تم استخدام المعاينة المحلية للصورة! ️');
         };
         reader.readAsDataURL(file);
     }
@@ -919,12 +940,12 @@ async function handleNewsFileSelect(input) {
 // Add Apartment Handler
 async function handleAddApartment(e) {
     e.preventDefault();
-    const bathrooms = document.getElementById('aptBathrooms')?.value || '1 حمام';
-    const rentalType = document.getElementById('aptRentalType')?.value || 'شقة';
-    const ownerPhone = document.getElementById('aptOwnerPhone')?.value || '';
-    const roomReqs = document.getElementById('aptRoommateReqs')?.value || '';
-    const roomFacs = document.getElementById('aptRoommateFacilities')?.value || '';
-    const capacity = document.getElementById('aptCapacity')?.value || '3 غرف';
+    const bathrooms = document.getElementById('aptBathrooms')?.value ||'1 حمام';
+    const rentalType = document.getElementById('aptRentalType')?.value ||'شقة';
+    const ownerPhone = document.getElementById('aptOwnerPhone')?.value ||'';
+    const roomReqs = document.getElementById('aptRoommateReqs')?.value ||'';
+    const roomFacs = document.getElementById('aptRoommateFacilities')?.value ||'';
+    const capacity = document.getElementById('aptCapacity')?.value ||'3 غرف';
 
     let proxList = [];
     const uniCheckboxes = document.querySelectorAll('#aptUniversitiesCheckboxes .uni-checkbox:checked');
@@ -938,12 +959,12 @@ async function handleAddApartment(e) {
     });
 
     const baseProx = document.getElementById('aptProximity').value;
-    const finalProximity = proxList.length > 0 ? `${baseProx} | ${proxList.join(' ، ')}` : baseProx;
+    const finalProximity = proxList.length > 0 ? `${baseProx} | ${proxList.join('،')}` : baseProx;
 
     let featArr = document.getElementById('aptFeatures').value.split('،').map(f => f.trim());
     if (!featArr.includes(bathrooms)) featArr.unshift(bathrooms);
-    if (rentalType === 'غرفة في شقة' && !featArr.includes('استئجار مع شريك')) featArr.push('استئجار مع شريك');
-    if (rentalType === 'شقة' && !featArr.includes('شقة بمفردك')) featArr.push('شقة بمفردك');
+    if (rentalType ==='غرفة في شقة'&& !featArr.includes('استئجار مع شريك')) featArr.push('استئجار مع شريك');
+    if (rentalType ==='شقة'&& !featArr.includes('شقة بمفردك')) featArr.push('شقة بمفردك');
 
     const newId = appData.apartments.length > 0 ? Math.max(...appData.apartments.map(a => parseInt(a.id) || 0)) + 1 : 1;
 
@@ -956,11 +977,11 @@ async function handleAddApartment(e) {
         universities: selectedUnis,
         capacity: capacity,
         rental_type: rentalType,
-        move_in_type: 'فوري',
-        move_in_date: 'انتقال فوري ⚡',
+        move_in_type:'فوري',
+        move_in_date:'انتقال فوري',
         owner_phone: ownerPhone,
-        roommate_reqs: rentalType === 'غرفة في شقة' ? roomReqs : null,
-        roommate_facilities: rentalType === 'غرفة في شقة' ? roomFacs : null,
+        roommate_reqs: rentalType ==='غرفة في شقة'? roomReqs : null,
+        roommate_facilities: rentalType ==='غرفة في شقة'? roomFacs : null,
         features: featArr,
         images: (() => {
             const rawVal = document.getElementById('aptImage').value;
@@ -974,9 +995,9 @@ async function handleAddApartment(e) {
     };
 
     if (!useSimulation) {
-        await fetch(`${API_URL}?action=add_apartment`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+        await window.authFetch(`${API_URL}?action=add_apartment`, {
+            method:'POST',
+            headers: {'Content-Type':'application/json'},
             body: JSON.stringify(newApt)
         });
         await loadDashboardData();
@@ -984,11 +1005,10 @@ async function handleAddApartment(e) {
         const newNotifId = appData.notifications.length > 0 ? Math.max(...appData.notifications.map(n => n.id)) + 1 : 1;
         appData.notifications.unshift({
             id: newNotifId,
-            title: "🏠 شقة سكنية جديدة معروضة للإيجار",
+            title:"شقة سكنية جديدة معروضة للإيجار",
             content: `تمت إضافة شقة سكنية جديدة للإيجار في حي: ${newApt.location} بسعر ${newApt.price}. تصفح شاشات السكن للاطلاع على الصور والتفاصيل كاملة.`,
             created_at: new Date().toISOString(),
-            date: 'الآن'
-        });
+            date:'الآن'});
         appData.apartments.unshift(newApt);
         saveLocalData();
         renderAll();
@@ -997,8 +1017,8 @@ async function handleAddApartment(e) {
     closeModal('aptModal');
     document.getElementById('aptForm').reset();
     const aptContainer = document.getElementById('aptImgPreviewsContainer');
-    if (aptContainer) aptContainer.innerHTML = '';
-    showToast('تمت إضافة الشقة بنجاح ونشرها في التطبيق! 🏠');
+    if (aptContainer) aptContainer.innerHTML ='';
+    showToast('تمت إضافة الشقة بنجاح ونشرها في التطبيق!');
 }
 
 // Add Service Handler
@@ -1010,30 +1030,30 @@ async function handleAddService(e) {
         id: Date.now(),
         title: document.getElementById('svcTitle').value.trim(),
         description: document.getElementById('svcDesc').value.trim(),
-        image_url: (rawImg && rawImg.trim() !== '') ? rawImg : 'https://images.unsplash.com/photo-1581092160607-ee22621dd758?auto=format&fit=crop&w=500&q=80',
+        image_url: (rawImg && rawImg.trim() !=='') ? rawImg :'https://images.unsplash.com/photo-1581092160607-ee22621dd758?auto=format&fit=crop&w=500&q=80',
         has_form: hasForm
     };
 
     if (!newSvc.title) {
-        showToast('❌ يرجى إدخال اسم الخدمة');
+        showToast('يرجى إدخال اسم الخدمة');
         return;
     }
 
     if (!useSimulation) {
         try {
-            const res = await fetch(`${API_URL}?action=add_service`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+            const res = await window.authFetch(`${API_URL}?action=add_service`, {
+                method:'POST',
+                headers: {'Content-Type':'application/json'},
                 body: JSON.stringify(newSvc)
             });
             const data = await res.json();
-            if (data.status !== 'success') {
-                showToast(`❌ فشل في إضافة الخدمة: ${data.message || 'خطأ غير معروف'}`);
+            if (data.status !=='success') {
+                showToast(` فشل في إضافة الخدمة: ${data.message ||'خطأ غير معروف'}`);
                 return;
             }
             await loadDashboardData();
         } catch (err) {
-            showToast(`❌ حدث خطأ أثناء الاتصال بالخادم عند إضافة الخدمة.`);
+            showToast(` حدث خطأ أثناء الاتصال بالخادم عند إضافة الخدمة.`);
             console.error('Error adding service:', err);
             return;
         }
@@ -1041,11 +1061,10 @@ async function handleAddService(e) {
         const newNotifId = appData.notifications.length > 0 ? Math.max(...appData.notifications.map(n => n.id)) + 1 : 1;
         appData.notifications.unshift({
             id: newNotifId,
-            title: "🛠️ خدمة طلابية جديدة متوفرة الآن",
+            title:"️ خدمة طلابية جديدة متوفرة الآن",
             content: `تمت إضافة خدمة طلابية جديدة: ${newSvc.title}. تصفح قسم الخدمات للطلب والاستفسار مباشرة.`,
             created_at: new Date().toISOString(),
-            date: 'الآن'
-        });
+            date:'الآن'});
         appData.services.unshift(newSvc);
         saveLocalData();
         renderAll();
@@ -1053,41 +1072,41 @@ async function handleAddService(e) {
 
     closeModal('svcModal');
     document.getElementById('svcForm').reset();
-    document.getElementById('svcImg').value = 'https://images.unsplash.com/photo-1581092160607-ee22621dd758?auto=format&fit=crop&w=500&q=80';
+    document.getElementById('svcImg').value ='https://images.unsplash.com/photo-1581092160607-ee22621dd758?auto=format&fit=crop&w=500&q=80';
     const prev = document.getElementById('svcImgPreview');
-    if (prev) prev.style.display = 'none';
-    showToast('تمت إضافة الخدمة بنجاح إلى قائمة الخدمات! 🛠️');
+    if (prev) prev.style.display ='none';
+    showToast('تمت إضافة الخدمة بنجاح إلى قائمة الخدمات! ️');
 }
 
 // Delete Handlers
 async function deleteApartment(id) {
     if (!confirm('هل أنت متأكد من رغبتك في حذف هذه الشقة؟')) return;
     if (!useSimulation) {
-        await fetch(`${API_URL}?action=delete_apartment`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+        await window.authFetch(`${API_URL}?action=delete_apartment`, {
+            method:'POST',
+            headers: {'Content-Type':'application/json'},
             body: JSON.stringify({ id })
         });
     }
     appData.apartments = appData.apartments.filter(a => a.id !== id);
     saveLocalData();
     renderAll();
-    showToast('تم حذف الشقة بنجاح 🗑️');
+    showToast('تم حذف الشقة بنجاح ️');
 }
 
 async function deleteService(id) {
     if (!confirm('هل أنت متأكد من رغبتك في حذف هذه الخدمة؟')) return;
     if (!useSimulation) {
-        await fetch(`${API_URL}?action=delete_service`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+        await window.authFetch(`${API_URL}?action=delete_service`, {
+            method:'POST',
+            headers: {'Content-Type':'application/json'},
             body: JSON.stringify({ id })
         });
     }
     appData.services = appData.services.filter(s => s.id !== id);
     saveLocalData();
     renderAll();
-    showToast('تم حذف الخدمة بنجاح 🗑️');
+    showToast('تم حذف الخدمة بنجاح ️');
 }
 
 // Universities Handlers
@@ -1095,13 +1114,13 @@ function renderUniversities() {
     const container = document.getElementById('universitiesList');
     if (!container) return;
     container.innerHTML = (appData.universities || []).map(uni => `
-        <div class="item-card" style="padding: 15px; display: flex; justify-content: space-between; align-items: center; border: 1px solid var(--border-color); border-radius: 12px; background: var(--bg-main);">
+        <div class="item-card"style="padding: 15px; display: flex; justify-content: space-between; align-items: center; border: 1px solid var(--border-color); border-radius: 12px; background: var(--bg-main);">
             <div style="font-weight: bold; color: var(--text-main); font-size: 1.1rem;"><i class="fa-solid fa-graduation-cap"></i> ${uni.name}</div>
-            <button class="btn btn-danger" onclick="deleteUniversity(${uni.id})"><i class="fa-solid fa-trash"></i> حذف</button>
+            <button class="btn btn-danger"onclick="deleteUniversity(${uni.id})"><i class="fa-solid fa-trash"></i> حذف</button>
         </div>
     `).join('');
 
-    if (typeof walkAndTranslate === 'function' && currentLang === 'en') walkAndTranslate(document.body);
+    if (typeof walkAndTranslate ==='function'&& currentLang ==='en') walkAndTranslate(document.body);
 }
 
 async function handleAddUniversity(e) {
@@ -1111,14 +1130,14 @@ async function handleAddUniversity(e) {
 
     if (!useSimulation) {
         try {
-            const res = await fetch(`${API_URL}?action=add_university`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+            const res = await window.authFetch(`${API_URL}?action=add_university`, {
+                method:'POST',
+                headers: {'Content-Type':'application/json'},
                 body: JSON.stringify({ name })
             });
             const data = await res.json();
-            if (data.status === 'success') {
-                showToast('تم إضافة الجامعة بنجاح 🎓');
+            if (data.status ==='success') {
+                showToast('تم إضافة الجامعة بنجاح');
                 await loadDashboardData();
             }
         } catch (err) {
@@ -1129,7 +1148,7 @@ async function handleAddUniversity(e) {
         appData.universities.push({ id: newId, name });
         saveLocalData();
         renderAll();
-        showToast('تم إضافة الجامعة بنجاح 🎓');
+        showToast('تم إضافة الجامعة بنجاح');
     }
     closeModal('uniModal');
     document.getElementById('uniForm').reset();
@@ -1138,23 +1157,23 @@ async function handleAddUniversity(e) {
 async function deleteUniversity(id) {
     if (!confirm('هل أنت متأكد من حذف هذه الجامعة؟')) return;
     if (!useSimulation) {
-        await fetch(`${API_URL}?action=delete_university`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+        await window.authFetch(`${API_URL}?action=delete_university`, {
+            method:'POST',
+            headers: {'Content-Type':'application/json'},
             body: JSON.stringify({ id })
         });
     }
     appData.universities = appData.universities.filter(u => u.id !== id);
     saveLocalData();
     renderAll();
-    showToast('تم حذف الجامعة بنجاح 🗑️');
+    showToast('تم حذف الجامعة بنجاح ️');
 }
 
 function toggleUniTime(checkbox, uniId) {
     const timeInput = document.getElementById(`uni_time_${uniId}`);
     if (timeInput) {
-        timeInput.style.display = checkbox.checked ? 'block' : 'none';
-        if (!checkbox.checked) timeInput.value = '';
+        timeInput.style.display = checkbox.checked ?'block':'none';
+        if (!checkbox.checked) timeInput.value ='';
     }
 }
 
@@ -1164,9 +1183,9 @@ function populateAptUniversitiesCheckboxes() {
     container.innerHTML = (appData.universities || []).map(uni => `
         <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 5px;">
             <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; color: var(--text-main);">
-                <input type="checkbox" value="${uni.name}" data-id="${uni.id}" class="uni-checkbox" onchange="toggleUniTime(this, ${uni.id})" style="width: 16px; height: 16px;"> ${uni.name}
+                <input type="checkbox"value="${uni.name}"data-id="${uni.id}"class="uni-checkbox"onchange="toggleUniTime(this, ${uni.id})"style="width: 16px; height: 16px;"> ${uni.name}
             </label>
-            <input type="number" id="uni_time_${uni.id}" placeholder="دقيقة" style="width: 70px; display: none; padding: 4px; border-radius: 4px; border: 1px solid var(--border-color); background: var(--bg-main); color: var(--text-main);">
+            <input type="number"id="uni_time_${uni.id}"placeholder="دقيقة"style="width: 70px; display: none; padding: 4px; border-radius: 4px; border: 1px solid var(--border-color); background: var(--bg-main); color: var(--text-main);">
         </div>
     `).join('');
 }
@@ -1176,18 +1195,18 @@ function renderDistricts() {
     const container = document.getElementById('districtsList');
     if (!container) return;
     container.innerHTML = (appData.districts || []).map(dist => `
-        <div class="service-card" style="display:flex; justify-content:space-between; align-items:center; padding: 20px;">
+        <div class="service-card"style="display:flex; justify-content:space-between; align-items:center; padding: 20px;">
             <div style="display:flex; align-items:center; gap: 15px;">
-                <i class="fa-solid fa-map-location-dot" style="font-size: 2rem; color: var(--accent-amber);"></i>
+                <i class="fa-solid fa-map-location-dot"style="font-size: 2rem; color: var(--accent-amber);"></i>
                 <h3 style="margin:0; font-size: 1.2rem;">${dist.name}</h3>
             </div>
-            <button class="btn" style="background:#ff4d4d; color:white; border:none;" onclick="deleteDistrict(${dist.id})">
+            <button class="btn"style="background:#ff4d4d; color:white; border:none;"onclick="deleteDistrict(${dist.id})">
                 <i class="fa-solid fa-trash"></i> مسح
             </button>
         </div>
     `).join('');
 
-    if (typeof walkAndTranslate === 'function' && currentLang === 'en') walkAndTranslate(document.body);
+    if (typeof walkAndTranslate ==='function'&& currentLang ==='en') walkAndTranslate(document.body);
 }
 
 async function handleAddDistrict(event) {
@@ -1196,9 +1215,9 @@ async function handleAddDistrict(event) {
     if (!name) return;
 
     if (!useSimulation) {
-        await fetch(`${API_URL}?action=add_district`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+        await window.authFetch(`${API_URL}?action=add_district`, {
+            method:'POST',
+            headers: {'Content-Type':'application/json'},
             body: JSON.stringify({ name })
         });
     } else {
@@ -1208,7 +1227,7 @@ async function handleAddDistrict(event) {
 
     saveLocalData();
     renderAll();
-    showToast('تمت إضافة الحي بنجاح ✅');
+    showToast('تمت إضافة الحي بنجاح');
     closeModal('districtModal');
     document.getElementById('districtForm').reset();
 }
@@ -1216,16 +1235,16 @@ async function handleAddDistrict(event) {
 async function deleteDistrict(id) {
     if (!confirm('هل أنت متأكد من حذف هذا الحي؟')) return;
     if (!useSimulation) {
-        await fetch(`${API_URL}?action=delete_district`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+        await window.authFetch(`${API_URL}?action=delete_district`, {
+            method:'POST',
+            headers: {'Content-Type':'application/json'},
             body: JSON.stringify({ id })
         });
     }
     appData.districts = appData.districts.filter(d => d.id !== id);
     saveLocalData();
     renderAll();
-    showToast('تم حذف الحي بنجاح 🗑️');
+    showToast('تم حذف الحي بنجاح ️');
 }
 
 function populateAptLocationSelect() {
@@ -1238,9 +1257,9 @@ function populateAptLocationSelect() {
 
 async function updateRequestStatus(id, newStatus) {
     if (!useSimulation) {
-        await fetch(`${API_URL}?action=update_request_status`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+        await window.authFetch(`${API_URL}?action=update_request_status`, {
+            method:'POST',
+            headers: {'Content-Type':'application/json'},
             body: JSON.stringify({ id, status: newStatus })
         });
     }
@@ -1249,39 +1268,37 @@ async function updateRequestStatus(id, newStatus) {
         req.status = newStatus;
         
         // Automated chat message to the student
-        const cleanPhone = (req.student_phone || '').replace(/[^0-9+]/g, '');
-        let chat = appData.chats.find(c => c.phone.replace(/[^0-9+]/g, '') === cleanPhone || c.student_name === req.student_name);
+        const cleanPhone = (req.student_phone ||'').replace(/[^0-9+]/g,'');
+        let chat = appData.chats.find(c => c.phone.replace(/[^0-9+]/g,'') === cleanPhone || c.student_name === req.student_name);
         
-        const autoMsgText = `📢 إشعار آلي: تم تحديث حالة طلبك (#${req.id} - ${req.type}) إلى: ${newStatus}`;
+        const autoMsgText = ` إشعار آلي: تم تحديث حالة طلبك (#${req.id} - ${req.type}) إلى: ${newStatus}`;
         
         if (chat) {
             chat.messages.push({
-                sender: 'admin',
+                sender:'admin',
                 text: autoMsgText,
-                time: 'الآن'
-            });
+                time:'الآن'});
             chat.last_msg = autoMsgText;
-            chat.time = 'الآن';
-            chat.status = 'تم الرد ✔️';
+            chat.time ='الآن';
+            chat.status ='تم الرد ️';
         } else {
             appData.chats.unshift({
                 id: Date.now(),
                 student_name: req.student_name,
-                student_uni: 'غير محدد',
-                phone: req.student_phone || '',
+                student_uni:'غير محدد',
+                phone: req.student_phone ||'',
                 last_msg: autoMsgText,
-                time: 'الآن',
-                status: 'تم الرد ✔️',
+                time:'الآن',
+                status:'تم الرد ️',
                 messages: [{
-                    sender: 'admin',
+                    sender:'admin',
                     text: autoMsgText,
-                    time: 'الآن'
-                }]
+                    time:'الآن'}]
             });
         }
     }
     renderAll();
-    showToast(`تم تحديث حالة الطلب إلى "${newStatus}" وتم إرسال إشعار آلي للطالب في الشات 🔔`);
+    showToast(`تم تحديث حالة الطلب إلى"${newStatus}"وتم إرسال إشعار آلي للطالب في الشات `);
 }
 
 // Chat Interaction & Customer Service Functions
@@ -1291,12 +1308,12 @@ function openChatReplyModal(chatId) {
 
     document.getElementById('activeChatId').value = chat.id;
     document.getElementById('chatModalStudentName').textContent = chat.student_name;
-    document.getElementById('chatModalStudentUni').textContent = '🎓 ' + chat.student_uni;
-    document.getElementById('chatModalStudentPhone').textContent = '📱 ' + chat.phone;
+    document.getElementById('chatModalStudentUni').textContent =''+ chat.student_uni;
+    document.getElementById('chatModalStudentPhone').textContent =''+ chat.phone;
     
     // Clean phone number for WhatsApp direct link
-    const cleanPhone = chat.phone.replace(/[^0-9]/g, '');
-    document.getElementById('whatsappDirectLink').href = `https://wa.me/${cleanPhone}?text=${encodeURIComponent('مرحباً ' + chat.student_name + '، معك خدمة عملاء تطبيق أبشر 🎓')}`;
+    const cleanPhone = chat.phone.replace(/[^0-9]/g,'');
+    document.getElementById('whatsappDirectLink').href = `https://wa.me/${cleanPhone}?text=${encodeURIComponent('مرحباً'+ chat.student_name +'، معك خدمة عملاء تطبيق أبشر')}`;
 
     renderChatMessagesThread(chat);
     openModal('chatReplyModal');
@@ -1308,46 +1325,43 @@ function renderChatMessagesThread(chat) {
 
     if (!chat.messages || chat.messages.length === 0) {
         chat.messages = [
-            { sender: 'student', text: chat.last_msg || 'مرحباً خدمة العملاء', time: chat.time || 'الآن' }
+            { sender:'student', text: chat.last_msg ||'مرحباً خدمة العملاء', time: chat.time ||'الآن'}
         ];
     }
 
     thread.innerHTML = chat.messages.map(m => `
-        <div style="display: flex; flex-direction: column; align-items: ${m.sender === 'admin' ? 'flex-end' : 'flex-start'};">
+        <div style="display: flex; flex-direction: column; align-items: ${m.sender ==='admin'?'flex-end':'flex-start'};">
             <div style="max-width: 80%; padding: 10px 14px; border-radius: 12px; font-size: 0.95rem; line-height: 1.5; ${
-                m.sender === 'admin' 
-                ? 'background: var(--primary); color: #fff; border-bottom-left-radius: 2px;' 
-                : 'background: var(--bg-card); color: var(--text-main); border: 1px solid var(--border-color); border-bottom-right-radius: 2px;'
-            }">
+                m.sender ==='admin'?'background: var(--primary); color: #fff; border-bottom-left-radius: 2px;':'background: var(--bg-card); color: var(--text-main); border: 1px solid var(--border-color); border-bottom-right-radius: 2px;'}">
                 <strong style="font-size: 0.8rem; display: block; margin-bottom: 4px; opacity: 0.9;">
-                    ${m.sender === 'admin' ? '🛡️ خدمة العملاء (أبشر)' : '👤 ' + chat.student_name}
+                    ${m.sender ==='admin'?'️ خدمة العملاء (أبشر)':''+ chat.student_name}
                 </strong>
-                ${m.type === 'image' ? `
-                    <img src="${formatChatMediaUrl(m.imageUrl)}" onclick="openImageLightbox('${formatChatMediaUrl(m.imageUrl)}')" style="max-width: 100%; max-height: 200px; border-radius: 8px; display: block; margin: 6px 0; border: 1px solid rgba(255,255,255,0.2); object-fit: cover; cursor: pointer; transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.02)'" onmouseout="this.style.transform='scale(1)'" title="اضغط لفتح الصورة بحجم كامل">
-                ` : ''}
-                ${m.type === 'link' ? `
+                ${m.type ==='image'? `
+                    <img src="${formatChatMediaUrl(m.imageUrl)}"onclick="openImageLightbox('${formatChatMediaUrl(m.imageUrl)}')"style="max-width: 100%; max-height: 200px; border-radius: 8px; display: block; margin: 6px 0; border: 1px solid rgba(255,255,255,0.2); object-fit: cover; cursor: pointer; transition: transform 0.2s;"onmouseover="this.style.transform='scale(1.02)'"onmouseout="this.style.transform='scale(1)'"title="اضغط لفتح الصورة بحجم كامل">
+                ` :''}
+                ${m.type ==='link'? `
                     <div style="background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15); padding: 10px 14px; border-radius: 10px; margin: 6px 0; display: flex; align-items: center; gap: 10px;">
-                        <i class="fa-solid fa-link" style="font-size: 1.3rem; color: #60a5fa;"></i>
+                        <i class="fa-solid fa-link"style="font-size: 1.3rem; color: #60a5fa;"></i>
                         <div style="overflow: hidden;">
                             <strong style="display: block; font-size: 0.85rem; color: #60a5fa;">رابط مرفق</strong>
-                            <a href="${m.imageUrl || (m.text && m.text.replace('🔗 رابط مرفق: ', ''))}" target="_blank" style="color: #93c5fd; font-size: 0.85rem; text-decoration: underline; word-break: break-all;">${m.imageUrl || (m.text && m.text.replace('🔗 رابط مرفق: ', ''))}</a>
+                            <a href="${m.imageUrl || (m.text && m.text.replace('رابط مرفق:',''))}"target="_blank"style="color: #93c5fd; font-size: 0.85rem; text-decoration: underline; word-break: break-all;">${m.imageUrl || (m.text && m.text.replace('رابط مرفق:',''))}</a>
                         </div>
                     </div>
-                ` : ''}
-                ${(m.type === 'video' || (m.imageUrl && (m.imageUrl.endsWith('.mp4') || m.imageUrl.endsWith('.webm') || m.imageUrl.endsWith('.mov') || typeof isEmbeddableVideo === 'function' && isEmbeddableVideo(m.imageUrl)))) ? `
+                ` :''}
+                ${(m.type ==='video'|| (m.imageUrl && (m.imageUrl.endsWith('.mp4') || m.imageUrl.endsWith('.webm') || m.imageUrl.endsWith('.mov') || typeof isEmbeddableVideo ==='function'&& isEmbeddableVideo(m.imageUrl)))) ? `
                     <div style="margin: 6px 0;">
-                        ${(typeof isEmbeddableVideo === 'function' && isEmbeddableVideo(m.imageUrl)) ? `
-                            <iframe src="${getEmbedUrl(m.imageUrl)}" style="width: 100%; height: 200px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.2); display: block;" allowfullscreen></iframe>
+                        ${(typeof isEmbeddableVideo ==='function'&& isEmbeddableVideo(m.imageUrl)) ? `
+                            <iframe src="${getEmbedUrl(m.imageUrl)}"style="width: 100%; height: 200px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.2); display: block;"allowfullscreen></iframe>
                         ` : `
-                            <video src="${m.imageUrl}" controls style="max-width: 100%; max-height: 220px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.2); outline: none; display: block;"></video>
+                            <video src="${m.imageUrl}"controls style="max-width: 100%; max-height: 220px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.2); outline: none; display: block;"></video>
                         `}
                     </div>
-                ` : ''}
-                ${(m.type !== 'image' && m.type !== 'video' && m.type !== 'link') ? `
+                ` :''}
+                ${(m.type !=='image'&& m.type !=='video'&& m.type !=='link') ? `
                 <div dir="auto">
-                    ${m.text || ''}
+                    ${m.text ||''}
                 </div>
-                ` : (m.text && !m.text.includes('مرفق') ? `<div dir="auto" style="margin-top: 4px; font-size: 0.85rem;">${m.text}</div>` : '')}
+                ` : (m.text && !m.text.includes('مرفق') ? `<div dir="auto"style="margin-top: 4px; font-size: 0.85rem;">${m.text}</div>` :'')}
             </div>
             <span style="font-size: 0.75rem; color: var(--text-muted); margin-top: 4px; padding: 0 4px;">${m.time}</span>
         </div>
@@ -1380,30 +1394,30 @@ function handleSendChatReply(e) {
         if (!chat.messages) chat.messages = [];
         
         const now = new Date();
-        const timeStr = now.toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' });
+        const timeStr = now.toLocaleTimeString('ar-EG', { hour:'2-digit', minute:'2-digit'});
 
         chat.messages.push({
-            sender: 'admin',
+            sender:'admin',
             text: replyText,
             time: timeStr
         });
 
-        chat.last_msg = 'الرد: ' + replyText;
-        chat.status = 'تم الرد ✔️';
+        chat.last_msg ='الرد:'+ replyText;
+        chat.status ='تم الرد ️';
 
         renderChatMessagesThread(chat);
         renderAll();
-        input.value = '';
-        showToast('تم إرسال ردك إلى الطالب بنجاح وتحديث المحادثة! 🚀');
+        input.value ='';
+        showToast('تم إرسال ردك إلى الطالب بنجاح وتحديث المحادثة!');
     }
 }
 
 function archiveChat(chatId) {
     const chat = appData.chats.find(c => c.id === chatId);
     if (chat) {
-        chat.status = 'مؤرشفة 📦';
+        chat.status ='مؤرشفة';
         renderAll();
-        showToast('تمت أرشفة المحادثة بنجاح ✔️');
+        showToast('تمت أرشفة المحادثة بنجاح ️');
     }
 }
 
@@ -1414,30 +1428,30 @@ function selectWaChat(chatId) {
 
     // Highlight selected item in column
     document.querySelectorAll('.wa-chat-item').forEach(el => {
-        el.style.background = 'var(--bg-main)';
-        el.style.borderLeft = 'none';
+        el.style.background ='var(--bg-main)';
+        el.style.borderLeft ='none';
     });
     const selectedItem = document.getElementById(`waItem-${chatId}`);
     if (selectedItem) {
-        selectedItem.style.background = 'rgba(37,211,102,0.12)';
-        selectedItem.style.borderLeft = '4px solid #25D366';
+        selectedItem.style.background ='rgba(37,211,102,0.12)';
+        selectedItem.style.borderLeft ='4px solid #25D366';
     }
 
     // Hide placeholder and show header, thread, quickbar, input
-    document.getElementById('waNoSelection').style.display = 'none';
-    document.getElementById('waHeader').style.display = 'flex';
-    document.getElementById('waMessagesThread').style.display = 'flex';
-    if (document.getElementById('waQuickBar')) document.getElementById('waQuickBar').style.display = 'flex';
-    document.getElementById('waInputForm').style.display = 'flex';
+    document.getElementById('waNoSelection').style.display ='none';
+    document.getElementById('waHeader').style.display ='flex';
+    document.getElementById('waMessagesThread').style.display ='flex';
+    if (document.getElementById('waQuickBar')) document.getElementById('waQuickBar').style.display ='flex';
+    document.getElementById('waInputForm').style.display ='flex';
 
     document.getElementById('waActiveChatId').value = chat.id;
     document.getElementById('waAvatar').textContent = chat.student_name.charAt(0);
     document.getElementById('waStudentName').textContent = chat.student_name;
-    document.getElementById('waStudentUni').textContent = '🎓 ' + chat.student_uni;
-    document.getElementById('waPhone').textContent = '📱 ' + chat.phone;
+    document.getElementById('waStudentUni').textContent =''+ chat.student_uni;
+    document.getElementById('waPhone').textContent =''+ chat.phone;
 
-    const cleanPhone = chat.phone.replace(/[^0-9]/g, '');
-    document.getElementById('waDirectBtn').href = `https://wa.me/${cleanPhone}?text=${encodeURIComponent('مرحباً ' + chat.student_name + '، معك خدمة عملاء تطبيق أبشر 🎓')}`;
+    const cleanPhone = chat.phone.replace(/[^0-9]/g,'');
+    document.getElementById('waDirectBtn').href = `https://wa.me/${cleanPhone}?text=${encodeURIComponent('مرحباً'+ chat.student_name +'، معك خدمة عملاء تطبيق أبشر')}`;
 
     renderWaThread(chat);
 }
@@ -1450,66 +1464,63 @@ function renderWaThread(chat) {
 
     if (!chat.messages || chat.messages.length === 0) {
         chat.messages = [
-            { sender: 'student', text: chat.last_msg || 'مرحباً خدمة العملاء', time: chat.time || 'الآن' }
+            { sender:'student', text: chat.last_msg ||'مرحباً خدمة العملاء', time: chat.time ||'الآن'}
         ];
     }
 
     thread.innerHTML = chat.messages.map((m, idx) => `
-        <div style="display: flex; flex-direction: column; align-items: ${m.sender === 'admin' ? 'flex-end' : 'flex-start'};">
+        <div style="display: flex; flex-direction: column; align-items: ${m.sender ==='admin'?'flex-end':'flex-start'};">
             <div style="max-width: 75%; padding: 10px 16px; border-radius: 12px; font-size: 0.95rem; line-height: 1.5; box-shadow: 0 1px 2px rgba(0,0,0,0.2); position: relative; group; ${
-                m.sender === 'admin' 
-                ? 'background: #005c4b; color: #fff; border-top-left-radius: 2px;' 
-                : 'background: #202c33; color: #e9edef; border-top-right-radius: 2px;'
-            }">
+                m.sender ==='admin'?'background: #005c4b; color: #fff; border-top-left-radius: 2px;':'background: #202c33; color: #e9edef; border-top-right-radius: 2px;'}">
                 <!-- Sender Header -->
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; gap: 15px;">
-                    <strong style="font-size: 0.78rem; color: ${m.sender === 'admin' ? '#53bdeb' : '#25D366'};">
-                        ${m.sender === 'admin' ? '🛡️ خدمة العملاء (أبشر)' : '👤 ' + chat.student_name}
+                    <strong style="font-size: 0.78rem; color: ${m.sender ==='admin'?'#53bdeb':'#25D366'};">
+                        ${m.sender ==='admin'?'️ خدمة العملاء (أبشر)':''+ chat.student_name}
                     </strong>
                     <!-- Message Actions Bar -->
                     <div style="display: flex; gap: 6px; font-size: 0.75rem; opacity: 0.8;">
-                        <button type="button" onclick="quoteWaMessage(${idx})" title="الرد على هذه الرسالة" style="background:none; border:none; color:#fff; cursor:pointer; padding:0 2px;"><i class="fa-solid fa-reply"></i></button>
-                        ${m.sender === 'admin' && !m.deleted ? `
-                            <button type="button" onclick="editWaMessage(${idx})" title="تعديل الرسالة" style="background:none; border:none; color:#fbbf24; cursor:pointer; padding:0 2px;"><i class="fa-solid fa-pen"></i></button>
-                            <button type="button" onclick="deleteWaMessage(${idx})" title="حذف الرسالة" style="background:none; border:none; color:#ef4444; cursor:pointer; padding:0 2px;"><i class="fa-solid fa-trash"></i></button>
-                        ` : ''}
+                        <button type="button"onclick="quoteWaMessage(${idx})"title="الرد على هذه الرسالة"style="background:none; border:none; color:#fff; cursor:pointer; padding:0 2px;"><i class="fa-solid fa-reply"></i></button>
+                        ${m.sender ==='admin'&& !m.deleted ? `
+                            <button type="button"onclick="editWaMessage(${idx})"title="تعديل الرسالة"style="background:none; border:none; color:#fbbf24; cursor:pointer; padding:0 2px;"><i class="fa-solid fa-pen"></i></button>
+                            <button type="button"onclick="deleteWaMessage(${idx})"title="حذف الرسالة"style="background:none; border:none; color:#ef4444; cursor:pointer; padding:0 2px;"><i class="fa-solid fa-trash"></i></button>
+                        ` :''}
                     </div>
                 </div>
 
                 <!-- Quoted Message Preview inside bubble -->
                 ${m.quoteText ? `
                     <div style="background: rgba(0,0,0,0.25); border-left: 3px solid #25D366; padding: 6px 10px; border-radius: 6px; margin-bottom: 6px; font-size: 0.8rem; color: rgba(255,255,255,0.8);">
-                        <strong style="color: #25D366; display: block; font-size: 0.75rem;">↩️ رد على ${m.quoteSender === 'admin' ? 'خدمة العملاء' : chat.student_name}:</strong>
+                        <strong style="color: #25D366; display: block; font-size: 0.75rem;">↩️ رد على ${m.quoteSender ==='admin'?'خدمة العملاء': chat.student_name}:</strong>
                         ${m.quoteText}
                     </div>
-                ` : ''}
+                ` :''}
 
                 <!-- Attachment / Video / Voice / Text Display -->
-                ${m.type === 'image' ? `
-                    <img src="${formatChatMediaUrl(m.imageUrl)}" onclick="openImageLightbox('${formatChatMediaUrl(m.imageUrl)}')" style="max-width: 100%; max-height: 220px; border-radius: 8px; display: block; margin: 6px 0; border: 1px solid rgba(255,255,255,0.2); object-fit: cover; cursor: pointer; transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.02)'" onmouseout="this.style.transform='scale(1)'" title="اضغط لفتح الصورة بحجم كامل">
-                ` : ''}
-                ${m.type === 'link' ? `
+                ${m.type ==='image'? `
+                    <img src="${formatChatMediaUrl(m.imageUrl)}"onclick="openImageLightbox('${formatChatMediaUrl(m.imageUrl)}')"style="max-width: 100%; max-height: 220px; border-radius: 8px; display: block; margin: 6px 0; border: 1px solid rgba(255,255,255,0.2); object-fit: cover; cursor: pointer; transition: transform 0.2s;"onmouseover="this.style.transform='scale(1.02)'"onmouseout="this.style.transform='scale(1)'"title="اضغط لفتح الصورة بحجم كامل">
+                ` :''}
+                ${m.type ==='link'? `
                     <div style="background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15); padding: 10px 14px; border-radius: 10px; margin: 6px 0; display: flex; align-items: center; gap: 10px;">
-                        <i class="fa-solid fa-link" style="font-size: 1.3rem; color: #60a5fa;"></i>
+                        <i class="fa-solid fa-link"style="font-size: 1.3rem; color: #60a5fa;"></i>
                         <div style="overflow: hidden;">
                             <strong style="display: block; font-size: 0.85rem; color: #60a5fa;">رابط مرفق</strong>
-                            <a href="${m.imageUrl || (m.text && m.text.replace('🔗 رابط مرفق: ', ''))}" target="_blank" style="color: #93c5fd; font-size: 0.85rem; text-decoration: underline; word-break: break-all;">${m.imageUrl || (m.text && m.text.replace('🔗 رابط مرفق: ', ''))}</a>
+                            <a href="${m.imageUrl || (m.text && m.text.replace('رابط مرفق:',''))}"target="_blank"style="color: #93c5fd; font-size: 0.85rem; text-decoration: underline; word-break: break-all;">${m.imageUrl || (m.text && m.text.replace('رابط مرفق:',''))}</a>
                         </div>
                     </div>
-                ` : ''}
-                ${(m.type === 'video' || (m.imageUrl && (m.imageUrl.endsWith('.mp4') || m.imageUrl.endsWith('.webm') || m.imageUrl.endsWith('.mov') || isEmbeddableVideo(m.imageUrl)))) ? `
+                ` :''}
+                ${(m.type ==='video'|| (m.imageUrl && (m.imageUrl.endsWith('.mp4') || m.imageUrl.endsWith('.webm') || m.imageUrl.endsWith('.mov') || isEmbeddableVideo(m.imageUrl)))) ? `
                     <div style="margin: 6px 0;">
                         ${isEmbeddableVideo(m.imageUrl) ? `
-                            <iframe src="${getEmbedUrl(m.imageUrl)}" style="width: 100%; height: 220px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.2); display: block;" allowfullscreen></iframe>
+                            <iframe src="${getEmbedUrl(m.imageUrl)}"style="width: 100%; height: 220px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.2); display: block;"allowfullscreen></iframe>
                         ` : `
-                            <video src="${m.imageUrl}" controls style="max-width: 100%; max-height: 250px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.2); outline: none; display: block;"></video>
+                            <video src="${m.imageUrl}"controls style="max-width: 100%; max-height: 250px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.2); outline: none; display: block;"></video>
                         `}
                     </div>
-                ` : ''}
+                ` :''}
 
-                ${m.type === 'voice' ? `
+                ${m.type ==='voice'? `
                     <div style="display: flex; align-items: center; gap: 10px; background: rgba(0,0,0,0.25); padding: 8px 14px; border-radius: 20px; margin: 6px 0; min-width: 180px;">
-                        <i class="fa-solid fa-circle-play" style="font-size: 1.8rem; color: #25D366; cursor: pointer;" onclick="showToast('▶️ جاري تشغيل التسجيل الصوتي... 🔊')"></i>
+                        <i class="fa-solid fa-circle-play"style="font-size: 1.8rem; color: #25D366; cursor: pointer;"onclick="showToast('▶️ جاري تشغيل التسجيل الصوتي...')"></i>
                         <div style="flex: 1;">
                             <div style="height: 4px; background: rgba(255,255,255,0.3); border-radius: 2px; position: relative;">
                                 <div style="width: 40%; height: 100%; background: #25D366; border-radius: 2px;"></div>
@@ -1517,16 +1528,16 @@ function renderWaThread(chat) {
                             <span style="font-size: 0.7rem; color: rgba(255,255,255,0.7); display: block; margin-top: 4px;">0:15 / 0:30</span>
                         </div>
                     </div>
-                ` : ''}
+                ` :''}
 
-                ${(m.type !== 'image' && m.type !== 'video' && m.type !== 'link') ? `
-                <div style="color: ${m.deleted ? '#ef4444' : 'inherit'}; font-style: ${m.deleted ? 'italic' : 'normal'};">
+                ${(m.type !=='image'&& m.type !=='video'&& m.type !=='link') ? `
+                <div style="color: ${m.deleted ?'#ef4444':'inherit'}; font-style: ${m.deleted ?'italic':'normal'};">
                     ${m.text}
                 </div>
-                ` : ''}
+                ` :''}
 
                 <div style="text-align: left; font-size: 0.7rem; color: rgba(255,255,255,0.6); margin-top: 4px;">
-                    ${m.time} ${m.sender === 'admin' ? '<i class="fa-solid fa-check-double" style="color: #53bdeb;"></i>' : ''}
+                    ${m.time} ${m.sender ==='admin'?'<i class="fa-solid fa-check-double"style="color: #53bdeb;"></i>':''}
                 </div>
             </div>
         </div>
@@ -1549,7 +1560,7 @@ function quoteWaMessage(idx) {
 
     if (quoteBar && quoteTextSpan) {
         quoteTextSpan.textContent = `"${msg.text}"`;
-        quoteBar.style.display = 'flex';
+        quoteBar.style.display ='flex';
         document.getElementById('waReplyInput').focus();
     }
 }
@@ -1557,7 +1568,7 @@ function quoteWaMessage(idx) {
 function cancelWaQuote() {
     currentQuoteIndex = null;
     const quoteBar = document.getElementById('waQuoteBar');
-    if (quoteBar) quoteBar.style.display = 'none';
+    if (quoteBar) quoteBar.style.display ='none';
 }
 
 function editWaMessage(idx) {
@@ -1565,12 +1576,12 @@ function editWaMessage(idx) {
     const chat = appData.chats.find(c => c.id === chatId);
     if (!chat || !chat.messages[idx]) return;
 
-    const currentText = chat.messages[idx].text.replace(' (معدلة)', '');
-    const newText = prompt('✏️ تعديل نص الرسالة:', currentText);
-    if (newText !== null && newText.trim() !== '') {
-        chat.messages[idx].text = newText.trim() + ' (معدلة)';
+    const currentText = chat.messages[idx].text.replace('(معدلة)','');
+    const newText = prompt('️ تعديل نص الرسالة:', currentText);
+    if (newText !== null && newText.trim() !=='') {
+        chat.messages[idx].text = newText.trim() +'(معدلة)';
         renderWaThread(chat);
-        showToast('تم تعديل الرسالة بنجاح ✏️');
+        showToast('تم تعديل الرسالة بنجاح ️');
     }
 }
 
@@ -1580,10 +1591,10 @@ function deleteWaMessage(idx) {
     if (!chat || !chat.messages[idx]) return;
 
     if (confirm('هل أنت متأكد من رغبتك في مسح هذه الرسالة؟')) {
-        chat.messages[idx].text = '🚫 تم حذف هذه الرسالة من قبل خدمة العملاء';
+        chat.messages[idx].text ='تم حذف هذه الرسالة من قبل خدمة العملاء';
         chat.messages[idx].deleted = true;
         renderWaThread(chat);
-        showToast('تم حذف الرسالة بنجاح 🗑️');
+        showToast('تم حذف الرسالة بنجاح ️');
     }
 }
 
@@ -1593,17 +1604,16 @@ function blockWaStudent() {
     if (!chat) return;
 
     if (confirm(`هل أنت متأكد من حظر الطالب (${chat.student_name}) وإغلاق الشات؟`)) {
-        chat.status = 'محظور 🚫';
+        chat.status ='محظور';
         if (!chat.messages) chat.messages = [];
         chat.messages.push({
-            sender: 'admin',
-            text: '🚫 تم حظر هذا الحساب من قبل إدارة خدمة العملاء ولن يتم استقبال رسائل جديدة.',
-            time: 'الآن'
-        });
-        chat.last_msg = '🚫 تم حظر الطالب';
+            sender:'admin',
+            text:'تم حظر هذا الحساب من قبل إدارة خدمة العملاء ولن يتم استقبال رسائل جديدة.',
+            time:'الآن'});
+        chat.last_msg ='تم حظر الطالب';
         renderWaThread(chat);
         renderChats();
-        showToast('تم حظر الطالب وإغلاق المحادثة بنجاح 🚫');
+        showToast('تم حظر الطالب وإغلاق المحادثة بنجاح');
     }
 }
 
@@ -1613,15 +1623,11 @@ function showWaStudentProfile() {
     if (!chat) return;
 
     document.getElementById('profileModalName').textContent = chat.student_name;
-    document.getElementById('profileModalUni').textContent = '🎓 ' + chat.student_uni;
+    document.getElementById('profileModalUni').textContent =''+ chat.student_uni;
     document.getElementById('profileModalPhone').textContent = chat.phone;
     
     // Set a consistent photo based on student name or avatar
-    const photos = [
-        'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80',
-        'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=400&q=80',
-        'https://images.unsplash.com/photo-1492562080023-ab3db95bfbce?auto=format&fit=crop&w=400&q=80'
-    ];
+    const photos = ['https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80','https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=400&q=80','https://images.unsplash.com/photo-1492562080023-ab3db95bfbce?auto=format&fit=crop&w=400&q=80'];
     document.getElementById('profileModalImg').src = photos[chat.id % photos.length];
 
     openModal('studentProfileModal');
@@ -1636,15 +1642,15 @@ function triggerWaAttachmentUrl() {
     const chatId = parseInt(document.getElementById('waActiveChatId')?.value || document.getElementById('activeChatId')?.value);
     const chat = appData.chats.find(c => c.id === chatId);
     if (!chat) {
-        showToast('❌ يرجى تحديد محادثة أولاً');
+        showToast('يرجى تحديد محادثة أولاً');
         return;
     }
 
-    const linkUrl = prompt('📎 أدخل الرابط (Link) الذي تريد إرساله للطالب (مثال: رابط موقع أو ملف أونلاين):', 'https://');
-    if (linkUrl && linkUrl.trim() !== '' && linkUrl.trim() !== 'https://') {
+    const linkUrl = prompt('أدخل الرابط (Link) الذي تريد إرساله للطالب (مثال: رابط موقع أو ملف أونلاين):','https://');
+    if (linkUrl && linkUrl.trim() !==''&& linkUrl.trim() !=='https://') {
         sendCustomWaMessage({
-            type: 'link',
-            text: `🔗 رابط مرفق: ${linkUrl.trim()}`,
+            type:'link',
+            text: ` رابط مرفق: ${linkUrl.trim()}`,
             imageUrl: linkUrl.trim()
         });
     }
@@ -1656,20 +1662,20 @@ async function handleWaImageUpload(input) {
     const chatId = parseInt(document.getElementById('waActiveChatId')?.value || document.getElementById('activeChatId')?.value);
     const chat = appData.chats.find(c => c.id === chatId);
     if (!chat) {
-        showToast('❌ يرجى تحديد محادثة أولاً');
+        showToast('يرجى تحديد محادثة أولاً');
         return;
     }
 
     showToast('⏳ جاري ضغط وتحميل الصورة للمستخدم...');
     const compressed = await compressImageClientSide(file, 1100, 0.80);
     const formData = new FormData();
-    formData.append('file', compressed.blob, file.name.replace(/\.[^/.]+$/, "") + '.jpg');
+    formData.append('file', compressed.blob, file.name.replace(/\.[^/.]+$/,"") +'.jpg');
 
-    let finalUrl = '';
+    let finalUrl ='';
     try {
-        const res = await fetch('../api/upload.php', { method: 'POST', body: formData });
+        const res = await fetch('../api/upload.php', { method:'POST', body: formData });
         const data = await res.json();
-        if (data.status === 'success') {
+        if (data.status ==='success') {
             finalUrl = formatChatMediaUrl(data.url);
         } else if (compressed.dataUrl) {
             finalUrl = compressed.dataUrl;
@@ -1682,14 +1688,14 @@ async function handleWaImageUpload(input) {
 
     if (finalUrl) {
         await sendCustomWaMessage({
-            type: 'image',
-            text: '📷 صورة مرفقة من خدمة العملاء (أبشر)',
+            type:'image',
+            text:'صورة مرفقة من خدمة العملاء (أبشر)',
             imageUrl: finalUrl
         });
-        showToast('تم رفع الصورة وإرسالها للطالب بنجاح! 🖼️🚀');
-        input.value = '';
+        showToast('تم رفع الصورة وإرسالها للطالب بنجاح! ️');
+        input.value ='';
     } else {
-        showToast('❌ فشل رفع الصورة');
+        showToast('فشل رفع الصورة');
     }
 }
 
@@ -1702,7 +1708,7 @@ function triggerModalVideoAttachment() {
 }
 
 function triggerWaVideoAttachment() {
-    showToast('🚧 ميزة إرفاق الفيديو تحت التطوير حالياً، يمكنك إرفاق رابط صورة أو تحميل صورة مباشرة 📷');
+    showToast('ميزة إرفاق الفيديو تحت التطوير حالياً، يمكنك إرفاق رابط صورة أو تحميل صورة مباشرة');
 }
 
 function openImageLightbox(url) {
@@ -1710,18 +1716,17 @@ function openImageLightbox(url) {
     const modal = document.getElementById('imageLightboxModal');
     if (imgEl && modal) {
         imgEl.src = url;
-        modal.style.display = 'flex';
+        modal.style.display ='flex';
     }
 }
 
 function recordWaVoiceNote() {
-    showToast('🔴 جاري تسجيل فويس نوت... (تحدث الآن 🎤)');
+    showToast('جاري تسجيل فويس نوت... (تحدث الآن )');
     setTimeout(() => {
         sendCustomWaMessage({
-            type: 'voice',
-            text: '🔊 فويس نوت صوتي مسجل (شرح تفاصيل السكن والحجز)'
-        });
-        showToast('تم إرسال التسجيل الصوتي بنجاح 🎤🚀');
+            type:'voice',
+            text:'فويس نوت صوتي مسجل (شرح تفاصيل السكن والحجز)'});
+        showToast('تم إرسال التسجيل الصوتي بنجاح');
     }, 1500);
 }
 
@@ -1731,40 +1736,39 @@ async function sendCustomWaMessage(msgData) {
     if (!chat) return;
 
     if (!useSimulation) {
-        await fetch(`${API_URL}?action=send_chat_reply`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+        await window.authFetch(`${API_URL}?action=send_chat_reply`, {
+            method:'POST',
+            headers: {'Content-Type':'application/json'},
             body: JSON.stringify({
                 chat_id: chatId,
                 text: msgData.text,
-                type: msgData.type || 'text',
-                image_url: msgData.imageUrl || ''
-            })
+                type: msgData.type ||'text',
+                image_url: msgData.imageUrl ||''})
         });
     }
 
     if (!chat.messages) chat.messages = [];
     const now = new Date();
-    const timeStr = now.toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' });
+    const timeStr = now.toLocaleTimeString('ar-EG', { hour:'2-digit', minute:'2-digit'});
 
     chat.messages.push({
-        sender: 'admin',
+        sender:'admin',
         text: msgData.text,
         type: msgData.type,
         imageUrl: msgData.imageUrl,
         time: timeStr
     });
 
-    chat.last_msg = msgData.type === 'image' ? '📷 صورة مرفقة' : (msgData.type === 'video' ? '🎥 فيديو مرفق' : msgData.text);
-    chat.status = 'تم الرد ✔️';
+    chat.last_msg = msgData.type ==='image'?'صورة مرفقة': (msgData.type ==='video'?'فيديو مرفق': msgData.text);
+    chat.status ='تم الرد ️';
 
     renderWaThread(chat);
     renderChatMessagesThread(chat);
     renderChats();
     const selectedItem = document.getElementById(`waItem-${chatId}`);
     if (selectedItem) {
-        selectedItem.style.background = 'rgba(37,211,102,0.12)';
-        selectedItem.style.borderLeft = '4px solid #25D366';
+        selectedItem.style.background ='rgba(37,211,102,0.12)';
+        selectedItem.style.borderLeft ='4px solid #25D366';
     }
 }
 
@@ -1789,16 +1793,16 @@ async function handleSendWaReply(e) {
         if (!chat.messages) chat.messages = [];
         
         const now = new Date();
-        const timeStr = now.toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' });
+        const timeStr = now.toLocaleTimeString('ar-EG', { hour:'2-digit', minute:'2-digit'});
 
         let newMsg = {
-            sender: 'admin',
+            sender:'admin',
             text: replyText,
             time: timeStr
         };
 
-        let qText = '';
-        let qSender = '';
+        let qText ='';
+        let qSender ='';
         // Attach Quoted Reply if active
         if (currentQuoteIndex !== null && chat.messages[currentQuoteIndex]) {
             qText = chat.messages[currentQuoteIndex].text;
@@ -1809,9 +1813,9 @@ async function handleSendWaReply(e) {
         }
 
         if (!useSimulation) {
-            await fetch(`${API_URL}?action=send_chat_reply`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+            await window.authFetch(`${API_URL}?action=send_chat_reply`, {
+                method:'POST',
+                headers: {'Content-Type':'application/json'},
                 body: JSON.stringify({
                     chat_id: chatId,
                     text: replyText,
@@ -1822,20 +1826,20 @@ async function handleSendWaReply(e) {
         }
 
         chat.messages.push(newMsg);
-        chat.last_msg = 'الرد: ' + replyText;
-        chat.status = 'تم الرد ✔️';
+        chat.last_msg ='الرد:'+ replyText;
+        chat.status ='تم الرد ️';
 
         renderWaThread(chat);
         renderChats(); // re-render list column to update preview
         // re-highlight selected
         const selectedItem = document.getElementById(`waItem-${chatId}`);
         if (selectedItem) {
-            selectedItem.style.background = 'rgba(37,211,102,0.12)';
-            selectedItem.style.borderLeft = '4px solid #25D366';
+            selectedItem.style.background ='rgba(37,211,102,0.12)';
+            selectedItem.style.borderLeft ='4px solid #25D366';
         }
 
-        input.value = '';
-        showToast('تم إرسال ردك إلى الطالب وحفظه في السيرفر! 🚀');
+        input.value ='';
+        showToast('تم إرسال ردك إلى الطالب وحفظه في السيرفر!');
     }
 }
 
@@ -1855,7 +1859,7 @@ function renderNews() {
     if (!container) return;
 
     if (!appData.news || appData.news.length === 0) {
-        container.innerHTML = `<tr><td colspan="6" style="text-align: center; color: var(--text-muted);">لا يوجد أخبار أو تنبيهات منشورة حالياً 📰</td></tr>`;
+        container.innerHTML = `<tr><td colspan="6"style="text-align: center; color: var(--text-muted);">لا يوجد أخبار أو تنبيهات منشورة حالياً </td></tr>`;
         return;
     }
 
@@ -1869,23 +1873,20 @@ function renderNews() {
         <tr>
             <td>${idx + 1}</td>
             <td>
-                <img src="${resolveImgUrl(item.image_url) || 'https://images.unsplash.com/photo-1504711434969-e33886168f5c?auto=format&fit=crop&w=150&q=80'}" 
-                     style="width: 60px; height: 45px; object-fit: cover; border-radius: 6px; border: 1px solid var(--border-color);" 
-                     onerror="this.src='https://images.unsplash.com/photo-1504711434969-e33886168f5c?auto=format&fit=crop&w=150&q=80'">
+                <img src="${resolveImgUrl(item.image_url) ||'https://images.unsplash.com/photo-1504711434969-e33886168f5c?auto=format&fit=crop&w=150&q=80'}"style="width: 60px; height: 45px; object-fit: cover; border-radius: 6px; border: 1px solid var(--border-color);"onerror="this.src='https://images.unsplash.com/photo-1504711434969-e33886168f5c?auto=format&fit=crop&w=150&q=80'">
             </td>
             <td style="font-weight: bold; color: var(--accent-amber);">${item.title}</td>
-            <td style="max-width: 400px; white-space: normal; word-break: break-word; line-height: 1.5; color: var(--text-muted); font-size: 0.9rem;" title="${item.content}">${item.content}</td>
-            <td>${item.date || item.created_at || 'الآن'}</td>
+            <td style="max-width: 400px; white-space: normal; word-break: break-word; line-height: 1.5; color: var(--text-muted); font-size: 0.9rem;"title="${item.content}">${item.content}</td>
+            <td>${item.date || item.created_at ||'الآن'}</td>
             <td>
-                <button class="btn" style="background: rgba(239, 68, 68, 0.15); color: #ef4444; border: 1px solid #ef4444; padding: 6px 12px; border-radius: 8px; font-weight: bold; cursor: pointer;" 
-                        onclick="handleDeleteNews(${item.id})">
+                <button class="btn"style="background: rgba(239, 68, 68, 0.15); color: #ef4444; border: 1px solid #ef4444; padding: 6px 12px; border-radius: 8px; font-weight: bold; cursor: pointer;"onclick="handleDeleteNews(${item.id})">
                     <i class="fa-solid fa-trash-can"></i> حذف
                 </button>
             </td>
         </tr>
     `).join('');
 
-    if (typeof walkAndTranslate === 'function' && currentLang === 'en') walkAndTranslate(document.body);
+    if (typeof walkAndTranslate ==='function'&& currentLang ==='en') walkAndTranslate(document.body);
 }
 
 // Add news alert
@@ -1898,16 +1899,16 @@ async function handleAddNews(e) {
     if (!title || !content) return;
 
     if (!useSimulation) {
-        const res = await fetch(`${API_URL}?action=add_news`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+        const res = await window.authFetch(`${API_URL}?action=add_news`, {
+            method:'POST',
+            headers: {'Content-Type':'application/json'},
             body: JSON.stringify({ title, content, image_url: imageUrl })
         });
         const result = await res.json();
-        if (result.status === 'success') {
+        if (result.status ==='success') {
             showToast(result.message);
         } else {
-            showToast('خطأ: ' + result.message);
+            showToast('خطأ:'+ result.message);
             return;
         }
     } else {
@@ -1918,10 +1919,9 @@ async function handleAddNews(e) {
             content: content,
             image_url: imageUrl,
             created_at: new Date().toISOString(),
-            date: 'الآن'
-        });
+            date:'الآن'});
         saveLocalData();
-        showToast('تم نشر الخبر بنجاح! 📰');
+        showToast('تم نشر الخبر بنجاح!');
     }
 
     closeModal('newsModal');
@@ -1934,9 +1934,9 @@ async function handleDeleteNews(id) {
     if (!confirm('هل أنت متأكد من رغبتك في حذف هذا الخبر نهائياً؟')) return;
 
     if (!useSimulation) {
-        const res = await fetch(`${API_URL}?action=delete_news`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+        const res = await window.authFetch(`${API_URL}?action=delete_news`, {
+            method:'POST',
+            headers: {'Content-Type':'application/json'},
             body: JSON.stringify({ id })
         });
         const result = await res.json();
@@ -1944,7 +1944,7 @@ async function handleDeleteNews(id) {
     } else {
         appData.news = appData.news.filter(n => n.id !== id);
         saveLocalData();
-        showToast('تم حذف الخبر بنجاح 🗑️');
+        showToast('تم حذف الخبر بنجاح ️');
     }
 
     loadDashboardData();
@@ -1956,7 +1956,7 @@ function renderNotifications() {
     if (!container) return;
 
     if (!appData.notifications || appData.notifications.length === 0) {
-        container.innerHTML = `<tr><td colspan="6" style="text-align: center; color: var(--text-muted);">لا يوجد تنبيهات عاجلة منشورة حالياً 🔔</td></tr>`;
+        container.innerHTML = `<tr><td colspan="6"style="text-align: center; color: var(--text-muted);">لا يوجد تنبيهات عاجلة منشورة حالياً </td></tr>`;
         return;
     }
 
@@ -1977,19 +1977,18 @@ function renderNotifications() {
             }
         }
         const statusBadge = isExpired
-            ? `<span style="background: rgba(239, 68, 68, 0.15); color: #ef4444; border: 1px solid #ef4444; padding: 4px 10px; border-radius: 12px; font-weight: bold; font-size: 0.8rem;">منتهي الصلاحية (مضى 48 ساعة) ❌</span>`
-            : `<span style="background: rgba(37, 211, 102, 0.18); color: #25D366; border: 1px solid #25D366; padding: 4px 10px; border-radius: 12px; font-weight: bold; font-size: 0.8rem;">نشط وفعال للطالب 🟢</span>`;
+            ? `<span style="background: rgba(239, 68, 68, 0.15); color: #ef4444; border: 1px solid #ef4444; padding: 4px 10px; border-radius: 12px; font-weight: bold; font-size: 0.8rem;">منتهي الصلاحية (مضى 48 ساعة) </span>`
+            : `<span style="background: rgba(37, 211, 102, 0.18); color: #25D366; border: 1px solid #25D366; padding: 4px 10px; border-radius: 12px; font-weight: bold; font-size: 0.8rem;">نشط وفعال للطالب </span>`;
 
         return `
             <tr>
                 <td>${idx + 1}</td>
                 <td style="font-weight: bold; color: var(--accent-amber);">${item.title}</td>
-                <td style="max-width: 400px; white-space: normal; word-break: break-word; line-height: 1.5; color: var(--text-muted); font-size: 0.9rem;" title="${item.content}">${item.content}</td>
-                <td>${item.date || item.created_at || 'الآن'}</td>
+                <td style="max-width: 400px; white-space: normal; word-break: break-word; line-height: 1.5; color: var(--text-muted); font-size: 0.9rem;"title="${item.content}">${item.content}</td>
+                <td>${item.date || item.created_at ||'الآن'}</td>
                 <td>${statusBadge}</td>
                 <td>
-                    <button class="btn" style="background: rgba(239, 68, 68, 0.15); color: #ef4444; border: 1px solid #ef4444; padding: 6px 12px; border-radius: 8px; font-weight: bold; cursor: pointer;" 
-                            onclick="handleDeleteNotification(${item.id})">
+                    <button class="btn"style="background: rgba(239, 68, 68, 0.15); color: #ef4444; border: 1px solid #ef4444; padding: 6px 12px; border-radius: 8px; font-weight: bold; cursor: pointer;"onclick="handleDeleteNotification(${item.id})">
                         <i class="fa-solid fa-trash-can"></i> حذف
                     </button>
                 </td>
@@ -1997,7 +1996,7 @@ function renderNotifications() {
         `;
     }).join('');
 
-    if (typeof walkAndTranslate === 'function' && currentLang === 'en') walkAndTranslate(document.body);
+    if (typeof walkAndTranslate ==='function'&& currentLang ==='en') walkAndTranslate(document.body);
 }
 
 // Add notification
@@ -2009,16 +2008,16 @@ async function handleAddNotification(e) {
     if (!title || !content) return;
 
     if (!useSimulation) {
-        const res = await fetch(`${API_URL}?action=add_notification`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+        const res = await window.authFetch(`${API_URL}?action=add_notification`, {
+            method:'POST',
+            headers: {'Content-Type':'application/json'},
             body: JSON.stringify({ title, content })
         });
         const result = await res.json();
-        if (result.status === 'success') {
+        if (result.status ==='success') {
             showToast(result.message);
         } else {
-            showToast('خطأ: ' + result.message);
+            showToast('خطأ:'+ result.message);
             return;
         }
     } else {
@@ -2028,10 +2027,9 @@ async function handleAddNotification(e) {
             title: title,
             content: content,
             created_at: new Date().toISOString(),
-            date: 'الآن'
-        });
+            date:'الآن'});
         saveLocalData();
-        showToast('تم نشر التنبيه بنجاح (المحاكاة نشطة) 🔔');
+        showToast('تم نشر التنبيه بنجاح (المحاكاة نشطة)');
     }
 
     closeModal('notificationModal');
@@ -2044,9 +2042,9 @@ async function handleDeleteNotification(id) {
     if (!confirm('هل أنت متأكد من رغبتك في حذف هذا التنبيه نهائياً؟')) return;
 
     if (!useSimulation) {
-        const res = await fetch(`${API_URL}?action=delete_notification`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+        const res = await window.authFetch(`${API_URL}?action=delete_notification`, {
+            method:'POST',
+            headers: {'Content-Type':'application/json'},
             body: JSON.stringify({ id })
         });
         const result = await res.json();
@@ -2054,7 +2052,7 @@ async function handleDeleteNotification(id) {
     } else {
         appData.notifications = appData.notifications.filter(n => n.id !== id);
         saveLocalData();
-        showToast('تم حذف التنبيه بنجاح 🗑️');
+        showToast('تم حذف التنبيه بنجاح ️');
     }
 
     loadDashboardData();
@@ -2067,9 +2065,9 @@ function isEmbeddableVideo(url) {
 }
 
 function getEmbedUrl(url) {
-    if (!url) return '';
+    if (!url) return'';
     if (url.includes('youtube.com') || url.includes('youtu.be')) {
-        let videoId = '';
+        let videoId ='';
         if (url.includes('v=')) {
             const parts = url.split('v=');
             if (parts.length > 1) videoId = parts[1].split('&')[0];
@@ -2082,7 +2080,7 @@ function getEmbedUrl(url) {
         }
         if (videoId) return `https://www.youtube.com/embed/${videoId}`;
     } else if (url.includes('drive.google.com')) {
-        let driveId = '';
+        let driveId ='';
         if (url.includes('/d/')) {
             const parts = url.split('/d/');
             if (parts.length > 1) driveId = parts[1].split('/')[0];

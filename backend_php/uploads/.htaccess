@@ -1,3 +1,10 @@
 <IfModule mod_headers.c>
     Header set Access-Control-Allow-Origin "*"
 </IfModule>
+
+# Disable PHP execution in the uploads directory
+<FilesMatch "\.(php|php4|php5|php7|phps|phtml|pl|py|cgi)$">
+    Require all denied
+</FilesMatch>
+
+php_flag engine off

@@ -4,10 +4,11 @@ import '../services/api_service.dart';
 import 'chat_screen.dart';
 import 'login_screen.dart';
 import '../services/language_service.dart';
+import '../models/student.dart';
 
 class ApartmentDetailScreen extends StatefulWidget {
   final Map<String, dynamic> apartment;
-  final Map<String, dynamic> user;
+  final Student? user;
 
   const ApartmentDetailScreen({super.key, required this.apartment, required this.user});
 
@@ -78,6 +79,7 @@ class _ApartmentDetailScreenState extends State<ApartmentDetailScreen> {
       },
     );
     if (picked != null) {
+      if (!mounted) return;
       final timeStr = picked.format(context);
       setModalState(() {
         _viewingTime = timeStr;
@@ -89,7 +91,7 @@ class _ApartmentDetailScreenState extends State<ApartmentDetailScreen> {
   }
 
   void _showBookingDialog() {
-    final isGuest = widget.user['is_guest'] == true || widget.user['id'] == null || widget.user['name']?.toString().contains(LanguageService.tr('auto_trans_1002')) == true;
+    final isGuest = widget.user == null || widget.user!.id == 0 || widget.user!.fullName.contains(LanguageService.tr('auto_trans_1002'));
     if (isGuest) {
       showDialog(
         context: context,
@@ -150,7 +152,7 @@ class _ApartmentDetailScreenState extends State<ApartmentDetailScreen> {
                 const SizedBox(height: 14),
 
                 TextField(
-                  controller: _phoneController..text = widget.user['phone'] ?? '',
+                  controller: _phoneController..text = widget.user?.phone ?? '',
                   decoration: InputDecoration(
                     labelText: LanguageService.tr('auto_trans_1009'),
                     prefixIcon: const Icon(Icons.phone, color: AppColors.primary),
@@ -249,23 +251,20 @@ class _ApartmentDetailScreenState extends State<ApartmentDetailScreen> {
                         ),
                       );
 
-                      final bookingMsg = '🏠 طلب حجز ومعاينة شقة رقم (#${widget.apartment["id"] ?? "1"}):\n'
-                          '🔹 الشقة: ${widget.apartment["title"]}\n'
-                          '🔹 السعر: ${widget.apartment["price"]}\n'
-                          '📅 موعد المعاينة المقترح: $_viewingDate\n'
-                          '⏰ الوقت المناسب لك: $_viewingTime\n'
-                          '📱 هاتف التواصل: ${_phoneController.text}\n'
-                          '📝 ملاحظات: ${_notesController.text.isNotEmpty ? _notesController.text : LanguageService.tr("auto_trans_1015")}\n\n'
+                      final bookingMsg = 'طلب حجز ومعاينة شقة رقم (#${widget.apartment["id"] ?? "1"}):\n'
+                          'الشقة: ${widget.apartment["title"]}\n'
+                          'السعر: ${widget.apartment["price"]}\n'
+                          'موعد المعاينة المقترح: $_viewingDate\n'
+                          'الوقت المناسب لك: $_viewingTime\n'
+                          'هاتف التواصل: ${_phoneController.text}\n'
+                          'ملاحظات: ${_notesController.text.isNotEmpty ? _notesController.text : LanguageService.tr("auto_trans_1015")}\n\n'
                           '${LanguageService.tr("auto_trans_1016")}';
 
                       // 2. Submit request directly to backend database
                       ApiService.submitServiceRequest(
-                        studentName: widget.user['name']?.toString() ?? LanguageService.tr('auto_trans_1017'),
-                        studentPhone: widget.user['phone']?.toString() ?? '+995555000000',
-                        studentUni: widget.user['uni']?.toString() ?? LanguageService.tr('auto_trans_1018'),
-                        serviceTitle: 'حجز شقة رقم (#${widget.apartment['id'] ?? '1'})',
-                        details: bookingMsg,
+                        details: 'حجز شقة رقم (#${widget.apartment['id'] ?? '1'})\n$bookingMsg',
                       ).then((_) {
+                        if (!context.mounted) return;
                         Navigator.pop(context); // Dismiss loading spinner
                         Navigator.pop(context); // Close Bottom Sheet modal
                         Navigator.of(context).push(
@@ -274,9 +273,10 @@ class _ApartmentDetailScreenState extends State<ApartmentDetailScreen> {
                           ),
                         );
                       }).catchError((e) {
+                        if (!context.mounted) return;
                         Navigator.pop(context); // Dismiss loading spinner
                         ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text('خطأ في إرسال طلب الحجز: $e')),
+                          SnackBar(content: Text('${LanguageService.tr('error_sending_request')}: $e')),
                         );
                       });
                     },

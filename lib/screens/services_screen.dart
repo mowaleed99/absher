@@ -6,9 +6,10 @@ import '../services/api_service.dart';
 import 'login_screen.dart';
 import 'chat_screen.dart';
 import '../services/language_service.dart';
+import '../models/student.dart';
 
 class ServicesScreen extends StatefulWidget {
-  final Map<String, dynamic> user;
+  final Student? user;
   const ServicesScreen({super.key, required this.user});
 
   @override
@@ -75,7 +76,7 @@ class _ServicesScreenState extends State<ServicesScreen> {
   }
 
   void _showServiceForm(BuildContext context, String initialServiceTitle) {
-    final isGuest = widget.user['is_guest'] == true || widget.user['id'] == null || widget.user['name']?.toString().contains(LanguageService.tr('auto_trans_1277')) == true;
+    final isGuest = widget.user == null || widget.user!.id == 0 || widget.user!.fullName.contains(LanguageService.tr('auto_trans_1277'));
     if (isGuest) {
       showDialog(
         context: context,
@@ -109,8 +110,8 @@ class _ServicesScreenState extends State<ServicesScreen> {
     }
 
     String selectedService = initialServiceTitle;
-    final nameCtrl = TextEditingController(text: widget.user['name']?.toString() ?? '');
-    final phoneCtrl = TextEditingController(text: widget.user['phone']?.toString() ?? '');
+    final nameCtrl = TextEditingController(text: widget.user?.fullName ?? '');
+    final phoneCtrl = TextEditingController(text: widget.user?.phone ?? '');
     final addressCtrl = TextEditingController();
     final dateCtrl = TextEditingController(text: LanguageService.tr('auto_trans_1279'));
     final detailsCtrl = TextEditingController();
@@ -133,7 +134,7 @@ class _ServicesScreenState extends State<ServicesScreen> {
           });
         }
       } catch (e) {
-        print("Error picking image: $e");
+        debugPrint("Error picking image: $e");
       }
     }
 
@@ -358,14 +359,6 @@ class _ServicesScreenState extends State<ServicesScreen> {
 
                   // 2. Submit service request directly to database
                   Future<void> submitData() async {
-                    if (payWithPoints) {
-                      final amount = calcPrice > 0 ? calcPrice.toInt() : 50;
-                      final result = await ApiService.payWithPoints(widget.user['id'], amount, selectedService);
-                      if (result['status'] == 'error') {
-                        throw Exception(result['message'] ?? LanguageService.tr('auto_trans_1288'));
-                      }
-                    }
-
                     String finalDetails = reqMsg;
                     if (attachedImageFile != null) {
                       final uploadedUrl = await ApiService.uploadFile(
@@ -377,16 +370,21 @@ class _ServicesScreenState extends State<ServicesScreen> {
                         finalDetails += '\n\n[رابط الصورة المرفقة: $uploadedUrl]';
                       }
                     }
-                    await ApiService.submitServiceRequest(
-                      studentName: widget.user['name']?.toString() ?? LanguageService.tr('auto_trans_1289'),
-                      studentPhone: widget.user['phone']?.toString() ?? '+995555000000',
-                      studentUni: widget.user['uni']?.toString() ?? LanguageService.tr('auto_trans_1290'),
-                      serviceTitle: 'خدمة ($selectedService)',
-                      details: finalDetails,
+
+                    final requestResult = await ApiService.submitServiceRequest(
+                      details: 'خدمة ($selectedService)\n$finalDetails',
                     );
+
+                    if (payWithPoints) {
+                      final result = await ApiService.payWithPoints(requestResult);
+                      if (result['status'] == 'error') {
+                        throw Exception(result['message'] ?? LanguageService.tr('auto_trans_1288'));
+                      }
+                    }
                   }
 
                   submitData().then((_) {
+                    if (!context.mounted) return;
                     Navigator.pop(context); // Dismiss loading spinner
                     Navigator.pop(context); // Close dialog form
                     Navigator.push(
@@ -396,6 +394,7 @@ class _ServicesScreenState extends State<ServicesScreen> {
                       ),
                     );
                   }).catchError((e) {
+                    if (!context.mounted) return;
                     Navigator.pop(context); // Dismiss loading spinner
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(content: Text('${LanguageService.tr('error_sending_service')} $e')),

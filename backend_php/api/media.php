@@ -17,13 +17,32 @@ if (empty($file)) {
 }
 
 // حماية ضد ثغرات التمرير عبر المجلدات (Directory Traversal Security)
-$file = basename($file);
-$filePath = __DIR__ . '/../uploads/' . $file;
+$cleanFile = str_replace(['..', "\0"], '', $file);
+$cleanFile = trim($cleanFile, '/\\');
+$filePath = __DIR__ . '/../uploads/' . $cleanFile;
 
 if (!file_exists($filePath)) {
-    http_response_code(404);
-    echo "الملف غير موجود";
-    exit();
+    // Search in subfolders by basename
+    $base = basename($file);
+    $found = false;
+    $subdirs = ['apartments', 'services', 'profiles', 'chat', 'general', 'requests'];
+    foreach ($subdirs as $dir) {
+        $checkPath = __DIR__ . '/../uploads/' . $dir . '/' . $base;
+        if (file_exists($checkPath)) {
+            $filePath = $checkPath;
+            $found = true;
+            break;
+        }
+    }
+    if (!$found && file_exists(__DIR__ . '/../uploads/' . $base)) {
+        $filePath = __DIR__ . '/../uploads/' . $base;
+        $found = true;
+    }
+    if (!$found) {
+        http_response_code(404);
+        echo "الملف غير موجود";
+        exit();
+    }
 }
 
 $ext = strtolower(pathinfo($filePath, PATHINFO_EXTENSION));

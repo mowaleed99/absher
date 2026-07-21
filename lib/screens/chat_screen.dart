@@ -5,9 +5,10 @@ import 'package:image_picker/image_picker.dart';
 import '../services/api_service.dart';
 import '../services/web_helper.dart';
 import '../services/language_service.dart';
+import '../models/student.dart';
 
 class ChatScreen extends StatefulWidget {
-  final Map<String, dynamic> user;
+  final Student? user;
   final String? initialMessage;
   final String? orderStatus;
   const ChatScreen({super.key, required this.user, this.initialMessage, this.orderStatus});
@@ -21,6 +22,8 @@ class _ChatScreenState extends State<ChatScreen> {
   final _messageController = TextEditingController();
   Timer? _pollTimer;
   bool _isLoadingMessages = false;
+  bool _isDisposed = false;
+  int _currentChatId = 0;
   Map<String, dynamic>? _replyingToMsg;
 
   String _getAbsoluteUrl(String path) {
@@ -110,14 +113,25 @@ class _ChatScreenState extends State<ChatScreen> {
 
     // بدء مؤقت جلب الرسائل الجديدة كل 3 ثوانٍ
     _pollTimer = Timer.periodic(const Duration(seconds: 3), (timer) {
-      _loadMessages();
+      if (!_isDisposed) _loadMessages();
     });
 
+    _initChat();
+  }
 
+  Future<void> _initChat() async {
+    if (widget.user != null) {
+      int? chatId = await ApiService.createChat(widget.user!.id);
+      if (chatId != null && mounted) {
+        setState(() => _currentChatId = chatId);
+        _loadMessages();
+      }
+    }
   }
 
   @override
   void dispose() {
+    _isDisposed = true;
     _pollTimer?.cancel();
     _messageController.dispose();
     super.dispose();
@@ -128,10 +142,9 @@ class _ChatScreenState extends State<ChatScreen> {
     _isLoadingMessages = true;
 
     try {
-      final phone = widget.user['phone']?.toString() ?? '';
-      if (phone.isEmpty) return;
+      if (_currentChatId == 0) return;
 
-      final serverMessages = await ApiService.getStudentChat(phone);
+      final serverMessages = await ApiService.getMessages(_currentChatId);
       
       if (serverMessages.isNotEmpty) {
         final List<Map<String, dynamic>> newMessages = [];
@@ -143,13 +156,13 @@ class _ChatScreenState extends State<ChatScreen> {
 
         for (var m in serverMessages) {
           newMessages.add({
-            'text': m['text']?.toString() ?? '',
-            'type': m['type']?.toString() ?? 'text',
-            'imageUrl': m['imageUrl']?.toString() ?? '',
-            'quoteText': m['quoteText']?.toString() ?? '',
-            'quoteSender': m['quoteSender']?.toString() ?? '',
-            'isMe': m['sender'] == 'student',
-            'time': m['time']?.toString() ?? LanguageService.tr('auto_trans_1024'),
+            'text': m.content,
+            'type': m.messageType,
+            'imageUrl': m.imageUrl ?? '',
+            'quoteText': '',
+            'quoteSender': '',
+            'isMe': m.senderType == 'student',
+            'time': m.createdAt ?? LanguageService.tr('auto_trans_1024'),
           });
         }
 
@@ -167,7 +180,7 @@ class _ChatScreenState extends State<ChatScreen> {
         }
       }
     } catch (e) {
-      print('Error loading messages periodically: $e');
+      debugPrint('Error loading messages periodically: $e');
     } finally {
       _isLoadingMessages = false;
     }
@@ -193,9 +206,7 @@ class _ChatScreenState extends State<ChatScreen> {
 
     // إرسال الرسالة لقاعدة البيانات في سيرفر الباك اند
     ApiService.sendChatMessage(
-      phone: widget.user['phone']?.toString() ?? '+995555000000',
-      studentName: widget.user['name']?.toString() ?? LanguageService.tr('auto_trans_1026'),
-      studentUni: widget.user['uni']?.toString() ?? LanguageService.tr('auto_trans_1027'),
+      chatId: _currentChatId,
       text: text,
       quoteText: quoteText,
       quoteSender: quoteSender,
@@ -249,8 +260,8 @@ class _ChatScreenState extends State<ChatScreen> {
               onPressed: () {
                 Navigator.pop(context);
                 ApiService.submitReview(
-                  studentName: widget.user['name']?.toString() ?? LanguageService.tr('auto_trans_1028'),
-                  uni: widget.user['uni']?.toString() ?? LanguageService.tr('auto_trans_1029'),
+                  studentName: widget.user?.fullName ?? '',
+                  uni: widget.user?.universityId?.toString() ?? '',
                   rating: rating,
                   comment: commentController.text.trim().isNotEmpty ? commentController.text.trim() : LanguageService.tr('auto_trans_1030'),
                 );
@@ -282,14 +293,10 @@ class _ChatScreenState extends State<ChatScreen> {
     });
 
     ApiService.sendChatMessage(
-      phone: widget.user['phone']?.toString() ?? '+995555000000',
-      studentName: widget.user['name']?.toString() ?? LanguageService.tr('auto_trans_1032'),
-      studentUni: widget.user['uni']?.toString() ?? LanguageService.tr('auto_trans_1033'),
+      chatId: _currentChatId,
       text: text,
       type: type,
       imageUrl: url,
-      quoteText: quoteText,
-      quoteSender: quoteSender,
     );
   }
 
@@ -340,13 +347,13 @@ class _ChatScreenState extends State<ChatScreen> {
                 
                 if (_isEmbeddableVideo(url)) {
                   detectedType = 'video';
-                  msgText = '🎥 فيديو مرفق: $url';
+                  msgText = 'فيديو مرفق: $url';
                 } else if (url.toLowerCase().contains('.mp4') || url.toLowerCase().contains('.mov')) {
                   detectedType = 'video';
-                  msgText = '🎥 فيديو مرفق: $url';
+                  msgText = 'فيديو مرفق: $url';
                 } else if (url.toLowerCase().contains('.png') || url.toLowerCase().contains('.jpg') || url.toLowerCase().contains('.jpeg')) {
                   detectedType = 'image';
-                  msgText = '📷 صورة مرفقة: $url';
+                  msgText = 'صورة مرفقة: $url';
                 }
                 
                 Navigator.pop(context);
@@ -410,7 +417,7 @@ class _ChatScreenState extends State<ChatScreen> {
                 _sendMediaMessage(
                   'video',
                   url,
-                  '🎥 فيديو مرفق: $url',
+                  'فيديو مرفق: $url',
                 );
               }
             },
@@ -448,9 +455,8 @@ class _ChatScreenState extends State<ChatScreen> {
       final bytes = await file.readAsBytes();
       final String? uploadedUrl = await ApiService.uploadFile(file.path, file.name, fileBytes: bytes);
 
-      if (mounted) {
-        Navigator.pop(context);
-      }
+      if (!context.mounted) return;
+      Navigator.pop(context);
 
       if (uploadedUrl != null) {
         _sendMediaMessage(
@@ -467,9 +473,10 @@ class _ChatScreenState extends State<ChatScreen> {
         );
       }
     } catch (e) {
-      print('Error picking/uploading media: $e');
+      debugPrint('Error picking/uploading media: $e');
+      if (!context.mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('حدث خطأ: $e')),
+        SnackBar(content: Text('${LanguageService.tr('error_occurred')}: $e')),
       );
     }
   }

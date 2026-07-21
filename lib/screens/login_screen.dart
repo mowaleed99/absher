@@ -4,6 +4,9 @@ import '../services/api_service.dart';
 import 'register_screen.dart';
 import 'home_screen.dart';
 import '../services/language_service.dart';
+import '../models/student.dart';
+import 'admin/admin_login_screen.dart';
+import 'admin/admin_shell.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -28,34 +31,43 @@ class _LoginScreenState extends State<LoginScreen> {
       _errorMessage = '';
     });
 
-    final result = await ApiService.login(
-      _identifierController.text.trim(),
-      _passwordController.text,
-    );
+    try {
+      final result = await ApiService.login(
+        _identifierController.text.trim(),
+        _passwordController.text,
+      );
 
-    setState(() => _isLoading = false);
+      setState(() => _isLoading = false);
 
-    if (result['status'] == 'success') {
-      if (mounted) {
-        Navigator.of(context).pushAndRemoveUntil(
-          MaterialPageRoute(
-            builder: (_) => HomeScreen(user: result['user'], isGuest: false),
-          ),
-          (route) => false,
-        );
+      if (result['status'] == 'success' && result['user'] != null) {
+        final student = Student.fromJson(result['user'] as Map<String, dynamic>);
+        if (mounted) {
+          Navigator.of(context).pushAndRemoveUntil(
+            MaterialPageRoute(
+              builder: (_) => HomeScreen(user: student, isGuest: false),
+            ),
+            (route) => false,
+          );
+        }
+      } else {
+        setState(() {
+          _errorMessage = result['message']?.toString() ?? LanguageService.tr('login_fail');
+        });
       }
-    } else {
+    } catch (e) {
       setState(() {
-        _errorMessage = result['message'] ?? LanguageService.tr('login_fail');
+        _isLoading = false;
+        _errorMessage = e.toString();
       });
     }
   }
 
   void _enterAsGuest() {
+    final guestUser = Student(id: 0, fullName: LanguageService.tr('guest_name'));
     Navigator.of(context).pushAndRemoveUntil(
       MaterialPageRoute(
         builder: (_) => HomeScreen(
-          user: {'name': LanguageService.tr('guest_name'), 'uni': LanguageService.tr('guest_uni'), 'is_guest': true},
+          user: guestUser,
           isGuest: true,
         ),
       ),
@@ -210,7 +222,31 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                     ),
                   ),
-                  const SizedBox(height: 24),
+                  const SizedBox(height: 16),
+
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton.icon(
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => ApiService.adminToken != null
+                                ? const AdminShell()
+                                : const AdminLoginScreen(),
+                          ),
+                        );
+                      },
+                      icon: const Icon(Icons.admin_panel_settings, color: Colors.white),
+                      label: Text(LanguageService.tr('admin_portal_btn'), style: const TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.bold)),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.primaryDark,
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 20),
 
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
