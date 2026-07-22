@@ -1165,9 +1165,6 @@ async function updateRequestStatus(id, newStatus) {
         showToast('خطأ في الاتصال بالخادم');
     }
 }
-    renderAll();
-    showToast(`تم تحديث حالة الطلب إلى"${newStatus}"وتم إرسال إشعار آلي للطالب في الشات `);
-}
 
 // Chat Interaction & Customer Service Functions
 function openChatReplyModal(chatId) {
