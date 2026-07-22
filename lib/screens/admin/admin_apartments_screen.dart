@@ -1,4 +1,3 @@
-import 'dart:io';
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
@@ -161,8 +160,11 @@ class _ApartmentFormDialogState extends State<ApartmentFormDialog> {
       _titleController.text = apt.title;
       _priceController.text = apt.price;
       _locationController.text = apt.district;
+      _proximityController.text = apt.proximity ?? '';
       _descriptionController.text = apt.description;
       _capacityController.text = apt.capacity?.toString() ?? '';
+      _moveInTypeController.text = apt.moveInType ?? '';
+      _moveInDateController.text = apt.moveInDate ?? '';
       // status: 'available' or anything else
       _isAvailable = apt.status == null || apt.status == 'available';
       if (apt.primaryImage.isNotEmpty) {

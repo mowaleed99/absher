@@ -1,4 +1,3 @@
-import 'dart:io';
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
@@ -72,9 +71,9 @@ class _AdminServicesScreenState extends State<AdminServicesScreen> {
             final bool isActive = srv['is_active'] == 1 || srv['is_active'] == true || srv['is_active'] == '1';
             return Card(
               child: ListTile(
-                leading: (srv['image'] != null && srv['image'].toString().isNotEmpty)
+                leading: (srv['image_url'] != null && srv['image_url'].toString().isNotEmpty)
                     ? Image.network(
-                        ApiService.resolveImageUrl(srv['image']),
+                        ApiService.resolveImageUrl(srv['image_url']),
                         width: 50,
                         height: 50,
                         fit: BoxFit.cover,

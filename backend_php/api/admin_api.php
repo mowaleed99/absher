@@ -145,8 +145,13 @@ try {
     if ($action ==='delete_apartment') {
         $id = intval($data['id'] ?? 0);
         if ($id > 0) {
-            $conn->prepare("DELETE FROM apartments WHERE id = ?")->execute([$id]);
-            echo json_encode(["status"=>"success","message"=>"تم حذف الشقة بنجاح"], JSON_UNESCAPED_UNICODE);
+            $stmt = $conn->prepare("DELETE FROM apartments WHERE id = ?");
+            $stmt->execute([$id]);
+            if ($stmt->rowCount() > 0) {
+                echo json_encode(["status"=>"success","message"=>"تم حذف الشقة بنجاح"], JSON_UNESCAPED_UNICODE);
+            } else {
+                echo json_encode(["status"=>"error","message"=>"لم يتم العثور على العنصر أو فشل الحذف"], JSON_UNESCAPED_UNICODE);
+            }
         } else {
             echo json_encode(["status"=>"error","message"=>"معرف الشقة غير صالح"], JSON_UNESCAPED_UNICODE);
         }
@@ -195,8 +200,13 @@ try {
     if ($action ==='delete_university') {
         $id = intval($data['id'] ?? 0);
         if ($id > 0) {
-            $conn->prepare("DELETE FROM universities WHERE id = ?")->execute([$id]);
-            echo json_encode(["status"=>"success","message"=>"تم حذف الجامعة بنجاح"], JSON_UNESCAPED_UNICODE);
+            $stmt = $conn->prepare("DELETE FROM universities WHERE id = ?");
+            $stmt->execute([$id]);
+            if ($stmt->rowCount() > 0) {
+                echo json_encode(["status"=>"success","message"=>"تم حذف الجامعة بنجاح"], JSON_UNESCAPED_UNICODE);
+            } else {
+                echo json_encode(["status"=>"error","message"=>"لم يتم العثور على العنصر أو فشل الحذف"], JSON_UNESCAPED_UNICODE);
+            }
         } else {
             echo json_encode(["status"=>"error","message"=>"معرف الجامعة غير صالح"], JSON_UNESCAPED_UNICODE);
         }
@@ -230,8 +240,13 @@ try {
     if ($action ==='delete_district') {
         $id = intval($data['id'] ?? 0);
         if ($id > 0) {
-            $conn->prepare("DELETE FROM districts WHERE id = ?")->execute([$id]);
-            echo json_encode(["status"=>"success","message"=>"تم حذف الحي بنجاح"], JSON_UNESCAPED_UNICODE);
+            $stmt = $conn->prepare("DELETE FROM districts WHERE id = ?");
+            $stmt->execute([$id]);
+            if ($stmt->rowCount() > 0) {
+                echo json_encode(["status"=>"success","message"=>"تم حذف الحي بنجاح"], JSON_UNESCAPED_UNICODE);
+            } else {
+                echo json_encode(["status"=>"error","message"=>"لم يتم العثور على العنصر أو فشل الحذف"], JSON_UNESCAPED_UNICODE);
+            }
         } else {
             echo json_encode(["status"=>"error","message"=>"معرف الحي غير صالح"], JSON_UNESCAPED_UNICODE);
         }
@@ -276,8 +291,13 @@ try {
     if ($action ==='delete_service') {
         $id = intval($data['id'] ?? 0);
         if ($id > 0) {
-            $conn->prepare("DELETE FROM services WHERE id = ?")->execute([$id]);
-            echo json_encode(["status"=>"success","message"=>"تم حذف الخدمة بنجاح"], JSON_UNESCAPED_UNICODE);
+            $stmt = $conn->prepare("DELETE FROM services WHERE id = ?");
+            $stmt->execute([$id]);
+            if ($stmt->rowCount() > 0) {
+                echo json_encode(["status"=>"success","message"=>"تم حذف الخدمة بنجاح"], JSON_UNESCAPED_UNICODE);
+            } else {
+                echo json_encode(["status"=>"error","message"=>"لم يتم العثور على العنصر أو فشل الحذف"], JSON_UNESCAPED_UNICODE);
+            }
         } else {
             echo json_encode(["status"=>"error","message"=>"معرف الخدمة غير صالح"], JSON_UNESCAPED_UNICODE);
         }
@@ -321,8 +341,13 @@ try {
     if ($action ==='delete_news') {
         $id = intval($data['id'] ?? 0);
         if ($id > 0) {
-            $conn->prepare("DELETE FROM news WHERE id = ?")->execute([$id]);
-            echo json_encode(["status"=>"success","message"=>"تم حذف الخبر بنجاح"], JSON_UNESCAPED_UNICODE);
+            $stmt = $conn->prepare("DELETE FROM news WHERE id = ?");
+            $stmt->execute([$id]);
+            if ($stmt->rowCount() > 0) {
+                echo json_encode(["status"=>"success","message"=>"تم حذف الخبر بنجاح"], JSON_UNESCAPED_UNICODE);
+            } else {
+                echo json_encode(["status"=>"error","message"=>"لم يتم العثور على العنصر أو فشل الحذف"], JSON_UNESCAPED_UNICODE);
+            }
         } else {
             echo json_encode(["status"=>"error","message"=>"معرف الخبر غير صالح"], JSON_UNESCAPED_UNICODE);
         }
@@ -346,8 +371,13 @@ try {
     if ($action ==='delete_notification') {
         $id = intval($data['id'] ?? 0);
         if ($id > 0) {
-            $conn->prepare("DELETE FROM notifications WHERE id = ?")->execute([$id]);
-            echo json_encode(["status"=>"success","message"=>"تم حذف التنبيه بنجاح"], JSON_UNESCAPED_UNICODE);
+            $stmt = $conn->prepare("DELETE FROM notifications WHERE id = ?");
+            $stmt->execute([$id]);
+            if ($stmt->rowCount() > 0) {
+                echo json_encode(["status"=>"success","message"=>"تم حذف التنبيه بنجاح"], JSON_UNESCAPED_UNICODE);
+            } else {
+                echo json_encode(["status"=>"error","message"=>"لم يتم العثور على العنصر أو فشل الحذف"], JSON_UNESCAPED_UNICODE);
+            }
         } else {
             echo json_encode(["status"=>"error","message"=>"معرف التنبيه غير صالح"], JSON_UNESCAPED_UNICODE);
         }
@@ -400,8 +430,13 @@ try {
     if ($action ==='delete_student') {
         $id = intval($data['id'] ?? 0);
         if ($id > 0) {
-            $conn->prepare("DELETE FROM students WHERE id = ?")->execute([$id]);
-            echo json_encode(["status"=>"success","message"=>"تم حذف الحساب بنجاح"], JSON_UNESCAPED_UNICODE);
+            $stmt = $conn->prepare("DELETE FROM students WHERE id = ?");
+            $stmt->execute([$id]);
+            if ($stmt->rowCount() > 0) {
+                echo json_encode(["status"=>"success","message"=>"تم حذف الحساب بنجاح"], JSON_UNESCAPED_UNICODE);
+            } else {
+                echo json_encode(["status"=>"error","message"=>"لم يتم العثور على العنصر أو فشل الحذف"], JSON_UNESCAPED_UNICODE);
+            }
         } else {
             echo json_encode(["status"=>"error","message"=>"معرف الطالب غير صالح"], JSON_UNESCAPED_UNICODE);
         }
@@ -411,8 +446,13 @@ try {
     if ($action ==='delete_request') {
         $id = intval($data['id'] ?? 0);
         if ($id > 0) {
-            $conn->prepare("DELETE FROM service_requests WHERE id = ?")->execute([$id]);
-            echo json_encode(["status"=>"success","message"=>"تم حذف الطلب بنجاح"], JSON_UNESCAPED_UNICODE);
+            $stmt = $conn->prepare("DELETE FROM service_requests WHERE id = ?");
+            $stmt->execute([$id]);
+            if ($stmt->rowCount() > 0) {
+                echo json_encode(["status"=>"success","message"=>"تم حذف الطلب بنجاح"], JSON_UNESCAPED_UNICODE);
+            } else {
+                echo json_encode(["status"=>"error","message"=>"لم يتم العثور على العنصر أو فشل الحذف"], JSON_UNESCAPED_UNICODE);
+            }
         } else {
             echo json_encode(["status"=>"error","message"=>"معرف الطلب غير صالح"], JSON_UNESCAPED_UNICODE);
         }
@@ -422,8 +462,13 @@ try {
     if ($action ==='delete_review') {
         $id = intval($data['id'] ?? 0);
         if ($id > 0) {
-            $conn->prepare("DELETE FROM reviews WHERE id = ?")->execute([$id]);
-            echo json_encode(["status"=>"success","message"=>"تم حذف التقييم بنجاح"], JSON_UNESCAPED_UNICODE);
+            $stmt = $conn->prepare("DELETE FROM reviews WHERE id = ?");
+            $stmt->execute([$id]);
+            if ($stmt->rowCount() > 0) {
+                echo json_encode(["status"=>"success","message"=>"تم حذف التقييم بنجاح"], JSON_UNESCAPED_UNICODE);
+            } else {
+                echo json_encode(["status"=>"error","message"=>"لم يتم العثور على العنصر أو فشل الحذف"], JSON_UNESCAPED_UNICODE);
+            }
         } else {
             echo json_encode(["status"=>"error","message"=>"معرف التقييم غير صالح"], JSON_UNESCAPED_UNICODE);
         }

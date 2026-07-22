@@ -323,30 +323,8 @@ class ApiService {
     } catch (e) {
       // error fetching news
     }
-    // محاكاة تنبيهات افتراضية في حال تعذر الاتصال بالسيرفر
-    return [
-      {
-        'id': '1',
-        'title': LanguageService.tr('auto_trans_1357'),
-        'content': LanguageService.tr('auto_trans_1358'),
-        'image_url': 'https://images.unsplash.com/photo-1585704032915-c3400ca199e7?auto=format&fit=crop&w=500&q=80',
-        'date': LanguageService.tr('auto_trans_1359'),
-      },
-      {
-        'id': '2',
-        'title': LanguageService.tr('auto_trans_1360'),
-        'content': LanguageService.tr('auto_trans_1361'),
-        'image_url': 'https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=500&q=80',
-        'date': LanguageService.tr('auto_trans_1362'),
-      },
-      {
-        'id': '3',
-        'title': LanguageService.tr('auto_trans_1363'),
-        'content': LanguageService.tr('auto_trans_1364'),
-        'image_url': 'https://images.unsplash.com/photo-1621905251189-08b45d6a269e?auto=format&fit=crop&w=500&q=80',
-        'date': LanguageService.tr('auto_trans_1365'),
-      },
-    ];
+    // إرجاع قائمة فارغة بدلاً من بيانات وهمية في حال فشل الاتصال
+    return [];
   }
 
   // جلب التنبيهات والإشعارات الفعالة (خلال آخر 24 ساعة)

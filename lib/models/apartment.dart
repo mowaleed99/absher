@@ -15,6 +15,10 @@ class Apartment {
   final List<ApartmentImage> images;
   final List<Feature> features;
   final List<University> universities;
+  final String? moveInType;
+  final String? moveInDate;
+  final String? proximity;
+  final bool? isAvailable;
 
   String get primaryImage => images.isNotEmpty ? images.first.imageUrl : '';
 
@@ -31,6 +35,10 @@ class Apartment {
     required this.images,
     required this.features,
     required this.universities,
+    this.moveInType,
+    this.moveInDate,
+    this.proximity,
+    this.isAvailable,
   });
 
   factory Apartment.fromJson(Map<String, dynamic> json) {
@@ -80,6 +88,10 @@ class Apartment {
       images: parsedImages,
       features: parsedFeatures,
       universities: parsedUniversities,
+      moveInType: json['move_in_type'],
+      moveInDate: json['move_in_date'],
+      proximity: json['proximity'],
+      isAvailable: json['is_available'] == 1 || json['is_available'] == true || json['is_available'] == '1',
     );
   }
 
@@ -97,6 +109,10 @@ class Apartment {
       'images': images.map((i) => i.imageUrl).toList(),
       'features': features.map((f) => f.name).toList(),
       'universities': universities.map((u) => u.name).toList(),
+      'move_in_type': moveInType,
+      'move_in_date': moveInDate,
+      'proximity': proximity,
+      'is_available': isAvailable == true ? 1 : 0,
     };
   }
 }

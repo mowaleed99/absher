@@ -112,127 +112,18 @@ function getEmbedUrl(url) {
     return url;
 }
 
-// Initial Mock Data (Fallback if DB server is offline)
-const MOCK_DATA = {
-    apartments: [
-        {
-            id: 1,
-            title:'شقة طلابية فاخرة - شارع بيكيني (Pekini)',
-            price:'450 دولار / شهر',
-            location:'سابورتالو (Saburtalo)',
-            proximity:'التبليسي الطبية TSMU (10 دقائق مشياً) | جامعة جورجيا UG (20 دقيقة)',
-            capacity:'3 غرف',
-            rental_type:'شقة',
-            owner_phone:'+995555111222',
-            features: ['شقة بمفردك','2 حمام','3 غرف واسعة','تدفئة مركزية دافئة','بلكونة بإطلالة مفتوحة','إنترنت ألياف ضوئية سريع','مفروشة بالكامل'],
-            images: ['assets/images/apt1.png','assets/images/apt2.png'],
-            description:'شقة ممتازة للطلاب في قلب تبليسي بالقرب من محطة مترو التكنيكال. مجهزة بالكامل بالفرش والأجهزة الكهربائية وتضم 2 حمام مع إطلالة رائعة من البلكونة. الدفع يتم نقداً عند الاستلام.'},
-        {
-            id: 2,
-            title:'ستوديو مودرن - بالقرب من جامعة جورجيا (UG)',
-            price:'380 دولار / شهر',
-            location:'فاكي (Vake)',
-            proximity:'جامعة جورجيا UG (10 دقائق مشياً) | إيليا ستيت (15 دقيقة)',
-            capacity:'1 غرفة',
-            rental_type:'شقة',
-            owner_phone:'+995555333444',
-            features: ['شقة بمفردك','1 حمام','ستوديو منفرد هادئ','تكييف وتدفئة','أمن على مدار 24 ساعة','قريب من السوبرماركت'],
-            images: ['assets/images/apt4.png'],
-            description:'ستوديو مثالي للطالب المنفرد الباحث عن الهدوء والتركيز في الدراسة ويحتوي على 1 حمام مستقل. يبعد 10 دقائق مشياً عن حرم جامعة جورجيا.'},
-        {
-            id: 3,
-            title:'شقة مشتركة لـ 3 طلاب - إطلالة بنورامية',
-            price:'550 دولار (أو 180 دولار للشخص)',
-            location:'سابورتالو (Saburtalo)',
-            proximity:'إيليا ستيت Ilia (10 دقائق) | جامعة تبليسي الحكومية TSU (20 دقيقة)',
-            capacity:'3 غرف',
-            rental_type:'غرفة في شقة',
-            owner_phone:'+995555888999',
-            roommate_reqs:'غير مدخن ، طالب هادئ ومحترم ، يحافظ على النظافة العامة والهدوء',
-            roommate_facilities:'غرفة نوم خاصة ومفروشة ، حمام ومطبخ مشترك ، شرفة (بلكونة واسعة)',
-            features: ['استئجار مع شريك','2 حمام','غرف منفصلة ومريحة','صالة كبيرة للمذاكرة المشتركة','بلكونة واسعة جداً','مصعد يعمل 24/7'],
-            images: ['assets/images/apt3.png'],
-            description:'فرصة ممتازة لثلاثة أصدقاء طلاب. مساحة واسعة وتضم 2 حمام وتوزيع ممتاز للغرف يضمن الخصوصية لكل طالب.'}
-    ],
-    services: [
-        { id: 1, title:'فني كهربائي', description:'صيانة كافة الأعطال والتوصيلات الكهربائية', image_url:'https://images.unsplash.com/photo-1621905251189-08b45d6a269e?auto=format&fit=crop&w=500&q=80'},
-        { id: 2, title:'فني سباكة', description:'إصلاح تسريبات المياه والصيانة الصحية', image_url:'https://images.unsplash.com/photo-1585704032915-c3400ca199e7?auto=format&fit=crop&w=500&q=80'},
-        { id: 3, title:'استخراج إقامة طلابية', description:'تجهيز أوراق الإقامة لأول مرة أو التجديد', image_url:'https://images.unsplash.com/photo-1544717305-2782549b5136?auto=format&fit=crop&w=500&q=80'},
-        { id: 4, title:'تسجيل العنوان القانوني', description:'إصدار وثيقة العنوان المعتمدة في جورجيا', image_url:'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&w=500&q=80'},
-        { id: 5, title:'التسجيل والنقل الجامعي', description:'إجراءات القبول وتحويل الساعات بين الجامعات', image_url:'https://images.unsplash.com/photo-1562774053-701939374585?auto=format&fit=crop&w=500&q=80'},
-        { id: 6, title:'الاستقبال والنقل من المطار', description:'توفير سيارات مريحة لاستقبالك فور وصولك تبليسي', image_url:'https://images.unsplash.com/photo-1436491865332-7a61a109cc05?auto=format&fit=crop&w=500&q=80'}
-    ],
-    students: [
-        { id: 1, full_name:'مصطفى علي', email:'mostafa@absher.ge', phone:'+995555112233', university:'جامعة تبليسي الطبية (TSMU) - الطب البشري', nationality:'مصر 🇪🇬', created_at:'2026-06-29 10:30'},
-        { id: 2, full_name:'سارة محمد', email:'sara@absher.ge', phone:'+995555445566', university:'جامعة جورجيا (UG) - إدارة أعمال', nationality:'الأردن 🇯🇴', created_at:'2026-06-28 14:15'},
-        { id: 3, full_name:'أحمد جمال', email:'ahmed@absher.ge', phone:'+995555123456', university:'جامعة إيليا الحكومية - هندسة حاسبات', nationality:'السعودية 🇸🇦', created_at:'2026-06-27 09:00'}
-    ],
-    requests: [
-        { id: 1, type:'تجميع شباب (شريك سكن)', student_name:'مصطفى علي', student_phone:'+995555112233', student_info:'الجامعة: TSMU | التخصص: الطب البشري | الجنسية: مصر | النوع: ذكر', details:'موعد الانتقال: فوري | إرفاق صورة: نعم ️ | الملاحظات: أبحث عن شريك هادئ ومحترم لمشاركة شقة 2 غرفة قريبة من الجامعة الميديكال.', status:'قيد المراجعة'},
-        { id: 2, type:'حجز شقة مباشرة', student_name:'سارة محمد', student_phone:'+995555445566', student_info:'الجامعة: جامعة جورجيا (UG) | التخصص: إدارة أعمال | الجنسية: الأردن | النوع: أنثى', details:'الشقة المحجوزة: ستوديو مودرن - شارع كوستافا (380$) | طريقة الدفع: نقداً عند معاينة واستلام الشقة.', status:'جاري التنفيذ'},
-        { id: 3, type:'️ طلب خدمة طلابية', student_name:'أحمد جمال', student_phone:'+995555123456', student_info:'الجامعة: جامعة إيليا | التخصص: هندسة حاسبات | الجنسية: السعودية | النوع: ذكر', details:'الخدمة المطلوبة: الاستقبال والنقل من المطار | موعد الوصول: يوم الخميس الساعة 3 فجراً، عدد 2 حقيبة.', status:'مكتمل'}
-    ],
-    chats: [
-        {
-            id: 1,
-            student_name:'مصطفى علي',
-            student_uni:'الطب البشري - TSMU',
-            phone:'+995555112233',
-            last_msg:'مرحباً، قمت بتعبئة نموذج البحث عن شريك سكن، هل يوجد طالب متوافق معي حالياً؟',
-            time:'منذ 10 دقائق',
-            status:'رسالة جديدة',
-            messages: [
-                { sender:'student', text:'مرحباً خدمة العملاء، قمت بتعبئة نموذج البحث عن شريك سكن لشقة في شارع بيكيني.', time:'10:15 صباحاً'},
-                { sender:'student', text:'هل يوجد طالب متوافق معي حالياً جاهز للانتقال الفوري؟', time:'10:16 صباحاً'}
-            ]
-        },
-        {
-            id: 2,
-            student_name:'سارة محمد',
-            student_uni:'إدارة أعمال - UG',
-            phone:'+995555445566',
-            last_msg:'شكراً لكم، تم تأكيد موعد معاينة الاستوديو غداً صباحاً.', time:'منذ ساعتين',
-            status:'تم الرد ️',
-            messages: [
-                { sender:'student', text:'مرحباً، أود حجز الاستوديو المودرن في شارع كوستافا بسعر 380$.', time:'أمس'},
-                { sender:'admin', text:'أهلاً بك سارة في أبشر! الاستوديو متاح حالياً ومفروش بالكامل. هل يناسبك معاينته غداً؟', time:'أمس'},
-                { sender:'student', text:'شكراً لكم، تم تأكيد موعد معاينة الاستوديو غداً صباحاً.', time:'منذ ساعتين'}
-            ]
-        },
-        {
-            id: 3,
-            student_name:'خالد عبد الله',
-            student_uni:'جامعة تبليسي الحكومية TSU',
-            phone:'+995555778899',
-            last_msg:'شكراً جزيلاً على سرعة الرد والمساعدة في الإقامة!', time:'أمس',
-            status:'مكتمل',
-            messages: [
-                { sender:'student', text:'استفسار بخصوص أوراق تجديد الإقامة الطلابية المطلوبة هذا العام.', time:'أمس'},
-                { sender:'admin', text:'مرحباً خالد، المطلوب شهادة طالب حديثة وكشف حساب بنكي وعقد السكن القانوني. يمكننا تجهيز كافة الملفات لك.', time:'أمس'},
-                { sender:'student', text:'شكراً جزيلاً على سرعة الرد والمساعدة في الإقامة!', time:'أمس'}
-            ]
-        }
-    ],
-    reviews: [
-        { id: 1, student_name:'د. عمر خالد', uni:'جامعة تبليسي الطبية TSMU', rating: 5, comment:'تطبيق أبشر رائع جداً! ساعدني في العثور على سكن ومطابقة شريك سكن محترم خلال أيام قليلة وبكل سهولة، خدمة ممتازة.', date:'2026-06-29'},
-        { id: 2, student_name:'ريم أحمد', uni:'جامعة جورجيا UG', rating: 5, comment:'فريق خدمة العملاء سريع جداً في الرد على الشات، والاستقبال من المطار كان في الموعد المحدد بكل احترافية وأمان.', date:'2026-06-28'},
-        { id: 3, student_name:'يوسف محمود', uni:'جامعة إيليا الحكومية', rating: 4, comment:'خيارات الشقق ممتازة ومفروشة بالكامل والأسعار مناسبة جداً لميزانية الطلاب في تبليسي.', date:'2026-06-26'}
-    ],
+let appData = {
+    apartments: [],
+    services: [],
+    students: [],
+    requests: [],
+    chats: [],
+    reviews: [],
     news: [],
     notifications: [],
-    universities: [{ id: 1, name:'جامعة تبليسي الطبية (TSMU)'}],
-    districts: [
-        { id: 1, name:'سابورتالو (Saburtalo)'},
-        { id: 2, name:'فاكي (Vake)'},
-        { id: 3, name:'ديدوبي (Didube)'},
-        { id: 4, name:'متاتسميندا (Mtatsminda)'},
-        { id: 5, name:'إساني (Isani)'},
-        { id: 6, name:'جلَداني (Gldani)'}
-    ]
+    universities: [],
+    districts: []
 };
-
-let appData = { ...MOCK_DATA };
-let useSimulation = false;
 
 // Initialize
 document.addEventListener('DOMContentLoaded', async () => {
@@ -313,9 +204,6 @@ async function loadDashboardData() {
     renderAll();
 }
 
-function saveLocalData() {
-    // No-op for direct MySQL API
-}
 
 function resolveImgUrl(url) {
     if (!url) return'';
@@ -994,31 +882,27 @@ async function handleAddApartment(e) {
         description: document.getElementById('aptDesc').value + ` (${bathrooms})`
     };
 
-    if (!useSimulation) {
-        await window.authFetch(`${API_URL}?action=add_apartment`, {
+    try {
+        const res = await window.authFetch(`${API_URL}?action=add_apartment`, {
             method:'POST',
             headers: {'Content-Type':'application/json'},
             body: JSON.stringify(newApt)
         });
-        await loadDashboardData();
-    } else {
-        const newNotifId = appData.notifications.length > 0 ? Math.max(...appData.notifications.map(n => n.id)) + 1 : 1;
-        appData.notifications.unshift({
-            id: newNotifId,
-            title:"شقة سكنية جديدة معروضة للإيجار",
-            content: `تمت إضافة شقة سكنية جديدة للإيجار في حي: ${newApt.location} بسعر ${newApt.price}. تصفح شاشات السكن للاطلاع على الصور والتفاصيل كاملة.`,
-            created_at: new Date().toISOString(),
-            date:'الآن'});
-        appData.apartments.unshift(newApt);
-        saveLocalData();
-        renderAll();
+        const data = await res.json();
+        if (data.status === 'success') {
+            await loadDashboardData();
+            closeModal('aptModal');
+            document.getElementById('aptForm').reset();
+            const aptContainer = document.getElementById('aptImgPreviewsContainer');
+            if (aptContainer) aptContainer.innerHTML ='';
+            showToast('تمت إضافة الشقة بنجاح ونشرها في التطبيق!');
+        } else {
+            showToast('حدث خطأ أثناء الإضافة: ' + (data.message || ''));
+        }
+    } catch(e) {
+        console.error(e);
+        showToast('خطأ في الاتصال بالخادم');
     }
-
-    closeModal('aptModal');
-    document.getElementById('aptForm').reset();
-    const aptContainer = document.getElementById('aptImgPreviewsContainer');
-    if (aptContainer) aptContainer.innerHTML ='';
-    showToast('تمت إضافة الشقة بنجاح ونشرها في التطبيق!');
 }
 
 // Add Service Handler
@@ -1030,7 +914,7 @@ async function handleAddService(e) {
         id: Date.now(),
         title: document.getElementById('svcTitle').value.trim(),
         description: document.getElementById('svcDesc').value.trim(),
-        image_url: (rawImg && rawImg.trim() !=='') ? rawImg :'https://images.unsplash.com/photo-1581092160607-ee22621dd758?auto=format&fit=crop&w=500&q=80',
+        image_url: rawImg && rawImg.trim() !== '' ? rawImg : '',
         has_form: hasForm
     };
 
@@ -1039,74 +923,71 @@ async function handleAddService(e) {
         return;
     }
 
-    if (!useSimulation) {
-        try {
-            const res = await window.authFetch(`${API_URL}?action=add_service`, {
-                method:'POST',
-                headers: {'Content-Type':'application/json'},
-                body: JSON.stringify(newSvc)
-            });
-            const data = await res.json();
-            if (data.status !=='success') {
-                showToast(` فشل في إضافة الخدمة: ${data.message ||'خطأ غير معروف'}`);
-                return;
-            }
+    try {
+        const res = await window.authFetch(`${API_URL}?action=add_service`, {
+            method:'POST',
+            headers: {'Content-Type':'application/json'},
+            body: JSON.stringify(newSvc)
+        });
+        const data = await res.json();
+        if (data.status === 'success') {
             await loadDashboardData();
-        } catch (err) {
-            showToast(` حدث خطأ أثناء الاتصال بالخادم عند إضافة الخدمة.`);
-            console.error('Error adding service:', err);
-            return;
+            closeModal('svcModal');
+            document.getElementById('svcForm').reset();
+            document.getElementById('svcImg').value = '';
+            const prev = document.getElementById('svcImgPreview');
+            if (prev) prev.style.display ='none';
+            showToast('تمت إضافة الخدمة بنجاح ️');
+        } else {
+            showToast(`فشل في إضافة الخدمة: ${data.message || 'خطأ غير معروف'}`);
         }
-    } else {
-        const newNotifId = appData.notifications.length > 0 ? Math.max(...appData.notifications.map(n => n.id)) + 1 : 1;
-        appData.notifications.unshift({
-            id: newNotifId,
-            title:"️ خدمة طلابية جديدة متوفرة الآن",
-            content: `تمت إضافة خدمة طلابية جديدة: ${newSvc.title}. تصفح قسم الخدمات للطلب والاستفسار مباشرة.`,
-            created_at: new Date().toISOString(),
-            date:'الآن'});
-        appData.services.unshift(newSvc);
-        saveLocalData();
-        renderAll();
+    } catch (err) {
+        showToast(`حدث خطأ أثناء الاتصال بالخادم عند إضافة الخدمة.`);
+        console.error('Error adding service:', err);
     }
-
-    closeModal('svcModal');
-    document.getElementById('svcForm').reset();
-    document.getElementById('svcImg').value ='https://images.unsplash.com/photo-1581092160607-ee22621dd758?auto=format&fit=crop&w=500&q=80';
-    const prev = document.getElementById('svcImgPreview');
-    if (prev) prev.style.display ='none';
-    showToast('تمت إضافة الخدمة بنجاح إلى قائمة الخدمات! ️');
 }
 
 // Delete Handlers
 async function deleteApartment(id) {
     if (!confirm('هل أنت متأكد من رغبتك في حذف هذه الشقة؟')) return;
-    if (!useSimulation) {
-        await window.authFetch(`${API_URL}?action=delete_apartment`, {
+    try {
+        const res = await window.authFetch(`${API_URL}?action=delete_apartment`, {
             method:'POST',
             headers: {'Content-Type':'application/json'},
             body: JSON.stringify({ id })
         });
+        const data = await res.json();
+        if (data.status === 'success') {
+            await loadDashboardData();
+            showToast('تم حذف الشقة بنجاح ️');
+        } else {
+            showToast('حدث خطأ أثناء الحذف: ' + (data.message || ''));
+        }
+    } catch(e) {
+        console.error(e);
+        showToast('خطأ في الاتصال بالخادم');
     }
-    appData.apartments = appData.apartments.filter(a => a.id !== id);
-    saveLocalData();
-    renderAll();
-    showToast('تم حذف الشقة بنجاح ️');
 }
 
 async function deleteService(id) {
     if (!confirm('هل أنت متأكد من رغبتك في حذف هذه الخدمة؟')) return;
-    if (!useSimulation) {
-        await window.authFetch(`${API_URL}?action=delete_service`, {
+    try {
+        const res = await window.authFetch(`${API_URL}?action=delete_service`, {
             method:'POST',
             headers: {'Content-Type':'application/json'},
             body: JSON.stringify({ id })
         });
+        const data = await res.json();
+        if (data.status === 'success') {
+            await loadDashboardData();
+            showToast('تم حذف الخدمة بنجاح ️');
+        } else {
+            showToast('حدث خطأ أثناء الحذف: ' + (data.message || ''));
+        }
+    } catch(e) {
+        console.error(e);
+        showToast('خطأ في الاتصال بالخادم');
     }
-    appData.services = appData.services.filter(s => s.id !== id);
-    saveLocalData();
-    renderAll();
-    showToast('تم حذف الخدمة بنجاح ️');
 }
 
 // Universities Handlers
@@ -1128,45 +1009,46 @@ async function handleAddUniversity(e) {
     const name = document.getElementById('uniName').value.trim();
     if (!name) return;
 
-    if (!useSimulation) {
-        try {
-            const res = await window.authFetch(`${API_URL}?action=add_university`, {
-                method:'POST',
-                headers: {'Content-Type':'application/json'},
-                body: JSON.stringify({ name })
-            });
-            const data = await res.json();
-            if (data.status ==='success') {
-                showToast('تم إضافة الجامعة بنجاح');
-                await loadDashboardData();
-            }
-        } catch (err) {
-            showToast('حدث خطأ أثناء الاتصال بالخادم');
+    try {
+        const res = await window.authFetch(`${API_URL}?action=add_university`, {
+            method:'POST',
+            headers: {'Content-Type':'application/json'},
+            body: JSON.stringify({ name })
+        });
+        const data = await res.json();
+        if (data.status === 'success') {
+            await loadDashboardData();
+            closeModal('uniModal');
+            document.getElementById('uniForm').reset();
+            showToast('تم إضافة الجامعة بنجاح');
+        } else {
+            showToast('حدث خطأ أثناء الإضافة: ' + (data.message || ''));
         }
-    } else {
-        const newId = appData.universities.length > 0 ? Math.max(...appData.universities.map(u => u.id)) + 1 : 1;
-        appData.universities.push({ id: newId, name });
-        saveLocalData();
-        renderAll();
-        showToast('تم إضافة الجامعة بنجاح');
+    } catch (err) {
+        console.error(err);
+        showToast('حدث خطأ أثناء الاتصال بالخادم');
     }
-    closeModal('uniModal');
-    document.getElementById('uniForm').reset();
 }
 
 async function deleteUniversity(id) {
     if (!confirm('هل أنت متأكد من حذف هذه الجامعة؟')) return;
-    if (!useSimulation) {
-        await window.authFetch(`${API_URL}?action=delete_university`, {
+    try {
+        const res = await window.authFetch(`${API_URL}?action=delete_university`, {
             method:'POST',
             headers: {'Content-Type':'application/json'},
             body: JSON.stringify({ id })
         });
+        const data = await res.json();
+        if (data.status === 'success') {
+            await loadDashboardData();
+            showToast('تم حذف الجامعة بنجاح ️');
+        } else {
+            showToast('حدث خطأ أثناء الحذف: ' + (data.message || ''));
+        }
+    } catch(e) {
+        console.error(e);
+        showToast('خطأ في الاتصال بالخادم');
     }
-    appData.universities = appData.universities.filter(u => u.id !== id);
-    saveLocalData();
-    renderAll();
-    showToast('تم حذف الجامعة بنجاح ️');
 }
 
 function toggleUniTime(checkbox, uniId) {
@@ -1214,37 +1096,46 @@ async function handleAddDistrict(event) {
     const name = document.getElementById('districtName').value.trim();
     if (!name) return;
 
-    if (!useSimulation) {
-        await window.authFetch(`${API_URL}?action=add_district`, {
+    try {
+        const res = await window.authFetch(`${API_URL}?action=add_district`, {
             method:'POST',
             headers: {'Content-Type':'application/json'},
             body: JSON.stringify({ name })
         });
-    } else {
-        const newId = appData.districts.length > 0 ? Math.max(...appData.districts.map(d => d.id)) + 1 : 1;
-        appData.districts.push({ id: newId, name });
+        const data = await res.json();
+        if (data.status === 'success') {
+            await loadDashboardData();
+            showToast('تمت إضافة الحي بنجاح');
+            closeModal('districtModal');
+            document.getElementById('districtForm').reset();
+        } else {
+            showToast('حدث خطأ أثناء إضافة الحي');
+        }
+    } catch (e) {
+        console.error(e);
+        showToast('خطأ في الاتصال بالخادم');
     }
-
-    saveLocalData();
-    renderAll();
-    showToast('تمت إضافة الحي بنجاح');
-    closeModal('districtModal');
-    document.getElementById('districtForm').reset();
 }
 
 async function deleteDistrict(id) {
     if (!confirm('هل أنت متأكد من حذف هذا الحي؟')) return;
-    if (!useSimulation) {
-        await window.authFetch(`${API_URL}?action=delete_district`, {
+    try {
+        const res = await window.authFetch(`${API_URL}?action=delete_district`, {
             method:'POST',
             headers: {'Content-Type':'application/json'},
             body: JSON.stringify({ id })
         });
+        const data = await res.json();
+        if (data.status === 'success') {
+            await loadDashboardData();
+            showToast('تم حذف الحي بنجاح ️');
+        } else {
+            showToast('حدث خطأ أثناء الحذف');
+        }
+    } catch(e) {
+        console.error(e);
+        showToast('خطأ في الاتصال بالخادم');
     }
-    appData.districts = appData.districts.filter(d => d.id !== id);
-    saveLocalData();
-    renderAll();
-    showToast('تم حذف الحي بنجاح ️');
 }
 
 function populateAptLocationSelect() {
@@ -1256,47 +1147,24 @@ function populateAptLocationSelect() {
 }
 
 async function updateRequestStatus(id, newStatus) {
-    if (!useSimulation) {
-        await window.authFetch(`${API_URL}?action=update_request_status`, {
+    try {
+        const res = await window.authFetch(`${API_URL}?action=update_request_status`, {
             method:'POST',
             headers: {'Content-Type':'application/json'},
             body: JSON.stringify({ id, status: newStatus })
         });
-    }
-    const req = appData.requests.find(r => r.id === id);
-    if (req) {
-        req.status = newStatus;
-        
-        // Automated chat message to the student
-        const cleanPhone = (req.student_phone ||'').replace(/[^0-9+]/g,'');
-        let chat = appData.chats.find(c => c.phone.replace(/[^0-9+]/g,'') === cleanPhone || c.student_name === req.student_name);
-        
-        const autoMsgText = ` إشعار آلي: تم تحديث حالة طلبك (#${req.id} - ${req.type}) إلى: ${newStatus}`;
-        
-        if (chat) {
-            chat.messages.push({
-                sender:'admin',
-                text: autoMsgText,
-                time:'الآن'});
-            chat.last_msg = autoMsgText;
-            chat.time ='الآن';
-            chat.status ='تم الرد ️';
+        const data = await res.json();
+        if (data.status === 'success') {
+            await loadDashboardData();
+            showToast('تم تحديث حالة الطلب بنجاح');
         } else {
-            appData.chats.unshift({
-                id: Date.now(),
-                student_name: req.student_name,
-                student_uni:'غير محدد',
-                phone: req.student_phone ||'',
-                last_msg: autoMsgText,
-                time:'الآن',
-                status:'تم الرد ️',
-                messages: [{
-                    sender:'admin',
-                    text: autoMsgText,
-                    time:'الآن'}]
-            });
+            showToast('حدث خطأ أثناء التحديث');
         }
+    } catch(e) {
+        console.error(e);
+        showToast('خطأ في الاتصال بالخادم');
     }
+}
     renderAll();
     showToast(`تم تحديث حالة الطلب إلى"${newStatus}"وتم إرسال إشعار آلي للطالب في الشات `);
 }
@@ -1735,40 +1603,27 @@ async function sendCustomWaMessage(msgData) {
     const chat = appData.chats.find(c => c.id === chatId);
     if (!chat) return;
 
-    if (!useSimulation) {
-        await window.authFetch(`${API_URL}?action=send_chat_reply`, {
+    try {
+        const res = await window.authFetch(`${API_URL}?action=send_chat_reply`, {
             method:'POST',
             headers: {'Content-Type':'application/json'},
             body: JSON.stringify({
                 chat_id: chatId,
                 text: msgData.text,
                 type: msgData.type ||'text',
-                image_url: msgData.imageUrl ||''})
+                image_url: msgData.imageUrl ||''
+            })
         });
-    }
-
-    if (!chat.messages) chat.messages = [];
-    const now = new Date();
-    const timeStr = now.toLocaleTimeString('ar-EG', { hour:'2-digit', minute:'2-digit'});
-
-    chat.messages.push({
-        sender:'admin',
-        text: msgData.text,
-        type: msgData.type,
-        imageUrl: msgData.imageUrl,
-        time: timeStr
-    });
-
-    chat.last_msg = msgData.type ==='image'?'صورة مرفقة': (msgData.type ==='video'?'فيديو مرفق': msgData.text);
-    chat.status ='تم الرد ️';
-
-    renderWaThread(chat);
-    renderChatMessagesThread(chat);
-    renderChats();
-    const selectedItem = document.getElementById(`waItem-${chatId}`);
-    if (selectedItem) {
-        selectedItem.style.background ='rgba(37,211,102,0.12)';
-        selectedItem.style.borderLeft ='4px solid #25D366';
+        const data = await res.json();
+        if (data.status === 'success') {
+            await loadDashboardData();
+            // Optional: re-select the chat to show new messages
+        } else {
+            showToast('فشل في إرسال الرسالة');
+        }
+    } catch(e) {
+        console.error(e);
+        showToast('خطأ في الاتصال بالخادم');
     }
 }
 
@@ -1790,30 +1645,17 @@ async function handleSendWaReply(e) {
 
     const chat = appData.chats.find(c => c.id === chatId);
     if (chat) {
-        if (!chat.messages) chat.messages = [];
-        
-        const now = new Date();
-        const timeStr = now.toLocaleTimeString('ar-EG', { hour:'2-digit', minute:'2-digit'});
-
-        let newMsg = {
-            sender:'admin',
-            text: replyText,
-            time: timeStr
-        };
-
         let qText ='';
         let qSender ='';
         // Attach Quoted Reply if active
-        if (currentQuoteIndex !== null && chat.messages[currentQuoteIndex]) {
+        if (currentQuoteIndex !== null && chat.messages && chat.messages[currentQuoteIndex]) {
             qText = chat.messages[currentQuoteIndex].text;
             qSender = chat.messages[currentQuoteIndex].sender;
-            newMsg.quoteText = qText;
-            newMsg.quoteSender = qSender;
             cancelWaQuote();
         }
 
-        if (!useSimulation) {
-            await window.authFetch(`${API_URL}?action=send_chat_reply`, {
+        try {
+            const res = await window.authFetch(`${API_URL}?action=send_chat_reply`, {
                 method:'POST',
                 headers: {'Content-Type':'application/json'},
                 body: JSON.stringify({
@@ -1823,23 +1665,18 @@ async function handleSendWaReply(e) {
                     quote_sender: qSender
                 })
             });
+            const data = await res.json();
+            if (data.status === 'success') {
+                input.value ='';
+                await loadDashboardData();
+                showToast('تم إرسال ردك إلى الطالب وحفظه في السيرفر!');
+            } else {
+                showToast('فشل في إرسال الرسالة');
+            }
+        } catch(err) {
+            console.error(err);
+            showToast('خطأ في الاتصال بالخادم');
         }
-
-        chat.messages.push(newMsg);
-        chat.last_msg ='الرد:'+ replyText;
-        chat.status ='تم الرد ️';
-
-        renderWaThread(chat);
-        renderChats(); // re-render list column to update preview
-        // re-highlight selected
-        const selectedItem = document.getElementById(`waItem-${chatId}`);
-        if (selectedItem) {
-            selectedItem.style.background ='rgba(37,211,102,0.12)';
-            selectedItem.style.borderLeft ='4px solid #25D366';
-        }
-
-        input.value ='';
-        showToast('تم إرسال ردك إلى الطالب وحفظه في السيرفر!');
     }
 }
 
@@ -1898,7 +1735,7 @@ async function handleAddNews(e) {
 
     if (!title || !content) return;
 
-    if (!useSimulation) {
+    try {
         const res = await window.authFetch(`${API_URL}?action=add_news`, {
             method:'POST',
             headers: {'Content-Type':'application/json'},
@@ -1906,48 +1743,40 @@ async function handleAddNews(e) {
         });
         const result = await res.json();
         if (result.status ==='success') {
-            showToast(result.message);
+            await loadDashboardData();
+            closeModal('newsModal');
+            document.getElementById('newsForm').reset();
+            showToast(result.message || 'تم نشر الخبر بنجاح!');
         } else {
-            showToast('خطأ:'+ result.message);
-            return;
+            showToast('خطأ: ' + (result.message || ''));
         }
-    } else {
-        const newId = appData.news.length > 0 ? Math.max(...appData.news.map(n => n.id)) + 1 : 1;
-        appData.news.unshift({
-            id: newId,
-            title: title,
-            content: content,
-            image_url: imageUrl,
-            created_at: new Date().toISOString(),
-            date:'الآن'});
-        saveLocalData();
-        showToast('تم نشر الخبر بنجاح!');
+    } catch(err) {
+        console.error(err);
+        showToast('خطأ في الاتصال بالخادم');
     }
-
-    closeModal('newsModal');
-    document.getElementById('newsForm').reset();
-    loadDashboardData();
 }
 
 // Delete news alert
 async function handleDeleteNews(id) {
     if (!confirm('هل أنت متأكد من رغبتك في حذف هذا الخبر نهائياً؟')) return;
 
-    if (!useSimulation) {
+    try {
         const res = await window.authFetch(`${API_URL}?action=delete_news`, {
             method:'POST',
             headers: {'Content-Type':'application/json'},
             body: JSON.stringify({ id })
         });
         const result = await res.json();
-        showToast(result.message);
-    } else {
-        appData.news = appData.news.filter(n => n.id !== id);
-        saveLocalData();
-        showToast('تم حذف الخبر بنجاح ️');
+        if (result.status === 'success') {
+            await loadDashboardData();
+            showToast(result.message || 'تم حذف الخبر بنجاح ️');
+        } else {
+            showToast('خطأ: ' + (result.message || ''));
+        }
+    } catch(err) {
+        console.error(err);
+        showToast('خطأ في الاتصال بالخادم');
     }
-
-    loadDashboardData();
 }
 
 // Render Georgia Notifications List
@@ -2007,7 +1836,7 @@ async function handleAddNotification(e) {
 
     if (!title || !content) return;
 
-    if (!useSimulation) {
+    try {
         const res = await window.authFetch(`${API_URL}?action=add_notification`, {
             method:'POST',
             headers: {'Content-Type':'application/json'},
@@ -2015,47 +1844,40 @@ async function handleAddNotification(e) {
         });
         const result = await res.json();
         if (result.status ==='success') {
-            showToast(result.message);
+            await loadDashboardData();
+            closeModal('notificationModal');
+            document.getElementById('notificationForm').reset();
+            showToast(result.message || 'تم نشر التنبيه بنجاح');
         } else {
-            showToast('خطأ:'+ result.message);
-            return;
+            showToast('خطأ: ' + (result.message || ''));
         }
-    } else {
-        const newId = appData.notifications.length > 0 ? Math.max(...appData.notifications.map(n => n.id)) + 1 : 1;
-        appData.notifications.unshift({
-            id: newId,
-            title: title,
-            content: content,
-            created_at: new Date().toISOString(),
-            date:'الآن'});
-        saveLocalData();
-        showToast('تم نشر التنبيه بنجاح (المحاكاة نشطة)');
+    } catch(err) {
+        console.error(err);
+        showToast('خطأ في الاتصال بالخادم');
     }
-
-    closeModal('notificationModal');
-    document.getElementById('notificationForm').reset();
-    loadDashboardData();
 }
 
 // Delete notification
 async function handleDeleteNotification(id) {
     if (!confirm('هل أنت متأكد من رغبتك في حذف هذا التنبيه نهائياً؟')) return;
 
-    if (!useSimulation) {
+    try {
         const res = await window.authFetch(`${API_URL}?action=delete_notification`, {
             method:'POST',
             headers: {'Content-Type':'application/json'},
             body: JSON.stringify({ id })
         });
         const result = await res.json();
-        showToast(result.message);
-    } else {
-        appData.notifications = appData.notifications.filter(n => n.id !== id);
-        saveLocalData();
-        showToast('تم حذف التنبيه بنجاح ️');
+        if (result.status === 'success') {
+            await loadDashboardData();
+            showToast(result.message || 'تم حذف التنبيه بنجاح ️');
+        } else {
+            showToast('خطأ: ' + (result.message || ''));
+        }
+    } catch(err) {
+        console.error(err);
+        showToast('خطأ في الاتصال بالخادم');
     }
-
-    loadDashboardData();
 }
 
 function isEmbeddableVideo(url) {

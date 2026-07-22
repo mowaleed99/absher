@@ -1,4 +1,6 @@
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import '../../services/api_service.dart';
 import '../../theme/app_colors.dart';
 
@@ -123,6 +125,9 @@ class _AdminChatDetailScreenState extends State<AdminChatDetailScreen> {
   final _scrollController = ScrollController();
   List<Map<String, dynamic>> _messages = [];
   bool _isSending = false;
+  final ImagePicker _picker = ImagePicker();
+  XFile? _selectedImage;
+  Uint8List? _selectedImageBytes;
 
   @override
   void initState() {
@@ -187,9 +192,20 @@ class _AdminChatDetailScreenState extends State<AdminChatDetailScreen> {
     });
   }
 
+  Future<void> _pickImage() async {
+    final picked = await _picker.pickImage(source: ImageSource.gallery);
+    if (picked != null) {
+      final bytes = await picked.readAsBytes();
+      setState(() {
+        _selectedImage = picked;
+        _selectedImageBytes = bytes;
+      });
+    }
+  }
+
   Future<void> _sendReply() async {
     final text = _messageController.text.trim();
-    if (text.isEmpty) return;
+    if (text.isEmpty && _selectedImage == null) return;
 
     final chatId = widget.chat['id'] is int
         ? widget.chat['id'] as int
@@ -197,18 +213,44 @@ class _AdminChatDetailScreenState extends State<AdminChatDetailScreen> {
 
     setState(() => _isSending = true);
 
-    final success = await ApiService.adminSendMessage(chatId: chatId, text: text);
+    String imageUrl = '';
+    String msgType = 'text';
 
-    if (mounted) {
-      if (success) {
-        _messageController.clear();
-        await _loadMessages();
-      } else {
+    try {
+      if (_selectedImage != null) {
+        imageUrl = (await ApiService.uploadImage(_selectedImage!, 'chats')) ?? '';
+        msgType = 'image';
+      }
+
+      final success = await ApiService.adminSendMessage(
+        chatId: chatId, 
+        text: text,
+        type: msgType,
+        imageUrl: imageUrl,
+      );
+
+      if (mounted) {
+        if (success) {
+          _messageController.clear();
+          setState(() {
+            _selectedImage = null;
+            _selectedImageBytes = null;
+          });
+          await _loadMessages();
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Failed to send message')),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Failed to send message')),
+          SnackBar(content: Text('Error: $e')),
         );
       }
-      setState(() => _isSending = false);
+    } finally {
+      if (mounted) setState(() => _isSending = false);
     }
   }
 
@@ -289,35 +331,72 @@ class _AdminChatDetailScreenState extends State<AdminChatDetailScreen> {
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
             color: Colors.white,
             child: SafeArea(
-              child: Row(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Expanded(
-                    child: TextField(
-                      controller: _messageController,
-                      decoration: InputDecoration(
-                        hintText: 'Type admin reply...',
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(24),
-                        ),
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                      ),
-                      maxLines: null,
-                      onSubmitted: (_) => _sendReply(),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  CircleAvatar(
-                    backgroundColor: AppColors.primary,
-                    child: _isSending
-                        ? const SizedBox(
-                            width: 20,
-                            height: 20,
-                            child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
-                          )
-                        : IconButton(
-                            icon: const Icon(Icons.send, color: Colors.white),
-                            onPressed: _sendReply,
+                  if (_selectedImageBytes != null)
+                    Stack(
+                      children: [
+                        Container(
+                          margin: const EdgeInsets.only(bottom: 8, left: 8),
+                          width: 80,
+                          height: 80,
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(8),
+                            image: DecorationImage(
+                              image: MemoryImage(_selectedImageBytes!),
+                              fit: BoxFit.cover,
+                            ),
                           ),
+                        ),
+                        Positioned(
+                          right: -10,
+                          top: -10,
+                          child: IconButton(
+                            icon: const Icon(Icons.cancel, color: Colors.black54),
+                            onPressed: () => setState(() {
+                              _selectedImage = null;
+                              _selectedImageBytes = null;
+                            }),
+                          ),
+                        ),
+                      ],
+                    ),
+                  Row(
+                    children: [
+                      IconButton(
+                        icon: const Icon(Icons.image, color: AppColors.primary),
+                        onPressed: _pickImage,
+                      ),
+                      Expanded(
+                        child: TextField(
+                          controller: _messageController,
+                          decoration: InputDecoration(
+                            hintText: 'Type admin reply...',
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(24),
+                            ),
+                            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                          ),
+                          maxLines: null,
+                          onSubmitted: (_) => _sendReply(),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      CircleAvatar(
+                        backgroundColor: AppColors.primary,
+                        child: _isSending
+                            ? const SizedBox(
+                                width: 20,
+                                height: 20,
+                                child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                              )
+                            : IconButton(
+                                icon: const Icon(Icons.send, color: Colors.white),
+                                onPressed: _sendReply,
+                              ),
+                      ),
+                    ],
                   ),
                 ],
               ),

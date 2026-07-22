@@ -14,7 +14,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 
 $data = file_get_contents("php://input");
 if ($data) {
-    file_put_contents(__DIR__ . '/../admin/database.json', $data);
+    // database.json is deprecated and removed.
+    // file_put_contents(__DIR__ . '/../admin/database.json', $data);
     echo json_encode(["status" => "success"]);
 } else {
     echo json_encode(["status" => "error", "message" => "No data provided"]);
