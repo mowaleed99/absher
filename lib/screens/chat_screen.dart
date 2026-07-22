@@ -186,31 +186,31 @@ class _ChatScreenState extends State<ChatScreen> {
     }
   }
 
-  void _sendMessage() {
+  Future<void> _sendMessage() async {
     if (_messageController.text.trim().isEmpty) return;
     final text = _messageController.text.trim();
     final quoteText = _replyingToMsg != null ? _replyingToMsg!['text']?.toString() ?? '' : '';
     final quoteSender = _replyingToMsg != null ? _replyingToMsg!['sender']?.toString() ?? '' : '';
 
-    setState(() {
-      _messages.add({
-        'text': text,
-        'isMe': true,
-        'time': LanguageService.tr('auto_trans_1025'),
-        'quoteText': quoteText,
-        'quoteSender': quoteSender,
-      });
-      _replyingToMsg = null;
-    });
-    _messageController.clear();
+    setState(() => _replyingToMsg = null);
 
-    // إرسال الرسالة لقاعدة البيانات في سيرفر الباك اند
-    ApiService.sendChatMessage(
+    final success = await ApiService.sendChatMessage(
       chatId: _currentChatId,
       text: text,
       quoteText: quoteText,
       quoteSender: quoteSender,
     );
+
+    if (mounted) {
+      if (success) {
+        _messageController.clear();
+        await _loadMessages();
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(LanguageService.tr('failed_to_send'))),
+        );
+      }
+    }
   }
 
   void _showRatingDialog() {
@@ -275,29 +275,30 @@ class _ChatScreenState extends State<ChatScreen> {
     );
   }
 
-  void _sendMediaMessage(String type, String url, String text) {
+  Future<void> _sendMediaMessage(String type, String url, String text) async {
     final quoteText = _replyingToMsg != null ? _replyingToMsg!['text']?.toString() ?? '' : '';
     final quoteSender = _replyingToMsg != null ? _replyingToMsg!['sender']?.toString() ?? '' : '';
 
-    setState(() {
-      _messages.add({
-        'text': text,
-        'type': type,
-        'imageUrl': url,
-        'isMe': true,
-        'time': LanguageService.tr('auto_trans_1031'),
-        'quoteText': quoteText,
-        'quoteSender': quoteSender,
-      });
-      _replyingToMsg = null;
-    });
+    setState(() => _replyingToMsg = null);
 
-    ApiService.sendChatMessage(
+    final success = await ApiService.sendChatMessage(
       chatId: _currentChatId,
       text: text,
       type: type,
       imageUrl: url,
+      quoteText: quoteText,
+      quoteSender: quoteSender,
     );
+
+    if (mounted) {
+      if (success) {
+        await _loadMessages();
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(LanguageService.tr('failed_to_send'))),
+        );
+      }
+    }
   }
 
   void _showAttachMediaDialog() {

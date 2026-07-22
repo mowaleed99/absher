@@ -44,6 +44,7 @@ class ApiService {
   }
 
   /// Fetch the currently logged-in student using the stored auth token.
+  /// Response format: {"success":true,"data":{"student":{...}}}
   static Future<Student?> getCurrentUser() async {
     if (authToken == null) return null;
     try {
@@ -53,8 +54,10 @@ class ApiService {
       );
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-        if (data['status'] == 'success' && data['user'] != null) {
-          return Student.fromJson(data['user']);
+        final isSuccess = data['success'] == true || data['status'] == 'success';
+        final student = data['data']?['student'] ?? data['user'];
+        if (isSuccess && student != null) {
+          return Student.fromJson(student as Map<String, dynamic>);
         }
       }
     } catch (e) {
@@ -116,39 +119,34 @@ class ApiService {
     return '$serverRoot/$cleanPath';
   }
 
-  // تسجيل الدخول
+  // تسجيل الدخول — يستخدم /auth/login.php الذي يصدر JWT
+  // Response: {"success":true,"data":{"token":"...","student":{...}}}
   static Future<Map<String, dynamic>> login(String identifier, String password) async {
     try {
       final response = await http.post(
-        Uri.parse('$baseUrl/login.php'),
+        Uri.parse('$baseUrl/auth/login.php'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
-          'identifier': identifier, // البريد الإلكتروني أو رقم الهاتف
+          'identifier': identifier,
           'password': password,
         }),
       );
 
       if (response.statusCode == 200) {
-        return jsonDecode(response.body);
+        final data = jsonDecode(response.body) as Map<String, dynamic>;
+        final isSuccess = data['success'] == true || data['status'] == 'success';
+        // Save token if login succeeded
+        final token = data['data']?['token'] ?? data['token'];
+        if (isSuccess && token != null) {
+          await saveAuthToken(token.toString());
+        }
+        return data;
       } else {
-        return {'status': 'error', 'message': 'خطأ في الاتصال بالخادم (${response.statusCode})'};
+        return {'success': false, 'message': 'خطأ في الاتصال بالخادم (${response.statusCode})'};
       }
     } catch (e) {
-      // وضع محاكاة (Fallback Simulation) للتجربة الفورية قبل تشغيل سيرفر الـ PHP
-      await Future.delayed(const Duration(milliseconds: 800));
-      if (identifier.isNotEmpty && password.isNotEmpty) {
-        return {
-          'status': 'success',
-          'user': {
-            'id': 1,
-            'name': LanguageService.tr('auto_trans_1292'),
-            'email': identifier,
-            'uni': LanguageService.tr('auto_trans_1293'),
-            'is_guest': false
-          }
-        };
-      }
-      return {'status': 'error', 'message': 'فشل الاتصال بالخادم: $e'};
+      debugPrint('login error: $e');
+      return {'success': false, 'message': 'فشل الاتصال بالخادم: $e'};
     }
   }
 
@@ -196,37 +194,44 @@ class ApiService {
   }
 
   // جلب كافة الشقق السكنية المتاحة
+  // Calls /apartments/list.php — public endpoint, returns is_available=1 only
+  // Response: {"success":true,"data":{"apartments":[...]}}
   static Future<List<Map<String, dynamic>>> getApartments() async {
     try {
       final response = await http.get(
-        Uri.parse('$baseUrl/admin_api.php?action=get_all&t=${DateTime.now().millisecondsSinceEpoch}'),
+        Uri.parse('$baseUrl/apartments/list.php?t=${DateTime.now().millisecondsSinceEpoch}'),
       );
       if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        if (data['status'] == 'success' && data['apartments'] != null) {
-          return (data['apartments'] as List).map((apt) {
-            final imagesList = (apt['images'] != null && apt['images'] is List)
-                ? (apt['images'] as List).map((e) => e.toString()).toList()
-                : ['assets/images/apt1.png'];
-            final featuresList = (apt['features'] != null && apt['features'] is List)
-                ? (apt['features'] as List).map((e) => e.toString()).toList()
-                : [LanguageService.tr('auto_trans_1295')];
-            final universitiesList = (apt['universities'] != null && apt['universities'] is List)
-                ? (apt['universities'] as List).map((e) => e.toString()).toList()
-                : [];
-
+        final data = jsonDecode(response.body) as Map<String, dynamic>;
+        final isSuccess = data['success'] == true || data['status'] == 'success';
+        final payload = data['data'] is Map ? data['data'] as Map<String, dynamic> : data;
+        final list = payload['apartments'];
+        if (isSuccess && list is List) {
+          return list.map((apt) {
+            final a = apt as Map<String, dynamic>;
+            final rawImages = a['images'];
+            final imagesList = rawImages is List
+                ? rawImages.map((e) => e.toString()).toList()
+                : <String>[];
+            final rawFeatures = a['features'];
+            final featuresList = rawFeatures is List
+                ? rawFeatures.map((e) => e.toString()).toList()
+                : <String>[];
+            final rawUnis = a['universities'];
+            final universitiesList = rawUnis is List
+                ? rawUnis.map((e) => e.toString()).toList()
+                : <String>[];
             return <String, dynamic>{
-              'id': apt['id']?.toString() ?? '',
-              'title': apt['title']?.toString() ?? LanguageService.tr('auto_trans_1296'),
-              'price': apt['price']?.toString() ?? LanguageService.tr('auto_trans_1297'),
-              'location': apt['location']?.toString() ?? LanguageService.tr('auto_trans_1298'),
-              'proximity': apt['proximity']?.toString() ?? LanguageService.tr('auto_trans_1299'),
-              'capacity': apt['capacity']?.toString() ?? LanguageService.tr('auto_trans_1300'),
-              'rental_type': apt['rental_type']?.toString() ?? LanguageService.tr('auto_trans_1301'),
-              'owner_phone': apt['owner_phone']?.toString() ?? '',
-              'move_in_type': LanguageService.tr('auto_trans_1302'),
-              'move_in_date': LanguageService.tr('auto_trans_1303'),
-              'description': apt['description']?.toString() ?? '',
+              'id': a['id']?.toString() ?? '',
+              'title': a['title']?.toString() ?? '',
+              'price': a['price']?.toString() ?? '',
+              'location': a['location']?.toString() ?? '',
+              'proximity': a['proximity']?.toString() ?? '',
+              'capacity': a['capacity']?.toString() ?? '',
+              'move_in_type': a['move_in_type']?.toString() ?? '',
+              'move_in_date': a['move_in_date']?.toString() ?? '',
+              'description': a['description']?.toString() ?? '',
+              'is_available': a['is_available'] == true || a['is_available'] == 1,
               'images': imagesList,
               'features': featuresList,
               'universities': universitiesList,
@@ -237,70 +242,8 @@ class ApiService {
     } catch (e) {
       debugPrint('Error fetching apartments from backend: $e');
     }
-    // الالتجاء للقيم الافتراضية في حال عدم اتصال الخادم
-    return [
-      {
-        'id': '1',
-        'title': LanguageService.tr('auto_trans_1304'),
-        'price': LanguageService.tr('auto_trans_1305'),
-        'location': LanguageService.tr('auto_trans_1306'),
-        'proximity': LanguageService.tr('auto_trans_1307'),
-        'capacity': LanguageService.tr('auto_trans_1308'),
-        'rental_type': LanguageService.tr('auto_trans_1309'),
-        'owner_phone': '+995555111222',
-        'move_in_type': LanguageService.tr('auto_trans_1310'),
-        'move_in_date': LanguageService.tr('auto_trans_1311'),
-        'images': [
-          'assets/images/apt1.png',
-          'assets/images/apt2.png',
-          'assets/images/apt3.png',
-          'assets/images/apt4.png',
-        ],
-        'features': [LanguageService.tr('auto_trans_1312'), LanguageService.tr('auto_trans_1313'), LanguageService.tr('auto_trans_1314'), LanguageService.tr('auto_trans_1315'), LanguageService.tr('auto_trans_1316')],
-        'universities': [LanguageService.tr('auto_trans_1317')],
-        'description': LanguageService.tr('auto_trans_1318')
-      },
-      {
-        'id': '2',
-        'title': LanguageService.tr('auto_trans_1319'),
-        'price': LanguageService.tr('auto_trans_1320'),
-        'location': LanguageService.tr('auto_trans_1321'),
-        'proximity': LanguageService.tr('auto_trans_1322'),
-        'capacity': LanguageService.tr('auto_trans_1323'),
-        'rental_type': LanguageService.tr('auto_trans_1324'),
-        'owner_phone': '+995555333444',
-        'move_in_type': LanguageService.tr('auto_trans_1325'),
-        'move_in_date': LanguageService.tr('auto_trans_1326'),
-        'images': [
-          'assets/images/apt4.png',
-          'assets/images/apt2.png',
-          'assets/images/apt1.png',
-        ],
-        'features': [LanguageService.tr('auto_trans_1327'), LanguageService.tr('auto_trans_1328'), LanguageService.tr('auto_trans_1329'), LanguageService.tr('auto_trans_1330')],
-        'description': LanguageService.tr('auto_trans_1331')
-      },
-      {
-        'id': '3',
-        'title': LanguageService.tr('auto_trans_1332'),
-        'price': LanguageService.tr('auto_trans_1333'),
-        'location': LanguageService.tr('auto_trans_1334'),
-        'proximity': LanguageService.tr('auto_trans_1335'),
-        'capacity': LanguageService.tr('auto_trans_1336'),
-        'rental_type': LanguageService.tr('auto_trans_1337'),
-        'owner_phone': '+995555888999',
-        'move_in_type': LanguageService.tr('auto_trans_1338'),
-        'move_in_date': LanguageService.tr('auto_trans_1339'),
-        'images': [
-          'assets/images/apt3.png',
-          'assets/images/apt1.png',
-          'assets/images/apt4.png',
-          'assets/images/apt2.png',
-        ],
-        'features': [LanguageService.tr('auto_trans_1340'), LanguageService.tr('auto_trans_1341'), LanguageService.tr('auto_trans_1342'), LanguageService.tr('auto_trans_1343')],
-        'universities': [LanguageService.tr('auto_trans_1344')],
-        'description': LanguageService.tr('auto_trans_1345')
-      },
-    ];
+    // No mock fallback — return empty list so UI shows "no data" state
+    return [];
   }
 
   // جلب كافة الجامعات
@@ -444,33 +387,36 @@ class ApiService {
   }
 
   // جلب قائمة الخدمات الطلابية
+  // Calls /services/list.php — public endpoint
+  // Response: {"success":true,"data":{"services":[...]}}
   static Future<List<Map<String, dynamic>>> getServices() async {
     try {
       final response = await http.get(
-        Uri.parse('$baseUrl/admin_api.php?action=get_all&t=${DateTime.now().millisecondsSinceEpoch}'),
+        Uri.parse('$baseUrl/services/list.php?t=${DateTime.now().millisecondsSinceEpoch}'),
       );
       if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        if (data['status'] == 'success' && data['services'] != null) {
-          return (data['services'] as List).map((s) => <String, dynamic>{
-            'title': s['title']?.toString() ?? LanguageService.tr('auto_trans_1373'),
-            'desc': s['description']?.toString() ?? '',
-            'img': resolveImageUrl(s['image_url']?.toString() ?? 'https://images.unsplash.com/photo-1621905251189-08b45d6a269e?auto=format&fit=crop&w=500&q=80'),
-            'has_form': s['has_form'] == 1 || s['has_form'] == true || s['has_form'] == '1',
+        final data = jsonDecode(response.body) as Map<String, dynamic>;
+        final isSuccess = data['success'] == true || data['status'] == 'success';
+        final payload = data['data'] is Map ? data['data'] as Map<String, dynamic> : data;
+        final list = payload['services'];
+        if (isSuccess && list is List) {
+          return list.map((s) {
+            final svc = s as Map<String, dynamic>;
+            return <String, dynamic>{
+              'id': svc['id']?.toString() ?? '',
+              'title': svc['title']?.toString() ?? '',
+              'desc': svc['description']?.toString() ?? '',
+              'img': resolveImageUrl(svc['image_url']?.toString() ?? ''),
+              'has_form': svc['has_form'] == true || svc['has_form'] == 1 || svc['has_form'] == '1',
+            };
           }).toList();
         }
       }
     } catch (e) {
       debugPrint('Error fetching services from backend: $e');
     }
-    // محاكاة البيانات في حال عدم اتصال الخادم
-    return [
-      {'title': LanguageService.tr('auto_trans_1374'), 'desc': LanguageService.tr('auto_trans_1375'), 'img': 'assets/images/10_20260712_212013_0001.png', 'has_form': true},
-      {'title': LanguageService.tr('auto_trans_1376'), 'desc': LanguageService.tr('auto_trans_1377'), 'img': 'assets/images/13_20260712_212014_0004.png', 'has_form': true},
-      {'title': LanguageService.tr('auto_trans_1378'), 'desc': LanguageService.tr('auto_trans_1379'), 'img': 'assets/images/14_20260712_212014_0005.png', 'has_form': true},
-      {'title': LanguageService.tr('auto_trans_1380'), 'desc': LanguageService.tr('auto_trans_1381'), 'img': 'assets/images/15_20260712_212014_0006.png', 'has_form': true},
-      {'title': LanguageService.tr('auto_trans_1382'), 'desc': LanguageService.tr('auto_trans_1383'), 'img': 'assets/images/16_20260712_212014_0007.png', 'has_form': true},
-    ];
+    // No mock fallback — return empty list so UI shows "no data" state
+    return [];
   }
 
   // إرسال طلب خدمة أو حجز شقة أو تجميع شريك سكن
@@ -862,7 +808,9 @@ class ApiService {
   // ─── Admin Upload ───────────────────────────────────────────────────────────
 
   /// Upload an image file for admin use (apartments, services, etc.).
-  /// [folder] is a hint for server-side organization (e.g. 'apartments', 'services').
+  /// Returns the raw server-relative path (e.g. "/uploads/apartments/file.jpg").
+  /// Callers must NOT store the resolved full URL in the database —
+  /// store the raw path and resolve it only at display time via [resolveImageUrl].
   static Future<String?> uploadImage(dynamic imageFile, String folder) async {
     try {
       final request = http.MultipartRequest(
@@ -875,21 +823,21 @@ class ApiService {
       }
       request.fields['folder'] = folder;
       if (imageFile is String) {
-        // Path string
         request.files.add(await http.MultipartFile.fromPath('file', imageFile));
       } else {
-        // Assume XFile or similar with path/readAsBytes
         final bytes = await imageFile.readAsBytes();
-        final name = imageFile.name ?? imageFile.path.split('/').last;
+        final name = imageFile.name ?? (imageFile.path as String).split('/').last;
         request.files.add(http.MultipartFile.fromBytes('file', bytes, filename: name));
       }
       final streamed = await request.send();
       final response = await http.Response.fromStream(streamed);
       if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        if ((data['status'] == 'success' || data['success'] == true) && (data['url'] != null || (data['data'] != null && data['data']['url'] != null))) {
-          final rawUrl = (data['url'] ?? data['data']['url']).toString();
-          return resolveImageUrl(rawUrl);
+        final data = jsonDecode(response.body) as Map<String, dynamic>;
+        final isSuccess = data['success'] == true || data['status'] == 'success';
+        final rawUrl = data['url']?.toString() ?? data['data']?['url']?.toString();
+        if (isSuccess && rawUrl != null && rawUrl.isNotEmpty) {
+          // Return raw path — do NOT resolve to full URL here; DB must store raw paths.
+          return rawUrl;
         } else {
           debugPrint('uploadImage error response: ${response.body}');
         }
@@ -902,14 +850,74 @@ class ApiService {
     return null;
   }
 
+  // ─── Admin Chat ─────────────────────────────────────────────────────────────
+
+  /// Fetches all chats with embedded messages for admin management.
+  static Future<List<Map<String, dynamic>>> getAdminChats() async {
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/chat/admin_list.php?t=${DateTime.now().millisecondsSinceEpoch}'),
+        headers: _adminHeaders,
+      );
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body) as Map<String, dynamic>;
+        final chats = data['chats'] ?? data['data']?['chats'];
+        if (chats is List) {
+          return chats.cast<Map<String, dynamic>>();
+        }
+      }
+    } catch (e) {
+      debugPrint('getAdminChats error: $e');
+    }
+    return [];
+  }
+
+  /// Sends an admin reply to a student chat.
+  /// Uses the dedicated admin-only endpoint so sender is verified by JWT.
+  static Future<bool> adminSendMessage({
+    required int chatId,
+    required String text,
+    String type = 'text',
+    String imageUrl = '',
+    String quoteText = '',
+    String quoteSender = '',
+  }) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/chat/admin_reply.php'),
+        headers: {
+          'Content-Type': 'application/json',
+          if (adminToken != null) 'Authorization': 'Bearer $adminToken',
+        },
+        body: jsonEncode({
+          'chat_id': chatId,
+          'content': text,
+          'message_type': type,
+          'image_url': imageUrl,
+          'quote_text': quoteText,
+          'quote_sender': quoteSender,
+        }),
+      );
+      return response.statusCode == 200 || response.statusCode == 201;
+    } catch (e) {
+      debugPrint('adminSendMessage error: $e');
+      return false;
+    }
+  }
+
   // ─── Chat (new typed endpoints) ─────────────────────────────────────────────
 
   /// Creates a new chat session for [studentId] and returns the chat ID.
+  /// Requires student JWT in Authorization header.
   static Future<int?> createChat(int studentId) async {
     try {
+      final headers = <String, String>{'Content-Type': 'application/json'};
+      if (authToken != null && authToken!.isNotEmpty) {
+        headers['Authorization'] = 'Bearer $authToken';
+      }
       final response = await http.post(
         Uri.parse('$baseUrl/chat/create.php'),
-        headers: {'Content-Type': 'application/json'},
+        headers: headers,
         body: jsonEncode({'student_id': studentId}),
       );
       if (response.statusCode == 200 || response.statusCode == 201) {
@@ -926,10 +934,17 @@ class ApiService {
   }
 
   /// Fetches all messages for [chatId].
+  /// Requires auth JWT (student or admin) in Authorization header.
   static Future<List<ChatMessage>> getMessages(int chatId) async {
     try {
+      final token = authToken ?? adminToken;
+      final headers = <String, String>{};
+      if (token != null && token.isNotEmpty) {
+        headers['Authorization'] = 'Bearer $token';
+      }
       final response = await http.get(
         Uri.parse('$baseUrl/chat/messages.php?chat_id=$chatId&t=${DateTime.now().millisecondsSinceEpoch}'),
+        headers: headers,
       );
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);

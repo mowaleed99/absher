@@ -1,74 +1,88 @@
 <?php
+// Public endpoint: list available apartments for students.
+// Returns only apartments where is_available = 1.
+// Images, features, and universities are stored as JSON in the apartments table.
 require_once __DIR__ . '/../../config/db.php';
+require_once __DIR__ . '/../core/response.php';
+require_once __DIR__ . '/../core/headers.php';
 
 try {
-    // 1. Fetch apartments with district
-    $aptQuery = "SELECT a.id, a.title, a.description, a.price, a.currency, a.capacity, a.is_available, d.name AS district
-                 FROM apartments a
-                 LEFT JOIN districts d ON a.district_id = d.id
-                 WHERE a.deleted_at IS NULL
-                 ORDER BY a.created_at DESC";
-    $stmt = $conn->query($aptQuery);
+    $where = ["is_available = 1"];
+    $params = [];
+
+    if (!empty($_GET['location'])) {
+        $where[] = "location LIKE :location";
+        $params[':location'] = '%' . trim($_GET['location']) . '%';
+    }
+    if (!empty($_GET['capacity'])) {
+        $where[] = "capacity LIKE :capacity";
+        $params[':capacity'] = '%' . trim($_GET['capacity']) . '%';
+    }
+    if (!empty($_GET['move_in_type'])) {
+        $where[] = "move_in_type LIKE :move_in_type";
+        $params[':move_in_type'] = '%' . trim($_GET['move_in_type']) . '%';
+    }
+
+    $sql = "SELECT id, title, description, price, location, proximity,
+                   universities, capacity, move_in_type, move_in_date,
+                   images, features, is_available
+            FROM apartments
+            WHERE " . implode(" AND ", $where) . "
+            ORDER BY created_at DESC";
+
+    $stmt = $conn->prepare($sql);
+    $stmt->execute($params);
     $apartments = $stmt->fetchAll();
 
-    if (empty($apartments)) {
-        jsonResponse(true, "Success", 200, []);
-    }
+    $minPrice = isset($_GET['min_price']) && $_GET['min_price'] !== '' ? floatval($_GET['min_price']) : null;
+    $maxPrice = isset($_GET['max_price']) && $_GET['max_price'] !== '' ? floatval($_GET['max_price']) : null;
+    $filterUni = !empty($_GET['university']) ? trim($_GET['university']) : null;
 
-    $aptIds = array_column($apartments, 'id');
-    $inQuery = implode(',', array_fill(0, count($aptIds), '?'));
-
-    // 2. Fetch images
-    $imgStmt = $conn->prepare("SELECT apartment_id, image_url FROM apartment_images WHERE apartment_id IN ($inQuery) ORDER BY is_primary DESC, id ASC");
-    $imgStmt->execute($aptIds);
-    $images = $imgStmt->fetchAll();
-
-    // 3. Fetch universities
-    $uniStmt = $conn->prepare("SELECT au.apartment_id, u.name 
-                               FROM apartment_universities au 
-                               JOIN universities u ON au.university_id = u.id 
-                               WHERE au.apartment_id IN ($inQuery)");
-    $uniStmt->execute($aptIds);
-    $universities = $uniStmt->fetchAll();
-
-    // 4. Fetch features
-    $featStmt = $conn->prepare("SELECT af.apartment_id, f.name 
-                                FROM apartment_features af 
-                                JOIN features f ON af.feature_id = f.id 
-                                WHERE af.apartment_id IN ($inQuery)");
-    $featStmt->execute($aptIds);
-    $features = $featStmt->fetchAll();
-
-    // 5. Aggregate Data in PHP to avoid massive N*M joins
     $result = [];
     foreach ($apartments as $apt) {
-        $aptId = $apt['id'];
-        
-        $apt['images'] = [];
-        foreach ($images as $img) {
-            if ($img['apartment_id'] == $aptId) {
-                $apt['images'][] = $img['image_url'];
+        $images       = json_decode($apt['images'] ?? '[]', true) ?: [];
+        $features     = json_decode($apt['features'] ?? '[]', true) ?: [];
+        $universities = json_decode($apt['universities'] ?? '[]', true) ?: [];
+
+        // Price check (extract numeric from string like "450 دولار")
+        if ($minPrice !== null || $maxPrice !== null) {
+            $numPrice = floatval(preg_replace('/[^0-9.]/', '', $apt['price'] ?? '0'));
+            if ($minPrice !== null && $numPrice < $minPrice) continue;
+            if ($maxPrice !== null && $numPrice > $maxPrice) continue;
+        }
+
+        // University check
+        if ($filterUni !== null) {
+            $uniMatched = false;
+            foreach ($universities as $u) {
+                if (stripos(trim((string)$u), $filterUni) !== false) {
+                    $uniMatched = true;
+                    break;
+                }
+            }
+            if (!$uniMatched && stripos($apt['universities'] ?? '', $filterUni) === false) {
+                continue;
             }
         }
-        
-        $apt['universities'] = [];
-        foreach ($universities as $uni) {
-            if ($uni['apartment_id'] == $aptId) {
-                $apt['universities'][] = $uni['name'];
-            }
-        }
-        
-        $apt['features'] = [];
-        foreach ($features as $feat) {
-            if ($feat['apartment_id'] == $aptId) {
-                $apt['features'][] = $feat['name'];
-            }
-        }
-        
-        $result[] = $apt;
+
+        $result[] = [
+            'id'            => (int)$apt['id'],
+            'title'         => $apt['title'],
+            'description'   => $apt['description'],
+            'price'         => $apt['price'],
+            'location'      => $apt['location'],
+            'proximity'     => $apt['proximity'],
+            'capacity'      => $apt['capacity'],
+            'move_in_type'  => $apt['move_in_type'],
+            'move_in_date'  => $apt['move_in_date'],
+            'is_available'  => (bool)$apt['is_available'],
+            'images'        => $images,
+            'features'      => $features,
+            'universities'  => $universities,
+        ];
     }
 
-    jsonResponse(true, "Success", 200, $result);
+    jsonResponse(true, "Success", 200, ['apartments' => $result]);
 
 } catch (PDOException $e) {
     error_log("Database error in " . __FILE__ . " on line " . __LINE__ . ": " . $e->getMessage());

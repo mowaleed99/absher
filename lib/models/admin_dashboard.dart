@@ -28,17 +28,19 @@ class AdminDashboard {
       }
     } else if (json['serviceRequests'] is num) {
       totalRequests = (json['serviceRequests'] as num).toInt();
+    } else if (json['pending_requests'] is num) {
+      totalRequests = (json['pending_requests'] as num).toInt();
     }
 
     return AdminDashboard(
-      activeStudents: (studentsMap?['active_count'] ?? json['activeStudents'] ?? json['active_students'] ?? 0) is num
-          ? (studentsMap?['active_count'] ?? json['activeStudents'] ?? json['active_students'] ?? 0).toInt()
+      activeStudents: (studentsMap?['active_count'] ?? json['activeStudents'] ?? json['active_students'] ?? json['total_students'] ?? 0) is num
+          ? (studentsMap?['active_count'] ?? json['activeStudents'] ?? json['active_students'] ?? json['total_students'] ?? 0).toInt()
           : 0,
-      activeApartments: (apartmentsMap?['active_count'] ?? json['activeApartments'] ?? json['active_apartments'] ?? 0) is num
-          ? (apartmentsMap?['active_count'] ?? json['activeApartments'] ?? json['active_apartments'] ?? 0).toInt()
+      activeApartments: (apartmentsMap?['active_count'] ?? json['activeApartments'] ?? json['active_apartments'] ?? json['total_apartments'] ?? 0) is num
+          ? (apartmentsMap?['active_count'] ?? json['activeApartments'] ?? json['active_apartments'] ?? json['total_apartments'] ?? 0).toInt()
           : 0,
-      activeServices: (servicesMap?['active_count'] ?? json['activeServices'] ?? json['active_services'] ?? 0) is num
-          ? (servicesMap?['active_count'] ?? json['activeServices'] ?? json['active_services'] ?? 0).toInt()
+      activeServices: (servicesMap?['active_count'] ?? json['activeServices'] ?? json['active_services'] ?? json['total_services'] ?? 0) is num
+          ? (servicesMap?['active_count'] ?? json['activeServices'] ?? json['active_services'] ?? json['total_services'] ?? 0).toInt()
           : 0,
       serviceRequests: totalRequests,
       totalTransactions: (walletMap?['total_transactions'] ?? json['totalTransactions'] ?? json['total_transactions'] ?? 0) is num

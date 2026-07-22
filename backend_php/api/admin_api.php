@@ -124,10 +124,12 @@ try {
         $features = json_encode($data['features'] ?? [], JSON_UNESCAPED_UNICODE);
         $imagesArray = $data['images'] ?? [];
         $images = empty($imagesArray) ? '[]' : json_encode($imagesArray, JSON_UNESCAPED_UNICODE);
+        // is_available: controls whether apartment shows in student public list
+        $is_available = isset($data['is_available']) ? (intval($data['is_available']) ? 1 : 0) : 1;
 
         if (!empty($title) && !empty($price)) {
-            $stmt = $conn->prepare("INSERT INTO apartments (title, price, location, proximity, universities, capacity, move_in_type, move_in_date, images, features, description) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
-            $stmt->execute([$title, $price, $location, $proximity, $universities, $capacity, $move_in_type, $move_in_date, $images, $features, $description]);
+            $stmt = $conn->prepare("INSERT INTO apartments (title, price, location, proximity, universities, capacity, move_in_type, move_in_date, images, features, description, is_available) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+            $stmt->execute([$title, $price, $location, $proximity, $universities, $capacity, $move_in_type, $move_in_date, $images, $features, $description, $is_available]);
             
             // إضافة تنبيه تلقائي في الإشعارات
             $stmtNotif = $conn->prepare("INSERT INTO notifications (student_id, title, body, created_at) VALUES (0, ?, ?, NOW())");
@@ -165,10 +167,12 @@ try {
         $features = json_encode($data['features'] ?? [], JSON_UNESCAPED_UNICODE);
         $imagesArray = $data['images'] ?? [];
         $images = empty($imagesArray) ? '[]' : json_encode($imagesArray, JSON_UNESCAPED_UNICODE);
+        // is_available: controls whether apartment shows in student public list
+        $is_available = isset($data['is_available']) ? (intval($data['is_available']) ? 1 : 0) : 1;
 
         if ($id > 0 && !empty($title) && !empty($price)) {
-            $stmt = $conn->prepare("UPDATE apartments SET title=?, price=?, location=?, proximity=?, universities=?, capacity=?, move_in_type=?, move_in_date=?, images=?, features=?, description=? WHERE id=?");
-            $stmt->execute([$title, $price, $location, $proximity, $universities, $capacity, $move_in_type, $move_in_date, $images, $features, $description, $id]);
+            $stmt = $conn->prepare("UPDATE apartments SET title=?, price=?, location=?, proximity=?, universities=?, capacity=?, move_in_type=?, move_in_date=?, images=?, features=?, description=?, is_available=? WHERE id=?");
+            $stmt->execute([$title, $price, $location, $proximity, $universities, $capacity, $move_in_type, $move_in_date, $images, $features, $description, $is_available, $id]);
             echo json_encode(["status"=>"success","message"=>"تم تعديل الشقة بنجاح"], JSON_UNESCAPED_UNICODE);
         } else {
             echo json_encode(["status"=>"error","message"=>"معرف الشقة، العنوان، والسعر مطلوبان"], JSON_UNESCAPED_UNICODE);
@@ -252,10 +256,11 @@ try {
         $image_url = trim($data['image_url'] ??'');
         $image_url = saveBase64IfPresent($image_url);
         $has_form = isset($data['has_form']) ? (int)$data['has_form'] : 1;
+        $price_points = isset($data['price_points']) ? (int)$data['price_points'] : 0;
 
         if (!empty($title)) {
-            $stmt = $conn->prepare("INSERT INTO services (title, description, image_url, has_form) VALUES (?, ?, ?, ?)");
-            $stmt->execute([$title, $description, $image_url, $has_form]);
+            $stmt = $conn->prepare("INSERT INTO services (title, description, image_url, has_form, price_points) VALUES (?, ?, ?, ?, ?)");
+            $stmt->execute([$title, $description, $image_url, $has_form, $price_points]);
             
             // إضافة تنبيه تلقائي في الإشعارات
             $stmtNotif = $conn->prepare("INSERT INTO notifications (student_id, title, body, created_at) VALUES (0, ?, ?, NOW())");
@@ -286,10 +291,11 @@ try {
         $image_url = trim($data['image_url'] ?? '');
         $image_url = saveBase64IfPresent($image_url);
         $has_form = isset($data['has_form']) ? (int)$data['has_form'] : 1;
+        $price_points = isset($data['price_points']) ? (int)$data['price_points'] : 0;
 
         if ($id > 0 && !empty($title)) {
-            $stmt = $conn->prepare("UPDATE services SET title=?, description=?, image_url=?, has_form=? WHERE id=?");
-            $stmt->execute([$title, $description, $image_url, $has_form, $id]);
+            $stmt = $conn->prepare("UPDATE services SET title=?, description=?, image_url=?, has_form=?, price_points=? WHERE id=?");
+            $stmt->execute([$title, $description, $image_url, $has_form, $price_points, $id]);
             echo json_encode(["status"=>"success","message"=>"تم تعديل الخدمة بنجاح"], JSON_UNESCAPED_UNICODE);
         } else {
             echo json_encode(["status"=>"error","message"=>"معرف الخدمة والعنوان مطلوبان"], JSON_UNESCAPED_UNICODE);

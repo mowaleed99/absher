@@ -1,5 +1,6 @@
 import 'package:absher/services/language_service.dart';
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'theme/app_colors.dart';
 import 'screens/splash_screen.dart';
 
@@ -27,7 +28,8 @@ class AbsherApp extends StatelessWidget {
               primary: AppColors.primary,
               secondary: AppColors.accent,
             ),
-            fontFamily: 'Cairo', // خط عربي أنيق ومتناسق
+            // Use Google Fonts Cairo — supports Arabic glyphs correctly
+            textTheme: GoogleFonts.cairoTextTheme(),
             useMaterial3: true,
           ),
           builder: (context, child) {

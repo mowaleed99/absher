@@ -1,4 +1,10 @@
 <?php
+// =============================================================================
+// UNUSED / DEAD CODE
+// Flutter calls admin_api.php?action=get_dashboard_stats directly.
+// This file is NOT in the active call path and should not be modified for
+// dashboard fixes. All dashboard stat queries live in api/admin_api.php.
+// =============================================================================
 require_once __DIR__ . '/../../config/db.php';
 require_once __DIR__ . '/../middleware/auth.php';
 require_once __DIR__ . '/../core/response.php';

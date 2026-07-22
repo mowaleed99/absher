@@ -5,6 +5,7 @@ import 'admin_dashboard_screen.dart';
 import 'admin_apartments_screen.dart';
 import 'admin_services_screen.dart';
 import 'admin_students_screen.dart';
+import 'admin_chat_screen.dart';
 import '../../theme/app_colors.dart';
 import '../../services/language_service.dart';
 
@@ -23,6 +24,7 @@ class _AdminShellState extends State<AdminShell> {
     const AdminApartmentsScreen(),
     const AdminServicesScreen(),
     const AdminStudentsScreen(),
+    const AdminChatScreen(),
   ];
 
   @override
@@ -88,6 +90,10 @@ class _AdminShellState extends State<AdminShell> {
           BottomNavigationBarItem(
             icon: const Icon(Icons.people),
             label: LanguageService.tr('students'),
+          ),
+          const BottomNavigationBarItem(
+            icon: Icon(Icons.chat_bubble_outline),
+            label: 'Chats',
           ),
         ],
       ),

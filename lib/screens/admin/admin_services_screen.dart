@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../services/api_service.dart';
@@ -117,7 +118,8 @@ class _ServiceFormDialogState extends State<ServiceFormDialog> {
   bool _isSaving = false;
 
   final ImagePicker _picker = ImagePicker();
-  File? _imageFile;
+  XFile? _imageFile;
+  Uint8List? _imageBytes;
   String? _existingImageUrl;
 
   @override
@@ -127,9 +129,10 @@ class _ServiceFormDialogState extends State<ServiceFormDialog> {
       _titleController.text = widget.service!['title'] ?? '';
       _descriptionController.text = widget.service!['description'] ?? '';
       _priceController.text = widget.service!['price_points']?.toString() ?? '0';
-      _isActive = widget.service!['is_active'] == 1 || widget.service!['is_active'] == true || widget.service!['is_active'] == '1';
-      if (widget.service!['image'] != null && widget.service!['image'].toString().isNotEmpty) {
-        _existingImageUrl = widget.service!['image'];
+      // has_form: does this service require a request form?
+      _isActive = widget.service!['has_form'] == 1 || widget.service!['has_form'] == true || widget.service!['has_form'] == '1';
+      if (widget.service!['image_url'] != null && widget.service!['image_url'].toString().isNotEmpty) {
+        _existingImageUrl = widget.service!['image_url'];
       }
     }
   }
@@ -137,8 +140,10 @@ class _ServiceFormDialogState extends State<ServiceFormDialog> {
   Future<void> _pickImage() async {
     final pickedFile = await _picker.pickImage(source: ImageSource.gallery);
     if (pickedFile != null) {
+      final bytes = await pickedFile.readAsBytes();
       setState(() {
-        _imageFile = File(pickedFile.path);
+        _imageFile = pickedFile;
+        _imageBytes = bytes;
         _existingImageUrl = null;
       });
     }
@@ -159,9 +164,11 @@ class _ServiceFormDialogState extends State<ServiceFormDialog> {
         if (widget.service != null) 'id': widget.service!['id'],
         'title': _titleController.text,
         'description': _descriptionController.text,
-        'price_points': int.parse(_priceController.text),
-        'is_active': _isActive ? 1 : 0,
-        if (imageUrl != null) 'image': imageUrl,
+        'price_points': int.tryParse(_priceController.text) ?? 0,
+        // has_form: server field indicates whether service presents a request form
+        'has_form': _isActive ? 1 : 0,
+        // image_url: matches the column name in the services table
+        if (imageUrl != null) 'image_url': imageUrl,
       };
 
       bool success;
@@ -208,8 +215,8 @@ class _ServiceFormDialogState extends State<ServiceFormDialog> {
                   height: 150,
                   width: double.infinity,
                   color: Colors.grey[200],
-                  child: _imageFile != null
-                      ? Image.file(_imageFile!, fit: BoxFit.cover)
+                  child: _imageBytes != null
+                      ? Image.memory(_imageBytes!, fit: BoxFit.cover)
                       : _existingImageUrl != null
                           ? Image.network(ApiService.resolveImageUrl(_existingImageUrl!), fit: BoxFit.cover)
                           : const Icon(Icons.add_a_photo, size: 50, color: Colors.grey),
@@ -233,7 +240,9 @@ class _ServiceFormDialogState extends State<ServiceFormDialog> {
                 validator: (v) => v!.isEmpty ? 'Required' : null,
               ),
               SwitchListTile(
-                title: Text(LanguageService.tr('active')),
+                // has_form: indicates whether this service shows a request form to students
+                title: const Text('Requires form'),
+                subtitle: const Text('Student sees a request form for this service'),
                 value: _isActive,
                 onChanged: (v) => setState(() => _isActive = v),
               ),

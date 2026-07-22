@@ -39,8 +39,12 @@ class _LoginScreenState extends State<LoginScreen> {
 
       setState(() => _isLoading = false);
 
-      if (result['status'] == 'success' && result['user'] != null) {
-        final student = Student.fromJson(result['user'] as Map<String, dynamic>);
+      // auth/login.php response: {"success":true,"data":{"token":"...","student":{...}}}
+      final isSuccess = result['success'] == true || result['status'] == 'success';
+      final studentData = result['data']?['student'] ?? result['user'];
+
+      if (isSuccess && studentData != null) {
+        final student = Student.fromJson(studentData as Map<String, dynamic>);
         if (mounted) {
           Navigator.of(context).pushAndRemoveUntil(
             MaterialPageRoute(

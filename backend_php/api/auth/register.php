@@ -33,15 +33,17 @@ try {
 
     // Hash password
     $passwordHash = password_hash($password, PASSWORD_DEFAULT);
+    $uni = trim($data['university'] ?? 'TSMU');
 
     // Insert student
-    $insertQuery = "INSERT INTO students (full_name, email, phone, password_hash) VALUES (:full_name, :email, :phone, :password_hash)";
+    $insertQuery = "INSERT INTO students (full_name, email, phone, password, university) VALUES (:full_name, :email, :phone, :password, :university)";
     $stmt = $conn->prepare($insertQuery);
     $stmt->execute([
         'full_name' => $fullName,
         'email' => $email,
         'phone' => $phone,
-        'password_hash' => $passwordHash
+        'password' => $passwordHash,
+        'university' => $uni
     ]);
 
     $studentId = $conn->lastInsertId();
