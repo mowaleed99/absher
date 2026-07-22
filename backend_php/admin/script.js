@@ -136,15 +136,36 @@ document.addEventListener('DOMContentLoaded', async () => {
 });
 
 // Navigation & Tabs
+const ALLOWED_TABS = ['stats', 'chats', 'requests', 'apartments', 'services', 'universities', 'districts', 'reviews', 'students', 'news', 'notifications'];
+
 function initNavigation() {
     const navItems = document.querySelectorAll('.nav-item');
     navItems.forEach(item => {
         item.addEventListener('click', (e) => {
             e.preventDefault();
             const tabId = item.getAttribute('data-tab');
-            switchTab(tabId);
+            if (window.location.hash !== `#${tabId}`) {
+                window.location.hash = tabId;
+            } else {
+                switchTab(tabId); // in case we're already there but want to force refresh UI
+            }
         });
     });
+
+    window.addEventListener('hashchange', () => {
+        let hashTab = window.location.hash.replace('#', '');
+        if (!ALLOWED_TABS.includes(hashTab)) {
+            hashTab = 'stats';
+        }
+        switchTab(hashTab);
+    });
+
+    // Handle initial load
+    let initialTab = window.location.hash.replace('#', '');
+    if (!ALLOWED_TABS.includes(initialTab)) {
+        initialTab = 'stats';
+    }
+    switchTab(initialTab);
 }
 
 function switchTab(tabId) {
