@@ -93,6 +93,61 @@ function walkAndTranslate(node) {
     }
 }
 
+// Track 5 Stage 3 dynamic translations dictionary extension
+translations.ar.feedback = "مقترحات وبلاغات الأعطال";
+translations.ar.feedback_desc = "إدارة وحل بلاغات الأعطال ومقترحات تطوير التطبيق المقدمة من الطلاب";
+translations.ar.reviewed = "تمت المراجعة";
+translations.ar.resolved = "تم حلها";
+translations.ar.feedback_type = "نوع البلاغ/المقترح";
+translations.ar.moderation_status = "الحالة";
+translations.ar.approve = "قبول";
+translations.ar.reject = "رفض";
+translations.ar.moderator = "المراجع";
+translations.ar.moderation_time = "وقت المراجعة";
+translations.ar.last_updated = "آخر تحديث";
+translations.ar.service_name = "الخدمة";
+translations.ar.reviews_analytics = "تحليلات وإحصائيات التقييمات";
+translations.ar.total_reviews = "إجمالي التقييمات";
+translations.ar.avg_rating = "متوسط التقييم";
+translations.ar.approved_reviews = "التقييمات المقبولة";
+translations.ar.pending_reviews = "تقييمات قيد الانتظار";
+translations.ar.rejected_reviews = "التقييمات المرفوضة";
+translations.ar.rating_distribution = "توزيع التقييمات (بالنجوم)";
+translations.ar.reviews_per_service = "عدد التقييمات لكل خدمة";
+translations.ar.avg_rating_per_service = "متوسط تقييم الخدمات";
+translations.ar.suggestion = "مقترح";
+translations.ar.bug_report = "بلاغ عطل";
+translations.ar.ux_feedback = "ملاحظة واجهة المستخدم";
+translations.ar.feature_request = "طلب ميزة جديدة";
+translations.ar.all = "الكل";
+
+translations.en.feedback = "Application Feedback";
+translations.en.feedback_desc = "Manage application bugs and suggestions submitted by students";
+translations.en.reviewed = "Reviewed";
+translations.en.resolved = "Resolved";
+translations.en.feedback_type = "Feedback Type";
+translations.en.moderation_status = "Status";
+translations.en.approve = "Approve";
+translations.en.reject = "Reject";
+translations.en.moderator = "Moderator";
+translations.en.moderation_time = "Moderated At";
+translations.en.last_updated = "Last Updated";
+translations.en.service_name = "Service";
+translations.en.reviews_analytics = "Reviews & Feedback Analytics";
+translations.en.total_reviews = "Total Reviews";
+translations.en.avg_rating = "Average Rating";
+translations.en.approved_reviews = "Approved Reviews";
+translations.en.pending_reviews = "Pending Reviews";
+translations.en.rejected_reviews = "Rejected Reviews";
+translations.en.rating_distribution = "Rating Distribution (Stars)";
+translations.en.reviews_per_service = "Reviews Per Service";
+translations.en.avg_rating_per_service = "Average Rating Per Service";
+translations.en.suggestion = "Suggestion";
+translations.en.bug_report = "Bug Report";
+translations.en.ux_feedback = "UX Feedback";
+translations.en.feature_request = "Feature Request";
+translations.en.all = "All";
+
 // Ensure language applies on load
 document.addEventListener("DOMContentLoaded", () => {
     if (currentLang ==='en') {

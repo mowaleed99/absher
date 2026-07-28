@@ -24,11 +24,11 @@ class _WalletScreenState extends State<WalletScreen> {
   }
 
   Future<void> _loadWallet() async {
-    final points = await ApiService.getWalletBalance(widget.user?.id ?? 0);
+    final result = await ApiService.getWallet(widget.user?.id ?? 0);
     if (mounted) {
       setState(() {
-        _points = points;
-        _notifications = [];
+        _points = (result['points'] as num?)?.toInt() ?? 0;
+        _notifications = result['notifications'] ?? [];
         _isLoading = false;
       });
     }
@@ -100,7 +100,7 @@ class _WalletScreenState extends State<WalletScreen> {
                                   ),
                                 ),
                                 title: Text(notif['title'], style: const TextStyle(color: AppColors.textDark, fontWeight: FontWeight.bold)),
-                                subtitle: Text("${notif['content']}\n${notif['created_at'] ?? ''}", style: const TextStyle(color: AppColors.textMuted, fontSize: 12)),
+                                subtitle: Text("${notif['content']}\n${notif['date'] ?? notif['created_at'] ?? ''}", style: const TextStyle(color: AppColors.textMuted, fontSize: 12)),
                                 isThreeLine: true,
                               ),
                             );

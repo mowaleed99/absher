@@ -39,7 +39,7 @@ try {
     $price_points = (int)$requestData['price_points'];
 
     // 4. Lock student row & 5. Verify balance
-    $stmt = $conn->prepare("SELECT points_balance FROM students WHERE id = ? FOR UPDATE");
+    $stmt = $conn->prepare("SELECT points AS points_balance FROM students WHERE id = ? FOR UPDATE");
     $stmt->execute([$student_id]);
     $studentData = $stmt->fetch();
 
@@ -50,7 +50,7 @@ try {
 
     // 6. Deduct points
     $new_balance = $studentData['points_balance'] - $price_points;
-    $stmt = $conn->prepare("UPDATE students SET points_balance = ? WHERE id = ?");
+    $stmt = $conn->prepare("UPDATE students SET points = ? WHERE id = ?");
     $stmt->execute([$new_balance, $student_id]);
 
     // 7. Insert wallet_transactions

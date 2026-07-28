@@ -18,14 +18,15 @@ class _RoommateMatchScreenState extends State<RoommateMatchScreen> {
   final _formKey = GlobalKey<FormState>();
   late TextEditingController _nameController;
   
-  String _selectedUni = LanguageService.tr('auto_trans_1247');
-  List<String> _universities = [LanguageService.tr('auto_trans_1248')];
+  String? _selectedUniId;
+  List<Map<String, dynamic>> _unisList = [];
   final _majorController = TextEditingController();
   
   final _phoneController = TextEditingController();
   final _budgetController = TextEditingController();
   final _notesController = TextEditingController();
   String _selectedGender = 'males_only';
+  String _selectedHousingPref = 'room_shared';
   String _moveInDate = 'this_month_move';
 
   @override
@@ -33,23 +34,18 @@ class _RoommateMatchScreenState extends State<RoommateMatchScreen> {
     super.initState();
     _nameController = TextEditingController(text: widget.user?.fullName ?? '');
     _phoneController.text = widget.user?.phone ?? '';
-    _loadUniversities((widget.user?.universityId != null && widget.user!.universityId! > 0) ? 'University #${widget.user!.universityId}' : '');
+    _loadUniversities(widget.user?.universityId);
   }
 
-  Future<void> _loadUniversities(String userUni) async {
-    final unis = await ApiService.getUniversities();
+  Future<void> _loadUniversities(int? userUniId) async {
+    final list = await ApiService.getUniversities();
     if (mounted) {
       setState(() {
-        if (unis.isNotEmpty) {
-          _universities = unis.map((u) => (u['name'] ?? '').toString()).where((n) => n.isNotEmpty).toList();
-        }
-        if (userUni.isNotEmpty) {
-          if (!_universities.contains(userUni)) {
-            _universities.add(userUni);
-          }
-          _selectedUni = userUni;
-        } else if (!_universities.contains(_selectedUni)) {
-          _selectedUni = _universities.first;
+        _unisList = list;
+        if (userUniId != null && userUniId > 0 && _unisList.any((u) => u['id']?.toString() == userUniId.toString())) {
+          _selectedUniId = userUniId.toString();
+        } else if (_unisList.isNotEmpty) {
+          _selectedUniId = _unisList.first['id']?.toString();
         }
       });
     }
@@ -95,7 +91,46 @@ class _RoommateMatchScreenState extends State<RoommateMatchScreen> {
 
     if (!_formKey.currentState!.validate()) return;
 
-    final matchMsg = 'طلب بحث عن شريك سكن (Roommate): الجامعة ($_selectedUni)، نوع السكن: $_selectedGender، الميزانية (${_budgetController.text})، موعد الانتقال: $_moveInDate. الملاحظات: ${_notesController.text}. التخصص: ${_majorController.text}. رقم التواصل: ${_phoneController.text}.';
+    final String housingPrefText;
+    if (_selectedHousingPref == 'apartment') {
+      housingPrefText = 'شقة كاملة';
+    } else if (_selectedHousingPref == 'studio') {
+      housingPrefText = 'استوديو';
+    } else {
+      housingPrefText = 'غرفة في شقة مشتركة';
+    }
+
+    final String genderPrefText;
+    if (_selectedGender == 'males_only') {
+      genderPrefText = 'ذكور فقط';
+    } else {
+      genderPrefText = 'إناث فقط';
+    }
+
+    final String moveInText;
+    if (_moveInDate == 'immediate_move') {
+      moveInText = 'فوري';
+    } else if (_moveInDate == 'this_month_move') {
+      moveInText = 'خلال هذا الشهر';
+    } else {
+      moveInText = 'مع بداية الفصل الدراسي الجديد';
+    }
+
+    final selectedUniMap = _unisList.firstWhere(
+      (u) => u['id']?.toString() == _selectedUniId,
+      orElse: () => <String, dynamic>{},
+    );
+    final selectedUniName = selectedUniMap['name']?.toString() ?? 'جامعة غير محددة';
+
+    final matchMsg = 'طلب شريك سكن:\n'
+        'الاسم: ${_nameController.text}\n'
+        'الجامعة: $selectedUniName\n'
+        'التخصص: ${_majorController.text}\n'
+        'الميزانية المقدرة: ${_budgetController.text} USD\n'
+        'نوع السكن المطلوب: $housingPrefText\n'
+        'تفضيل الشركاء: $genderPrefText\n'
+        'موعد الانتقال: $moveInText\n'
+        'ملاحظات إضافية: ${_notesController.text.isNotEmpty ? _notesController.text : "بدون ملاحظات إضافية"}.';
 
     // Show loading spinner
     showDialog(
@@ -113,7 +148,12 @@ class _RoommateMatchScreenState extends State<RoommateMatchScreen> {
     );
 
     ApiService.submitServiceRequest(
-      details: '${LanguageService.tr('auto_trans_1254')}\n$matchMsg',
+      studentName: _nameController.text.isNotEmpty ? _nameController.text : (widget.user!.fullName),
+      studentPhone: _phoneController.text,
+      studentUni: selectedUniName,
+      universityId: int.tryParse(_selectedUniId ?? ''),
+      serviceTitle: 'طلب بحث عن شريك سكن',
+      details: matchMsg,
     ).then((_) {
       if (!context.mounted) return;
       Navigator.pop(context); // Dismiss loading spinner
@@ -201,17 +241,20 @@ class _RoommateMatchScreenState extends State<RoommateMatchScreen> {
                       ),
                       const SizedBox(height: 16),
 
-                      DropdownButtonFormField<String>(
-                        initialValue: _selectedUni,
+                      DropdownButtonFormField<String?>(
+                        value: _unisList.any((u) => u['id']?.toString() == _selectedUniId) ? _selectedUniId : null,
                         decoration: InputDecoration(
                           labelText: LanguageService.tr('auto_trans_1258'),
                           prefixIcon: const Icon(Icons.school, color: AppColors.primary),
                           border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                         ),
-                        items: _universities.map((uni) {
-                          return DropdownMenuItem(value: uni, child: Text(uni, style: const TextStyle(fontSize: 13)));
+                        items: _unisList.map((uni) {
+                          return DropdownMenuItem<String?>(
+                            value: uni['id']?.toString(), 
+                            child: Text(uni['name']?.toString() ?? '', style: const TextStyle(fontSize: 13))
+                          );
                         }).toList(),
-                        onChanged: (val) => setState(() => _selectedUni = val!),
+                        onChanged: (val) => setState(() => _selectedUniId = val),
                       ),
                       const SizedBox(height: 16),
                       
@@ -251,9 +294,25 @@ class _RoommateMatchScreenState extends State<RoommateMatchScreen> {
                       const SizedBox(height: 16),
 
                       DropdownButtonFormField<String>(
-                        initialValue: _selectedGender,
+                        initialValue: _selectedHousingPref,
                         decoration: InputDecoration(
                           labelText: LanguageService.tr('housing_type_req'),
+                          prefixIcon: const Icon(Icons.home, color: AppColors.primary),
+                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                        ),
+                        items: const [
+                          DropdownMenuItem(value: 'apartment', child: Text("شقة كاملة")),
+                          DropdownMenuItem(value: 'room_shared', child: Text("غرفة في شقة مشتركة")),
+                          DropdownMenuItem(value: 'studio', child: Text("استوديو")),
+                        ],
+                        onChanged: (val) => setState(() => _selectedHousingPref = val!),
+                      ),
+                      const SizedBox(height: 16),
+
+                      DropdownButtonFormField<String>(
+                        initialValue: _selectedGender,
+                        decoration: InputDecoration(
+                          labelText: "شريك السكن المفضل",
                           prefixIcon: const Icon(Icons.wc, color: AppColors.primary),
                           border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                         ),

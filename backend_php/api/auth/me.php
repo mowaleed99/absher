@@ -9,7 +9,7 @@ AuthMiddleware::requireAuth();
 $studentId = AuthMiddleware::$currentUserId;
 
 try {
-    $stmt = $conn->prepare("SELECT id, full_name, email, phone, university_id, points_balance, created_at, updated_at FROM students WHERE id = ? AND deleted_at IS NULL LIMIT 1");
+    $stmt = $conn->prepare("SELECT id, full_name, email, phone, university, points AS points_balance, created_at FROM students WHERE id = ? LIMIT 1");
     $stmt->execute([$studentId]);
     $student = $stmt->fetch(PDO::FETCH_ASSOC);
 

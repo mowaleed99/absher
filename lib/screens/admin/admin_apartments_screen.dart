@@ -211,6 +211,9 @@ class _ApartmentFormDialogState extends State<ApartmentFormDialog> {
       String? imagePath = _existingImagePath;
       if (_imageFile != null) {
         imagePath = await ApiService.uploadImage(_imageFile!, 'apartments');
+        if (imagePath == null || imagePath.trim().isEmpty) {
+          throw Exception('Image upload failed. Please try again.');
+        }
       }
 
       // Build images JSON array — store raw paths

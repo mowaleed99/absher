@@ -253,7 +253,7 @@ function renderStats() {
     document.getElementById('statSvcCount').textContent = appData.services.length;
     document.getElementById('statStdCount').textContent = appData.students.length;
     
-    const pendingReqs = appData.requests.filter(r => r.status ==='قيد المراجعة');
+    const pendingReqs = appData.requests.filter(r => r.status === 'قيد المراجعة' || r.status === 'under_review' || r.status === 'pending_cash' || r.status === 'انتظار الدفع النقدي');
     document.getElementById('statReqCount').textContent = pendingReqs.length;
     const reqBadge = document.getElementById('reqCountBadge');
     if (reqBadge) reqBadge.textContent = appData.requests.length;
@@ -292,13 +292,20 @@ function renderApartments() {
                         رقم الشقة: #${apt.id}
                     </span>
                     ${apt.owner_phone ? `<span style="background: rgba(239, 68, 68, 0.15); color: #ef4444; border: 1px solid #ef4444; padding: 4px 10px; border-radius: 12px; font-weight: bold; font-size: 0.82rem; cursor: pointer;"onclick="navigator.clipboard.writeText('${apt.owner_phone}'); showToast('تم نسخ رقم المالك بنجاح')"><i class="fa-solid fa-lock"></i> هاتف المالك: ${apt.owner_phone}</span>` :''}
-                    ${apt.rental_type ? `<span style="background: rgba(251, 191, 36, 0.18); color: #fbbf24; border: 1px solid #fbbf24; padding: 4px 10px; border-radius: 12px; font-weight: bold; font-size: 0.82rem;">${apt.rental_type}</span>` :''}
+                    ${apt.rental_type ? (() => {
+                        const rtLabels = { apartment: 'شقة كاملة', room_shared: 'غرفة مشتركة', studio: 'ستوديو' };
+                        const rtColors = { apartment: '#fbbf24', room_shared: '#38bdf8', studio: '#a78bfa' };
+                        const label = rtLabels[apt.rental_type] || apt.rental_type;
+                        const color = rtColors[apt.rental_type] || '#fbbf24';
+                        return `<span style="background: rgba(${color === '#fbbf24' ? '251,191,36' : color === '#38bdf8' ? '56,189,248' : '167,139,250'},0.18); color: ${color}; border: 1px solid ${color}; padding: 4px 10px; border-radius: 12px; font-weight: bold; font-size: 0.82rem;">${label}</span>`;
+                    })() : ''}
+                    ${apt.rooms_count ? `<span style="background: rgba(37,211,102,0.15); color: #25D366; border: 1px solid #25D366; padding: 4px 10px; border-radius: 12px; font-size: 0.82rem; font-weight:bold;">${apt.rooms_count} غرف نوم</span>` : ''}
                 </div>
                 <h3 class="card-title">${apt.title}</h3>
                 <p class="card-loc"><i class="fa-solid fa-location-dot"></i> الحي السكني: ${apt.location}</p>
                 <div style="margin: 8px 0; display: flex; gap: 8px; flex-wrap: wrap;">
                     <span style="background:var(--primary); color:#fff; padding:4px 10px; border-radius:12px; font-size:0.85rem; font-weight:bold; display:inline-block;">
-                         عدد الغرف: ${apt.capacity ||'3 غرف'}
+                         عدد الغرف: ${apt.capacity || '3 غرف'}
                     </span>
                 </div>
                 ${apt.roommate_reqs || apt.roommate_facilities ? `
@@ -361,7 +368,7 @@ function renderRequests(filterText ='') {
     
     let countPending = 0;
     appData.requests.forEach(r => {
-        if (r.status ==='قيد المراجعة') countPending++;
+        if (r.status === 'قيد المراجعة' || r.status === 'under_review' || r.status === 'pending_cash' || r.status === 'انتظار الدفع النقدي') countPending++;
     });
 
     tbody.innerHTML = filteredReqs.map((req) => {
@@ -375,9 +382,16 @@ function renderRequests(filterText ='') {
         });
 
         // Status style
-        let statusColor ='#fbbf24';
-        if (req.status ==='جاري التنفيذ') statusColor ='#38bdf8';
-        if (req.status ==='مكتمل') statusColor ='#25D366';
+        let statusColor = '#fbbf24';
+        if (req.status === 'under_review' || req.status === 'قيد المراجعة') {
+            statusColor = '#fbbf24';
+        } else if (req.status === 'pending_cash' || req.status === 'انتظار الدفع النقدي') {
+            statusColor = '#a78bfa';
+        } else if (req.status === 'in_progress' || req.status === 'جاري التنفيذ') {
+            statusColor = '#38bdf8';
+        } else if (req.status === 'completed' || req.status === 'مكتمل') {
+            statusColor = '#25D366';
+        }
 
         return `
         <tr>
@@ -389,14 +403,29 @@ function renderRequests(filterText ='') {
             </td>
             <td dir="ltr"style="font-family: monospace; color: #25D366; font-weight: bold; font-size: 1rem;">${req.student_phone}</td>
             <td>
-                <div style="font-weight: bold; color: var(--accent-amber); margin-bottom: 6px; font-size: 0.95rem;">${req.type ||'طلب خدمة'}</div>
+                <div style="font-weight: bold; color: var(--accent-amber); margin-bottom: 6px; font-size: 0.95rem;">${req.type || req.service_title || 'طلب خدمة'}</div>
+                <div style="margin-bottom: 6px; display: flex; gap: 6px; flex-wrap: wrap;">
+                    ${(() => {
+                        const pm = req.payment_method || 'free';
+                        const pc = parseInt(req.points_charged || '0');
+                        const spp = parseInt(req.service_price_points || '0');
+                        if (pm === 'wallet') {
+                            return `<span style="background: rgba(56, 189, 248, 0.15); color: #38bdf8; border: 1px solid #38bdf8; padding: 2px 8px; border-radius: 8px; font-size: 0.75rem; font-weight: bold;"> محفظة (خصم ${pc} نقاط)</span>`;
+                        } else if (pm === 'cash') {
+                            return `<span style="background: rgba(167, 139, 250, 0.15); color: #a78bfa; border: 1px solid #a78bfa; padding: 2px 8px; border-radius: 8px; font-size: 0.75rem; font-weight: bold;"> كاش (السعر: ${spp} نقاط)</span>`;
+                        } else {
+                            return `<span style="background: rgba(34, 197, 94, 0.15); color: #22c55e; border: 1px solid #22c55e; padding: 2px 8px; border-radius: 8px; font-size: 0.75rem; font-weight: bold;"> مجانية</span>`;
+                        }
+                    })()}
+                </div>
                 <div style="font-size: 0.85rem; color: var(--text-muted); line-height: 1.5; background: rgba(0,0,0,0.2); padding: 8px; border-radius: 8px;">${req.details}</div>
             </td>
             <td>
                 <select onchange="updateRequestStatus(${req.id}, this.value)"style="padding: 6px 12px; border-radius: 8px; background: #1e293b; color: ${statusColor}; border: 1px solid rgba(255,255,255,0.1); font-weight: bold; font-size: 0.95rem; cursor: pointer; outline: none; box-shadow: 0 2px 8px rgba(0,0,0,0.2);">
-                    <option value="قيد المراجعة"style="color:#fbbf24;"${req.status ==='قيد المراجعة'?'selected':''}>⏳ قيد المراجعة</option>
-                    <option value="جاري التنفيذ"style="color:#38bdf8;"${req.status ==='جاري التنفيذ'?'selected':''}> جاري التنفيذ</option>
-                    <option value="مكتمل"style="color:#25D366;"${req.status ==='مكتمل'?'selected':''}> مكتمل</option>
+                    <option value="under_review"style="color:#fbbf24;"${(req.status === 'under_review' || req.status === 'قيد المراجعة') ? 'selected' : ''}>⏳ قيد المراجعة</option>
+                    <option value="pending_cash"style="color:#a78bfa;"${(req.status === 'pending_cash' || req.status === 'انتظار الدفع النقدي') ? 'selected' : ''}>💵 انتظار الدفع النقدي</option>
+                    <option value="in_progress"style="color:#38bdf8;"${(req.status === 'in_progress' || req.status === 'جاري التنفيذ') ? 'selected' : ''}>⚙️ جاري التنفيذ</option>
+                    <option value="completed"style="color:#25D366;"${(req.status === 'completed' || req.status === 'مكتمل') ? 'selected' : ''}>✅ مكتمل</option>
                 </select>
             </td>
             <td>
@@ -849,12 +878,18 @@ async function handleNewsFileSelect(input) {
 // Add Apartment Handler
 async function handleAddApartment(e) {
     e.preventDefault();
-    const bathrooms = document.getElementById('aptBathrooms')?.value ||'1 حمام';
-    const rentalType = document.getElementById('aptRentalType')?.value ||'شقة';
-    const ownerPhone = document.getElementById('aptOwnerPhone')?.value ||'';
-    const roomReqs = document.getElementById('aptRoommateReqs')?.value ||'';
-    const roomFacs = document.getElementById('aptRoommateFacilities')?.value ||'';
-    const capacity = document.getElementById('aptCapacity')?.value ||'3 غرف';
+    const bathrooms = document.getElementById('aptBathrooms')?.value || '1 حمام';
+    const rentalTypeDisplay = document.getElementById('aptRentalType')?.value || 'شقة';
+    const ownerPhone = document.getElementById('aptOwnerPhone')?.value || '';
+    const roomReqs = document.getElementById('aptRoommateReqs')?.value || '';
+    const roomFacs = document.getElementById('aptRoommateFacilities')?.value || '';
+    const capacity = document.getElementById('aptCapacity')?.value || '3 غرف';
+    const districtId = document.getElementById('aptDistrictId')?.value || '';
+    const roomsCount = parseInt(document.getElementById('aptRoomsCount')?.value || '0', 10) || null;
+
+    // Map display value to canonical API value
+    const rentalTypeMap = { 'شقة': 'apartment', 'شقة كاملة': 'apartment', 'غرفة في شقة': 'room_shared', 'ستوديو': 'studio', 'studio': 'studio', 'apartment': 'apartment', 'room_shared': 'room_shared' };
+    const rentalType = rentalTypeMap[rentalTypeDisplay] || 'apartment';
 
     let proxList = [];
     const uniCheckboxes = document.querySelectorAll('#aptUniversitiesCheckboxes .uni-checkbox:checked');
@@ -872,8 +907,8 @@ async function handleAddApartment(e) {
 
     let featArr = document.getElementById('aptFeatures').value.split('،').map(f => f.trim());
     if (!featArr.includes(bathrooms)) featArr.unshift(bathrooms);
-    if (rentalType ==='غرفة في شقة'&& !featArr.includes('استئجار مع شريك')) featArr.push('استئجار مع شريك');
-    if (rentalType ==='شقة'&& !featArr.includes('شقة بمفردك')) featArr.push('شقة بمفردك');
+    if (rentalTypeDisplay === 'غرفة في شقة' && !featArr.includes('استئجار مع شريك')) featArr.push('استئجار مع شريك');
+    if (rentalTypeDisplay === 'شقة' && !featArr.includes('شقة بمفردك')) featArr.push('شقة بمفردك');
 
     const newId = appData.apartments.length > 0 ? Math.max(...appData.apartments.map(a => parseInt(a.id) || 0)) + 1 : 1;
 
@@ -885,12 +920,14 @@ async function handleAddApartment(e) {
         proximity: finalProximity,
         universities: selectedUnis,
         capacity: capacity,
-        rental_type: rentalType,
-        move_in_type:'فوري',
-        move_in_date:'انتقال فوري',
+        rental_type: rentalType,       // canonical value for DB + Flutter filters
+        rooms_count: roomsCount,       // int | null
+        district_id: districtId !== '' ? parseInt(districtId, 10) : null,
+        move_in_type: 'فوري',
+        move_in_date: 'انتقال فوري',
         owner_phone: ownerPhone,
-        roommate_reqs: rentalType ==='غرفة في شقة'? roomReqs : null,
-        roommate_facilities: rentalType ==='غرفة في شقة'? roomFacs : null,
+        roommate_reqs: rentalTypeDisplay === 'غرفة في شقة' ? roomReqs : null,
+        roommate_facilities: rentalTypeDisplay === 'غرفة في شقة' ? roomFacs : null,
         features: featArr,
         images: (() => {
             const rawVal = document.getElementById('aptImage').value;
@@ -905,8 +942,8 @@ async function handleAddApartment(e) {
 
     try {
         const res = await window.authFetch(`${API_URL}?action=add_apartment`, {
-            method:'POST',
-            headers: {'Content-Type':'application/json'},
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
             body: JSON.stringify(newApt)
         });
         const data = await res.json();
@@ -915,7 +952,7 @@ async function handleAddApartment(e) {
             closeModal('aptModal');
             document.getElementById('aptForm').reset();
             const aptContainer = document.getElementById('aptImgPreviewsContainer');
-            if (aptContainer) aptContainer.innerHTML ='';
+            if (aptContainer) aptContainer.innerHTML = '';
             showToast('تمت إضافة الشقة بنجاح ونشرها في التطبيق!');
         } else {
             showToast('حدث خطأ أثناء الإضافة: ' + (data.message || ''));
@@ -925,6 +962,7 @@ async function handleAddApartment(e) {
         showToast('خطأ في الاتصال بالخادم');
     }
 }
+
 
 // Add Service Handler
 async function handleAddService(e) {

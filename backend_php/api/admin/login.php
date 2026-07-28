@@ -19,13 +19,22 @@ try {
 
     $storedPass = $admin['password_hash'] ?? $admin['password'] ?? '';
     $isValid = false;
+    $needsRehash = false;
     if ($admin && !empty($storedPass)) {
-        if ($password === $storedPass || password_verify($password, $storedPass)) {
+        if (password_verify($password, $storedPass)) {
             $isValid = true;
+        } elseif (hash_equals($storedPass, $password)) {
+            $isValid = true;
+            $needsRehash = true;
         }
     }
 
     if ($isValid) {
+        if ($needsRehash) {
+            $newHash = password_hash($password, PASSWORD_DEFAULT);
+            $updateStmt = $conn->prepare("UPDATE admins SET password = ? WHERE id = ?");
+            $updateStmt->execute([$newHash, $admin['id']]);
+        }
         $payload = [
             "admin_id" => $admin['id'],
             "role" => $admin['role'],

@@ -115,13 +115,21 @@ ON DUPLICATE KEY UPDATE `title`=VALUES(`title`);
 -- 5. جدول طلبات الخدمات والحجوزات (Service Requests)
 CREATE TABLE IF NOT EXISTS `service_requests` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
+  `student_id` int(11) DEFAULT NULL,
+  `service_id` int(11) DEFAULT NULL,
+  `service_price_points` int(11) NOT NULL DEFAULT 0,
+  `points_charged` int(11) NOT NULL DEFAULT 0,
+  `payment_method` varchar(30) NOT NULL DEFAULT 'free',
+  `request_uuid` varchar(64) DEFAULT NULL UNIQUE,
   `student_name` varchar(150) NOT NULL,
   `student_phone` varchar(50) NOT NULL,
   `service_title` varchar(200) NOT NULL,
   `details` text NOT NULL,
-  `status` varchar(50) DEFAULT'قيد المراجعة', -- قيد المراجعة، جاري التنفيذ، مكتمل
+  `status` varchar(50) DEFAULT 'قيد المراجعة', -- قيد المراجعة، جاري التنفيذ، مكتمل
   `created_at` datetime DEFAULT CURRENT_TIMESTAMP,
-  PRIMARY KEY (`id`)
+  PRIMARY KEY (`id`),
+  CONSTRAINT `fk_service_request_student` FOREIGN KEY (`student_id`) REFERENCES `students` (`id`) ON DELETE SET NULL ON UPDATE CASCADE,
+  CONSTRAINT `fk_service_request_service` FOREIGN KEY (`service_id`) REFERENCES `services` (`id`) ON DELETE SET NULL ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 INSERT INTO `service_requests` (`id`, `student_name`, `student_phone`, `service_title`, `details`, `status`) VALUES
@@ -129,22 +137,50 @@ INSERT INTO `service_requests` (`id`, `student_name`, `student_phone`, `service_
 (2,'محمد علي','+995555987654','فني كهربائي','انقطاع التيار عن مقبس المطبخ في شقة سابورتالو.','جاري التنفيذ')
 ON DUPLICATE KEY UPDATE `service_title`=VALUES(`service_title`);
 
--- 6. جدول تقييمات وآراء الطلاب (Reviews)
-CREATE TABLE IF NOT EXISTS `reviews` (
+-- 6. جدول تقييمات وآراء الخدمات (Service Reviews)
+CREATE TABLE IF NOT EXISTS `service_reviews` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
-  `student_name` varchar(150) NOT NULL,
-  `uni` varchar(150) DEFAULT'جامعة في جورجيا',
-  `rating` int(11) DEFAULT 5,
-  `comment` text NOT NULL,
+  `student_id` int(11) DEFAULT NULL,
+  `service_request_id` int(11) DEFAULT NULL,
+  `student_name` varchar(150) DEFAULT NULL,
+  `uni` varchar(150) DEFAULT 'جامعة في جورجيا',
+  `rating` int(11) NOT NULL DEFAULT 5,
+  `comment` text DEFAULT NULL,
+  `status` enum('pending','approved','rejected') DEFAULT 'pending',
+  `reviewed_by_admin_id` int(11) DEFAULT NULL,
+  `reviewed_at` datetime DEFAULT NULL,
   `created_at` datetime DEFAULT CURRENT_TIMESTAMP,
-  PRIMARY KEY (`id`)
+  `updated_at` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  CONSTRAINT `fk_service_reviews_student` FOREIGN KEY (`student_id`) REFERENCES `students` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `fk_service_reviews_request` FOREIGN KEY (`service_request_id`) REFERENCES `service_requests` (`id`) ON DELETE SET NULL ON UPDATE CASCADE,
+  UNIQUE KEY `uq_student_service_request` (`student_id`, `service_request_id`),
+  INDEX `idx_service_reviews_status` (`status`),
+  INDEX `idx_service_reviews_rating` (`rating`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-INSERT INTO `reviews` (`id`, `student_name`, `uni`, `rating`, `comment`) VALUES
-(1,'د. عمر خالد','جامعة تبليسي الطبية TSMU', 5,'تطبيق وموقع أبشر رائع جداً! ساعدني في العثور على سكن ومطابقة شريك سكن محترم خلال أيام قليلة وبكل سهولة، خدمة ممتازة.'),
-(2,'ريم أحمد','جامعة جورجيا UG', 5,'فريق خدمة العملاء سريع جداً في الرد على الشات، والاستقبال من المطار كان في الموعد المحدد بكل احترافية وأمان.'),
-(3,'يوسف محمود','جامعة إيليا الحكومية', 4,'خيارات الشقق ممتازة ومفروشة بالكامل والأسعار مناسبة جداً لميزانية الطلاب في تبليسي.')
+INSERT INTO `service_reviews` (`id`, `student_name`, `uni`, `rating`, `comment`, `status`) VALUES
+(1,'د. عمر خالد','جامعة تبليسي الطبية TSMU', 5,'تطبيق وموقع أبشر رائع جداً! ساعدني في العثور على سكن ومطابقة شريك سكن محترم خلال أيام قليلة وبكل سهولة، خدمة ممتازة.', 'approved'),
+(2,'ريم أحمد','جامعة جورجيا UG', 5,'فريق خدمة العملاء سريع جداً في الرد على الشات، والاستقبال من المطار كان في الموعد المحدد بكل احترافية وأمان.', 'approved'),
+(3,'يوسف محمود','جامعة إيليا الحكومية', 4,'خيارات الشقق ممتازة ومفروشة بالكامل والأسعار مناسبة جداً لميزانية الطلاب في تبليسي.', 'approved')
 ON DUPLICATE KEY UPDATE `student_name`=VALUES(`student_name`);
+
+-- 6ب. جدول البلاغات والمقترحات العامة (Application Feedback)
+CREATE TABLE IF NOT EXISTS `application_feedback` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `student_id` int(11) NOT NULL,
+  `feedback_type` enum('suggestion','bug','ux','feature') NOT NULL,
+  `comment` text NOT NULL,
+  `status` enum('pending','reviewed','resolved') DEFAULT 'pending',
+  `reviewed_by_admin_id` int(11) DEFAULT NULL,
+  `reviewed_at` datetime DEFAULT NULL,
+  `created_at` datetime DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  CONSTRAINT `fk_app_feedback_student` FOREIGN KEY (`student_id`) REFERENCES `students` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  INDEX `idx_app_feedback_type` (`feedback_type`),
+  INDEX `idx_app_feedback_status` (`status`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- 7. جدول محادثات الدعم الفني (Chats)
 CREATE TABLE IF NOT EXISTS `chats` (
@@ -195,10 +231,14 @@ INSERT INTO `chat_messages` (`chat_id`, `sender`, `text`, `created_at`) VALUES
 CREATE TABLE IF NOT EXISTS `wallet_transactions` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `student_id` int(11) NOT NULL,
+  `service_request_id` int(11) DEFAULT NULL,
   `amount` int(11) NOT NULL, -- موجب للإضافة، وسالب للخصم
-  `type` varchar(50) NOT NULL, --'add','deduct','payment'`description` text NOT NULL,
+  `type` varchar(50) NOT NULL, --'add','deduct','payment'
+  `description` text NOT NULL,
   `created_at` datetime DEFAULT CURRENT_TIMESTAMP,
-  PRIMARY KEY (`id`)
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uniq_service_request_id` (`service_request_id`),
+  CONSTRAINT `fk_wallet_transaction_service_request` FOREIGN KEY (`service_request_id`) REFERENCES `service_requests` (`id`) ON DELETE SET NULL ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- 10. جدول الإشعارات (Notifications)
@@ -217,7 +257,33 @@ CREATE TABLE IF NOT EXISTS `news` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `title` varchar(255) NOT NULL,
   `content` text NOT NULL,
+  `image_url` varchar(500) DEFAULT NULL,
   `created_at` datetime DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- 12. جدول عروض السكن الحصرية (Housing Offers)
+CREATE TABLE IF NOT EXISTS `housing_offers` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `apartment_id` int(11) NOT NULL,
+  `title` varchar(255) NOT NULL,
+  `description` text NOT NULL,
+  `original_price` decimal(10,2) NOT NULL,
+  `offer_price` decimal(10,2) NOT NULL,
+  `badge_text` varchar(100) DEFAULT NULL,
+  `image_url` varchar(500) DEFAULT NULL,
+  `starts_at` datetime DEFAULT NULL,
+  `expires_at` datetime DEFAULT NULL,
+  `is_active` tinyint(1) DEFAULT 1,
+  `display_order` int(11) DEFAULT 0,
+  `created_at` datetime DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  CONSTRAINT `fk_offer_apartment` FOREIGN KEY (`apartment_id`) 
+    REFERENCES `apartments` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `chk_original_price` CHECK (`original_price` > 0),
+  CONSTRAINT `chk_offer_price` CHECK (`offer_price` >= 0 AND `offer_price` < `original_price`),
+  CONSTRAINT `chk_dates` CHECK (`starts_at` IS NULL OR `expires_at` IS NULL OR `starts_at` < `expires_at`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 

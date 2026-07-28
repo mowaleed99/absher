@@ -1,3 +1,4 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import '../theme/app_colors.dart';
 import '../services/api_service.dart';
@@ -9,8 +10,20 @@ import '../models/student.dart';
 class ApartmentDetailScreen extends StatefulWidget {
   final Map<String, dynamic> apartment;
   final Student? user;
+  final double? offerPrice;
+  final double? originalPrice;
+  final int? discountPercent;
+  final String? badgeText;
 
-  const ApartmentDetailScreen({super.key, required this.apartment, required this.user});
+  const ApartmentDetailScreen({
+    super.key,
+    required this.apartment,
+    required this.user,
+    this.offerPrice,
+    this.originalPrice,
+    this.discountPercent,
+    this.badgeText,
+  });
 
   @override
   State<ApartmentDetailScreen> createState() => _ApartmentDetailScreenState();
@@ -18,6 +31,7 @@ class ApartmentDetailScreen extends StatefulWidget {
 
 class _ApartmentDetailScreenState extends State<ApartmentDetailScreen> {
   int _currentImageIndex = 0;
+  final PageController _pageController = PageController();
   final _phoneController = TextEditingController();
   final _notesController = TextEditingController();
   String _viewingDate = '';
@@ -28,6 +42,14 @@ class _ApartmentDetailScreenState extends State<ApartmentDetailScreen> {
     super.initState();
     final today = DateTime.now();
     _viewingDate = '${today.year}-${today.month.toString().padLeft(2, '0')}-${today.day.toString().padLeft(2, '0')}';
+  }
+
+  @override
+  void dispose() {
+    _pageController.dispose();
+    _phoneController.dispose();
+    _notesController.dispose();
+    super.dispose();
   }
 
   void _selectViewingDate(StateSetter setModalState) async {
@@ -251,22 +273,51 @@ class _ApartmentDetailScreenState extends State<ApartmentDetailScreen> {
                         ),
                       );
 
-                      final bookingMsg = 'طلب حجز ومعاينة شقة رقم (#${widget.apartment["id"] ?? "1"}):\n'
-                          'الشقة: ${widget.apartment["title"]}\n'
-                          'السعر: ${widget.apartment["price"]}\n'
+                       final aptId   = widget.apartment['id']?.toString() ?? '?';
+                       final aptTitle = widget.apartment['title']?.toString() ?? '';
+                       final aptPrice = widget.offerPrice != null
+                           ? "${widget.offerPrice} \$ (خصم ${widget.discountPercent}%)"
+                           : (widget.apartment['price']?.toString() ?? '');
+
+                      final String rawRentalType = widget.apartment['rental_type']?.toString() ?? '';
+                      final String resolvedRentalType;
+                      if (rawRentalType == 'apartment') {
+                        resolvedRentalType = 'شقة كاملة';
+                      } else if (rawRentalType == 'studio') {
+                        resolvedRentalType = 'استوديو';
+                      } else if (rawRentalType == 'room_shared') {
+                        resolvedRentalType = 'غرفة في شقة مشتركة';
+                      } else {
+                        resolvedRentalType = 'غير محدد';
+                      }
+
+                      final bookingMsg = 'طلب حجز ومعاينة سكن رقم (#$aptId):\n'
+                          'السكن: $aptTitle\n'
+                          'نوع السكن: $resolvedRentalType\n'
+                          'السعر: $aptPrice\n'
                           'موعد المعاينة المقترح: $_viewingDate\n'
                           'الوقت المناسب لك: $_viewingTime\n'
                           'هاتف التواصل: ${_phoneController.text}\n'
                           'ملاحظات: ${_notesController.text.isNotEmpty ? _notesController.text : LanguageService.tr("auto_trans_1015")}\n\n'
                           '${LanguageService.tr("auto_trans_1016")}';
 
-                      // 2. Submit request directly to backend database
+                      // 2. Submit booking as a service_request with all required fields
                       ApiService.submitServiceRequest(
-                        details: 'حجز شقة رقم (#${widget.apartment['id'] ?? '1'})\n$bookingMsg',
-                      ).then((_) {
+                        studentName: widget.user?.fullName ?? '',
+                        studentPhone: widget.user?.phone ?? _phoneController.text,
+                        studentUni: widget.user?.universityId != null ? 'جامعة #${widget.user!.universityId}' : '',
+                        serviceTitle: 'حجز شقة #$aptId - $aptTitle',
+                        details: bookingMsg,
+                      ).then((result) {
                         if (!context.mounted) return;
                         Navigator.pop(context); // Dismiss loading spinner
                         Navigator.pop(context); // Close Bottom Sheet modal
+                        if (result['status'] == 'error') {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text('${LanguageService.tr("error_sending_request")}: ${result["message"] ?? ""}')),
+                          );
+                          return;
+                        }
                         Navigator.of(context).push(
                           MaterialPageRoute(
                             builder: (_) => ChatScreen(user: widget.user),
@@ -276,7 +327,7 @@ class _ApartmentDetailScreenState extends State<ApartmentDetailScreen> {
                         if (!context.mounted) return;
                         Navigator.pop(context); // Dismiss loading spinner
                         ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text('${LanguageService.tr('error_sending_request')}: $e')),
+                          SnackBar(content: Text('${LanguageService.tr("error_sending_request")}: $e')),
                         );
                       });
                     },
@@ -325,26 +376,76 @@ class _ApartmentDetailScreenState extends State<ApartmentDetailScreen> {
                       height: 260,
                       child: Stack(
                         children: [
-                          PageView.builder(
-                            itemCount: images.length,
-                            onPageChanged: (idx) => setState(() => _currentImageIndex = idx),
-                            itemBuilder: (context, index) {
-                              final String currentImg = images[index];
-                              return currentImg.startsWith('assets/')
-                                  ? Image.asset(
-                                      currentImg,
-                                      fit: BoxFit.cover,
-                                      width: double.infinity,
-                                      errorBuilder: (_, __, ___) => Image.asset('assets/images/apt1.png', fit: BoxFit.cover, width: double.infinity),
-                                    )
-                                  : Image.network(
-                                      ApiService.resolveImageUrl(currentImg),
-                                      fit: BoxFit.cover,
-                                      width: double.infinity,
-                                      errorBuilder: (_, __, ___) => Image.asset('assets/images/apt1.png', fit: BoxFit.cover, width: double.infinity),
-                                    );
-                            },
+                          ScrollConfiguration(
+                            behavior: const MaterialScrollBehavior().copyWith(
+                              dragDevices: {
+                                PointerDeviceKind.touch,
+                                PointerDeviceKind.mouse,
+                              },
+                            ),
+                            child: PageView.builder(
+                              controller: _pageController,
+                              itemCount: images.length,
+                              onPageChanged: (idx) => setState(() => _currentImageIndex = idx),
+                              itemBuilder: (context, index) {
+                                final String currentImg = images[index];
+                                return currentImg.startsWith('assets/')
+                                    ? Image.asset(
+                                        currentImg,
+                                        fit: BoxFit.cover,
+                                        width: double.infinity,
+                                        errorBuilder: (_, __, ___) => Image.asset('assets/images/apt1.png', fit: BoxFit.cover, width: double.infinity),
+                                      )
+                                    : Image.network(
+                                        ApiService.resolveImageUrl(currentImg),
+                                        fit: BoxFit.cover,
+                                        width: double.infinity,
+                                        errorBuilder: (_, __, ___) => Image.asset('assets/images/apt1.png', fit: BoxFit.cover, width: double.infinity),
+                                      );
+                              },
+                            ),
                           ),
+                          
+                          // Navigation Arrows for Web/Desktop and ease of use
+                          if (images.length > 1) ...[
+                            Positioned(
+                              left: 8,
+                              top: 0,
+                              bottom: 0,
+                              child: Center(
+                                child: Container(
+                                  decoration: BoxDecoration(color: Colors.black.withValues(alpha: 0.4), shape: BoxShape.circle),
+                                  child: IconButton(
+                                    icon: const Icon(Icons.arrow_back_ios_new, color: Colors.white, size: 18),
+                                    onPressed: () {
+                                      if (_currentImageIndex > 0) {
+                                        _pageController.previousPage(duration: const Duration(milliseconds: 300), curve: Curves.easeInOut);
+                                      }
+                                    },
+                                  ),
+                                ),
+                              ),
+                            ),
+                            Positioned(
+                              right: 8,
+                              top: 0,
+                              bottom: 0,
+                              child: Center(
+                                child: Container(
+                                  decoration: BoxDecoration(color: Colors.black.withValues(alpha: 0.4), shape: BoxShape.circle),
+                                  child: IconButton(
+                                    icon: const Icon(Icons.arrow_forward_ios, color: Colors.white, size: 18),
+                                    onPressed: () {
+                                      if (_currentImageIndex < images.length - 1) {
+                                        _pageController.nextPage(duration: const Duration(milliseconds: 300), curve: Curves.easeInOut);
+                                      }
+                                    },
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+
                           Positioned(
                             bottom: 12,
                             right: 0,
@@ -389,10 +490,33 @@ class _ApartmentDetailScreenState extends State<ApartmentDetailScreen> {
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                                      decoration: BoxDecoration(color: const Color(0xFFE8F5E9), borderRadius: BorderRadius.circular(8)),
-                                      child: Text('${LanguageService.tr('apartment_number')}${widget.apartment['id'] ?? '1'}', style: const TextStyle(color: Color(0xFF2E7D32), fontWeight: FontWeight.bold, fontSize: 13)),
+                                    Row(
+                                      children: [
+                                        Container(
+                                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                          decoration: BoxDecoration(color: const Color(0xFFE8F5E9), borderRadius: BorderRadius.circular(8)),
+                                          child: Text('${LanguageService.tr('apartment_number')}${widget.apartment['id'] ?? '1'}', style: const TextStyle(color: Color(0xFF2E7D32), fontWeight: FontWeight.bold, fontSize: 13)),
+                                        ),
+                                        const SizedBox(width: 8),
+                                        Container(
+                                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                          decoration: BoxDecoration(
+                                            color: AppColors.accentLight,
+                                            borderRadius: BorderRadius.circular(8),
+                                            border: Border.all(color: AppColors.accent),
+                                          ),
+                                          child: Text(
+                                            (() {
+                                              final t = widget.apartment['rental_type']?.toString() ?? '';
+                                              if (t == 'apartment') return 'شقة كاملة';
+                                              if (t == 'studio') return 'استوديو';
+                                              if (t == 'room_shared') return 'غرفة في شقة مشتركة';
+                                              return 'غير محدد';
+                                            })(),
+                                            style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold, fontSize: 12),
+                                          ),
+                                        ),
+                                      ],
                                     ),
                                     const SizedBox(height: 6),
                                     Text(
@@ -402,11 +526,69 @@ class _ApartmentDetailScreenState extends State<ApartmentDetailScreen> {
                                   ],
                                 ),
                               ),
-                              Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                                decoration: BoxDecoration(color: AppColors.accentLight, borderRadius: BorderRadius.circular(12), border: Border.all(color: AppColors.accent)),
-                                child: Text(widget.apartment['price'] ?? '', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.textDark)),
-                              ),
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.end,
+                                children: [
+                                  if (widget.offerPrice != null) ...[
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                                      decoration: BoxDecoration(
+                                        color: AppColors.accentLight,
+                                        borderRadius: BorderRadius.circular(12),
+                                        border: Border.all(color: AppColors.accent),
+                                      ),
+                                      child: Text(
+                                        "${widget.offerPrice} \$",
+                                        style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.textDark),
+                                      ),
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Text(
+                                          "${widget.originalPrice ?? widget.apartment['price']} \$",
+                                          style: const TextStyle(
+                                            color: AppColors.textMuted,
+                                            decoration: TextDecoration.lineThrough,
+                                            fontSize: 13,
+                                          ),
+                                        ),
+                                        const SizedBox(width: 6),
+                                        if (widget.discountPercent != null && widget.discountPercent! > 0)
+                                          Container(
+                                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                            decoration: BoxDecoration(
+                                              color: Colors.red.shade50,
+                                              borderRadius: BorderRadius.circular(6),
+                                            ),
+                                            child: Text(
+                                              "خصم ${widget.discountPercent}%",
+                                              style: TextStyle(
+                                                color: Colors.red.shade700,
+                                                fontWeight: FontWeight.bold,
+                                                fontSize: 11,
+                                              ),
+                                            ),
+                                          ),
+                                      ],
+                                    ),
+                                  ] else ...[
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                                      decoration: BoxDecoration(
+                                        color: AppColors.accentLight,
+                                        borderRadius: BorderRadius.circular(12),
+                                        border: Border.all(color: AppColors.accent),
+                                      ),
+                                      child: Text(
+                                        widget.apartment['price'] ?? '',
+                                        style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.textDark),
+                                      ),
+                                    ),
+                                  ],
+                                ],
+                              )
                             ],
                           ),
                           const SizedBox(height: 12),

@@ -157,6 +157,9 @@ class _ServiceFormDialogState extends State<ServiceFormDialog> {
 
       if (_imageFile != null) {
         imageUrl = await ApiService.uploadImage(_imageFile!, 'services');
+        if (imageUrl == null || imageUrl.trim().isEmpty) {
+          throw Exception('Image upload failed. Please try again.');
+        }
       }
 
       final payload = {
@@ -236,7 +239,13 @@ class _ServiceFormDialogState extends State<ServiceFormDialog> {
                 controller: _priceController,
                 decoration: InputDecoration(labelText: LanguageService.tr('price_points')),
                 keyboardType: TextInputType.number,
-                validator: (v) => v!.isEmpty ? 'Required' : null,
+                validator: (v) {
+                  if (v == null || v.isEmpty) return 'Required';
+                  final val = int.tryParse(v);
+                  if (val == null) return 'Must be a valid integer';
+                  if (val < 0) return 'Cannot be negative';
+                  return null;
+                },
               ),
               SwitchListTile(
                 // has_form: indicates whether this service shows a request form to students

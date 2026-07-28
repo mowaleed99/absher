@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:math';
 import 'package:http/http.dart' as http;
 import 'package:flutter/foundation.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
@@ -7,6 +8,7 @@ import '../models/apartment.dart';
 import '../models/admin_dashboard.dart';
 import '../models/chat_message.dart';
 import 'language_service.dart';
+import '../models/housing_offer.dart';
 
 class ApiService {
   static const _storage = FlutterSecureStorage();
@@ -49,13 +51,13 @@ class ApiService {
     if (authToken == null) return null;
     try {
       final response = await http.get(
-        Uri.parse('$baseUrl/auth/me.php'),
+        Uri.parse('$baseUrl/profile/get.php'),
         headers: {'Authorization': 'Bearer $authToken'},
-      );
+      ).timeout(const Duration(seconds: 10));
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         final isSuccess = data['success'] == true || data['status'] == 'success';
-        final student = data['data']?['student'] ?? data['user'];
+        final student = data['data']?['student'] ?? data['student'];
         if (isSuccess && student != null) {
           return Student.fromJson(student as Map<String, dynamic>);
         }
@@ -160,7 +162,7 @@ class ApiService {
   }) async {
     try {
       final response = await http.post(
-        Uri.parse('$baseUrl/register.php'),
+        Uri.parse('$baseUrl/auth/register.php'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
           'full_name': fullName,
@@ -169,38 +171,62 @@ class ApiService {
           'university': university,
           'password': password,
         }),
-      );
+      ).timeout(const Duration(seconds: 15));
 
-      if (response.statusCode == 200) {
-        return jsonDecode(response.body);
+      final data = jsonDecode(response.body) as Map<String, dynamic>;
+      final isSuccess = response.statusCode == 200 || response.statusCode == 201;
+      
+      if (isSuccess && data['success'] == true) {
+        final token = data['data']?['token'];
+        if (token != null) {
+          await saveAuthToken(token.toString());
+        }
+        final student = data['data']?['student'] ?? {};
+        return {
+          'status': 'success',
+          'message': data['message'] ?? 'تم إنشاء الحساب بنجاح',
+          'user': {
+            'id': student['id'],
+            'name': student['full_name'],
+            'email': student['email'],
+            'phone': student['phone'],
+            'uni': student['university'],
+            'is_guest': false
+          }
+        };
       } else {
-        return {'status': 'error', 'message': 'خطأ في الاتصال بالخادم (${response.statusCode})'};
+        return {
+          'status': 'error',
+          'message': data['message'] ?? 'خطأ في إنشاء الحساب (${response.statusCode})'
+        };
       }
     } catch (e) {
-      // وضع محاكاة للتجربة الفورية
-      await Future.delayed(const Duration(milliseconds: 800));
+      debugPrint('register error: $e');
       return {
-        'status': 'success',
-        'message': LanguageService.tr('auto_trans_1294'),
-        'user': {
-          'id': 2,
-          'name': fullName,
-          'email': email,
-          'uni': university,
-          'is_guest': false
-        }
+        'status': 'error',
+        'message': 'فشل الاتصال بالخادم: $e'
       };
     }
   }
 
-  // جلب كافة الشقق السكنية المتاحة
+  // جلب كافة الشقق السكنية المتاحة (مع دعم الفلترة من الخادم)
   // Calls /apartments/list.php — public endpoint, returns is_available=1 only
   // Response: {"success":true,"data":{"apartments":[...]}}
-  static Future<List<Map<String, dynamic>>> getApartments() async {
+  static Future<List<Map<String, dynamic>>> getApartments({
+    String? rentalType,   // 'apartment' | 'room_shared' | 'studio' | null = all
+    int?    roomsCount,   // exact bedroom count | null = all
+    int?    districtId,   // district FK | null = all
+  }) async {
     try {
-      final response = await http.get(
-        Uri.parse('$baseUrl/apartments/list.php?t=${DateTime.now().millisecondsSinceEpoch}'),
-      );
+      final params = <String, String>{
+        't': DateTime.now().millisecondsSinceEpoch.toString(),
+      };
+      if (rentalType != null && rentalType.isNotEmpty) params['rental_type'] = rentalType;
+      if (roomsCount != null && roomsCount > 0) params['rooms_count'] = roomsCount.toString();
+      if (districtId != null && districtId > 0) params['district_id'] = districtId.toString();
+
+      final uri = Uri.parse('$baseUrl/apartments/list.php').replace(queryParameters: params);
+      final response = await http.get(uri);
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body) as Map<String, dynamic>;
         final isSuccess = data['success'] == true || data['status'] == 'success';
@@ -226,8 +252,11 @@ class ApiService {
               'title': a['title']?.toString() ?? '',
               'price': a['price']?.toString() ?? '',
               'location': a['location']?.toString() ?? '',
+              'district_id': a['district_id'] is int ? a['district_id'] as int : (int.tryParse(a['district_id']?.toString() ?? '')),
               'proximity': a['proximity']?.toString() ?? '',
               'capacity': a['capacity']?.toString() ?? '',
+              'rental_type': a['rental_type']?.toString() ?? '',
+              'rooms_count': a['rooms_count'] is int ? a['rooms_count'] as int : (int.tryParse(a['rooms_count']?.toString() ?? '')),
               'move_in_type': a['move_in_type']?.toString() ?? '',
               'move_in_date': a['move_in_date']?.toString() ?? '',
               'description': a['description']?.toString() ?? '',
@@ -244,6 +273,34 @@ class ApiService {
     }
     // No mock fallback — return empty list so UI shows "no data" state
     return [];
+  }
+
+  static Future<List<HousingOffer>?> getHousingOffers() async {
+    final String url = '$baseUrl/offers/list.php?t=${DateTime.now().millisecondsSinceEpoch}';
+    try {
+      final response = await http.get(Uri.parse(url)).timeout(const Duration(seconds: 10));
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        final isSuccess = data['status'] == 'success' || data['success'] == true;
+        
+        List? rawList;
+        if (data['data'] is Map && data['data']['offers'] is List) {
+          rawList = data['data']['offers'] as List;
+        } else if (data['data'] is List) {
+          rawList = data['data'] as List;
+        } else if (data['offers'] is List) {
+          rawList = data['offers'] as List;
+        }
+
+        if (isSuccess && rawList != null) {
+          return rawList.map((item) => HousingOffer.fromJson(item as Map<String, dynamic>)).toList();
+        }
+      }
+      return null;
+    } catch (e) {
+      debugPrint('Error fetching housing offers at $url: $e');
+      return null;
+    }
   }
 
   // جلب كافة الجامعات
@@ -315,7 +372,7 @@ class ApiService {
             'id': n['id']?.toString() ?? '',
             'title': n['title']?.toString() ?? '',
             'content': n['content']?.toString() ?? '',
-            'image_url': n['image_url']?.toString() ?? '',
+            'image_url': resolveImageUrl(n['image_url']?.toString() ?? ''),
             'date': n['date']?.toString() ?? n['created_at']?.toString() ?? LanguageService.tr('auto_trans_1356'),
           }).toList();
         }
@@ -364,6 +421,19 @@ class ApiService {
     ];
   }
 
+  static String generateUuidV4() {
+    final random = Random.secure();
+    final values = List<int>.generate(16, (i) => random.nextInt(256));
+    values[6] = (values[6] & 0x0f) | 0x40; // version 4
+    values[8] = (values[8] & 0x3f) | 0x80; // variant RFC 4122
+    final buffer = StringBuffer();
+    for (var i = 0; i < 16; i++) {
+      if (i == 4 || i == 6 || i == 8 || i == 10) buffer.write('-');
+      buffer.write(values[i].toRadixString(16).padLeft(2, '0'));
+    }
+    return buffer.toString();
+  }
+
   // جلب قائمة الخدمات الطلابية
   // Calls /services/list.php — public endpoint
   // Response: {"success":true,"data":{"services":[...]}}
@@ -386,6 +456,23 @@ class ApiService {
               'desc': svc['description']?.toString() ?? '',
               'img': resolveImageUrl(svc['image_url']?.toString() ?? ''),
               'has_form': svc['has_form'] == true || svc['has_form'] == 1 || svc['has_form'] == '1',
+              'price_points': (() {
+                final raw = svc['price_points'];
+                final svcId = svc['id']?.toString() ?? 'unknown';
+                if (raw == null) {
+                  throw FormatException('Missing price_points field for service ID: $svcId');
+                }
+                if (raw is int) return raw;
+                if (raw is num) return raw.toInt();
+                if (raw is String) {
+                  final parsed = int.tryParse(raw);
+                  if (parsed == null) {
+                    throw FormatException('Malformed price_points value: "$raw" for service ID: $svcId');
+                  }
+                  return parsed;
+                }
+                throw FormatException('Unexpected price_points type: ${raw.runtimeType} for service ID: $svcId');
+              })(),
             };
           }).toList();
         }
@@ -397,34 +484,57 @@ class ApiService {
     return [];
   }
 
-  // إرسال طلب خدمة أو حجز شقة أو تجميع شريك سكن
   static Future<Map<String, dynamic>> submitServiceRequest({
+    int? serviceId,
     String studentName = '',
     String studentPhone = '',
     String studentUni = '',
+    int? universityId,
     String serviceTitle = '',
     required String details,
+    bool payWithPoints = false,
+    String paymentMethod = 'free',
+    String? requestUuid,
   }) async {
     try {
+      final finalUuid = (requestUuid == null || requestUuid.isEmpty)
+          ? generateUuidV4()
+          : requestUuid;
+      // Always attach Authorization header so the backend can resolve student_id from JWT
+      final headers = {'Content-Type': 'application/json'};
+      if (authToken != null && authToken!.isNotEmpty) {
+        headers['Authorization'] = 'Bearer $authToken';
+      }
       final response = await http.post(
         Uri.parse('$baseUrl/student_requests.php'),
-        headers: {'Content-Type': 'application/json'},
+        headers: headers,
         body: jsonEncode({
           'action': 'submit',
+          'service_id': serviceId,
           'student_name': studentName,
           'student_phone': studentPhone,
           'student_uni': studentUni,
+          'university_id': universityId,
           'service_title': serviceTitle,
           'details': details,
+          'pay_with_points': payWithPoints,
+          'payment_method': paymentMethod,
+          'request_uuid': finalUuid,
         }),
       );
       if (response.statusCode == 200) {
-        return jsonDecode(response.body);
+        final Map<String, dynamic> data = jsonDecode(response.body);
+        if (data['status'] == 'error') {
+          throw Exception(data['message'] ?? 'حدث خطأ أثناء معالجة الطلب في الخادم');
+        }
+        return data;
+      } else {
+        throw Exception('فشل الاتصال بالخادم: رمز الاستجابة ${response.statusCode}');
       }
     } catch (e) {
       debugPrint('Error submitting request: $e');
+      rethrow;
     }
-    return {'status': 'success', 'message': LanguageService.tr('auto_trans_1384')};
   }
 
   // جلب محادثات الطالب من الخادم
@@ -515,41 +625,187 @@ class ApiService {
     }
   }
 
-  // رفع ملف (صورة أو فيديو) إلى السيرفر
-  static Future<String?> uploadFile(String filePath, String fileName, {List<int>? fileBytes}) async {
+  // ─── Student Requests ──────────────────────────────────────────────────────
+
+  static Future<List<Map<String, dynamic>>> getMyServiceRequests() async {
     try {
-      final request = http.MultipartRequest('POST', Uri.parse('$baseUrl/upload.php'));
-      final authHeader = adminToken ?? authToken;
-      if (authHeader != null && authHeader.isNotEmpty) {
-        request.headers['Authorization'] = 'Bearer $authHeader';
-      }
-      if (kIsWeb || filePath.isEmpty) {
-        if (fileBytes != null) {
-          request.files.add(http.MultipartFile.fromBytes('file', fileBytes, filename: fileName));
-        } else {
-          return null;
-        }
-      } else {
-        request.files.add(await http.MultipartFile.fromPath('file', filePath, filename: fileName));
-      }
-      final streamedResponse = await request.send();
-      final response = await http.Response.fromStream(streamedResponse);
+      final response = await http.get(
+        Uri.parse('$baseUrl/student_requests.php?action=list'),
+        headers: {
+          'Authorization': 'Bearer $authToken',
+        },
+      );
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-        if ((data['status'] == 'success' || data['success'] == true) && (data['url'] != null || (data['data'] != null && data['data']['url'] != null))) {
-          final rawUrl = (data['url'] ?? data['data']['url']).toString();
-          final domain = baseUrl.replaceAll('/api', '');
-          return rawUrl.startsWith('http') ? rawUrl : (rawUrl.startsWith('/') ? '$domain$rawUrl' : '$domain/$rawUrl');
-        } else {
-          debugPrint('uploadFile error response: ${response.body}');
+        final list = data['data']?['requests'] ?? data['requests'];
+        if (list is List) {
+          return list.cast<Map<String, dynamic>>();
         }
-      } else {
-        debugPrint('uploadFile failed statusCode ${response.statusCode}: ${response.body}');
       }
+      throw Exception(jsonDecode(response.body)['message'] ?? 'Failed to load requests');
     } catch (e) {
-      debugPrint('uploadFile exception: $e');
+      debugPrint('getMyServiceRequests error: $e');
+      rethrow;
     }
-    return null;
+  }
+
+  // ─── Service Reviews (Track 5 System A) ───────────────────────────────────
+
+  static Future<Map<String, dynamic>> createServiceReview({
+    required int rating,
+    required String comment,
+    required int serviceRequestId,
+  }) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/reviews/create.php'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $authToken',
+        },
+        body: jsonEncode({
+          'rating': rating,
+          'comment': comment,
+          'service_request_id': serviceRequestId,
+        }),
+      );
+      final data = jsonDecode(response.body);
+      return {
+        'success': response.statusCode == 201 || response.statusCode == 200,
+        'message': data['message'] ?? 'Successfully submitted review',
+        'data': data['data'] ?? data,
+      };
+    } catch (e) {
+      debugPrint('createServiceReview error: $e');
+      return {'success': false, 'message': LanguageService.tr('auto_trans_1386')};
+    }
+  }
+
+  static Future<List<Map<String, dynamic>>> getMyServiceReviews() async {
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/reviews/my.php'),
+        headers: {
+          'Authorization': 'Bearer $authToken',
+        },
+      );
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        final list = data['data'] ?? data;
+        if (list is List) {
+          return list.cast<Map<String, dynamic>>();
+        }
+      }
+      throw Exception(jsonDecode(response.body)['message'] ?? 'Failed to load reviews');
+    } catch (e) {
+      debugPrint('getMyServiceReviews error: $e');
+      rethrow;
+    }
+  }
+
+  static Future<Map<String, dynamic>> updateServiceReview({
+    required int id,
+    required int rating,
+    required String comment,
+  }) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/reviews/update.php'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $authToken',
+        },
+        body: jsonEncode({
+          'id': id,
+          'rating': rating,
+          'comment': comment,
+        }),
+      );
+      final data = jsonDecode(response.body);
+      return {
+        'success': response.statusCode == 200,
+        'message': data['message'] ?? 'Successfully updated review',
+      };
+    } catch (e) {
+      debugPrint('updateServiceReview error: $e');
+      return {'success': false, 'message': LanguageService.tr('auto_trans_1386')};
+    }
+  }
+
+  static Future<Map<String, dynamic>> deleteServiceReview({
+    required int id,
+  }) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/reviews/delete.php'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $authToken',
+        },
+        body: jsonEncode({
+          'id': id,
+        }),
+      );
+      final data = jsonDecode(response.body);
+      return {
+        'success': response.statusCode == 200,
+        'message': data['message'] ?? 'Successfully deleted review',
+      };
+    } catch (e) {
+      debugPrint('deleteServiceReview error: $e');
+      return {'success': false, 'message': LanguageService.tr('auto_trans_1386')};
+    }
+  }
+
+  // ─── Application Feedback (Track 5 System B) ───────────────────────────────
+
+  static Future<Map<String, dynamic>> submitFeedback({
+    required String feedbackType,
+    required String comment,
+  }) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/feedback/create.php'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $authToken',
+        },
+        body: jsonEncode({
+          'feedback_type': feedbackType,
+          'comment': comment,
+        }),
+      );
+      final data = jsonDecode(response.body);
+      return {
+        'success': response.statusCode == 201 || response.statusCode == 200,
+        'message': data['message'] ?? 'Successfully submitted feedback',
+      };
+    } catch (e) {
+      debugPrint('submitFeedback error: $e');
+      return {'success': false, 'message': LanguageService.tr('auto_trans_1386')};
+    }
+  }
+
+  static Future<List<Map<String, dynamic>>> getMyFeedback() async {
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/feedback/my.php'),
+        headers: {
+          'Authorization': 'Bearer $authToken',
+        },
+      );
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        final list = data['data'] ?? data;
+        if (list is List) {
+          return list.cast<Map<String, dynamic>>();
+        }
+      }
+      throw Exception(jsonDecode(response.body)['message'] ?? 'Failed to load feedback');
+    } catch (e) {
+      debugPrint('getMyFeedback error: $e');
+      rethrow;
+    }
   }
 
   // المحفظة - جلب الرصيد والإشعارات
@@ -570,13 +826,27 @@ class ApiService {
   }
 
   // المحفظة - الدفع بالنقاط
+  // studentIdOrResult can be:
+  //   - an int (direct student ID)
+  //   - a Map from submitServiceRequest (student_id is resolved server-side via JWT)
   static Future<Map<String, dynamic>> payWithPoints(dynamic studentIdOrResult, [int amount = 0, String serviceTitle = '']) async {
-    // Supports being called with just a Map result from submitServiceRequest
-    final int studentId = studentIdOrResult is int ? studentIdOrResult : 0;
+    // Extract student_id: prefer Map['student_id'], then int cast, then JWT-resolved (send 0 and let server resolve)
+    int studentId = 0;
+    if (studentIdOrResult is int) {
+      studentId = studentIdOrResult;
+    } else if (studentIdOrResult is Map) {
+      studentId = (studentIdOrResult['student_id'] as num?)?.toInt() ?? 0;
+    }
+
     try {
+      // Always include Authorization so backend resolves from JWT when studentId is still 0
+      final headers = {'Content-Type': 'application/json'};
+      if (authToken != null && authToken!.isNotEmpty) {
+        headers['Authorization'] = 'Bearer $authToken';
+      }
       final response = await http.post(
         Uri.parse('$baseUrl/wallet_api.php?action=pay_with_points'),
-        headers: {'Content-Type': 'application/json'},
+        headers: headers,
         body: jsonEncode({
           'student_id': studentId,
           'amount': amount,
@@ -937,6 +1207,133 @@ class ApiService {
       debugPrint('getMessages error: $e');
     }
     return [];
+  }
+
+  // ─── Profile Overhaul REST APIs ─────────────────────────────────────────────
+
+  static Future<Map<String, dynamic>> updateProfile({
+    required String fullName,
+    required String email,
+    required String phone,
+    required String university,
+  }) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/profile/update.php'),
+        headers: {
+          'Content-Type': 'application/json',
+          if (authToken != null) 'Authorization': 'Bearer $authToken',
+        },
+        body: jsonEncode({
+          'full_name': fullName,
+          'email': email,
+          'phone': phone,
+          'university': university,
+        }),
+      ).timeout(const Duration(seconds: 15));
+
+      final data = jsonDecode(response.body) as Map<String, dynamic>;
+      if (response.statusCode == 200 && data['success'] == true) {
+        return {
+          'success': true,
+          'message': data['message'] ?? 'تم تحديث الحساب بنجاح',
+          'student': Student.fromJson(data['data']?['student'] ?? data['student'] ?? {}),
+        };
+      } else {
+        return {
+          'success': false,
+          'message': data['message'] ?? 'خطأ في تحديث الحساب (${response.statusCode})',
+        };
+      }
+    } catch (e) {
+      debugPrint('updateProfile error: $e');
+      return {
+        'success': false,
+        'message': 'فشل الاتصال بالخادم: $e',
+      };
+    }
+  }
+
+  static Future<Map<String, dynamic>> changePassword({
+    required String currentPassword,
+    required String newPassword,
+  }) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/profile/change_password.php'),
+        headers: {
+          'Content-Type': 'application/json',
+          if (authToken != null) 'Authorization': 'Bearer $authToken',
+        },
+        body: jsonEncode({
+          'current_password': currentPassword,
+          'new_password': newPassword,
+        }),
+      ).timeout(const Duration(seconds: 15));
+
+      final data = jsonDecode(response.body) as Map<String, dynamic>;
+      if (response.statusCode == 200 && data['success'] == true) {
+        return {
+          'success': true,
+          'message': data['message'] ?? 'تم تغيير كلمة المرور بنجاح',
+        };
+      } else {
+        return {
+          'success': false,
+          'message': data['message'] ?? 'خطأ في تغيير كلمة المرور (${response.statusCode})',
+        };
+      }
+    } catch (e) {
+      debugPrint('changePassword error: $e');
+      return {
+        'success': false,
+        'message': 'فشل الاتصال بالخادم: $e',
+      };
+    }
+  }
+
+  static Future<Map<String, dynamic>> uploadAvatar(dynamic imageFile) async {
+    try {
+      final request = http.MultipartRequest(
+        'POST',
+        Uri.parse('$baseUrl/profile/upload_avatar.php'),
+      );
+      if (authToken != null && authToken!.isNotEmpty) {
+        request.headers['Authorization'] = 'Bearer $authToken';
+      }
+      
+      if (imageFile is String) {
+        request.files.add(await http.MultipartFile.fromPath('image', imageFile));
+      } else {
+        final bytes = await imageFile.readAsBytes();
+        final name = imageFile.name ?? (imageFile.path as String).split('/').last;
+        request.files.add(http.MultipartFile.fromBytes('image', bytes, filename: name));
+      }
+
+      final streamed = await request.send().timeout(const Duration(seconds: 25));
+      final response = await http.Response.fromStream(streamed);
+      final data = jsonDecode(response.body) as Map<String, dynamic>;
+
+      if (response.statusCode == 200 && data['success'] == true) {
+        final rawUrl = data['avatar_url'] ?? data['data']?['avatar_url'];
+        return {
+          'success': true,
+          'avatar_url': rawUrl,
+          'message': data['message'] ?? 'تم رفع الصورة الشخصية بنجاح',
+        };
+      } else {
+        return {
+          'success': false,
+          'message': data['message'] ?? 'فشل رفع الصورة (${response.statusCode})',
+        };
+      }
+    } catch (e) {
+      debugPrint('uploadAvatar error: $e');
+      return {
+        'success': false,
+        'message': 'فشل الاتصال بالخادم: $e',
+      };
+    }
   }
 }
 

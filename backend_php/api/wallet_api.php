@@ -4,10 +4,30 @@ header("Access-Control-Allow-Headers: *");
 header("Content-Type: application/json; charset=UTF-8");
 
 require_once __DIR__ . '/../config/db.php';
+require_once __DIR__ . '/middleware/auth.php';
 
 $input = json_decode(file_get_contents("php://input"), true) ?? $_POST;
 $action = $_GET['action'] ?? ($input['action'] ?? '');
-$student_id = $input['student_id'] ?? $_GET['student_id'] ?? null;
+
+// Source of Truth for Student Identity:
+// First resolve via JWT Authorization Header, fallback to explicit input/param
+$student_id = null;
+$authHeader = $_SERVER['HTTP_AUTHORIZATION'] ?? $_SERVER['REDIRECT_HTTP_AUTHORIZATION'] ?? '';
+if (!empty($authHeader) && preg_match('/Bearer\s+(.*)$/i', $authHeader, $matches)) {
+    try {
+        if (AuthMiddleware::requireAnyAuth()) {
+            $student_id = AuthMiddleware::$currentUserId;
+        }
+    } catch (Exception $e) {
+        // Fallback if token invalid or absent
+    }
+}
+if (!$student_id && !empty($input['student_id'])) {
+    $student_id = intval($input['student_id']);
+}
+if (!$student_id && !empty($_GET['student_id'])) {
+    $student_id = intval($_GET['student_id']);
+}
 
 if ($action === 'get_wallet') {
     if (!$student_id) {

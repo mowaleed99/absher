@@ -31,7 +31,56 @@ try {
         $universities = $conn->query("SELECT * FROM universities ORDER BY id DESC")->fetchAll();
         $districts = $conn->query("SELECT * FROM districts ORDER BY id DESC")->fetchAll();
         $requests = $conn->query("SELECT * FROM service_requests ORDER BY id DESC")->fetchAll();
-        $reviews = $conn->query("SELECT id, student_name, uni, rating, comment, DATE_FORMAT(created_at,'%Y-%m-%d') AS date FROM reviews ORDER BY id DESC")->fetchAll();
+        // Service Reviews (all reviews for moderation list)
+        $reviews = $conn->query("
+            SELECT r.id, r.student_id, r.service_request_id, r.rating, r.comment, r.status,
+                   COALESCE(s.full_name, r.student_name, 'طالب كريم') AS student_name,
+                   COALESCE(s.university, r.uni, 'جامعة في جورجيا') AS uni,
+                   DATE_FORMAT(r.created_at, '%Y-%m-%d') AS date,
+                   r.reviewed_by_admin_id, r.reviewed_at
+            FROM service_reviews r
+            LEFT JOIN students s ON r.student_id = s.id
+            ORDER BY r.id DESC
+        ")->fetchAll();
+
+        // Application Feedback (all feedback for inbox)
+        $application_feedback = $conn->query("
+            SELECT af.id, af.student_id, af.feedback_type, af.comment, af.status, af.reviewed_by_admin_id, af.reviewed_at,
+                   DATE_FORMAT(af.created_at, '%Y-%m-%d %h:%i %p') AS date,
+                   s.full_name AS student_name, s.university AS student_uni
+            FROM application_feedback af
+            JOIN students s ON af.student_id = s.id
+            ORDER BY af.id DESC
+        ")->fetchAll();
+
+        // Expanded Analytics for Service Reviews (APPROVED ONLY, RELATIONAL REVIEWS ONLY)
+        $totalReviews = $conn->query("SELECT COUNT(*) FROM service_reviews WHERE status = 'approved' AND service_request_id IS NOT NULL")->fetchColumn();
+        $avgRating = $conn->query("SELECT ROUND(AVG(rating), 2) FROM service_reviews WHERE status = 'approved' AND service_request_id IS NOT NULL")->fetchColumn();
+        
+        $distributionStmt = $conn->query("SELECT rating, COUNT(*) AS count FROM service_reviews WHERE status = 'approved' AND service_request_id IS NOT NULL GROUP BY rating");
+        $ratingDistribution = ["1" => 0, "2" => 0, "3" => 0, "4" => 0, "5" => 0];
+        while ($distRow = $distributionStmt->fetch()) {
+            $ratingDistribution[strval($distRow['rating'])] = (int)$distRow['count'];
+        }
+
+        $serviceAnalytics = $conn->query("
+            SELECT COALESCE(sr.service_title, 'General / Testimonial') AS service_type,
+                   COUNT(r.id) AS review_count,
+                   ROUND(AVG(r.rating), 2) AS average_rating
+            FROM service_reviews r
+            LEFT JOIN service_requests sr ON r.service_request_id = sr.id
+            WHERE r.status = 'approved' AND r.service_request_id IS NOT NULL
+            GROUP BY service_type
+            ORDER BY review_count DESC
+        ")->fetchAll();
+
+        $reviews_analytics = [
+            "total_reviews" => (int)$totalReviews,
+            "average_rating" => $avgRating ? floatval($avgRating) : 0.0,
+            "rating_distribution" => $ratingDistribution,
+            "service_analytics" => $serviceAnalytics
+        ];
+
         $news = $conn->query("SELECT *, DATE_FORMAT(created_at,'%Y-%m-%d %h:%i %p') AS date FROM news ORDER BY created_at DESC")->fetchAll();
         $notifications = $conn->query("SELECT *, DATE_FORMAT(created_at,'%Y-%m-%d %h:%i %p') AS date FROM notifications ORDER BY created_at DESC")->fetchAll();
 
@@ -56,7 +105,7 @@ try {
         }
 
         echo json_encode(["status"=>"success","stats"=> ["total_apartments"=> count($apartments),"total_services"=> count($services),"total_students"=> count($students),"total_universities"=> count($universities),"total_districts"=> count($districts),"pending_requests"=> count(array_filter($requests, fn($r) => $r['status'] ==='قيد المراجعة'))
-            ],"apartments"=> $apartments,"services"=> $services,"students"=> $students,"universities"=> $universities,"districts"=> $districts,"requests"=> $requests,"reviews"=> $reviews,"chats"=> $chats,"news"=> $news,"notifications"=> $notifications
+            ],"apartments"=> $apartments,"services"=> $services,"students"=> $students,"universities"=> $universities,"districts"=> $districts,"requests"=> $requests,"reviews"=> $reviews,"reviews_analytics"=> $reviews_analytics,"application_feedback"=> $application_feedback,"chats"=> $chats,"news"=> $news,"notifications"=> $notifications
         ], JSON_UNESCAPED_UNICODE);
         exit();
     }
@@ -459,10 +508,10 @@ try {
         exit();
     }
 
-    if ($action ==='delete_review') {
+    if ($action === 'delete_review' || $action === 'delete_service_review') {
         $id = intval($data['id'] ?? 0);
         if ($id > 0) {
-            $stmt = $conn->prepare("DELETE FROM reviews WHERE id = ?");
+            $stmt = $conn->prepare("DELETE FROM service_reviews WHERE id = ?");
             $stmt->execute([$id]);
             if ($stmt->rowCount() > 0) {
                 echo json_encode(["status"=>"success","message"=>"تم حذف التقييم بنجاح"], JSON_UNESCAPED_UNICODE);
@@ -471,6 +520,71 @@ try {
             }
         } else {
             echo json_encode(["status"=>"error","message"=>"معرف التقييم غير صالح"], JSON_UNESCAPED_UNICODE);
+        }
+        exit();
+    }
+
+    if ($action === 'moderate_service_review') {
+        $id = intval($data['id'] ?? 0);
+        $status = trim($data['status'] ?? '');
+        $adminId = AuthMiddleware::$currentUserId;
+        if ($id > 0 && in_array($status, ['approved', 'rejected'])) {
+            $stmt = $conn->prepare("UPDATE service_reviews SET status = ?, reviewed_by_admin_id = ?, reviewed_at = NOW() WHERE id = ?");
+            $stmt->execute([$status, $adminId, $id]);
+            if ($stmt->rowCount() > 0) {
+                echo json_encode(["status" => "success", "message" => "تم تحديث حالة التقييم بنجاح"], JSON_UNESCAPED_UNICODE);
+            } else {
+                echo json_encode(["status" => "error", "message" => "لم يتم العثور على التقييم أو لم يحدث تغيير"], JSON_UNESCAPED_UNICODE);
+            }
+        } else {
+            echo json_encode(["status" => "error", "message" => "بيانات المراجعة غير صالحة"], JSON_UNESCAPED_UNICODE);
+        }
+        exit();
+    }
+
+    if ($action === 'get_application_feedback') {
+        $feedback = $conn->query("
+            SELECT af.id, af.student_id, af.feedback_type, af.comment, af.status, af.reviewed_by_admin_id, af.reviewed_at,
+                   DATE_FORMAT(af.created_at, '%Y-%m-%d %h:%i %p') AS date,
+                   s.full_name AS student_name, s.university AS student_uni
+            FROM application_feedback af
+            JOIN students s ON af.student_id = s.id
+            ORDER BY af.id DESC
+        ")->fetchAll();
+        echo json_encode(["status" => "success", "data" => ["feedback" => $feedback]], JSON_UNESCAPED_UNICODE);
+        exit();
+    }
+
+    if ($action === 'update_feedback_status') {
+        $id = intval($data['id'] ?? 0);
+        $status = trim($data['status'] ?? '');
+        $adminId = AuthMiddleware::$currentUserId;
+        if ($id > 0 && in_array($status, ['pending', 'reviewed', 'resolved'])) {
+            $stmt = $conn->prepare("UPDATE application_feedback SET status = ?, reviewed_by_admin_id = ?, reviewed_at = NOW() WHERE id = ?");
+            $stmt->execute([$status, $adminId, $id]);
+            if ($stmt->rowCount() > 0) {
+                echo json_encode(["status" => "success", "message" => "تم تحديث حالة البلاغ/المقترح بنجاح"], JSON_UNESCAPED_UNICODE);
+            } else {
+                echo json_encode(["status" => "error", "message" => "لم يتم العثور على البلاغ أو لم يحدث تغيير"], JSON_UNESCAPED_UNICODE);
+            }
+        } else {
+            echo json_encode(["status" => "error", "message" => "بيانات البلاغ/المقترح غير صالحة"], JSON_UNESCAPED_UNICODE);
+        }
+        exit();
+    }
+
+    if ($action === 'delete_feedback') {
+        $id = intval($data['id'] ?? 0);
+        if ($id > 0) {
+            $stmt = $conn->prepare("DELETE FROM application_feedback WHERE id = ?");
+            $stmt->execute([$id]);
+            if ($stmt->rowCount() > 0) {
+                echo json_encode(["status"=>"success","message"=>"تم حذف البلاغ/المقترح بنجاح"], JSON_UNESCAPED_UNICODE);
+            } else {
+                echo json_encode(["status"=>"error","message"=>"لم يتم العثور على البلاغ أو فشل الحذف"], JSON_UNESCAPED_UNICODE);
+            }
+        } else {
+            echo json_encode(["status"=>"error","message"=>"معرف البلاغ غير صالح"], JSON_UNESCAPED_UNICODE);
         }
         exit();
     }

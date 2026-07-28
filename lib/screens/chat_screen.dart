@@ -19,7 +19,9 @@ class ChatScreen extends StatefulWidget {
 
 class _ChatScreenState extends State<ChatScreen> {
   final List<Map<String, dynamic>> _messages = [];
-  final _messageController = TextEditingController();
+  final TextEditingController _messageController = TextEditingController();
+  final ScrollController _scrollController = ScrollController();
+  bool _isInitialLoad = true;
   Timer? _pollTimer;
   bool _isLoadingMessages = false;
   bool _isDisposed = false;
@@ -134,7 +136,28 @@ class _ChatScreenState extends State<ChatScreen> {
     _isDisposed = true;
     _pollTimer?.cancel();
     _messageController.dispose();
+    _scrollController.dispose();
     super.dispose();
+  }
+
+  bool _isNearBottom() {
+    if (!_scrollController.hasClients) return true;
+    final currentScroll = _scrollController.position.pixels;
+    return currentScroll <= 200.0;
+  }
+
+  void _scrollToBottom({bool force = false}) {
+    if (!_scrollController.hasClients) return;
+    if (force || _isNearBottom()) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!_scrollController.hasClients) return;
+        _scrollController.animateTo(
+          0.0,
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeOut,
+        );
+      });
+    }
   }
 
   Future<void> _loadMessages() async {
@@ -172,12 +195,23 @@ class _ChatScreenState extends State<ChatScreen> {
             _messages.last['imageUrl'] != newMessages.last['imageUrl'] ||
             _messages.last['quoteText'] != newMessages.last['quoteText']) {
           if (mounted) {
+            final shouldForceScroll = _isInitialLoad || _isNearBottom();
             setState(() {
               _messages.clear();
               _messages.addAll(newMessages);
+              _isInitialLoad = false;
             });
+            if (shouldForceScroll) {
+              _scrollToBottom(force: true);
+            }
           }
+        } else if (_isInitialLoad) {
+          _isInitialLoad = false;
+          _scrollToBottom(force: true);
         }
+      } else if (_isInitialLoad) {
+        _isInitialLoad = false;
+        _scrollToBottom(force: true);
       }
     } catch (e) {
       debugPrint('Error loading messages periodically: $e');
@@ -205,6 +239,7 @@ class _ChatScreenState extends State<ChatScreen> {
       if (success) {
         _messageController.clear();
         await _loadMessages();
+        _scrollToBottom(force: true);
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(LanguageService.tr('failed_to_send'))),
@@ -261,7 +296,7 @@ class _ChatScreenState extends State<ChatScreen> {
                 Navigator.pop(context);
                 ApiService.submitReview(
                   studentName: widget.user?.fullName ?? '',
-                  uni: widget.user?.universityId?.toString() ?? '',
+                  uni: widget.user?.university ?? '',
                   rating: rating,
                   comment: commentController.text.trim().isNotEmpty ? commentController.text.trim() : LanguageService.tr('auto_trans_1030'),
                 );
@@ -293,6 +328,7 @@ class _ChatScreenState extends State<ChatScreen> {
     if (mounted) {
       if (success) {
         await _loadMessages();
+        _scrollToBottom(force: true);
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(LanguageService.tr('failed_to_send'))),
@@ -453,8 +489,7 @@ class _ChatScreenState extends State<ChatScreen> {
         ),
       );
 
-      final bytes = await file.readAsBytes();
-      final String? uploadedUrl = await ApiService.uploadFile(file.path, file.name, fileBytes: bytes);
+      final String? uploadedUrl = await ApiService.uploadImage(file, 'chat');
 
       if (!context.mounted) return;
       Navigator.pop(context);
@@ -627,10 +662,12 @@ class _ChatScreenState extends State<ChatScreen> {
             // قائمة الرسائل
             Expanded(
               child: ListView.builder(
+                controller: _scrollController,
+                reverse: true,
                 padding: const EdgeInsets.all(16),
                 itemCount: _messages.length,
                 itemBuilder: (context, index) {
-                  final msg = _messages[index];
+                  final msg = _messages[_messages.length - 1 - index];
                   final isMe = msg['isMe'] as bool;
                   final type = msg['type']?.toString() ?? 'text';
                   final mediaUrl = msg['imageUrl']?.toString() ?? '';
@@ -766,13 +803,20 @@ class _ChatScreenState extends State<ChatScreen> {
                                 onTap: () => _showMediaPreview(context, _getAbsoluteUrl(mediaUrl), 'image'),
                                 child: ClipRRect(
                                   borderRadius: BorderRadius.circular(12),
-                                  child: Image.network(
-                                    _getAbsoluteUrl(mediaUrl),
-                                    height: 150,
-                                    width: double.infinity,
-                                    fit: BoxFit.cover,
-                                    errorBuilder: (_, __, ___) => Container(height: 100, color: Colors.grey.shade300, child: const Icon(Icons.image, size: 40)),
-                                  ),
+                                    child: Image.network(
+                                      _getAbsoluteUrl(mediaUrl),
+                                      height: 150,
+                                      width: double.infinity,
+                                      fit: BoxFit.cover,
+                                      errorBuilder: (_, __, ___) => Container(height: 100, color: Colors.grey.shade300, child: const Icon(Icons.image, size: 40)),
+                                      frameBuilder: (context, child, frame, wasSynchronouslyLoaded) {
+                                        if (wasSynchronouslyLoaded) return child;
+                                        if (frame != null) {
+                                          _scrollToBottom();
+                                        }
+                                        return child;
+                                      },
+                                    ),
                                 ),
                               ),
                               const SizedBox(height: 8),

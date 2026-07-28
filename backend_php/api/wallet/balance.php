@@ -11,7 +11,7 @@ if (!$student_id) {
 }
 
 try {
-    $stmt = $conn->prepare("SELECT points_balance FROM students WHERE id = ? LIMIT 1");
+    $stmt = $conn->prepare("SELECT points AS points_balance FROM students WHERE id = ? LIMIT 1");
     $stmt->execute([$student_id]);
     $student = $stmt->fetch();
 

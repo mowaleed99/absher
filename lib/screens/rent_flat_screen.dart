@@ -24,8 +24,8 @@ class _RentFlatScreenState extends State<RentFlatScreen> {
   final _nationalityController = TextEditingController();
   String _selectedGender = 'male';
   
-  String _selectedUni = LanguageService.tr('auto_trans_1207');
-  List<String> _universities = [LanguageService.tr('auto_trans_1208')];
+  String? _selectedUniId;
+  List<Map<String, dynamic>> _unisList = [];
   
   final _majorController = TextEditingController();
   late TextEditingController _wpController;
@@ -38,23 +38,18 @@ class _RentFlatScreenState extends State<RentFlatScreen> {
     final isGuest = widget.user == null || widget.user!.id == 0 || widget.user!.fullName.contains(LanguageService.tr('auto_trans_1211'));
     _nameController = TextEditingController(text: !isGuest ? (widget.user?.fullName ?? '') : '');
     _wpController = TextEditingController(text: !isGuest ? (widget.user?.phone ?? '') : '');
-    _loadUniversities(!isGuest ? ((widget.user?.universityId != null && widget.user!.universityId! > 0) ? 'University #${widget.user!.universityId}' : '') : '');
+    _loadUniversities(!isGuest ? widget.user?.universityId : null);
   }
 
-  Future<void> _loadUniversities(String userUni) async {
-    final unis = await ApiService.getUniversities();
+  Future<void> _loadUniversities(int? userUniId) async {
+    final list = await ApiService.getUniversities();
     if (mounted) {
       setState(() {
-        if (unis.isNotEmpty) {
-          _universities = unis.map((u) => (u['name'] ?? '').toString()).where((n) => n.isNotEmpty).toList();
-        }
-        if (userUni.isNotEmpty) {
-          if (!_universities.contains(userUni)) {
-            _universities.add(userUni);
-          }
-          _selectedUni = userUni;
-        } else if (!_universities.contains(_selectedUni)) {
-          _selectedUni = _universities.first;
+        _unisList = list;
+        if (userUniId != null && userUniId > 0 && _unisList.any((u) => u['id']?.toString() == userUniId.toString())) {
+          _selectedUniId = userUniId.toString();
+        } else if (_unisList.isNotEmpty) {
+          _selectedUniId = _unisList.first['id']?.toString();
         }
       });
     }
@@ -104,11 +99,17 @@ class _RentFlatScreenState extends State<RentFlatScreen> {
     if (_checkGuest()) return;
     if (!_formKey.currentState!.validate()) return;
 
-    final msg = LanguageService.tr('auto_trans_1216');
+    final selectedUniMap = _unisList.firstWhere(
+      (u) => u['id']?.toString() == _selectedUniId,
+      orElse: () => <String, dynamic>{},
+    );
+    final selectedUniName = selectedUniMap['name']?.toString() ?? 'جامعة غير محددة';
+
+    final msg = LanguageService.tr('auto_trans_1216') +
         'الاسم: ${_nameController.text}\n'
         'الجنسية: ${_nationalityController.text}\n'
         'النوع: $_selectedGender\n'
-        'الجامعة: $_selectedUni\n'
+        'الجامعة: $selectedUniName\n'
         'التخصص: ${_majorController.text}\n'
         'رقم الواتساب: ${_wpController.text}\n'
         'موعد النقل: $_moveInDate\n'
@@ -130,7 +131,12 @@ class _RentFlatScreenState extends State<RentFlatScreen> {
     );
 
     ApiService.submitServiceRequest(
-      details: '${LanguageService.tr('auto_trans_1221')}\n$msg',
+      studentName: _nameController.text,
+      studentPhone: _wpController.text,
+      studentUni: selectedUniName,
+      universityId: int.tryParse(_selectedUniId ?? ''),
+      serviceTitle: 'طلب بحث عن شريك سكن',
+      details: msg,
     ).then((_) {
       if (!context.mounted) return;
       Navigator.pop(context); // Dismiss loading spinner
@@ -170,7 +176,12 @@ class _RentFlatScreenState extends State<RentFlatScreen> {
     final aloneMsg = LanguageService.tr('auto_trans_1223');
 
     ApiService.submitServiceRequest(
-      details: '${LanguageService.tr('auto_trans_1226')}\n$aloneMsg',
+      studentName: widget.user!.fullName,
+      studentPhone: widget.user!.phone ?? '',
+      studentUni: '', // Let backend resolve it
+      universityId: widget.user?.universityId,
+      serviceTitle: LanguageService.tr('auto_trans_1226'),
+      details: aloneMsg,
     ).then((_) {
       if (!context.mounted) return;
       Navigator.pop(context); // Dismiss loading spinner
@@ -405,17 +416,20 @@ class _RentFlatScreenState extends State<RentFlatScreen> {
             const SizedBox(height: 14),
 
             // 4. Uni
-            DropdownButtonFormField<String>(
-              initialValue: _selectedUni,
+            DropdownButtonFormField<String?>(
+              value: _unisList.any((u) => u['id']?.toString() == _selectedUniId) ? _selectedUniId : null,
               decoration: InputDecoration(
                 labelText: LanguageService.tr('auto_trans_1238'),
                 prefixIcon: const Icon(Icons.school_outlined, color: AppColors.primary),
                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
               ),
-              items: _universities.map((uni) {
-                return DropdownMenuItem(value: uni, child: Text(uni, style: const TextStyle(fontSize: 13)));
+              items: _unisList.map((uni) {
+                return DropdownMenuItem<String?>(
+                  value: uni['id']?.toString(),
+                  child: Text(uni['name']?.toString() ?? '', style: const TextStyle(fontSize: 13)),
+                );
               }).toList(),
-              onChanged: (val) => setState(() => _selectedUni = val!),
+              onChanged: (val) => setState(() => _selectedUniId = val),
             ),
             const SizedBox(height: 14),
 

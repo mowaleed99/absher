@@ -16,7 +16,7 @@ if (!$file || $file['error'] !== UPLOAD_ERR_OK) {
 }
 
 $folder = $_POST['folder'] ?? $_GET['folder'] ?? 'general';
-$allowed_folders = ['apartments', 'services', 'profiles', 'chat', 'general', 'requests'];
+$allowed_folders = ['apartments', 'services', 'profiles', 'chat', 'general', 'requests', 'news'];
 
 if (!in_array($folder, $allowed_folders)) {
     $folder = 'general';
@@ -40,13 +40,8 @@ $allowed_mimes = [
 ];
 
 if (!array_key_exists($mime, $allowed_mimes)) {
-    // If not in standard images, check if extension is allowed or fallback safely
-    $ext_raw = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
-    if (in_array($ext_raw, ['jpg', 'jpeg', 'png', 'webp', 'gif'])) {
-        $ext = $ext_raw == 'jpeg' ? 'jpg' : $ext_raw;
-    } else {
-        jsonResponse(false, "Invalid file type. Only JPG, PNG, WEBP and GIF are allowed.", 400);
-    }
+    // We only accept valid image mimes.
+    jsonResponse(false, "Invalid file type. Only JPG, PNG, WEBP and GIF are allowed.", 400);
 } else {
     $ext = $allowed_mimes[$mime];
 }
@@ -121,9 +116,9 @@ echo json_encode([
     "success" => true,
     "status" => "success",
     "message" => "Image uploaded successfully",
-    "url" => "/uploads/$folder/$filename",
+    "url" => "uploads/$folder/$filename",
     "data" => [
-        "url" => "/uploads/$folder/$filename"
+        "url" => "uploads/$folder/$filename"
     ]
 ], JSON_UNESCAPED_UNICODE);
 exit();

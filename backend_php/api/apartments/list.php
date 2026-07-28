@@ -1,7 +1,8 @@
 <?php
 // Public endpoint: list available apartments for students.
 // Returns only apartments where is_available = 1.
-// Images, features, and universities are stored as JSON in the apartments table.
+// Supports server-side filtering: district_id, rental_type, rooms_count, location, capacity, move_in_type.
+// Price and university filtering remain PHP-side (no numeric column for price, universities stored as JSON).
 require_once __DIR__ . '/../../config/db.php';
 require_once __DIR__ . '/../core/response.php';
 require_once __DIR__ . '/../core/headers.php';
@@ -23,9 +24,33 @@ try {
         $params[':move_in_type'] = '%' . trim($_GET['move_in_type']) . '%';
     }
 
+    // Canonical server-side filters
+    if (!empty($_GET['district_id'])) {
+        $where[] = "district_id = :district_id";
+        $params[':district_id'] = (int)$_GET['district_id'];
+    }
+
+    if (!empty($_GET['rental_type'])) {
+        $allowed = ['apartment', 'room_shared', 'studio'];
+        $rt = trim($_GET['rental_type']);
+        if (in_array($rt, $allowed, true)) {
+            $where[] = "rental_type = :rental_type";
+            $params[':rental_type'] = $rt;
+        }
+    }
+
+    if (isset($_GET['rooms_count']) && $_GET['rooms_count'] !== '') {
+        $rc = intval($_GET['rooms_count']);
+        if ($rc > 0) {
+            $where[] = "rooms_count = :rooms_count";
+            $params[':rooms_count'] = $rc;
+        }
+    }
+
     $sql = "SELECT id, title, description, price, location, proximity,
                    universities, capacity, move_in_type, move_in_date,
-                   images, features, is_available
+                   images, features, is_available, district_id,
+                   rental_type, rooms_count
             FROM apartments
             WHERE " . implode(" AND ", $where) . "
             ORDER BY created_at DESC";
@@ -34,6 +59,7 @@ try {
     $stmt->execute($params);
     $apartments = $stmt->fetchAll();
 
+    // PHP-side filters (no DB column equivalent)
     $minPrice = isset($_GET['min_price']) && $_GET['min_price'] !== '' ? floatval($_GET['min_price']) : null;
     $maxPrice = isset($_GET['max_price']) && $_GET['max_price'] !== '' ? floatval($_GET['max_price']) : null;
     $filterUni = !empty($_GET['university']) ? trim($_GET['university']) : null;
@@ -71,8 +97,11 @@ try {
             'description'   => $apt['description'],
             'price'         => $apt['price'],
             'location'      => $apt['location'],
+            'district_id'   => $apt['district_id'] !== null ? (int)$apt['district_id'] : null,
             'proximity'     => $apt['proximity'],
             'capacity'      => $apt['capacity'],
+            'rental_type'   => $apt['rental_type'],
+            'rooms_count'   => $apt['rooms_count'] !== null ? (int)$apt['rooms_count'] : null,
             'move_in_type'  => $apt['move_in_type'],
             'move_in_date'  => $apt['move_in_date'],
             'is_available'  => (bool)$apt['is_available'],

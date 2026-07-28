@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../theme/app_colors.dart';
 import '../services/language_service.dart';
 import 'apartment_detail_screen.dart';
@@ -23,22 +24,28 @@ class HomeScreen extends StatefulWidget {
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> {
+class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver, RouteAware {
   int _currentIndex = 0;
   List<News> _newsList = [];
   List<Map<String, dynamic>> _notificationsList = [];
   List<University> _universitiesList = [];
-  List<String> _districtsList = [];
+  List<Map<String, dynamic>> _districtsList = [];
+  List<Map<String, dynamic>> _myRequests = [];
+  bool _myRequestsLoaded = false;
+  bool _isRatingPromptShowing = false;
+
+  // Server-side filter state — null means "no filter" (show all)
   List<String> _selectedUniversities = [];
   int? _maxPriceFilter;
-  String _rentalTypeFilter = 'all_flats';
-  String _districtFilter = 'all_districts';
-  String _roomsFilter = 'all';
-  String _bathroomsFilter = 'all';
-  String _minutesFilter = 'all';
+  String? _rentalTypeFilter;   // null | 'apartment' | 'room_shared' | 'studio'
+  int?    _districtIdFilter;   // null | district.id
+  int?    _roomsCountFilter;   // null | exact count
+
   final PageController _adController = PageController();
   final ValueNotifier<int> _currentAdPage = ValueNotifier<int>(0);
   Timer? _adTimer;
+  int _activeRequestId = 0;
+
 
   // إعلانات متحركة بصور حقيقية وأحداث وتخفيضات
   final List<Map<String, String>> _adBanners = [
@@ -171,11 +178,17 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _loadApartments();
     _loadNews();
     _loadNotifications();
     _loadUniversities();
     _loadDistricts();
+    if (!widget.isGuest) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _checkCompletedServiceRequestsForRating();
+      });
+    }
 
     // تشغيل التمرير التلقائي للإعلانات كل 3.5 ثانية
     _adTimer = Timer.periodic(const Duration(milliseconds: 3500), (timer) {
@@ -192,13 +205,303 @@ class _HomeScreenState extends State<HomeScreen> {
     });
   }
 
-  Future<void> _loadApartments() async {
-    final list = await ApiService.getApartments();
-    if (mounted) {
-      setState(() {
-        _apartments = list;
-      });
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      _loadApartments();
+      if (!widget.isGuest) {
+        // Force fresh fetch so the rating check sees the latest status
+        setState(() {
+          _myRequestsLoaded = false;
+        });
+        _checkCompletedServiceRequestsForRating();
+      }
     }
+  }
+
+  Future<void> _checkCompletedServiceRequestsForRating() async {
+    if (_isRatingPromptShowing) return;
+    try {
+      if (!_myRequestsLoaded) {
+        _myRequests = await ApiService.getMyServiceRequests();
+        _myRequestsLoaded = true;
+      }
+      // Admin JS sends value="completed" (English); legacy rows may store 'مكتمل' (Arabic).
+      // Accept both so the popup fires regardless of which value the backend stored.
+      final completedRequests = _myRequests
+          .where((r) {
+            final s = (r['status'] ?? '').toString().trim().toLowerCase();
+            return s == 'completed' || s == 'مكتمل';
+          })
+          .toList();
+      if (completedRequests.isEmpty) return;
+
+      final reviews = await ApiService.getMyServiceReviews();
+      final reviewedRequestIds = reviews
+          .map((rev) => int.tryParse(rev['service_request_id']?.toString() ?? '0') ?? 0)
+          .where((id) => id > 0)
+          .toSet();
+
+      final prefs = await SharedPreferences.getInstance();
+      final now = DateTime.now().millisecondsSinceEpoch;
+
+      for (final req in completedRequests) {
+        final reqId = int.tryParse(req['id']?.toString() ?? '0') ?? 0;
+        if (reqId == 0) continue;
+
+        if (reviewedRequestIds.contains(reqId)) {
+          await prefs.remove('service_review_reminder_$reqId');
+          continue;
+        }
+
+        final reminderTime = prefs.getInt('service_review_reminder_$reqId') ?? 0;
+        if (reminderTime > 0 && now < reminderTime) {
+          continue;
+        }
+
+        if (mounted) {
+          setState(() {
+            _isRatingPromptShowing = true;
+          });
+          _showRatingPromptDialog(req);
+          break; // Show only one prompt at a time
+        }
+      }
+    } catch (e) {
+      debugPrint('Error checking completed requests for rating: $e');
+    }
+  }
+
+  void _showRatingPromptDialog(Map<String, dynamic> request) {
+    final isAr = LanguageService.isRtl;
+    final reqId = int.tryParse(request['id']?.toString() ?? '0') ?? 0;
+    final serviceTitle = request['service_title'] ?? LanguageService.tr('service_requests');
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (promptCtx) {
+        return AlertDialog(
+          backgroundColor: AppColors.cardBg,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          title: Text(
+            isAr ? 'يرجى تقييم الخدمة' : 'Rate Service',
+            style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.primary),
+            textAlign: TextAlign.center,
+          ),
+          content: Text(
+            isAr
+                ? 'لقد تم إكمال طلبك لـ ($serviceTitle). ما رأيك في جودة الخدمة؟'
+                : 'Your request for ($serviceTitle) has been completed. What is your feedback?',
+            style: const TextStyle(color: AppColors.textDark),
+            textAlign: TextAlign.center,
+          ),
+          actionsAlignment: MainAxisAlignment.spaceEvenly,
+          actions: [
+            TextButton(
+              onPressed: () async {
+                final prefs = await SharedPreferences.getInstance();
+                final cooldownTime = DateTime.now().millisecondsSinceEpoch + (2 * 60 * 60 * 1000);
+                await prefs.setInt('service_review_reminder_$reqId', cooldownTime);
+                if (mounted) {
+                  setState(() {
+                    _isRatingPromptShowing = false;
+                  });
+                }
+                if (promptCtx.mounted) {
+                  Navigator.pop(promptCtx);
+                }
+              },
+              child: Text(
+                LanguageService.tr('remind_later'),
+                style: const TextStyle(color: AppColors.textMuted, fontWeight: FontWeight.bold),
+              ),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.pop(promptCtx);
+                _showRatingFormDialog(request);
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primary,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+              child: Text(
+                LanguageService.tr('rate_now'),
+                style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _showRatingFormDialog(Map<String, dynamic> request) {
+    final reqId = int.tryParse(request['id']?.toString() ?? '0') ?? 0;
+    final serviceTitle = request['service_title'] ?? LanguageService.tr('service_requests');
+    int selectedRating = 5;
+    final commentCtrl = TextEditingController();
+    bool isSaving = false;
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (formCtx) {
+        return StatefulBuilder(
+          builder: (formCtx, setFormState) {
+            return AlertDialog(
+              backgroundColor: AppColors.cardBg,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+              title: Text(
+                LanguageService.tr('rate_customer_service'),
+                style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.textDark),
+                textAlign: TextAlign.center,
+              ),
+              content: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      serviceTitle,
+                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: AppColors.primary),
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 16),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: List.generate(5, (index) {
+                        final starValue = index + 1;
+                        return IconButton(
+                          icon: Icon(
+                            starValue <= selectedRating ? Icons.star : Icons.star_border,
+                            color: Colors.amber,
+                            size: 36,
+                          ),
+                          onPressed: isSaving
+                              ? null
+                              : () {
+                                  setFormState(() {
+                                    selectedRating = starValue;
+                                  });
+                                },
+                        );
+                      }),
+                    ),
+                    const SizedBox(height: 16),
+                    TextField(
+                      controller: commentCtrl,
+                      maxLines: 3,
+                      enabled: !isSaving,
+                      decoration: InputDecoration(
+                        hintText: LanguageService.tr('comment_optional'),
+                        hintStyle: const TextStyle(color: AppColors.textMuted),
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: const BorderSide(color: AppColors.primary, width: 1.5),
+                        ),
+                      ),
+                      style: const TextStyle(color: AppColors.textDark),
+                    ),
+                  ],
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: isSaving
+                      ? null
+                      : () {
+                          if (mounted) {
+                            setState(() {
+                              _isRatingPromptShowing = false;
+                            });
+                          }
+                          Navigator.pop(formCtx);
+                        },
+                  child: Text(
+                    LanguageService.tr('cancel'),
+                    style: const TextStyle(color: AppColors.textMuted),
+                  ),
+                ),
+                ElevatedButton(
+                  onPressed: isSaving
+                      ? null
+                      : () async {
+                          setFormState(() {
+                            isSaving = true;
+                          });
+                          final messenger = ScaffoldMessenger.of(context);
+                          final res = await ApiService.createServiceReview(
+                            rating: selectedRating,
+                            comment: commentCtrl.text.trim(),
+                            serviceRequestId: reqId,
+                          );
+                          if (res['success']) {
+                            if (mounted) {
+                              setState(() {
+                                _isRatingPromptShowing = false;
+                                _myRequestsLoaded = false; // Reset to reload on next opportunity
+                              });
+                            }
+                            if (formCtx.mounted) {
+                              Navigator.pop(formCtx);
+                            }
+                            messenger.showSnackBar(
+                              SnackBar(
+                                content: Text(res['message']),
+                                backgroundColor: AppColors.success,
+                              ),
+                            );
+                            final prefs = await SharedPreferences.getInstance();
+                            await prefs.remove('service_review_reminder_$reqId');
+                          } else {
+                            setFormState(() {
+                              isSaving = false;
+                            });
+                            messenger.showSnackBar(
+                              SnackBar(
+                                content: Text(res['message']),
+                                backgroundColor: AppColors.error,
+                              ),
+                            );
+                          }
+                        },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primary,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                  child: isSaving
+                      ? const SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                        )
+                      : Text(
+                          LanguageService.tr('submit_review'),
+                          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                        ),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
+
+  Future<void> _loadApartments() async {
+    final requestId = ++_activeRequestId;
+    final list = await ApiService.getApartments(
+      rentalType: _rentalTypeFilter,
+      roomsCount: _roomsCountFilter,
+      districtId: _districtIdFilter,
+    );
+    if (!mounted || requestId != _activeRequestId) return;
+    setState(() {
+      _apartments = list;
+    });
   }
 
   Future<void> _loadNews() async {
@@ -232,13 +535,14 @@ class _HomeScreenState extends State<HomeScreen> {
     final list = await ApiService.getDistricts();
     if (mounted) {
       setState(() {
-        _districtsList = list.map((d) => d['name'].toString()).toList();
+        _districtsList = List<Map<String, dynamic>>.from(list);
       });
     }
   }
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _adTimer?.cancel();
     _adController.dispose();
     super.dispose();
@@ -540,47 +844,22 @@ class _HomeScreenState extends State<HomeScreen> {
 
   // محتوى التبويب الرئيسي (Home)
   Widget _buildHomeTab(Student? usr) {
+
     List<Map<String, dynamic>> filteredApts = List.from(_apartments);
     final List<Map<String, dynamic>> carouselItems = _newsList.isNotEmpty 
         ? _newsList.map((n) => {'title': n.title, 'content': n.content, 'image_url': n.imageUrl}).toList()
         : _adBanners.map((e) => Map<String, dynamic>.from(e)).toList();
 
-    // 0. تصفية نوع الإيجار (جميع الشقق vs شقة vs غرفة في شقة)
-    if (_rentalTypeFilter != 'all_flats') {
-      filteredApts = filteredApts.where((a) {
-        final rType = (a['rental_type'] ?? '').toString();
-        final featStr = (a['features'] as List?)?.map((e) => e.toString()).join(' ') ?? '';
-        final tit = (a['title'] ?? '').toString();
-        final cap = (a['capacity'] ?? '').toString();
-        final combined = '$rType $featStr $tit $cap';
-        if (_rentalTypeFilter == LanguageService.tr('auto_trans_1144')) {
-          return combined.contains(LanguageService.tr('auto_trans_1145')) || rType == LanguageService.tr('auto_trans_1146') || (!combined.contains(LanguageService.tr('auto_trans_1147')) && !combined.contains(LanguageService.tr('auto_trans_1148')) && !combined.contains(LanguageService.tr('auto_trans_1149')));
-        } else if (_rentalTypeFilter == LanguageService.tr('auto_trans_1150')) {
-          return combined.contains(LanguageService.tr('auto_trans_1151')) || rType == LanguageService.tr('auto_trans_1152') || combined.contains(LanguageService.tr('auto_trans_1153'));
-        }
-        return true;
-      }).toList();
-    }
+    // Server-side filters (rental_type, rooms_count, district_id) are applied via API.
+    // Only client-side filters remain: university (JSON array field), price (free-text string).
 
-    // 0.1 تصفية الحي
-    if (_districtFilter != 'all_districts') {
-      filteredApts = filteredApts.where((a) {
-        final loc = (a['location'] ?? '').toString();
-        final tit = (a['title'] ?? '').toString();
-        final desc = (a['description'] ?? '').toString();
-        final shortDistrict = _districtFilter.split(' ')[0]; // e.g. LanguageService.tr('auto_trans_1154')
-        return loc.contains(shortDistrict) || tit.contains(shortDistrict) || desc.contains(shortDistrict);
-      }).toList();
-    }
-
-    // 1. تصفية الجامعات (اختيار جامعة أو أكثر)
+    // University filter (client-side — stored as JSON array, not easily filterable in SQL)
     if (_selectedUniversities.isNotEmpty) {
       filteredApts = filteredApts.where((a) {
         final aptUnis = (a['universities'] as List?)?.map((e) => e.toString()).toList() ?? [];
         if (aptUnis.isNotEmpty) {
           return _selectedUniversities.any((selected) => aptUnis.contains(selected));
         }
-        
         final prox = (a['proximity'] ?? '').toString();
         final tit = (a['title'] ?? '').toString();
         final desc = (a['description'] ?? '').toString();
@@ -592,7 +871,7 @@ class _HomeScreenState extends State<HomeScreen> {
       }).toList();
     }
 
-    // 2. تصفية حسب السعر الذي يحدده المستخدم بنفسه (الميزانية)
+    // Price filter (client-side — price is a free-text string like "450 دولار")
     if (_maxPriceFilter != null && _maxPriceFilter! > 0) {
       filteredApts = filteredApts.where((a) {
         final priceStr = a['price'].toString().replaceAll(RegExp(r'[^0-9]'), '');
@@ -601,43 +880,13 @@ class _HomeScreenState extends State<HomeScreen> {
       }).toList();
     }
 
-    // 2. تصفية غرف النوم
-    if (_roomsFilter != 'all') {
-      final key = _roomsFilter.split('_')[0]; // 'one', 'two', 'three'
-      filteredApts = filteredApts.where((a) => (a['features'] as List).any((f) => f.toString().contains(key)) || (a['title'] as String).contains(key)).toList();
-    }
-
-    // 4. تصفية عدد الحمامات (تم إضافتها بدلاً من التعاقد ونوع السكن)
-    if (_bathroomsFilter != 'all') {
-      final key = _bathroomsFilter.split(' ')[0]; // '1' or '2' or '3+'
-      filteredApts = filteredApts.where((a) {
-        final featStr = (a['features'] as List?)?.map((e) => e.toString()).join(' ') ?? '';
-        final descStr = (a['description'] ?? '').toString();
-        return featStr.contains('$key حمام') || descStr.contains('$key حمام') || featStr.contains(LanguageService.tr('auto_trans_1155'));
-      }).toList();
-    }
-
-    // 5. تصفية كم دقيقة للجامعة (10 دقائق أو 20 أو 30 أو وقت مفتوح)
-    if (_minutesFilter != LanguageService.tr('auto_trans_1156') && _minutesFilter != LanguageService.tr('auto_trans_1157')) {
-      final targetMins = int.tryParse(_minutesFilter.replaceAll(RegExp(r'[^0-9]'), '')) ?? 10;
-      filteredApts = filteredApts.where((a) {
-        final proxStr = (a['proximity'] ?? '').toString();
-        if (proxStr.contains(LanguageService.tr('auto_trans_1158')) && targetMins >= 10) return true;
-        final matches = RegExp(r'(\d+)\s*دقيقة').allMatches(proxStr);
-        if (matches.isEmpty) return true; // الشقق التي لم يحدد بها وقت تظهر في كل الخيارات
-        for (final m in matches) {
-          final mVal = int.tryParse(m.group(1) ?? '999') ?? 999;
-          if (mVal <= targetMins) return true;
-        }
-        return false;
-      }).toList();
-    }
 
 
-
-    return CustomScrollView(
-      slivers: [
-        SliverToBoxAdapter(
+    return RefreshIndicator(
+      onRefresh: _loadApartments,
+      child: CustomScrollView(
+        slivers: [
+          SliverToBoxAdapter(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -907,7 +1156,7 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
               child: Column(
                 children: [
-                  if (_selectedUniversities.isNotEmpty || _maxPriceFilter != null || _rentalTypeFilter != 'all_flats' || _districtFilter != 'all_districts' || _roomsFilter != 'all' || _bathroomsFilter != 'all' || _minutesFilter != 'all')
+                  if (_selectedUniversities.isNotEmpty || _maxPriceFilter != null || _rentalTypeFilter != null || _districtIdFilter != null || _roomsCountFilter != null)
                     Align(
                       alignment: Alignment.centerLeft,
                       child: InkWell(
@@ -915,12 +1164,11 @@ class _HomeScreenState extends State<HomeScreen> {
                           setState(() {
                             _selectedUniversities = [];
                             _maxPriceFilter = null;
-                            _rentalTypeFilter = 'all_flats';
-                            _districtFilter = 'all_districts';
-                            _roomsFilter = 'all';
-                            _bathroomsFilter = 'all';
-                            _minutesFilter = 'all';
+                            _rentalTypeFilter = null;
+                            _districtIdFilter = null;
+                            _roomsCountFilter = null;
                           });
+                          _loadApartments();
                         },
                         child: Padding(
                           padding: const EdgeInsets.only(bottom: 12),
@@ -962,18 +1210,35 @@ class _HomeScreenState extends State<HomeScreen> {
                       Expanded(
                         child: _buildFilterChipDropdown(
                           label: LanguageService.tr('auto_trans_1167'),
-                          value: _districtFilter,
-                          items: ['all_districts', ..._districtsList.isNotEmpty ? _districtsList : [LanguageService.tr('auto_trans_1168'), LanguageService.tr('auto_trans_1169'), LanguageService.tr('auto_trans_1170')]],
-                          onChanged: (val) => setState(() => _districtFilter = val!),
+                          value: _districtIdFilter != null
+                              ? (_districtsList.firstWhere(
+                                  (d) => d['id']?.toString() == _districtIdFilter.toString(),
+                                  orElse: () => {'name': 'all_districts'},
+                                )['name'] as String)
+                              : 'all_districts',
+                          items: ['all_districts', ..._districtsList.map((e) => e['name'].toString())],
+                          onChanged: (val) {
+                            if (val == null || val == 'all_districts') {
+                              setState(() => _districtIdFilter = null);
+                            } else {
+                              final d = _districtsList.firstWhere(
+                                  (d) => d['name'].toString() == val, orElse: () => {});
+                              setState(() => _districtIdFilter = d['id'] != null ? int.tryParse(d['id'].toString()) : null);
+                            }
+                            _loadApartments();
+                          },
                         ),
                       ),
                       const SizedBox(width: 8),
                       Expanded(
                         child: _buildFilterChipDropdown(
                           label: LanguageService.tr('auto_trans_1171'),
-                          value: _rentalTypeFilter,
-                          items: ['all_flats', 'flat_alone', 'with_roommate'],
-                          onChanged: (val) => setState(() => _rentalTypeFilter = val!),
+                          value: _rentalTypeFilter ?? 'all_flats',
+                          items: const ['all_flats', 'apartment', 'room_shared', 'studio'],
+                          onChanged: (val) {
+                            setState(() => _rentalTypeFilter = (val == null || val == 'all_flats') ? null : val);
+                            _loadApartments();
+                          },
                         ),
                       ),
                     ],
@@ -984,18 +1249,20 @@ class _HomeScreenState extends State<HomeScreen> {
                       Expanded(
                         child: _buildFilterChipDropdown(
                           label: LanguageService.tr('auto_trans_1172'),
-                          value: _roomsFilter,
-                          items: ['all', 'one_room', 'two_rooms', 'three_plus_rooms'],
-                          onChanged: (val) => setState(() => _roomsFilter = val!),
+                          value: _roomsCountFilter != null ? _roomsCountFilter.toString() : 'all',
+                          items: const ['all', '1', '2', '3', '4', '5'],
+                          onChanged: (val) {
+                            setState(() => _roomsCountFilter = (val == null || val == 'all') ? null : int.tryParse(val));
+                            _loadApartments();
+                          },
                         ),
                       ),
                       const SizedBox(width: 8),
                       Expanded(
-                        child: _buildFilterChipDropdown(
-                          label: LanguageService.tr('auto_trans_1173'),
-                          value: _bathroomsFilter,
-                          items: ['all', LanguageService.tr('auto_trans_1174'), LanguageService.tr('auto_trans_1175'), LanguageService.tr('auto_trans_1176')],
-                          onChanged: (val) => setState(() => _bathroomsFilter = val!),
+                        child: _buildCustomFilterChip(
+                          label: _selectedUniversities.isEmpty ? LanguageService.tr('auto_trans_1165') : _selectedUniversities.join(" + "),
+                          isSelected: _selectedUniversities.isNotEmpty,
+                          onTap: _showUniversitiesDialog,
                         ),
                       ),
                     ],
@@ -1060,10 +1327,33 @@ class _HomeScreenState extends State<HomeScreen> {
                             Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
-                                Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-                                  decoration: BoxDecoration(color: AppColors.primaryDark, borderRadius: BorderRadius.circular(12)),
-                                  child: Text(apt['price'] as String, style: const TextStyle(color: AppColors.accent, fontWeight: FontWeight.bold, fontSize: 15)),
+                                Row(
+                                  children: [
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                                      decoration: BoxDecoration(color: AppColors.primaryDark, borderRadius: BorderRadius.circular(12)),
+                                      child: Text(apt['price'] as String, style: const TextStyle(color: AppColors.accent, fontWeight: FontWeight.bold, fontSize: 15)),
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                                      decoration: BoxDecoration(
+                                        color: AppColors.accentLight,
+                                        borderRadius: BorderRadius.circular(12),
+                                        border: Border.all(color: AppColors.accent),
+                                      ),
+                                      child: Text(
+                                        (() {
+                                          final t = apt['rental_type']?.toString() ?? '';
+                                          if (t == 'apartment') return 'شقة كاملة';
+                                          if (t == 'studio') return 'استوديو';
+                                          if (t == 'room_shared') return 'غرفة في شقة مشتركة';
+                                          return 'غير محدد';
+                                        })(),
+                                        style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold, fontSize: 12),
+                                      ),
+                                    ),
+                                  ],
                                 ),
                                 Container(
                                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
@@ -1136,6 +1426,7 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
         const SliverPadding(padding: EdgeInsets.only(bottom: 24)),
       ],
+    ),
     );
   }
 

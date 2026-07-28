@@ -9,7 +9,7 @@ require_once __DIR__ . '/../core/headers.php';
 
 try {
     $stmt = $conn->query(
-        "SELECT id, title, description, image_url, has_form
+        "SELECT id, title, description, image_url, has_form, price_points
          FROM services
          ORDER BY id ASC"
     );
@@ -23,6 +23,7 @@ try {
             'description' => $svc['description'],
             'image_url'   => $svc['image_url'],
             'has_form'    => (bool)$svc['has_form'],
+            'price_points' => isset($svc['price_points']) ? (int)$svc['price_points'] : 0,
         ];
     }
 

@@ -20,13 +20,22 @@ try {
     $student = $stmt->fetch();
 
     $isValid = false;
+    $needsRehash = false;
     if ($student && !empty($student['password'])) {
-        if ($password === $student['password'] || password_verify($password, $student['password'])) {
+        if (password_verify($password, $student['password'])) {
             $isValid = true;
+        } elseif (hash_equals($student['password'], $password)) {
+            $isValid = true;
+            $needsRehash = true;
         }
     }
 
     if ($isValid) {
+        if ($needsRehash) {
+            $newHash = password_hash($password, PASSWORD_DEFAULT);
+            $updateStmt = $conn->prepare("UPDATE students SET password = ? WHERE id = ?");
+            $updateStmt->execute([$newHash, $student['id']]);
+        }
         $payload = [
             'student_id' => (int)$student['id'],
             'iat' => time(),

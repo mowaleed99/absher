@@ -4,8 +4,9 @@ import 'package:google_fonts/google_fonts.dart';
 import 'theme/app_colors.dart';
 import 'screens/splash_screen.dart';
 
-void main() {
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await LanguageService.initLanguage();
   runApp(const AbsherApp());
 }
 

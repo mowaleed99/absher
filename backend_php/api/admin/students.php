@@ -28,7 +28,7 @@ try {
         jsonResponse(true, "Student deleted", 200);
         exit;
     }
-    $where = "WHERE deleted_at IS NULL";
+    $where = "WHERE 1=1";
     $params = [];
 
     if (!empty($search)) {
@@ -43,7 +43,7 @@ try {
     $total = $countStmt->fetchColumn();
 
     // Get students
-    $query = "SELECT id, full_name, email, phone, university_id, points_balance, created_at FROM students $where ORDER BY created_at DESC LIMIT ? OFFSET ?";
+    $query = "SELECT id, full_name, email, phone, university, points AS points_balance, created_at FROM students $where ORDER BY created_at DESC LIMIT ? OFFSET ?";
     $stmt = $conn->prepare($query);
     
     foreach ($params as $i => $param) {

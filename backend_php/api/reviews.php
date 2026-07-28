@@ -1,5 +1,5 @@
 <?php
-// ملف التقييمات والآراء (Reviews API)
+// ملف التقييمات والآراء (Reviews API) - Legacy compatibility
 require_once __DIR__ . '/../config/db.php';
 
 $input = json_decode(file_get_contents("php://input"), true) ?? $_POST;
@@ -7,7 +7,18 @@ $action = $_GET['action'] ?? ($input['action'] ?? 'get');
 
 try {
     if ($action === 'get') {
-        $reviews = $conn->query("SELECT id, student_name, uni, rating, comment, DATE_FORMAT(created_at, '%Y-%m-%d') AS date FROM reviews ORDER BY id DESC")->fetchAll();
+        // Fetch approved service reviews
+        $reviews = $conn->query("
+            SELECT r.id, 
+                   COALESCE(s.full_name, r.student_name, 'طالب كريم') AS student_name,
+                   COALESCE(s.university, r.uni, 'جامعة في جورجيا') AS uni,
+                   r.rating, r.comment, DATE_FORMAT(r.created_at, '%Y-%m-%d') AS date 
+            FROM service_reviews r
+            LEFT JOIN students s ON r.student_id = s.id
+            WHERE r.status = 'approved'
+            ORDER BY r.id DESC
+        ")->fetchAll(PDO::FETCH_ASSOC);
+        
         echo json_encode(["status" => "success", "reviews" => $reviews], JSON_UNESCAPED_UNICODE);
         exit();
     }
@@ -23,7 +34,8 @@ try {
             exit();
         }
 
-        $stmt = $conn->prepare("INSERT INTO reviews (student_name, uni, rating, comment) VALUES (?, ?, ?, ?)");
+        // Insert as an approved review for backward compatibility
+        $stmt = $conn->prepare("INSERT INTO service_reviews (student_name, uni, rating, comment, status) VALUES (?, ?, ?, ?, 'approved')");
         $stmt->execute([$studentName, $uni, $rating, $comment]);
 
         echo json_encode(["status" => "success", "message" => "تم إضافة تقييمك بنجاح"], JSON_UNESCAPED_UNICODE);
