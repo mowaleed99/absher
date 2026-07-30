@@ -21,7 +21,7 @@ export function renderReviews() {
             let serviceTitle;
             let sourceLabelText = '';
             if (!rev.service_request_id && !rev.student_id) {
-                serviceTitle = 'شهادة من محادثة خدمة العملاء';
+                serviceTitle = tr('شهادة من محادثة خدمة العملاء');
                 sourceLabelText = 'testimonial شهادة عملاء';
             } else {
                 sourceLabelText = 'service review تقييم خدمة';
@@ -30,7 +30,7 @@ export function renderReviews() {
                 } else if (rev.service_request_id) {
                     serviceTitle = `Request #${rev.service_request_id}`;
                 } else {
-                    serviceTitle = 'عام / شهادة عملاء';
+                    serviceTitle = tr('عام / شهادة عملاء');
                 }
             }
             return (rev.student_name || '').toLowerCase().includes(query) ||
@@ -78,13 +78,13 @@ export function renderReviews() {
         let isLegacyTestimonial = false;
         if (!rev.service_request_id && !rev.student_id) {
             isLegacyTestimonial = true;
-            serviceTitle = 'شهادة من محادثة خدمة العملاء';
+            serviceTitle = tr('شهادة من محادثة خدمة العملاء');
         } else if (req) {
             serviceTitle = req.service_title;
         } else if (rev.service_request_id) {
             serviceTitle = `Request #${rev.service_request_id}`;
         } else {
-            serviceTitle = 'عام / شهادة عملاء';
+            serviceTitle = tr('عام / شهادة عملاء');
         }
         
         // Stars HTML
@@ -108,8 +108,8 @@ export function renderReviews() {
 
         // Source Label Badge
         const sourceLabel = isLegacyTestimonial
-            ? `<span class="badge" style="background: rgba(139, 92, 246, 0.15); color: #8b5cf6; font-size: 0.72rem; padding: 2px 6px; border-radius: 4px; display: inline-block; margin-bottom: 4px; font-weight: bold;">شهادة عملاء</span>`
-            : `<span class="badge" style="background: rgba(59, 130, 246, 0.15); color: #3b82f6; font-size: 0.72rem; padding: 2px 6px; border-radius: 4px; display: inline-block; margin-bottom: 4px; font-weight: bold;">تقييم خدمة</span>`;
+            ? `<span class="badge" style="background: rgba(139, 92, 246, 0.15); color: #8b5cf6; font-size: 0.72rem; padding: 2px 6px; border-radius: 4px; display: inline-block; margin-bottom: 4px; font-weight: bold;">${tr('شهادة عملاء')}</span>`
+            : `<span class="badge" style="background: rgba(59, 130, 246, 0.15); color: #3b82f6; font-size: 0.72rem; padding: 2px 6px; border-radius: 4px; display: inline-block; margin-bottom: 4px; font-weight: bold;">${tr('تقييم خدمة')}</span>`;
 
         // Moderator name mapping
         const moderatorName = rev.reviewed_by_admin_id 
@@ -133,7 +133,7 @@ export function renderReviews() {
                 <td><span style="font-size: 0.85rem; color: var(--text-muted);">${
                     rev.uni && !/^\d+$/.test(rev.uni.trim())
                         ? rev.uni
-                        : '<em style="color: var(--text-muted); opacity: 0.6;">غير متاح</em>'
+                        : `<em style="color: var(--text-muted); opacity: 0.6;">${tr('غير متاح')}</em>`
                 }</span></td>
                 <td>
                     ${sourceLabel}<br/>
@@ -142,7 +142,7 @@ export function renderReviews() {
                 <td><span style="color: var(--accent-amber); font-weight: bold; white-space: nowrap;">${starsHtml}</span></td>
                 <td style="max-width: 250px; font-style: italic;">"${rev.comment || '-'}"</td>
                 <td>
-                    <span class="status-badge ${statusClass}" style="${badgeStyle}">${statusText}</span>
+                    <span class="status-badge ${statusClass}" style="${badgeStyle}">${tr(statusText)}</span>
                 </td>
                 <td><span style="font-size: 0.82rem; color: var(--text-muted);">${rev.date}</span></td>
                 <td><span style="font-size: 0.82rem; color: var(--text-muted);">${lastUpdated}</span></td>

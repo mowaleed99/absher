@@ -83,14 +83,14 @@ export function renderFeedback() {
                 <td style="white-space: nowrap;"><span style="font-size: 0.85rem; color: var(--text-muted);">${item.student_uni || '-'}</span></td>
                 <td style="white-space: nowrap;">
                     <span style="padding: 4px 8px; border-radius: 6px; font-size: 0.8rem; font-weight: bold; ${typeInfo.style}">
-                        ${typeInfo.ar} / ${typeInfo.en}
+                        ${localStorage.getItem('admin_lang') === 'en' ? typeInfo.en : typeInfo.ar}
                     </span>
                 </td>
                 <td style="max-width: 400px; white-space: normal; word-break: normal; overflow-wrap: break-word; font-style: italic;">
                     "${item.comment || '-'}"
                 </td>
                 <td style="white-space: nowrap;">
-                    <span class="status-badge ${statusClass}" style="${badgeStyle} white-space: nowrap;">${statusText}</span>
+                    <span class="status-badge ${statusClass}" style="${badgeStyle} white-space: nowrap;">${tr(statusText)}</span>
                 </td>
                 <td style="white-space: nowrap;"><span style="font-size: 0.82rem; color: var(--text-muted);">${item.created_at || '-'}</span></td>
                 <td style="white-space: nowrap;"><span style="font-weight: 600; color: var(--text-main);">${moderatorName}</span></td>
@@ -102,9 +102,9 @@ export function renderFeedback() {
                         ` : `
                             <select style="padding: 6px; border-radius: 8px; border: 1px solid var(--border-color); background: var(--bg-card); color: var(--text-main); font-size: 0.8rem; cursor: pointer; white-space: nowrap;"
                                     onchange="window.updateFeedbackStatusGlobal(${item.id}, this.value)" ${disabledAttr}>
-                                <option value="pending" ${item.status === 'pending' ? 'selected' : ''}>قيد الانتظار</option>
-                                <option value="reviewed" ${item.status === 'reviewed' ? 'selected' : ''}>تمت المراجعة</option>
-                                <option value="resolved" ${item.status === 'resolved' ? 'selected' : ''}>تم حلها</option>
+                                <option value="pending" ${item.status === 'pending' ? 'selected' : ''}>${tr('قيد الانتظار')}</option>
+                                <option value="reviewed" ${item.status === 'reviewed' ? 'selected' : ''}>${tr('تمت المراجعة')}</option>
+                                <option value="resolved" ${item.status === 'resolved' ? 'selected' : ''}>${tr('تم حلها')}</option>
                             </select>
                             <button class="btn btn-danger" style="padding: 6px 12px; font-size: 0.8rem; white-space: nowrap;"
                                     onclick="window.deleteFeedbackGlobal(${item.id})" ${disabledAttr}>
