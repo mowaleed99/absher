@@ -82,7 +82,7 @@ try {
         ];
 
         $news = $conn->query("SELECT *, DATE_FORMAT(created_at,'%Y-%m-%d %h:%i %p') AS date FROM news ORDER BY created_at DESC")->fetchAll();
-        $notifications = $conn->query("SELECT *, DATE_FORMAT(created_at,'%Y-%m-%d %h:%i %p') AS date FROM notifications ORDER BY created_at DESC")->fetchAll();
+        $notifications = $conn->query("SELECT *, DATE_FORMAT(created_at,'%Y-%m-%d %h:%i %p') AS date FROM notifications WHERE student_id = 0 ORDER BY created_at DESC")->fetchAll();
         $housing_offers = $conn->query("SELECT * FROM housing_offers ORDER BY display_order ASC, created_at DESC")->fetchAll();
 
         // جلب المحادثات ورسائل كل محادثة

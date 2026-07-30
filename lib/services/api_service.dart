@@ -398,9 +398,14 @@ class ApiService {
   // جلب التنبيهات والإشعارات الفعالة (خلال آخر 24 ساعة)
   static Future<List<Map<String, dynamic>>> getNotifications() async {
     try {
+      final Map<String, String> headers = {};
+      if (authToken != null) {
+        headers['Authorization'] = 'Bearer $authToken';
+      }
       final response = await http.get(
         Uri.parse(
             '$baseUrl/student_requests.php?action=get_notifications&t=${DateTime.now().millisecondsSinceEpoch}'),
+        headers: headers,
       );
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);

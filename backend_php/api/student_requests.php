@@ -50,7 +50,22 @@ if ($action === 'get_news') {
 
 if ($action === 'get_notifications') {
     try {
-        $stmt = $conn->query("SELECT id, title, body as content, created_at as date FROM notifications ORDER BY created_at DESC LIMIT 50");
+        $studentId = 0;
+        $authHeader = $_SERVER['HTTP_AUTHORIZATION'] ?? $_SERVER['REDIRECT_HTTP_AUTHORIZATION'] ?? '';
+        if (!empty($authHeader) && preg_match('/Bearer\s(\S+)/', $authHeader, $matches)) {
+            $token = $matches[1];
+            $payload = JWT::decode($token);
+            if ($payload && isset($payload['student_id'])) {
+                $studentId = intval($payload['student_id']);
+            }
+        }
+
+        $stmt = $conn->prepare("SELECT id, title, body as content, created_at as date 
+                                FROM notifications 
+                                WHERE student_id = 0 OR student_id = ? 
+                                ORDER BY created_at DESC 
+                                LIMIT 50");
+        $stmt->execute([$studentId]);
         $notifications = $stmt->fetchAll(PDO::FETCH_ASSOC);
         echo json_encode(["status" => "success", "notifications" => $notifications], JSON_UNESCAPED_UNICODE);
     } catch (PDOException $e) {
