@@ -21,16 +21,16 @@ export function renderReviews() {
             let serviceTitle;
             let sourceLabelText = '';
             if (!rev.service_request_id && !rev.student_id) {
-                serviceTitle = tr('شهادة من محادثة خدمة العملاء');
-                sourceLabelText = 'testimonial شهادة عملاء';
+                serviceTitle = t('reviews.cs_chat_testimonial');
+                sourceLabelText = 'testimonial ' + t('reviews.source.testimonial');
             } else {
-                sourceLabelText = 'service review تقييم خدمة';
+                sourceLabelText = 'service review ' + t('reviews.source.service');
                 if (req) {
                     serviceTitle = req.service_title;
                 } else if (rev.service_request_id) {
                     serviceTitle = `Request #${rev.service_request_id}`;
                 } else {
-                    serviceTitle = tr('عام / شهادة عملاء');
+                    serviceTitle = t('reviews.general_testimonial');
                 }
             }
             return (rev.student_name || '').toLowerCase().includes(query) ||
@@ -60,7 +60,7 @@ export function renderReviews() {
             <tr>
                 <td colspan="11" style="text-align: center; color: var(--text-muted); padding: 2rem;">
                     <i class="fa-solid fa-face-meh" style="font-size: 1.8rem; margin-bottom: 8px; display: block; opacity: 0.5;"></i>
-                    لا توجد تقييمات مطابقة للفلاتر الحالية
+                    ${t('reviews.no_reviews')}
                 </td>
             </tr>
         `;
@@ -78,13 +78,13 @@ export function renderReviews() {
         let isLegacyTestimonial = false;
         if (!rev.service_request_id && !rev.student_id) {
             isLegacyTestimonial = true;
-            serviceTitle = tr('شهادة من محادثة خدمة العملاء');
+            serviceTitle = t('reviews.cs_chat_testimonial');
         } else if (req) {
             serviceTitle = req.service_title;
         } else if (rev.service_request_id) {
             serviceTitle = `Request #${rev.service_request_id}`;
         } else {
-            serviceTitle = tr('عام / شهادة عملاء');
+            serviceTitle = t('reviews.general_testimonial');
         }
         
         // Stars HTML
@@ -92,13 +92,13 @@ export function renderReviews() {
         
         // Badges
         let statusClass = 'status-pending';
-        let statusText = tr('قيد الانتظار');
+        let statusText = t('reviews.status.pending');
         if (rev.status === 'approved') {
             statusClass = 'status-done';
-            statusText = tr('مقبول');
+            statusText = t('reviews.status.approved');
         } else if (rev.status === 'rejected') {
             statusClass = 'status-pending'; // fallback style
-            statusText = tr('مرفوض');
+            statusText = t('reviews.status.rejected');
         }
         
         // Status Badge Style overrides
@@ -108,8 +108,8 @@ export function renderReviews() {
 
         // Source Label Badge
         const sourceLabel = isLegacyTestimonial
-            ? `<span class="badge" style="background: rgba(139, 92, 246, 0.15); color: #8b5cf6; font-size: 0.72rem; padding: 2px 6px; border-radius: 4px; display: inline-block; margin-bottom: 4px; font-weight: bold;">${tr('شهادة عملاء')}</span>`
-            : `<span class="badge" style="background: rgba(59, 130, 246, 0.15); color: #3b82f6; font-size: 0.72rem; padding: 2px 6px; border-radius: 4px; display: inline-block; margin-bottom: 4px; font-weight: bold;">${tr('تقييم خدمة')}</span>`;
+            ? `<span class="badge" style="background: rgba(139, 92, 246, 0.15); color: #8b5cf6; font-size: 0.72rem; padding: 2px 6px; border-radius: 4px; display: inline-block; margin-bottom: 4px; font-weight: bold;">${t('reviews.source.testimonial')}</span>`
+            : `<span class="badge" style="background: rgba(59, 130, 246, 0.15); color: #3b82f6; font-size: 0.72rem; padding: 2px 6px; border-radius: 4px; display: inline-block; margin-bottom: 4px; font-weight: bold;">${t('reviews.source.service')}</span>`;
 
         // Moderator name mapping
         const moderatorName = rev.reviewed_by_admin_id 
@@ -133,7 +133,7 @@ export function renderReviews() {
                 <td><span style="font-size: 0.85rem; color: var(--text-muted);">${
                     rev.uni && !/^\d+$/.test(rev.uni.trim())
                         ? rev.uni
-                        : `<em style="color: var(--text-muted); opacity: 0.6;">${tr('غير متاح')}</em>`
+                        : `<em style="color: var(--text-muted); opacity: 0.6;">${t('reviews.field.unavailable')}</em>`
                 }</span></td>
                 <td>
                     ${sourceLabel}<br/>
@@ -141,9 +141,7 @@ export function renderReviews() {
                 </td>
                 <td><span style="color: var(--accent-amber); font-weight: bold; white-space: nowrap;">${starsHtml}</span></td>
                 <td style="max-width: 250px; font-style: italic;">"${rev.comment || '-'}"</td>
-                <td>
-                    <span class="status-badge ${statusClass}" style="${badgeStyle}">${tr(statusText)}</span>
-                </td>
+                <td><span class="status-badge ${statusClass}" style="${badgeStyle}">${statusText}</span></td>
                 <td><span style="font-size: 0.82rem; color: var(--text-muted);">${rev.date}</span></td>
                 <td><span style="font-size: 0.82rem; color: var(--text-muted);">${lastUpdated}</span></td>
                 <td><span style="font-weight: 600; color: var(--text-main);">${moderatorName}</span></td>
@@ -156,13 +154,13 @@ export function renderReviews() {
                             ${!isApproved ? `
                                 <button class="btn btn-primary" style="padding: 6px 12px; font-size: 0.8rem; background: var(--accent-green);" 
                                         onclick="window.moderateReviewGlobal(${rev.id}, 'approved')" ${disabledAttr}>
-                                    <i class="fa-solid fa-check"></i> ${tr('قبول')}
+                                    <i class="fa-solid fa-check"></i> ${t('buttons.accept')}
                                 </button>
                             ` : ''}
                             ${!isRejected ? `
                                 <button class="btn btn-secondary" style="padding: 6px 12px; font-size: 0.8rem; background: var(--accent-amber); color: black;" 
                                         onclick="window.moderateReviewGlobal(${rev.id}, 'rejected')" ${disabledAttr}>
-                                    <i class="fa-solid fa-ban"></i> ${tr('رفض')}
+                                    <i class="fa-solid fa-ban"></i> ${t('buttons.reject')}
                                 </button>
                             ` : ''}
                             <button class="btn btn-danger" style="padding: 6px 12px; font-size: 0.8rem;" 
@@ -199,13 +197,13 @@ export async function moderateReview(id, status) {
             review.status = status;
             review.reviewed_by_admin_id = 1; // Super admin default
             review.reviewed_at = new Date().toISOString().slice(0, 19).replace('T', ' ');
-            showToast('تم تحديث حالة التقييم بنجاح ️');
+            showToast(t('messages.review_moderated'));
         } else {
-            showToast('خطأ: ' + (data.message || ''));
+            showToast(t('status.error') + ': ' + (data.message || ''));
         }
     } catch (ex) {
         console.error(ex);
-        showToast('خطأ في الاتصال بالخادم');
+        showToast(t('messages.conn_error'));
     } finally {
         review._processing = false;
         renderReviews();
@@ -216,10 +214,10 @@ export async function moderateReview(id, status) {
 
 export async function deleteReview(id) {
     const confirmed = await window.showConfirmDialog({
-        title: 'تأكيد حذف التقييم',
-        message: 'هل أنت متأكد من رغبتك في حذف هذا التقييم؟',
-        confirmText: 'حذف',
-        cancelText: 'إلغاء',
+        title: t('dialog.delete_review_title'),
+        message: t('dialog.delete_review_msg'),
+        confirmText: t('buttons.delete'),
+        cancelText: t('buttons.cancel'),
         variant: 'danger'
     });
     if (!confirmed) return;
@@ -242,14 +240,14 @@ export async function deleteReview(id) {
         if (data.status === 'success') {
             // Remove from local memory state immediately
             appData.reviews = appData.reviews.filter(r => r.id !== id);
-            showToast('تم حذف التقييم بنجاح ️');
+            showToast(t('messages.review_deleted'));
         } else {
-            showToast('حدث خطأ أثناء الحذف: ' + (data.message || ''));
+            showToast(t('messages.review_delete_failed') + ': ' + (data.message || ''));
             review._processing = false;
         }
     } catch (ex) {
         console.error(ex);
-        showToast('خطأ في الاتصال بالخادم');
+        showToast(t('messages.conn_error'));
         review._processing = false;
     } finally {
         renderReviews();

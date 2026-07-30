@@ -182,7 +182,9 @@ export function initModalDelegation() {
     });
 }
 
-export function showConfirmDialog({ title, message, confirmText = 'تأكيد', cancelText = 'إلغاء', variant = 'primary' }) {
+export function showConfirmDialog({ title, message, confirmText, cancelText, variant = 'primary' }) {
+    if (!confirmText) confirmText = t('dialog.confirm_ok');
+    if (!cancelText) cancelText = t('dialog.confirm_cancel');
     return new Promise((resolve) => {
         const triggeringElement = document.activeElement;
 
@@ -218,7 +220,7 @@ export function showConfirmDialog({ title, message, confirmText = 'تأكيد', 
                         <i class="${iconClass}" style="color: ${iconColor}; font-size: 1.3rem;"></i>
                         <span>${title}</span>
                     </h3>
-                    <button class="close-btn" style="background: none; border: none; color: var(--text-muted); font-size: 1.3rem; cursor: pointer;" title="إغلاق"><i class="fa-solid fa-xmark"></i></button>
+                    <button class="close-btn" style="background: none; border: none; color: var(--text-muted); font-size: 1.3rem; cursor: pointer;" title="${t('buttons.close')}"><i class="fa-solid fa-xmark"></i></button>
                 </div>
                 <div style="padding: 1.5rem; direction: rtl; text-align: right; color: var(--text-main); font-size: 0.95rem; line-height: 1.6;">
                     <p style="margin: 0;">${message}</p>
@@ -272,7 +274,7 @@ export function showConfirmDialog({ title, message, confirmText = 'تأكيد', 
         };
 
         confirmBtn.addEventListener('click', () => {
-            confirmBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> جاري...';
+            confirmBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> ' + t('buttons.saving');
             handleClose(true);
         });
 
@@ -325,15 +327,15 @@ export function showPromptDialog({ title, message, defaultValue = '', placeholde
                         <i class="fa-solid fa-pen-to-square" style="color: var(--primary); font-size: 1.3rem;"></i>
                         <span>${title}</span>
                     </h3>
-                    <button class="close-btn" style="background: none; border: none; color: var(--text-muted); font-size: 1.3rem; cursor: pointer;" title="إغلاق"><i class="fa-solid fa-xmark"></i></button>
+                    <button class="close-btn" style="background: none; border: none; color: var(--text-muted); font-size: 1.3rem; cursor: pointer;" title="${t('buttons.close')}"><i class="fa-solid fa-xmark"></i></button>
                 </div>
                 <div style="padding: 1.5rem; direction: rtl; text-align: right; color: var(--text-main); font-size: 0.95rem; display: flex; flex-direction: column; gap: 10px;">
                     <label style="margin: 0; font-weight: 600;">${message}</label>
                     <input type="text" id="promptDialogInput" style="width: 100%; padding: 0.8rem 1rem; border-radius: 12px; border: 1px solid var(--border-color); background: rgba(0,0,0,0.2); color: var(--text-main); font-size: 0.95rem; box-sizing: border-box;">
                 </div>
                 <div style="padding: 1rem 1.5rem; border-top: 1px solid var(--border-color); display: flex; justify-content: flex-end; gap: 12px; direction: rtl; background: rgba(0,0,0,0.15); border-bottom-left-radius: 20px; border-bottom-right-radius: 20px;">
-                    <button class="btn btn-secondary prompt-cancel" style="padding: 0.6rem 1.2rem; border-radius: 10px; font-size: 0.85rem; font-weight: 700;">إلغاء</button>
-                    <button class="btn prompt-ok" style="background: var(--primary); color: white; border: none; padding: 0.6rem 1.2rem; border-radius: 10px; font-size: 0.85rem; font-weight: 700;">تأكيد</button>
+                    <button class="btn btn-secondary prompt-cancel" style="padding: 0.6rem 1.2rem; border-radius: 10px; font-size: 0.85rem; font-weight: 700;">${t('buttons.cancel')}</button>
+                    <button class="btn prompt-ok" style="background: var(--primary); color: white; border: none; padding: 0.6rem 1.2rem; border-radius: 10px; font-size: 0.85rem; font-weight: 700;">${t('dialog.confirm_ok')}</button>
                 </div>
             </div>
         `;

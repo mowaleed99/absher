@@ -32,7 +32,7 @@ export function renderFeedback() {
             <tr>
                 <td colspan="9" style="text-align: center; color: var(--text-muted); padding: 2rem;">
                     <i class="fa-solid fa-face-meh" style="font-size: 1.8rem; margin-bottom: 8px; display: block; opacity: 0.5;"></i>
-                    لا توجد تذاكر بلاغات أو مقترحات مطابقة
+                    ${t('feedback.no_feedback_tickets')}
                 </td>
             </tr>
         `;
@@ -42,16 +42,16 @@ export function renderFeedback() {
     container.innerHTML = list.map(item => {
         // Badges for Status
         let statusClass = 'status-pending';
-        let statusText = 'قيد الانتظار';
+        let statusText = 'status.pending';
         let badgeStyle = '';
 
         if (item.status === 'reviewed') {
             statusClass = 'status-under-review';
-            statusText = 'تمت المراجعة';
+            statusText = 'status.reviewed';
             badgeStyle = 'background: rgba(59, 130, 246, 0.15); color: #3b82f6; border: 1px solid rgba(59, 130, 246, 0.3);';
         } else if (item.status === 'resolved') {
             statusClass = 'status-done';
-            statusText = 'تم حلها';
+            statusText = 'status.resolved';
             badgeStyle = 'background: rgba(16, 185, 129, 0.15); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.3);';
         }
 
@@ -79,7 +79,7 @@ export function renderFeedback() {
 
         return `
             <tr id="feedback-row-${item.id}" style="${isProcessing ? 'opacity: 0.6;' : ''}">
-                <td style="font-weight: bold; color: var(--text-main); white-space: nowrap;">${item.student_name || 'طالب مجهول'}</td>
+                <td style="font-weight: bold; color: var(--text-main); white-space: nowrap;">${item.student_name || t('feedback.unknown_student')}</td>
                 <td style="white-space: nowrap;"><span style="font-size: 0.85rem; color: var(--text-muted);">${item.student_uni || '-'}</span></td>
                 <td style="white-space: nowrap;">
                     <span style="padding: 4px 8px; border-radius: 6px; font-size: 0.8rem; font-weight: bold; ${typeInfo.style}">
@@ -90,7 +90,7 @@ export function renderFeedback() {
                     "${item.comment || '-'}"
                 </td>
                 <td style="white-space: nowrap;">
-                    <span class="status-badge ${statusClass}" style="${badgeStyle} white-space: nowrap;">${tr(statusText)}</span>
+                    <span class="status-badge ${statusClass}" style="${badgeStyle} white-space: nowrap;">${t(statusText)}</span>
                 </td>
                 <td style="white-space: nowrap;"><span style="font-size: 0.82rem; color: var(--text-muted);">${item.created_at || '-'}</span></td>
                 <td style="white-space: nowrap;"><span style="font-weight: 600; color: var(--text-main);">${moderatorName}</span></td>
@@ -102,9 +102,9 @@ export function renderFeedback() {
                         ` : `
                             <select style="padding: 6px; border-radius: 8px; border: 1px solid var(--border-color); background: var(--bg-card); color: var(--text-main); font-size: 0.8rem; cursor: pointer; white-space: nowrap;"
                                     onchange="window.updateFeedbackStatusGlobal(${item.id}, this.value)" ${disabledAttr}>
-                                <option value="pending" ${item.status === 'pending' ? 'selected' : ''}>${tr('قيد الانتظار')}</option>
-                                <option value="reviewed" ${item.status === 'reviewed' ? 'selected' : ''}>${tr('تمت المراجعة')}</option>
-                                <option value="resolved" ${item.status === 'resolved' ? 'selected' : ''}>${tr('تم حلها')}</option>
+                                <option value="pending" ${item.status === 'pending' ? 'selected' : ''}>${t('status.pending')}</option>
+                                <option value="reviewed" ${item.status === 'reviewed' ? 'selected' : ''}>${t('status.reviewed')}</option>
+                                <option value="resolved" ${item.status === 'resolved' ? 'selected' : ''}>${t('status.resolved')}</option>
                             </select>
                             <button class="btn btn-danger" style="padding: 6px 12px; font-size: 0.8rem; white-space: nowrap;"
                                     onclick="window.deleteFeedbackGlobal(${item.id})" ${disabledAttr}>
@@ -136,13 +136,13 @@ export async function updateFeedbackStatus(id, status) {
             item.status = status;
             item.reviewed_by_admin_id = 1;
             item.reviewed_at = new Date().toISOString().slice(0, 19).replace('T', ' ');
-            showToast('تم تحديث حالة التذكرة بنجاح ️');
+            showToast(t('messages.feedback_updated'));
         } else {
-            showToast('خطأ: ' + (data.message || ''));
+            showToast(t('status.error') + ': ' + (data.message || ''));
         }
     } catch (ex) {
         console.error(ex);
-        showToast('خطأ في الاتصال بالخادم');
+        showToast(t('messages.conn_error'));
     } finally {
         item._processing = false;
         renderFeedback();
@@ -152,10 +152,10 @@ export async function updateFeedbackStatus(id, status) {
 
 export async function deleteFeedback(id) {
     const confirmed = await window.showConfirmDialog({
-        title: 'تأكيد حذف التذكرة',
-        message: 'هل أنت متأكد من رغبتك في حذف هذه التذكرة؟',
-        confirmText: 'حذف',
-        cancelText: 'إلغاء',
+        title: t('dialog.delete_feedback_title'),
+        message: t('dialog.delete_feedback_msg'),
+        confirmText: t('buttons.delete'),
+        cancelText: t('buttons.cancel'),
         variant: 'danger'
     });
     if (!confirmed) return;
@@ -175,14 +175,14 @@ export async function deleteFeedback(id) {
         const data = await res.json();
         if (data.status === 'success') {
             appData.application_feedback = appData.application_feedback.filter(x => x.id !== id);
-            showToast('تم حذف تذكرة الملاحظات بنجاح ️');
+            showToast(t('messages.feedback_deleted'));
         } else {
-            showToast('حدث خطأ أثناء الحذف: ' + (data.message || ''));
+            showToast(t('messages.feedback_delete_failed') + ': ' + (data.message || ''));
             item._processing = false;
         }
     } catch (ex) {
         console.error(ex);
-        showToast('خطأ في الاتصال بالخادم');
+        showToast(t('messages.conn_error'));
         item._processing = false;
     } finally {
         renderFeedback();

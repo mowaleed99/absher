@@ -1,0 +1,1459 @@
+AUDIT REPORT: HARDCODED ARABIC STRINGS IN ADMIN
+================================================
+
+File: index.html
+----------------
+  Line 7: <title>أبشر - لوحة الإدارة الذكية</title>
+    Arabic texts: ['أبشر', 'لوحة الإدارة الذكية'] [NO TRANSLATION KEY]
+  Line 23: <h1>أبشر <span class="badge">PRO ADMIN</span></h1>
+    Arabic texts: ['أبشر'] [NO TRANSLATION KEY]
+  Line 24: <p>بوابة التحكم الشاملة في الخدمات والشقق والحسابات</p>
+    Arabic texts: ['بوابة التحكم الشاملة في الخدمات والشقق والحسابات'] [NO TRANSLATION KEY]
+  Line 28: <button id="langToggleBtn"class="action-btn"title="تبديل اللغة / Switch Language"><i
+    Arabic texts: ['تبديل اللغة'] [NO TRANSLATION KEY]
+  Line 30: <button id="themeToggleBtn"class="action-btn"title="تبديل المظهر"><i
+    Arabic texts: ['تبديل المظهر'] [NO TRANSLATION KEY]
+  Line 34: <span>المدير العام</span>
+    Arabic texts: ['المدير العام'] [NO TRANSLATION KEY]
+  Line 44: <span data-i18n="sidebar.generalStatistics">الإحصائيات العامة</span></a>
+    Arabic texts: ['الإحصائيات العامة'] [HAS data-i18n]
+  Line 45: <a href="#chats"class="nav-item"data-tab="chats"><i class="fa-solid fa-headset"></i> <span data-i18n="sidebar.customerServiceChat">محادثات خدمة العملاء</span>
+    Arabic texts: ['محادثات خدمة العملاء'] [HAS data-i18n]
+  Line 47: <a href="#requests"class="nav-item"data-tab="requests"><i class="fa-solid fa-bell"></i> <span data-i18n="sidebar.bookingsRequests">الحجوزات وطلبات السكن</span> <span class="notify-badge"id="reqCountBadge">4</span></a>
+    Arabic texts: ['الحجوزات وطلبات السكن'] [HAS data-i18n]
+  Line 48: <a href="#apartments"class="nav-item"data-tab="apartments"><i class="fa-solid fa-building"></i> <span data-i18n="sidebar.manageApartments">إدارة الشقق والسعة</span></a>
+    Arabic texts: ['إدارة الشقق والسعة'] [HAS data-i18n]
+  Line 49: <a href="#offers"class="nav-item"data-tab="offers"><i class="fa-solid fa-tags"></i> <span data-i18n="sidebar.exclusiveOffers">عروض السكن الحصرية</span></a>
+    Arabic texts: ['عروض السكن الحصرية'] [HAS data-i18n]
+  Line 51: <span data-i18n="sidebar.studentServices">خدمات الطلاب</span></a>
+    Arabic texts: ['خدمات الطلاب'] [HAS data-i18n]
+  Line 53: <span data-i18n="sidebar.universities">الجامعات</span></a>
+    Arabic texts: ['الجامعات'] [HAS data-i18n]
+  Line 55: <span data-i18n="sidebar.districts">المناطق</span></a>
+    Arabic texts: ['المناطق'] [HAS data-i18n]
+  Line 56: <a href="#reviews"class="nav-item"data-tab="reviews"><i class="fa-solid fa-star"></i> <span data-i18n="sidebar.studentReviews">تقييمات وآراء الطلاب</span></a>
+    Arabic texts: ['تقييمات وآراء الطلاب'] [HAS data-i18n]
+  Line 57: <a href="#feedback"class="nav-item"data-tab="feedback"><i class="fa-solid fa-comments"></i> <span data-i18n="sidebar.applicationFeedback">ملاحظات التطبيق</span></a>
+    Arabic texts: ['ملاحظات التطبيق'] [HAS data-i18n]
+  Line 58: <a href="#students"class="nav-item"data-tab="students"><i class="fa-solid fa-users"></i> <span data-i18n="sidebar.studentAccounts">بيانات وحسابات الطلاب</span></a>
+    Arabic texts: ['بيانات وحسابات الطلاب'] [HAS data-i18n]
+  Line 59: <a href="#news"class="nav-item"data-tab="news"><i class="fa-solid fa-newspaper"></i> <span data-i18n="sidebar.georgiaNews">أخبار جورجيا</span> </a>
+    Arabic texts: ['أخبار جورجيا'] [HAS data-i18n]
+  Line 60: <a href="#notifications"class="nav-item"data-tab="notifications"><i class="fa-solid fa-bell"></i> <span data-i18n="sidebar.alertsNotifications">التنبيهات والإشعارات</span> </a>
+    Arabic texts: ['التنبيهات والإشعارات'] [HAS data-i18n]
+  Line 63: <p><i class="fa-solid fa-server"></i> حالة الاتصال: <span id="serverStatus" class="status-online">متصل</span></p>
+    Arabic texts: ['حالة الاتصال', 'متصل'] [NO TRANSLATION KEY]
+  Line 73: <h2><i class="fa-solid fa-gauge-high"></i> نظرة عامة على نشاط الموقع والتطبيق</h2>
+    Arabic texts: ['نظرة عامة على نشاط الموقع والتطبيق'] [NO TRANSLATION KEY]
+  Line 74: <p>ملخص فوري للبيانات المسجلة والحجوزات النشطة</p>
+    Arabic texts: ['ملخص فوري للبيانات المسجلة والحجوزات النشطة'] [NO TRANSLATION KEY]
+  Line 81: <h3>الشقق السكنية</h3>
+    Arabic texts: ['الشقق السكنية'] [NO TRANSLATION KEY]
+  Line 83: <span>متاحة للطلاب حالياً</span>
+    Arabic texts: ['متاحة للطلاب حالياً'] [NO TRANSLATION KEY]
+  Line 89: <h3>الخدمات المتاحة</h3>
+    Arabic texts: ['الخدمات المتاحة'] [NO TRANSLATION KEY]
+  Line 91: <span>خدمة طلابية ولوجستية</span>
+    Arabic texts: ['خدمة طلابية ولوجستية'] [NO TRANSLATION KEY]
+  Line 97: <h3>الطلاب والعملاء</h3>
+    Arabic texts: ['الطلاب والعملاء'] [NO TRANSLATION KEY]
+  Line 99: <span>حساب مسجل بالمنصة</span>
+    Arabic texts: ['حساب مسجل بالمنصة'] [NO TRANSLATION KEY]
+  Line 105: <h3>طلبات قيد المراجعة</h3>
+    Arabic texts: ['طلبات قيد المراجعة'] [NO TRANSLATION KEY]
+  Line 107: <span>تحتاج لمتابعة الإدارة</span>
+    Arabic texts: ['تحتاج لمتابعة الإدارة'] [NO TRANSLATION KEY]
+  Line 114: <h3> أضف جديداً إلى التطبيق في ثوانٍ!</h3>
+    Arabic texts: ['أضف جديداً إلى التطبيق في ثوانٍ'] [NO TRANSLATION KEY]
+  Line 115: <p>أي إضافة تقوم بها هنا تنعكس مباشرة في متصفح الموقع وتطبيق الهاتف المحمول فلاتر.</p>
+    Arabic texts: ['أي إضافة تقوم بها هنا تنعكس مباشرة في متصفح الموقع وتطبيق الهاتف المحمول فلاتر'] [NO TRANSLATION KEY]
+  Line 119: class="fa-solid fa-plus"></i> إضافة شقة جديدة</button>
+    Arabic texts: ['إضافة شقة جديدة'] [NO TRANSLATION KEY]
+  Line 121: class="fa-solid fa-plus"></i> إضافة خدمة جديدة</button>
+    Arabic texts: ['إضافة خدمة جديدة'] [NO TRANSLATION KEY]
+  Line 126: <h2><i class="fa-solid fa-chart-line"></i> <span data-tr="reviews_analytics">تحليلات وإحصائيات التقييمات</span></h2>
+    Arabic texts: ['تحليلات وإحصائيات التقييمات'] [NO TRANSLATION KEY]
+  Line 127: <p data-tr="reviews_analytics_desc">نظرة فاحصة على تقييمات الطلاب وتوزيع النجوم وأداء الخدمات</p>
+    Arabic texts: ['نظرة فاحصة على تقييمات الطلاب وتوزيع النجوم وأداء الخدمات'] [NO TRANSLATION KEY]
+  Line 134: <h3 data-tr="total_reviews">إجمالي التقييمات</h3>
+    Arabic texts: ['إجمالي التقييمات'] [NO TRANSLATION KEY]
+  Line 136: <span>مقبولة ومفعلة</span>
+    Arabic texts: ['مقبولة ومفعلة'] [NO TRANSLATION KEY]
+  Line 142: <h3 data-tr="avg_rating">متوسط التقييم</h3>
+    Arabic texts: ['متوسط التقييم'] [NO TRANSLATION KEY]
+  Line 144: <span>من 5 نجوم</span>
+    Arabic texts: ['من', 'نجوم'] [NO TRANSLATION KEY]
+  Line 150: <h3 data-tr="approved_reviews">التقييمات المقبولة</h3>
+    Arabic texts: ['التقييمات المقبولة'] [NO TRANSLATION KEY]
+  Line 152: <span>تظهر للمستخدمين</span>
+    Arabic texts: ['تظهر للمستخدمين'] [NO TRANSLATION KEY]
+  Line 158: <h3 data-tr="pending_reviews">تقييمات قيد الانتظار</h3>
+    Arabic texts: ['تقييمات قيد الانتظار'] [NO TRANSLATION KEY]
+  Line 160: <span>تحتاج لمراجعة</span>
+    Arabic texts: ['تحتاج لمراجعة'] [NO TRANSLATION KEY]
+  Line 168: <h3 style="font-weight: bold; margin-bottom: 1.5rem; font-size: 1.1rem; color: var(--text-main);" data-tr="rating_distribution">توزيع التقييمات (بالنجوم)</h3>
+    Arabic texts: ['توزيع التقييمات', 'بالنجوم'] [NO TRANSLATION KEY]
+  Line 175: <h3 style="font-weight: bold; margin-bottom: 1.5rem; font-size: 1.1rem; color: var(--text-main);" data-tr="avg_rating_per_service">متوسط تقييم الخدمات</h3>
+    Arabic texts: ['متوسط تقييم الخدمات'] [NO TRANSLATION KEY]
+  Line 187: <h2><i class="fa-solid fa-building"></i> إدارة الشقق السكنية</h2>
+    Arabic texts: ['إدارة الشقق السكنية'] [NO TRANSLATION KEY]
+  Line 188: <p>إضافة، تعديل، أو حذف الشقق المعروضة للطلاب في تبليسي</p>
+    Arabic texts: ['إضافة، تعديل، أو حذف الشقق المعروضة للطلاب في تبليسي'] [NO TRANSLATION KEY]
+  Line 191: إضافة شقة جديدة</button>
+    Arabic texts: ['إضافة شقة جديدة'] [NO TRANSLATION KEY]
+  Line 195: <input type="text"id="aptSearchInput"placeholder="ابحث برقم الشقة (مثال: 1 أو #1) أو عنوان الشقة..."oninput="renderApartments()"style="flex: 1; padding: 12px 18px; border-radius: 12px; border: 1px solid var(--border-color); background: var(--bg-card); color: var(--text-main); font-size: 1rem;">
+    Arabic texts: ['ابحث برقم الشقة', 'مثال', 'أو', 'أو عنوان الشقة'] [NO TRANSLATION KEY]
+  Line 207: <h2><i class="fa-solid fa-tags"></i> عروض السكن الحصرية</h2>
+    Arabic texts: ['عروض السكن الحصرية'] [NO TRANSLATION KEY]
+  Line 208: <p>إنشاء وتعديل وإدارة عروض السكن والخصومات للطلاب</p>
+    Arabic texts: ['إنشاء وتعديل وإدارة عروض السكن والخصومات للطلاب'] [NO TRANSLATION KEY]
+  Line 211: <i class="fa-solid fa-plus-circle"></i> إضافة عرض جديد
+    Arabic texts: ['إضافة عرض جديد'] [NO TRANSLATION KEY]
+  Line 216: <input type="text" id="offerSearchInput" placeholder="ابحث بعنوان العرض أو الشقة المرتبطة..." style="flex: 1; padding: 12px 18px; border-radius: 12px; border: 1px solid var(--border-color); background: var(--bg-card); color: var(--text-main); font-size: 1rem;">
+    Arabic texts: ['ابحث بعنوان العرض أو الشقة المرتبطة'] [NO TRANSLATION KEY]
+  Line 228: <h2><i class="fa-solid fa-screwdriver-wrench"></i> إدارة خدمات الطلاب</h2>
+    Arabic texts: ['إدارة خدمات الطلاب'] [NO TRANSLATION KEY]
+  Line 229: <p>التحكم في خدمات الصيانة والإقامة والاستقبال</p>
+    Arabic texts: ['التحكم في خدمات الصيانة والإقامة والاستقبال'] [NO TRANSLATION KEY]
+  Line 232: إضافة خدمة جديدة</button>
+    Arabic texts: ['إضافة خدمة جديدة'] [NO TRANSLATION KEY]
+  Line 244: <h2><i class="fa-solid fa-university"></i> إدارة الجامعات</h2>
+    Arabic texts: ['إدارة الجامعات'] [NO TRANSLATION KEY]
+  Line 245: <p>إضافة أو حذف الجامعات التي سيتم استخدامها في فلاتر التطبيق</p>
+    Arabic texts: ['إضافة أو حذف الجامعات التي سيتم استخدامها في فلاتر التطبيق'] [NO TRANSLATION KEY]
+  Line 248: إضافة جامعة جديدة</button>
+    Arabic texts: ['إضافة جامعة جديدة'] [NO TRANSLATION KEY]
+  Line 260: <h2><i class="fa-solid fa-map-location-dot"></i> إدارة المناطق</h2>
+    Arabic texts: ['إدارة المناطق'] [NO TRANSLATION KEY]
+  Line 261: <p>إضافة أو حذف المناطق المتاحة في تبليسي والتي سيتم استخدامها في فلتر السكن</p>
+    Arabic texts: ['إضافة أو حذف المناطق المتاحة في تبليسي والتي سيتم استخدامها في فلتر السكن'] [NO TRANSLATION KEY]
+  Line 264: إضافة حي جديد</button>
+    Arabic texts: ['إضافة حي جديد'] [NO TRANSLATION KEY]
+  Line 275: <h2><i class="fa-brands fa-whatsapp"style="color: #25D366;"></i> محادثات خدمة العملاء (نظام محادثات
+    Arabic texts: ['محادثات خدمة العملاء', 'نظام محادثات'] [NO TRANSLATION KEY]
+  Line 276: فوري)</h2>
+    Arabic texts: ['فوري'] [NO TRANSLATION KEY]
+  Line 277: <p>المحادثات مرتبة تحت بعضها بشكل عمودي حسب الأحدث وقتاً للرد المباشر والسريع على استفسارات وحجوزات
+    Arabic texts: ['المحادثات مرتبة تحت بعضها بشكل عمودي حسب الأحدث وقتاً للرد المباشر والسريع على استفسارات وحجوزات'] [NO TRANSLATION KEY]
+  Line 278: الطلاب</p>
+    Arabic texts: ['الطلاب'] [NO TRANSLATION KEY]
+  Line 286: <span><i class="fa-solid fa-comments"style="color: #25D366;"></i> <span>المحادثات النشطة</span> (<span
+    Arabic texts: ['المحادثات النشطة'] [NO TRANSLATION KEY]
+  Line 290: class="fa-solid fa-circle"style="font-size: 0.6rem;"></i> مباشر</span>
+    Arabic texts: ['مباشر'] [NO TRANSLATION KEY]
+  Line 302: <h3 style="color: #fff; font-size: 1.6rem; margin-bottom: 10px;">أبشر لخدمة العملاء</h3>
+    Arabic texts: ['أبشر لخدمة العملاء'] [NO TRANSLATION KEY]
+  Line 303: <p style="max-width: 400px; line-height: 1.6;">اختر محادثة من القائمة الجانبية (المرتبة حسب
+    Arabic texts: ['اختر محادثة من القائمة الجانبية', 'المرتبة حسب'] [NO TRANSLATION KEY]
+  Line 304: الوقت) لعرض استفسارات وحجوزات الطالب والرد عليها فوراً بأسلوب الواتساب.</p>
+    Arabic texts: ['الوقت', 'لعرض استفسارات وحجوزات الطالب والرد عليها فوراً بأسلوب الواتساب'] [NO TRANSLATION KEY]
+  Line 310: <div id="waAvatar"title="اضغط لعرض صورة وبيانات الطالب"style="width: 45px; height: 45px; border-radius: 50%; background: #25D366; display: flex; align-items: center; justify-content: center; color: #fff; font-weight: bold; font-size: 1.3rem; cursor: pointer; border: 2px solid #fff; transition: transform 0.2s;">
+    Arabic texts: ['اضغط لعرض صورة وبيانات الطالب'] [NO TRANSLATION KEY]
+  Line 320: <i class="fa-brands fa-whatsapp"></i> وتساب فوري
+    Arabic texts: ['وتساب فوري'] [NO TRANSLATION KEY]
+  Line 322: <button type="button"class="btn btn-secondary"style="background: rgba(239,68,68,0.15); color: #ef4444; border: 1px solid #ef4444; padding: 6px 12px; font-size: 0.85rem; font-weight: bold;"title="حظر الطالب والشات">
+    Arabic texts: ['حظر الطالب والشات'] [NO TRANSLATION KEY]
+  Line 323: <i class="fa-solid fa-ban"></i> حظر
+    Arabic texts: ['حظر'] [NO TRANSLATION KEY]
+  Line 338: <strong style="font-size: 0.8rem; color: #25D366; display: block;">↩️ الرد على
+    Arabic texts: ['الرد على'] [NO TRANSLATION KEY]
+  Line 339: رسالة:</strong>
+    Arabic texts: ['رسالة'] [NO TRANSLATION KEY]
+  Line 352: <input type="text"id="waReplyInput"placeholder="اكتب رسالتك و ردك على استفسار وحجز الطالب هنا..."style="width: 100%; box-sizing: border-box; padding: 14px 20px; border-radius: 14px; border: 1px solid rgba(255,255,255,0.15); background: #2a3942; color: #fff; font-size: 1rem; outline: none; transition: border-color 0.2s;">
+    Arabic texts: ['اكتب رسالتك و ردك على استفسار وحجز الطالب هنا'] [NO TRANSLATION KEY]
+  Line 359: <button type="button"id="waAttachImgBtn"class="btn btn-secondary"style="background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15); color: #e9edef; padding: 8px 14px; border-radius: 10px; cursor: pointer; display: flex; align-items: center; gap: 6px; font-size: 0.85rem; font-weight: bold; transition: background 0.2s;"title="تحميل صورة من جهازك وإرسالها للطالب">
+    Arabic texts: ['تحميل صورة من جهازك وإرسالها للطالب'] [NO TRANSLATION KEY]
+  Line 361: تحميل صورة
+    Arabic texts: ['تحميل صورة'] [NO TRANSLATION KEY]
+  Line 363: <button type="button"id="waAttachUrlBtn"class="btn btn-secondary"style="background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15); color: #e9edef; padding: 8px 14px; border-radius: 10px; cursor: pointer; display: flex; align-items: center; gap: 6px; font-size: 0.85rem; font-weight: bold; transition: background 0.2s;"title="إرفاق رابط مباشر (موقع، مستند، أو خرائط)">
+    Arabic texts: ['إرفاق رابط مباشر', 'موقع، مستند، أو خرائط'] [NO TRANSLATION KEY]
+  Line 365: إرفاق رابط
+    Arabic texts: ['إرفاق رابط'] [NO TRANSLATION KEY]
+  Line 367: <button type="button"id="waAttachVideoBtn"class="btn btn-secondary"style="background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15); color: #e9edef; padding: 8px 14px; border-radius: 10px; cursor: pointer; display: flex; align-items: center; gap: 6px; font-size: 0.85rem; font-weight: bold; transition: background 0.2s; opacity: 0.8;"title="ميزة إرفاق الفيديو قيد التطوير حالياً">
+    Arabic texts: ['ميزة إرفاق الفيديو قيد التطوير حالياً'] [NO TRANSLATION KEY]
+  Line 369: إرفاق فيديو (تحت التطوير )
+    Arabic texts: ['إرفاق فيديو', 'تحت التطوير'] [NO TRANSLATION KEY]
+  Line 374: <span>إرسال الرد</span> <i class="fa-solid fa-paper-plane"style="transform: scaleX(-1); font-size: 1.1rem;"></i>
+    Arabic texts: ['إرسال الرد'] [NO TRANSLATION KEY]
+  Line 385: <h2><i class="fa-solid fa-bell"></i> إدارة الحجوزات والطلبات وتجميع الشباب</h2>
+    Arabic texts: ['إدارة الحجوزات والطلبات وتجميع الشباب'] [NO TRANSLATION KEY]
+  Line 386: <p>متابعة وتحديث حالات طلبات الطلاب الجامعيين مع تفاصيل الحجز الكاملة وإمكانية الرد عبر الواتساب</p>
+    Arabic texts: ['متابعة وتحديث حالات طلبات الطلاب الجامعيين مع تفاصيل الحجز الكاملة وإمكانية الرد عبر الواتساب'] [NO TRANSLATION KEY]
+  Line 390: <input type="text"id="reqSearchInput"placeholder="ابحث برقم الطلب، اسم الطالب، أو رقم الواتساب..."style="flex: 1; padding: 12px 18px; border-radius: 12px; border: 1px solid var(--border-color); background: var(--bg-card); color: var(--text-main); font-size: 1rem;">
+    Arabic texts: ['ابحث برقم الطلب، اسم الطالب، أو رقم الواتساب'] [NO TRANSLATION KEY]
+  Line 396: <th># الطلب</th>
+    Arabic texts: ['الطلب'] [NO TRANSLATION KEY]
+  Line 397: <th>اسم الطالب</th>
+    Arabic texts: ['اسم الطالب'] [NO TRANSLATION KEY]
+  Line 398: <th>الجامعة والجنسية</th>
+    Arabic texts: ['الجامعة والجنسية'] [NO TRANSLATION KEY]
+  Line 399: <th>الواتساب</th>
+    Arabic texts: ['الواتساب'] [NO TRANSLATION KEY]
+  Line 400: <th style="max-width: 300px;">نوع الخدمة والتفاصيل</th>
+    Arabic texts: ['نوع الخدمة والتفاصيل'] [NO TRANSLATION KEY]
+  Line 401: <th>الحالة</th>
+    Arabic texts: ['الحالة'] [NO TRANSLATION KEY]
+  Line 402: <th>إجراءات</th>
+    Arabic texts: ['إجراءات'] [NO TRANSLATION KEY]
+  Line 415: <h2><i class="fa-solid fa-star"></i> <span data-tr="reviews">تقييمات الطلاب في الخدمات والتطبيق</span></h2>
+    Arabic texts: ['تقييمات الطلاب في الخدمات والتطبيق'] [NO TRANSLATION KEY]
+  Line 416: <p data-tr="rev_desc">عرض آراء وانطباعات الطلاب الجامعيين في تبليسي</p>
+    Arabic texts: ['عرض آراء وانطباعات الطلاب الجامعيين في تبليسي'] [NO TRANSLATION KEY]
+  Line 421: <input type="text" id="revSearchInput" placeholder="ابحث باسم الطالب أو اسم الخدمة..." style="padding: 12px 18px; border-radius: 12px; border: 1px solid var(--border-color); background: var(--bg-card); color: var(--text-main); font-size: 0.95rem;">
+    Arabic texts: ['ابحث باسم الطالب أو اسم الخدمة'] [NO TRANSLATION KEY]
+  Line 424: <option value="all">كل الحالات</option>
+    Arabic texts: ['كل الحالات'] [NO TRANSLATION KEY]
+  Line 425: <option value="pending">قيد الانتظار</option>
+    Arabic texts: ['قيد الانتظار'] [NO TRANSLATION KEY]
+  Line 426: <option value="approved">مقبول</option>
+    Arabic texts: ['مقبول'] [NO TRANSLATION KEY]
+  Line 427: <option value="rejected">مرفوض</option>
+    Arabic texts: ['مرفوض'] [NO TRANSLATION KEY]
+  Line 431: <option value="all">كل التقييمات</option>
+    Arabic texts: ['كل التقييمات'] [NO TRANSLATION KEY]
+  Line 440: <option value="newest">الأحدث أولاً</option>
+    Arabic texts: ['الأحدث أولاً'] [NO TRANSLATION KEY]
+  Line 441: <option value="oldest">الأقدم أولاً</option>
+    Arabic texts: ['الأقدم أولاً'] [NO TRANSLATION KEY]
+  Line 449: <th data-tr="student_name_label">اسم الطالب</th>
+    Arabic texts: ['اسم الطالب'] [NO TRANSLATION KEY]
+  Line 450: <th data-tr="university">الجامعة</th>
+    Arabic texts: ['الجامعة'] [NO TRANSLATION KEY]
+  Line 451: <th data-tr="service_name">الخدمة</th>
+    Arabic texts: ['الخدمة'] [NO TRANSLATION KEY]
+  Line 452: <th data-tr="wallet_points">التقييم</th>
+    Arabic texts: ['التقييم'] [NO TRANSLATION KEY]
+  Line 453: <th style="max-width: 300px;" data-tr="content_details">التعليق</th>
+    Arabic texts: ['التعليق'] [NO TRANSLATION KEY]
+  Line 454: <th data-tr="moderation_status">حالة المراجعة</th>
+    Arabic texts: ['حالة المراجعة'] [NO TRANSLATION KEY]
+  Line 455: <th data-tr="publish_date">تاريخ النشر</th>
+    Arabic texts: ['تاريخ النشر'] [NO TRANSLATION KEY]
+  Line 456: <th data-tr="last_updated">آخر تحديث</th>
+    Arabic texts: ['آخر تحديث'] [NO TRANSLATION KEY]
+  Line 457: <th data-tr="moderator">المراجع</th>
+    Arabic texts: ['المراجع'] [NO TRANSLATION KEY]
+  Line 458: <th data-tr="moderation_time">وقت المراجعة</th>
+    Arabic texts: ['وقت المراجعة'] [NO TRANSLATION KEY]
+  Line 459: <th data-tr="actions">إجراءات</th>
+    Arabic texts: ['إجراءات'] [NO TRANSLATION KEY]
+  Line 472: <h2><i class="fa-solid fa-comments"></i> <span data-tr="feedback">ملاحظات التطبيق</span></h2>
+    Arabic texts: ['ملاحظات التطبيق'] [NO TRANSLATION KEY]
+  Line 473: <p data-tr="feedback_desc">إدارة وحل بلاغات الأعطال ومقترحات تطوير التطبيق المقدمة من الطلاب</p>
+    Arabic texts: ['إدارة وحل بلاغات الأعطال ومقترحات تطوير التطبيق المقدمة من الطلاب'] [NO TRANSLATION KEY]
+  Line 479: <option value="all">كل الحالات</option>
+    Arabic texts: ['كل الحالات'] [NO TRANSLATION KEY]
+  Line 480: <option value="pending">قيد الانتظار</option>
+    Arabic texts: ['قيد الانتظار'] [NO TRANSLATION KEY]
+  Line 481: <option value="reviewed">تمت المراجعة</option>
+    Arabic texts: ['تمت المراجعة'] [NO TRANSLATION KEY]
+  Line 482: <option value="resolved">تم حلها</option>
+    Arabic texts: ['تم حلها'] [NO TRANSLATION KEY]
+  Line 486: <option value="all">كل الأنواع</option>
+    Arabic texts: ['كل الأنواع'] [NO TRANSLATION KEY]
+  Line 487: <option value="suggestion">مقترح</option>
+    Arabic texts: ['مقترح'] [NO TRANSLATION KEY]
+  Line 488: <option value="bug">بلاغ عطل</option>
+    Arabic texts: ['بلاغ عطل'] [NO TRANSLATION KEY]
+  Line 489: <option value="ux">ملاحظة واجهة المستخدم</option>
+    Arabic texts: ['ملاحظة واجهة المستخدم'] [NO TRANSLATION KEY]
+  Line 490: <option value="feature">طلب ميزة جديدة</option>
+    Arabic texts: ['طلب ميزة جديدة'] [NO TRANSLATION KEY]
+  Line 498: <th data-tr="student_name_label">اسم الطالب</th>
+    Arabic texts: ['اسم الطالب'] [NO TRANSLATION KEY]
+  Line 499: <th data-tr="university">الجامعة</th>
+    Arabic texts: ['الجامعة'] [NO TRANSLATION KEY]
+  Line 500: <th data-tr="feedback_type">نوع البلاغ/المقترح</th>
+    Arabic texts: ['نوع البلاغ', 'المقترح'] [NO TRANSLATION KEY]
+  Line 501: <th style="max-width: 400px;" data-tr="content_details">التعليق والبيانات</th>
+    Arabic texts: ['التعليق والبيانات'] [NO TRANSLATION KEY]
+  Line 502: <th data-tr="moderation_status">الحالة</th>
+    Arabic texts: ['الحالة'] [NO TRANSLATION KEY]
+  Line 503: <th data-tr="publish_date">التاريخ</th>
+    Arabic texts: ['التاريخ'] [NO TRANSLATION KEY]
+  Line 504: <th data-tr="moderator">المراجع</th>
+    Arabic texts: ['المراجع'] [NO TRANSLATION KEY]
+  Line 505: <th data-tr="moderation_time">وقت المراجعة</th>
+    Arabic texts: ['وقت المراجعة'] [NO TRANSLATION KEY]
+  Line 506: <th data-tr="actions">إجراءات</th>
+    Arabic texts: ['إجراءات'] [NO TRANSLATION KEY]
+  Line 520: <h2><i class="fa-solid fa-users"></i> حسابات الطلاب والعملاء</h2>
+    Arabic texts: ['حسابات الطلاب والعملاء'] [NO TRANSLATION KEY]
+  Line 521: <p>قائمة الحسابات المسجلة في منصة وتطبيق أبشر مع التفاصيل الكاملة</p>
+    Arabic texts: ['قائمة الحسابات المسجلة في منصة وتطبيق أبشر مع التفاصيل الكاملة'] [NO TRANSLATION KEY]
+  Line 523: <button class="btn btn-glow"data-action="openModal" data-modal="addStudentModal"><i class="fa-solid fa-user-plus"></i> إضافة حساب طالب</button>
+    Arabic texts: ['إضافة حساب طالب'] [NO TRANSLATION KEY]
+  Line 531: <th>الاسم الكامل</th>
+    Arabic texts: ['الاسم الكامل'] [NO TRANSLATION KEY]
+  Line 532: <th>البريد الإلكتروني</th>
+    Arabic texts: ['البريد الإلكتروني'] [NO TRANSLATION KEY]
+  Line 533: <th>رقم الهاتف</th>
+    Arabic texts: ['رقم الهاتف'] [NO TRANSLATION KEY]
+  Line 534: <th>الجامعة والتخصص</th>
+    Arabic texts: ['الجامعة والتخصص'] [NO TRANSLATION KEY]
+  Line 535: <th>الجنسية</th>
+    Arabic texts: ['الجنسية'] [NO TRANSLATION KEY]
+  Line 536: <th>تاريخ التسجيل</th>
+    Arabic texts: ['تاريخ التسجيل'] [NO TRANSLATION KEY]
+  Line 537: <th>نقاط المحفظة</th>
+    Arabic texts: ['نقاط المحفظة'] [NO TRANSLATION KEY]
+  Line 538: <th>إدارة النقاط</th>
+    Arabic texts: ['إدارة النقاط'] [NO TRANSLATION KEY]
+  Line 539: <th>حذف</th>
+    Arabic texts: ['حذف'] [NO TRANSLATION KEY]
+  Line 553: <h2><i class="fa-solid fa-newspaper"></i> إدارة أخبار جورجيا</h2>
+    Arabic texts: ['إدارة أخبار جورجيا'] [NO TRANSLATION KEY]
+  Line 554: <p>نشر وإدارة الأخبار والمستجدات والمقالات المفيدة للطلاب في جورجيا</p>
+    Arabic texts: ['نشر وإدارة الأخبار والمستجدات والمقالات المفيدة للطلاب في جورجيا'] [NO TRANSLATION KEY]
+  Line 557: نشر خبر جديد</button>
+    Arabic texts: ['نشر خبر جديد'] [NO TRANSLATION KEY]
+  Line 565: <th>الصورة المرفقة</th>
+    Arabic texts: ['الصورة المرفقة'] [NO TRANSLATION KEY]
+  Line 566: <th>العنوان</th>
+    Arabic texts: ['العنوان'] [NO TRANSLATION KEY]
+  Line 567: <th>المحتوى والتفاصيل</th>
+    Arabic texts: ['المحتوى والتفاصيل'] [NO TRANSLATION KEY]
+  Line 568: <th>تاريخ النشر</th>
+    Arabic texts: ['تاريخ النشر'] [NO TRANSLATION KEY]
+  Line 569: <th>حذف</th>
+    Arabic texts: ['حذف'] [NO TRANSLATION KEY]
+  Line 583: <h2><i class="fa-solid fa-bell"></i> إدارة التنبيهات والإشعارات العاجلة</h2>
+    Arabic texts: ['إدارة التنبيهات والإشعارات العاجلة'] [NO TRANSLATION KEY]
+  Line 584: <p>نشر التنبيهات العاجلة للطلاب (انقطاع مياه/كهرباء، تفاصيل الصلاة والأنشطة). تختفي تلقائياً بعد مرور 48 ساعة.</p>
+    Arabic texts: ['نشر التنبيهات العاجلة للطلاب', 'انقطاع مياه', 'كهرباء، تفاصيل الصلاة والأنشطة', 'تختفي تلقائياً بعد مرور', 'ساعة'] [NO TRANSLATION KEY]
+  Line 587: <i class="fa-solid fa-bullhorn"></i> نشر تنبيه عاجل جديد
+    Arabic texts: ['نشر تنبيه عاجل جديد'] [NO TRANSLATION KEY]
+  Line 596: <th>عنوان التنبيه</th>
+    Arabic texts: ['عنوان التنبيه'] [NO TRANSLATION KEY]
+  Line 597: <th>محتوى التنبيه والتفاصيل</th>
+    Arabic texts: ['محتوى التنبيه والتفاصيل'] [NO TRANSLATION KEY]
+  Line 598: <th>تاريخ النشر</th>
+    Arabic texts: ['تاريخ النشر'] [NO TRANSLATION KEY]
+  Line 599: <th>حالة التنبيه</th>
+    Arabic texts: ['حالة التنبيه'] [NO TRANSLATION KEY]
+  Line 600: <th>حذف</th>
+    Arabic texts: ['حذف'] [NO TRANSLATION KEY]
+  Line 617: <h3><i class="fa-solid fa-house-circle-check"></i> إضافة شقة سكنية جديدة</h3>
+    Arabic texts: ['إضافة شقة سكنية جديدة'] [NO TRANSLATION KEY]
+  Line 622: <label>عنوان الشقة الأساسي:</label>
+    Arabic texts: ['عنوان الشقة الأساسي'] [NO TRANSLATION KEY]
+  Line 623: <input type="text"id="aptTitle"required placeholder="مثال: شقة طلابية فاخرة - شارع بيكيني">
+    Arabic texts: ['مثال', 'شقة طلابية فاخرة', 'شارع بيكيني'] [NO TRANSLATION KEY]
+  Line 627: <label>السعر الشهري:</label>
+    Arabic texts: ['السعر الشهري'] [NO TRANSLATION KEY]
+  Line 628: <input type="text" id="aptPrice" required placeholder="مثال: 450 دولار / شهر">
+    Arabic texts: ['مثال', 'دولار', 'شهر'] [NO TRANSLATION KEY]
+  Line 631: <label>الحي السكني:</label>
+    Arabic texts: ['الحي السكني'] [NO TRANSLATION KEY]
+  Line 634: <option value="">-- اختر الحي --</option>
+    Arabic texts: ['اختر الحي'] [NO TRANSLATION KEY]
+  Line 640: <label>العنوان التفصيلي (الشارع / أقرب معلم):</label>
+    Arabic texts: ['العنوان التفصيلي', 'الشارع', 'أقرب معلم'] [NO TRANSLATION KEY]
+  Line 641: <input type="text" id="aptLocation" required placeholder="مثال: شارع بيكيني رقم 15، بالقرب من كارفور">
+    Arabic texts: ['مثال', 'شارع بيكيني رقم', '، بالقرب من كارفور'] [NO TRANSLATION KEY]
+  Line 645: <label>نوع الإيجار:</label>
+    Arabic texts: ['نوع الإيجار'] [NO TRANSLATION KEY]
+  Line 647: <option value="شقة كاملة">شقة كاملة</option>
+    Arabic texts: ['شقة كاملة', 'شقة كاملة'] [NO TRANSLATION KEY]
+  Line 648: <option value="غرفة في شقة">غرفة مشتركة</option>
+    Arabic texts: ['غرفة في شقة', 'غرفة مشتركة'] [NO TRANSLATION KEY]
+  Line 649: <option value="ستوديو">ستوديو</option>
+    Arabic texts: ['ستوديو', 'ستوديو'] [NO TRANSLATION KEY]
+  Line 653: <label>عدد غرف النوم:</label>
+    Arabic texts: ['عدد غرف النوم'] [NO TRANSLATION KEY]
+  Line 654: <input type="number" id="aptRoomsCount" min="1" max="10" placeholder="مثال: 3" style="width:100%; padding:10px; border-radius:8px; border:1px solid var(--border-color); background:var(--bg-card); color:var(--text-main);">
+    Arabic texts: ['مثال'] [NO TRANSLATION KEY]
+  Line 658: <label style="color: #ef4444; font-weight: bold;"> رقم هاتف صاحب الشقة (سري للإدارة فقط):</label>
+    Arabic texts: ['رقم هاتف صاحب الشقة', 'سري للإدارة فقط'] [NO TRANSLATION KEY]
+  Line 659: <input type="text" id="aptOwnerPhone" placeholder="مثال: +995555123456 (لا يظهر للعميل نهائياً)">
+    Arabic texts: ['مثال', 'لا يظهر للعميل نهائياً'] [NO TRANSLATION KEY]
+  Line 664: class="fa-solid fa-user-group"></i> بيانات وشروط شريك السكن:</h4>
+    Arabic texts: ['بيانات وشروط شريك السكن'] [NO TRANSLATION KEY]
+  Line 666: <label style="font-size: 0.85rem;">المواصفات والشروط المطلوبة في الشريك:</label>
+    Arabic texts: ['المواصفات والشروط المطلوبة في الشريك'] [NO TRANSLATION KEY]
+  Line 667: <input type="text"id="aptRoommateReqs"placeholder="مثال: غير مدخن ، طالب هادئ ومحترم ، يحافظ على النظافة العامة">
+    Arabic texts: ['مثال', 'غير مدخن ، طالب هادئ ومحترم ، يحافظ على النظافة العامة'] [NO TRANSLATION KEY]
+  Line 670: <label style="font-size: 0.85rem;">المرافق والمساحة المتاحة للشريك:</label>
+    Arabic texts: ['المرافق والمساحة المتاحة للشريك'] [NO TRANSLATION KEY]
+  Line 671: <input type="text"id="aptRoommateFacilities"placeholder="مثال: غرفة نوم منفصلة ومفروشة ، حمام ومطبخ مشترك ، شرفة (بلكونة)">
+    Arabic texts: ['مثال', 'غرفة نوم منفصلة ومفروشة ، حمام ومطبخ مشترك ، شرفة', 'بلكونة'] [NO TRANSLATION KEY]
+  Line 676: <label>وصف عام للموقع والقرب:</label>
+    Arabic texts: ['وصف عام للموقع والقرب'] [NO TRANSLATION KEY]
+  Line 678: placeholder="مثال: قريبة جداً من التبليسي الطبية TSMU (مشياً)">
+    Arabic texts: ['مثال', 'قريبة جداً من التبليسي الطبية', 'مشياً'] [NO TRANSLATION KEY]
+  Line 683: <label>عدد غرف الشقة (مثال: 3 غرف):</label>
+    Arabic texts: ['عدد غرف الشقة', 'مثال', 'غرف'] [NO TRANSLATION KEY]
+  Line 684: <input type="text"id="aptCapacity"required placeholder="مثال: 3 غرف">
+    Arabic texts: ['مثال', 'غرف'] [NO TRANSLATION KEY]
+  Line 687: <label>عدد الحمامات:</label>
+    Arabic texts: ['عدد الحمامات'] [NO TRANSLATION KEY]
+  Line 689: <option value="1 حمام">1 حمام</option>
+    Arabic texts: ['حمام', 'حمام'] [NO TRANSLATION KEY]
+  Line 690: <option value="2 حمام">2 حمام</option>
+    Arabic texts: ['حمام', 'حمام'] [NO TRANSLATION KEY]
+  Line 691: <option value="3+ حمامات">3+ حمامات</option>
+    Arabic texts: ['حمامات', 'حمامات'] [NO TRANSLATION KEY]
+  Line 696: <label>الجامعات القريبة (اختر الجامعات التي تظهر في الفلتر لهذه الشقة):</label>
+    Arabic texts: ['الجامعات القريبة', 'اختر الجامعات التي تظهر في الفلتر لهذه الشقة'] [NO TRANSLATION KEY]
+  Line 702: <label>المميزات الرئيسية (افصل بينها بفاصلة ،):</label>
+    Arabic texts: ['المميزات الرئيسية', 'افصل بينها بفاصلة ،'] [NO TRANSLATION KEY]
+  Line 704: placeholder="3 غرف واسعة ، تدفئة مركزية ، إنترنت سريع ، بلكونة">
+    Arabic texts: ['غرف واسعة ، تدفئة مركزية ، إنترنت سريع ، بلكونة'] [NO TRANSLATION KEY]
+  Line 707: <label>️ صور الشقة (يمكنك تحديد عدة صور من جهازك):</label>
+    Arabic texts: ['صور الشقة', 'يمكنك تحديد عدة صور من جهازك'] [NO TRANSLATION KEY]
+  Line 717: <label>وصف تفصيلي للشقة:</label>
+    Arabic texts: ['وصف تفصيلي للشقة'] [NO TRANSLATION KEY]
+  Line 719: placeholder="اكتب تفاصيل الشقة والفرش وشروط الدفع..."></textarea>
+    Arabic texts: ['اكتب تفاصيل الشقة والفرش وشروط الدفع'] [NO TRANSLATION KEY]
+  Line 722: <button type="button"class="btn btn-secondary"data-action="closeModal" data-modal="aptModal"><span data-i18n="buttons.cancel">إلغاء</span></button>
+    Arabic texts: ['إلغاء'] [HAS data-i18n]
+  Line 723: <button type="submit"class="btn btn-primary"><span data-i18n="buttons.save">حفظ ونشر في التطبيق</span></button>
+    Arabic texts: ['حفظ ونشر في التطبيق'] [HAS data-i18n]
+  Line 733: <h3><i class="fa-solid fa-toolbox"></i> إضافة خدمة طلابية جديدة</h3>
+    Arabic texts: ['إضافة خدمة طلابية جديدة'] [NO TRANSLATION KEY]
+  Line 738: <label>اسم الخدمة:</label>
+    Arabic texts: ['اسم الخدمة'] [NO TRANSLATION KEY]
+  Line 739: <input type="text"id="svcTitle"required placeholder="مثال: فني تكييف وتبريد">
+    Arabic texts: ['مثال', 'فني تكييف وتبريد'] [NO TRANSLATION KEY]
+  Line 742: <label>وصف مختصر للخدمة:</label>
+    Arabic texts: ['وصف مختصر للخدمة'] [NO TRANSLATION KEY]
+  Line 743: <input type="text"id="svcDesc"required placeholder="مثال: صيانة وغسيل أجهزة التكييف والشتاء">
+    Arabic texts: ['مثال', 'صيانة وغسيل أجهزة التكييف والشتاء'] [NO TRANSLATION KEY]
+  Line 746: <label>️ صورة الخدمة (اختياري - من جهازك):</label>
+    Arabic texts: ['صورة الخدمة', 'اختياري', 'من جهازك'] [NO TRANSLATION KEY]
+  Line 756: <label>سعر الخدمة بالنقاط:</label>
+    Arabic texts: ['سعر الخدمة بالنقاط'] [NO TRANSLATION KEY]
+  Line 757: <input type="number" id="svcPricePoints" required min="0" step="1" value="0" placeholder="مثال: 50">
+    Arabic texts: ['مثال'] [NO TRANSLATION KEY]
+  Line 762: تفعيل نموذج طلب مخصص لهذه الخدمة (يتيح للطالب الاختيار وتعبئة الفورم)
+    Arabic texts: ['تفعيل نموذج طلب مخصص لهذه الخدمة', 'يتيح للطالب الاختيار وتعبئة الفورم'] [NO TRANSLATION KEY]
+  Line 766: <button type="button"class="btn btn-secondary"data-action="closeModal" data-modal="svcModal"><span data-i18n="buttons.cancel">إلغاء</span></button>
+    Arabic texts: ['إلغاء'] [HAS data-i18n]
+  Line 767: <button type="submit"class="btn btn-primary"><span data-i18n="buttons.add">إضافة الخدمة فوراً</span></button>
+    Arabic texts: ['إضافة الخدمة فوراً'] [HAS data-i18n]
+  Line 777: <h3><i class="fa-solid fa-university"></i> إضافة جامعة جديدة</h3>
+    Arabic texts: ['إضافة جامعة جديدة'] [NO TRANSLATION KEY]
+  Line 782: <label>اسم الجامعة:</label>
+    Arabic texts: ['اسم الجامعة'] [NO TRANSLATION KEY]
+  Line 783: <input type="text"id="uniName"required placeholder="مثال: جامعة تبليسي الطبية (TSMU)">
+    Arabic texts: ['مثال', 'جامعة تبليسي الطبية'] [NO TRANSLATION KEY]
+  Line 786: <button type="button"class="btn btn-secondary"data-action="closeModal" data-modal="uniModal"><span data-i18n="buttons.cancel">إلغاء</span></button>
+    Arabic texts: ['إلغاء'] [HAS data-i18n]
+  Line 787: <button type="submit"class="btn btn-primary"><span data-i18n="buttons.add">إضافة الجامعة</span></button>
+    Arabic texts: ['إضافة الجامعة'] [HAS data-i18n]
+  Line 797: <h3><i class="fa-solid fa-map-location-dot"></i> إضافة حي سكني جديد</h3>
+    Arabic texts: ['إضافة حي سكني جديد'] [NO TRANSLATION KEY]
+  Line 802: <label>اسم الحي السكني (مثال: سابورتالو):</label>
+    Arabic texts: ['اسم الحي السكني', 'مثال', 'سابورتالو'] [NO TRANSLATION KEY]
+  Line 806: <button type="button"class="btn btn-secondary"data-action="closeModal" data-modal="districtModal"><span data-i18n="buttons.cancel">إلغاء</span></button>
+    Arabic texts: ['إلغاء'] [HAS data-i18n]
+  Line 807: <button type="submit"class="btn btn-primary"><span data-i18n="buttons.add">حفظ إضافة الحي</span></button>
+    Arabic texts: ['حفظ إضافة الحي'] [HAS data-i18n]
+  Line 817: <h3><i class="fa-solid fa-headset"></i> الرد على استفسار وحجز الطالب <span id="chatModalStudentName"style="color:var(--accent-amber);"></span></h3>
+    Arabic texts: ['الرد على استفسار وحجز الطالب'] [NO TRANSLATION KEY]
+  Line 828: <i class="fa-brands fa-whatsapp"></i> مراسلة وتساب مباشر
+    Arabic texts: ['مراسلة وتساب مباشر'] [NO TRANSLATION KEY]
+  Line 841: <input type="text"id="customReplyInput"placeholder="اكتب ردك المخصص للطالب هنا..."style="flex: 1; padding: 10px 14px; border-radius: 10px; border: 1px solid var(--border-color); background: var(--bg-main); color: var(--text-main); min-width: 220px;">
+    Arabic texts: ['اكتب ردك المخصص للطالب هنا'] [NO TRANSLATION KEY]
+  Line 842: <button type="button"id="modalAttachImgBtn"class="btn btn-secondary"style="background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15); color: #e9edef; padding: 10px 14px; border-radius: 10px; cursor: pointer; display: flex; align-items: center; gap: 6px; font-size: 0.85rem; font-weight: bold;"title="تحميل صورة من جهازك وإرسالها للطالب">
+    Arabic texts: ['تحميل صورة من جهازك وإرسالها للطالب'] [NO TRANSLATION KEY]
+  Line 844: تحميل صورة
+    Arabic texts: ['تحميل صورة'] [NO TRANSLATION KEY]
+  Line 846: <button type="button"id="waAttachUrlBtn"class="btn btn-secondary"style="background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15); color: #e9edef; padding: 10px 14px; border-radius: 10px; cursor: pointer; display: flex; align-items: center; gap: 6px; font-size: 0.85rem; font-weight: bold;"title="إرفاق رابط مباشر">
+    Arabic texts: ['إرفاق رابط مباشر'] [NO TRANSLATION KEY]
+  Line 848: إرفاق رابط
+    Arabic texts: ['إرفاق رابط'] [NO TRANSLATION KEY]
+  Line 850: <button type="button"id="modalAttachVideoBtn"class="btn btn-secondary"style="background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15); color: #e9edef; padding: 10px 14px; border-radius: 10px; cursor: pointer; display: flex; align-items: center; gap: 6px; font-size: 0.85rem; font-weight: bold; opacity: 0.8;"title="ميزة إرفاق الفيديو قيد التطوير حالياً">
+    Arabic texts: ['ميزة إرفاق الفيديو قيد التطوير حالياً'] [NO TRANSLATION KEY]
+  Line 852: إرفاق فيديو (تحت التطوير )
+    Arabic texts: ['إرفاق فيديو', 'تحت التطوير'] [NO TRANSLATION KEY]
+  Line 855: class="fa-solid fa-paper-plane"></i> إرسال الرد</button>
+    Arabic texts: ['إرسال الرد'] [NO TRANSLATION KEY]
+  Line 863: <button data-action="closeModal" data-modal="imageLightboxModal"style="position: absolute; top: -45px; right: 0; background: none; border: none; color: #fff; font-size: 2rem; cursor: pointer; z-index: 10001;"title="إغلاق"><i class="fa-solid fa-xmark"></i></button>
+    Arabic texts: ['إغلاق'] [NO TRANSLATION KEY]
+  Line 872: <h3><i class="fa-solid fa-id-card"></i> بطاقة وبيانات الطالب</h3>
+    Arabic texts: ['بطاقة وبيانات الطالب'] [NO TRANSLATION KEY]
+  Line 883: <p style="margin: 8px 0; color: var(--text-main);"><strong> رقم الواتساب:</strong> <span
+    Arabic texts: ['رقم الواتساب'] [NO TRANSLATION KEY]
+  Line 885: <p style="margin: 8px 0; color: var(--text-main);"><strong> الجنسية:</strong> <span
+    Arabic texts: ['الجنسية'] [NO TRANSLATION KEY]
+  Line 886: style="color: var(--text-main);">مسجل في بوابة الطلاب المقيمين</span></p>
+    Arabic texts: ['مسجل في بوابة الطلاب المقيمين'] [NO TRANSLATION KEY]
+  Line 887: <p style="margin: 8px 0; color: var(--text-main);"><strong> حالة الحساب:</strong> <span
+    Arabic texts: ['حالة الحساب'] [NO TRANSLATION KEY]
+  Line 888: style="color: #25D366; font-weight: bold;">نشط وموثق لدى التطبيق ️</span></p>
+    Arabic texts: ['نشط وموثق لدى التطبيق'] [NO TRANSLATION KEY]
+  Line 898: <h3><i class="fa-solid fa-newspaper"></i> إضافة خبر جديد</h3>
+    Arabic texts: ['إضافة خبر جديد'] [NO TRANSLATION KEY]
+  Line 903: <label>عنوان الخبر:</label>
+    Arabic texts: ['عنوان الخبر'] [NO TRANSLATION KEY]
+  Line 904: <input type="text"id="newsTitle"required placeholder="مثال: افتتاح مركز خدمات الطلاب الجديد بتبليسي">
+    Arabic texts: ['مثال', 'افتتاح مركز خدمات الطلاب الجديد بتبليسي'] [NO TRANSLATION KEY]
+  Line 907: <label>تفاصيل ومحتوى الخبر:</label>
+    Arabic texts: ['تفاصيل ومحتوى الخبر'] [NO TRANSLATION KEY]
+  Line 908: <textarea id="newsContent"rows="5"required placeholder="اكتب هنا تفاصيل الخبر والمقالة كاملة للطلاب..."></textarea>
+    Arabic texts: ['اكتب هنا تفاصيل الخبر والمقالة كاملة للطلاب'] [NO TRANSLATION KEY]
+  Line 911: <label>️ صورة الخبر (من جهازك - اختياري):</label>
+    Arabic texts: ['صورة الخبر', 'من جهازك', 'اختياري'] [NO TRANSLATION KEY]
+  Line 918: <input type="hidden"id="newsImage"placeholder="رابط صورة للخبر (أو اترك فارغاً)">
+    Arabic texts: ['رابط صورة للخبر', 'أو اترك فارغاً'] [NO TRANSLATION KEY]
+  Line 921: <button type="button"class="btn btn-secondary"data-action="closeModal" data-modal="newsModal"><span data-i18n="buttons.cancel">إلغاء</span></button>
+    Arabic texts: ['إلغاء'] [HAS data-i18n]
+  Line 922: <button type="submit"class="btn btn-primary"><span data-i18n="buttons.save">حفظ ونشر الخبر</span> </button>
+    Arabic texts: ['حفظ ونشر الخبر'] [HAS data-i18n]
+  Line 932: <h3><i class="fa-solid fa-bell"></i> نشر تنبيه عاجل جديد</h3>
+    Arabic texts: ['نشر تنبيه عاجل جديد'] [NO TRANSLATION KEY]
+  Line 937: <label>عنوان التنبيه:</label>
+    Arabic texts: ['عنوان التنبيه'] [NO TRANSLATION KEY]
+  Line 938: <input type="text"id="notifTitle"required placeholder="مثال: انقطاع الكهرباء غداً في ديدوبي">
+    Arabic texts: ['مثال', 'انقطاع الكهرباء غداً في ديدوبي'] [NO TRANSLATION KEY]
+  Line 941: <label>تفاصيل ومحتوى التنبيه:</label>
+    Arabic texts: ['تفاصيل ومحتوى التنبيه'] [NO TRANSLATION KEY]
+  Line 942: <textarea id="notifContent"rows="4"required placeholder="مثال: نسترعي انتباه طلابنا الكرام بأنه سيتم فصل التيار..."></textarea>
+    Arabic texts: ['مثال', 'نسترعي انتباه طلابنا الكرام بأنه سيتم فصل التيار'] [NO TRANSLATION KEY]
+  Line 945: <button type="button"class="btn btn-secondary"data-action="closeModal" data-modal="notificationModal"><span data-i18n="buttons.cancel">إلغاء</span></button>
+    Arabic texts: ['إلغاء'] [HAS data-i18n]
+  Line 947: <span data-i18n="buttons.save">نشر وإرسال الإشعار</span>
+    Arabic texts: ['نشر وإرسال الإشعار'] [HAS data-i18n]
+  Line 958: <h3><i class="fa-solid fa-user-plus"></i> إضافة حساب طالب جديد</h3>
+    Arabic texts: ['إضافة حساب طالب جديد'] [NO TRANSLATION KEY]
+  Line 963: <label>الاسم الكامل:</label>
+    Arabic texts: ['الاسم الكامل'] [NO TRANSLATION KEY]
+  Line 964: <input type="text" id="addStdName" required placeholder="الاسم الكامل">
+    Arabic texts: ['الاسم الكامل'] [NO TRANSLATION KEY]
+  Line 967: <label>البريد الإلكتروني:</label>
+    Arabic texts: ['البريد الإلكتروني'] [NO TRANSLATION KEY]
+  Line 968: <input type="email" id="addStdEmail" required placeholder="البريد الإلكتروني">
+    Arabic texts: ['البريد الإلكتروني'] [NO TRANSLATION KEY]
+  Line 971: <label>رقم الهاتف:</label>
+    Arabic texts: ['رقم الهاتف'] [NO TRANSLATION KEY]
+  Line 972: <input type="text" id="addStdPhone" required placeholder="رقم الهاتف مع الرمز">
+    Arabic texts: ['رقم الهاتف مع الرمز'] [NO TRANSLATION KEY]
+  Line 975: <label>الجامعة والتخصص:</label>
+    Arabic texts: ['الجامعة والتخصص'] [NO TRANSLATION KEY]
+  Line 976: <input type="text" id="addStdUni" required placeholder="مثال: جامعة جورجيا (UG)">
+    Arabic texts: ['مثال', 'جامعة جورجيا'] [NO TRANSLATION KEY]
+  Line 979: <label>كلمة المرور الافتراضية:</label>
+    Arabic texts: ['كلمة المرور الافتراضية'] [NO TRANSLATION KEY]
+  Line 980: <input type="text" id="addStdPass" required placeholder="كلمة المرور للدخول">
+    Arabic texts: ['كلمة المرور للدخول'] [NO TRANSLATION KEY]
+  Line 983: <button type="button" class="btn btn-secondary" data-action="closeModal" data-modal="addStudentModal"><span data-i18n="buttons.cancel">إلغاء</span></button>
+    Arabic texts: ['إلغاء'] [HAS data-i18n]
+  Line 984: <button type="submit" class="btn btn-primary"><span data-i18n="buttons.add">إضافة الطالب</span></button>
+    Arabic texts: ['إضافة الطالب'] [HAS data-i18n]
+  Line 994: <h3><i class="fa-solid fa-coins"></i> إدارة نقاط المحفظة للطالب</h3>
+    Arabic texts: ['إدارة نقاط المحفظة للطالب'] [NO TRANSLATION KEY]
+  Line 998: <h4 id="pointsModalStudentName"style="color: var(--accent-amber); font-size: 1.2rem; margin-bottom: 5px;">اسم الطالب</h4>
+    Arabic texts: ['اسم الطالب'] [NO TRANSLATION KEY]
+  Line 999: <div style="color: var(--text-main); font-size: 0.9rem;">الرصيد الحالي: <strong id="pointsModalCurrentPoints"style="font-size: 1.3rem; color: var(--accent-green);">0</strong> نقطة</div>
+    Arabic texts: ['الرصيد الحالي', 'نقطة'] [NO TRANSLATION KEY]
+  Line 1004: <label>نوع العملية:</label>
+    Arabic texts: ['نوع العملية'] [NO TRANSLATION KEY]
+  Line 1007: <input type="radio"name="pointsOperation"value="add"checked> إضافة نقاط
+    Arabic texts: ['إضافة نقاط'] [NO TRANSLATION KEY]
+  Line 1010: <input type="radio"name="pointsOperation"value="subtract"> سحب نقاط
+    Arabic texts: ['سحب نقاط'] [NO TRANSLATION KEY]
+  Line 1015: <label>المبلغ / عدد النقاط:</label>
+    Arabic texts: ['المبلغ', 'عدد النقاط'] [NO TRANSLATION KEY]
+  Line 1016: <input type="number"id="pointsAmount"required min="1"placeholder="مثال: 50"style="font-size: 1.2rem; font-weight: bold; text-align: center;">
+    Arabic texts: ['مثال'] [NO TRANSLATION KEY]
+  Line 1019: <label>السبب أو الوصف (يظهر للطالب في الإشعارات):</label>
+    Arabic texts: ['السبب أو الوصف', 'يظهر للطالب في الإشعارات'] [NO TRANSLATION KEY]
+  Line 1020: <input type="text"id="pointsReason"required placeholder="مثال: مكافأة تسجيل أو سداد رسوم خدمة...">
+    Arabic texts: ['مثال', 'مكافأة تسجيل أو سداد رسوم خدمة'] [NO TRANSLATION KEY]
+  Line 1023: <button type="button"class="btn btn-secondary"data-action="closeModal" data-modal="pointsModal"><span data-i18n="buttons.cancel">إلغاء</span></button>
+    Arabic texts: ['إلغاء'] [HAS data-i18n]
+  Line 1024: <button type="submit"class="btn btn-primary"><span data-i18n="buttons.save">تنفيذ العملية وتحديث الرصيد</span></button>
+    Arabic texts: ['تنفيذ العملية وتحديث الرصيد'] [HAS data-i18n]
+  Line 1034: <h3><i class="fa-solid fa-pen-to-square"></i> تعديل بيانات الشقة</h3>
+    Arabic texts: ['تعديل بيانات الشقة'] [NO TRANSLATION KEY]
+  Line 1040: <label>عنوان الشقة:</label>
+    Arabic texts: ['عنوان الشقة'] [NO TRANSLATION KEY]
+  Line 1041: <input type="text" id="editAptTitle" required placeholder="عنوان الشقة">
+    Arabic texts: ['عنوان الشقة'] [NO TRANSLATION KEY]
+  Line 1045: <label>السعر الشهري:</label>
+    Arabic texts: ['السعر الشهري'] [NO TRANSLATION KEY]
+  Line 1046: <input type="text" id="editAptPrice" required placeholder="مثال: 450 دولار / شهر">
+    Arabic texts: ['مثال', 'دولار', 'شهر'] [NO TRANSLATION KEY]
+  Line 1049: <label>الحي السكني:</label>
+    Arabic texts: ['الحي السكني'] [NO TRANSLATION KEY]
+  Line 1051: <option value="">-- اختر الحي --</option>
+    Arabic texts: ['اختر الحي'] [NO TRANSLATION KEY]
+  Line 1057: <label>نوع الإيجار:</label>
+    Arabic texts: ['نوع الإيجار'] [NO TRANSLATION KEY]
+  Line 1059: <option value="apartment">شقة كاملة</option>
+    Arabic texts: ['شقة كاملة'] [NO TRANSLATION KEY]
+  Line 1060: <option value="room_shared">غرفة مشتركة</option>
+    Arabic texts: ['غرفة مشتركة'] [NO TRANSLATION KEY]
+  Line 1061: <option value="studio">ستوديو</option>
+    Arabic texts: ['ستوديو'] [NO TRANSLATION KEY]
+  Line 1065: <label>عدد غرف النوم:</label>
+    Arabic texts: ['عدد غرف النوم'] [NO TRANSLATION KEY]
+  Line 1066: <input type="number" id="editAptRoomsCount" min="1" max="10" placeholder="مثال: 3" style="width:100%; padding:10px; border-radius:8px; border:1px solid var(--border-color); background:var(--bg-card); color:var(--text-main);">
+    Arabic texts: ['مثال'] [NO TRANSLATION KEY]
+  Line 1070: <label>العنوان التفصيلي (الشارع):</label>
+    Arabic texts: ['العنوان التفصيلي', 'الشارع'] [NO TRANSLATION KEY]
+  Line 1071: <input type="text" id="editAptLocation" required placeholder="مثال: شارع بيكيني رقم 15">
+    Arabic texts: ['مثال', 'شارع بيكيني رقم'] [NO TRANSLATION KEY]
+  Line 1074: <label>وصف القرب من الجامعات:</label>
+    Arabic texts: ['وصف القرب من الجامعات'] [NO TRANSLATION KEY]
+  Line 1075: <input type="text" id="editAptProximity" placeholder="مثال: قريبة جداً من TSMU">
+    Arabic texts: ['مثال', 'قريبة جداً من'] [NO TRANSLATION KEY]
+  Line 1079: <label>عدد غرف الشقة (الوصف):</label>
+    Arabic texts: ['عدد غرف الشقة', 'الوصف'] [NO TRANSLATION KEY]
+  Line 1080: <input type="text" id="editAptCapacity" placeholder="مثال: 3 غرف">
+    Arabic texts: ['مثال', 'غرف'] [NO TRANSLATION KEY]
+  Line 1083: <label>رقم هاتف المالك (سري):</label>
+    Arabic texts: ['رقم هاتف المالك', 'سري'] [NO TRANSLATION KEY]
+  Line 1084: <input type="text" id="editAptOwnerPhone" placeholder="مثال: +995555123456">
+    Arabic texts: ['مثال'] [NO TRANSLATION KEY]
+  Line 1088: <label>المميزات (افصل بفاصلة ،):</label>
+    Arabic texts: ['المميزات', 'افصل بفاصلة ،'] [NO TRANSLATION KEY]
+  Line 1089: <input type="text" id="editAptFeatures" placeholder="مثال: 3 غرف ، تدفئة ، إنترنت">
+    Arabic texts: ['مثال', 'غرف ، تدفئة ، إنترنت'] [NO TRANSLATION KEY]
+  Line 1092: <label>وصف تفصيلي:</label>
+    Arabic texts: ['وصف تفصيلي'] [NO TRANSLATION KEY]
+  Line 1093: <textarea id="editAptDesc" rows="3" placeholder="وصف الشقة..."></textarea>
+    Arabic texts: ['وصف الشقة'] [NO TRANSLATION KEY]
+  Line 1097: <label>️ استبدال صور الشقة (اختياري – اتركه فارغاً للإبقاء على الصور الحالية):</label>
+    Arabic texts: ['استبدال صور الشقة', 'اختياري', 'اتركه فارغاً للإبقاء على الصور الحالية'] [NO TRANSLATION KEY]
+  Line 1111: <label>الجامعات القريبة (حدد الجامعات التي تظهر في الفلتر لهذه الشقة):</label>
+    Arabic texts: ['الجامعات القريبة', 'حدد الجامعات التي تظهر في الفلتر لهذه الشقة'] [NO TRANSLATION KEY]
+  Line 1118: <button type="button" class="btn btn-secondary" data-action="closeModal" data-modal="editAptModal"><span data-i18n="buttons.cancel">إلغاء</span></button>
+    Arabic texts: ['إلغاء'] [HAS data-i18n]
+  Line 1119: <button type="submit" class="btn btn-primary"><i class="fa-solid fa-floppy-disk"></i> <span data-i18n="buttons.save">حفظ التعديلات</span></button>
+    Arabic texts: ['حفظ التعديلات'] [HAS data-i18n]
+  Line 1129: <h3><i class="fa-solid fa-pen-to-square"></i> تعديل بيانات الخدمة</h3>
+    Arabic texts: ['تعديل بيانات الخدمة'] [NO TRANSLATION KEY]
+  Line 1135: <label>اسم الخدمة:</label>
+    Arabic texts: ['اسم الخدمة'] [NO TRANSLATION KEY]
+  Line 1136: <input type="text" id="editSvcTitle" required placeholder="اسم الخدمة">
+    Arabic texts: ['اسم الخدمة'] [NO TRANSLATION KEY]
+  Line 1139: <label>وصف الخدمة:</label>
+    Arabic texts: ['وصف الخدمة'] [NO TRANSLATION KEY]
+  Line 1140: <input type="text" id="editSvcDesc" required placeholder="وصف مختصر">
+    Arabic texts: ['وصف مختصر'] [NO TRANSLATION KEY]
+  Line 1143: <label>️ صورة الخدمة (اختر ملفاً جديداً لاستبدال الصورة الحالية):</label>
+    Arabic texts: ['صورة الخدمة', 'اختر ملفاً جديداً لاستبدال الصورة الحالية'] [NO TRANSLATION KEY]
+  Line 1151: <p style="font-size: 0.78rem; color: var(--text-muted); margin: 4px 0 0 0;">اترك بدون اختيار للإبقاء على الصورة الحالية.</p>
+    Arabic texts: ['اترك بدون اختيار للإبقاء على الصورة الحالية'] [NO TRANSLATION KEY]
+  Line 1154: <label>سعر الخدمة بالنقاط:</label>
+    Arabic texts: ['سعر الخدمة بالنقاط'] [NO TRANSLATION KEY]
+  Line 1155: <input type="number" id="editSvcPricePoints" required min="0" step="1" placeholder="مثال: 50">
+    Arabic texts: ['مثال'] [NO TRANSLATION KEY]
+  Line 1160: تفعيل نموذج طلب لهذه الخدمة
+    Arabic texts: ['تفعيل نموذج طلب لهذه الخدمة'] [NO TRANSLATION KEY]
+  Line 1164: <button type="button" class="btn btn-secondary" data-action="closeModal" data-modal="editSvcModal"><span data-i18n="buttons.cancel">إلغاء</span></button>
+    Arabic texts: ['إلغاء'] [HAS data-i18n]
+  Line 1165: <button type="submit" class="btn btn-primary"><i class="fa-solid fa-floppy-disk"></i> <span data-i18n="buttons.save">حفظ التعديلات</span></button>
+    Arabic texts: ['حفظ التعديلات'] [HAS data-i18n]
+  Line 1175: <h3><i class="fa-solid fa-tags"></i> إضافة عرض سكن جديد</h3>
+    Arabic texts: ['إضافة عرض سكن جديد'] [NO TRANSLATION KEY]
+  Line 1180: <label>الشقة المرتبطة بالعرض:</label>
+    Arabic texts: ['الشقة المرتبطة بالعرض'] [NO TRANSLATION KEY]
+  Line 1186: <label>عنوان العرض (مثال: عرض الصيف الحصري - خصم 20%):</label>
+    Arabic texts: ['عنوان العرض', 'مثال', 'عرض الصيف الحصري', 'خصم'] [NO TRANSLATION KEY]
+  Line 1187: <input type="text" id="offerTitle" required placeholder="أدخل عنواناً مميزاً للعرض">
+    Arabic texts: ['أدخل عنواناً مميزاً للعرض'] [NO TRANSLATION KEY]
+  Line 1191: <label>السعر الأصلي (دولار):</label>
+    Arabic texts: ['السعر الأصلي', 'دولار'] [NO TRANSLATION KEY]
+  Line 1192: <input type="number" id="offerOriginalPrice" required min="0.01" step="0.01" placeholder="مثال: 500">
+    Arabic texts: ['مثال'] [NO TRANSLATION KEY]
+  Line 1195: <label>سعر العرض المخفض (دولار):</label>
+    Arabic texts: ['سعر العرض المخفض', 'دولار'] [NO TRANSLATION KEY]
+  Line 1196: <input type="number" id="offerOfferPrice" required min="0.00" step="0.01" placeholder="مثال: 400">
+    Arabic texts: ['مثال'] [NO TRANSLATION KEY]
+  Line 1201: <label>نص الشارة الترويجية (اختياري):</label>
+    Arabic texts: ['نص الشارة الترويجية', 'اختياري'] [NO TRANSLATION KEY]
+  Line 1202: <input type="text" id="offerBadgeText" placeholder="مثال: لقطة ، عرض محدود">
+    Arabic texts: ['مثال', 'لقطة ، عرض محدود'] [NO TRANSLATION KEY]
+  Line 1205: <label>ترتيب العرض:</label>
+    Arabic texts: ['ترتيب العرض'] [NO TRANSLATION KEY]
+  Line 1206: <input type="number" id="offerDisplayOrder" value="0" min="0" placeholder="مثال: 0 (الأولوية للأصغر)">
+    Arabic texts: ['مثال', 'الأولوية للأصغر'] [NO TRANSLATION KEY]
+  Line 1211: <label>تاريخ ووقت بدء العرض (اختياري):</label>
+    Arabic texts: ['تاريخ ووقت بدء العرض', 'اختياري'] [NO TRANSLATION KEY]
+  Line 1215: <label>تاريخ ووقت انتهاء العرض (اختياري):</label>
+    Arabic texts: ['تاريخ ووقت انتهاء العرض', 'اختياري'] [NO TRANSLATION KEY]
+  Line 1220: <label>صورة العرض الترويجية (اختيارية - يُعرض بدلاً منها صورة الشقة إن لم تُحدد):</label>
+    Arabic texts: ['صورة العرض الترويجية', 'اختيارية', 'يُعرض بدلاً منها صورة الشقة إن لم تُحدد'] [NO TRANSLATION KEY]
+  Line 1230: <label>تفاصيل ووصف العرض:</label>
+    Arabic texts: ['تفاصيل ووصف العرض'] [NO TRANSLATION KEY]
+  Line 1231: <textarea id="offerDesc" rows="3" required placeholder="اكتب تفاصيل العرض وما الذي يجعله مميزاً للطلاب..."></textarea>
+    Arabic texts: ['اكتب تفاصيل العرض وما الذي يجعله مميزاً للطلاب'] [NO TRANSLATION KEY]
+  Line 1236: تفعيل ونشر العرض في التطبيق فوراً
+    Arabic texts: ['تفعيل ونشر العرض في التطبيق فوراً'] [NO TRANSLATION KEY]
+  Line 1240: <button type="button" class="btn btn-secondary" data-action="closeModal" data-modal="offerModal"><span data-i18n="buttons.cancel">إلغاء</span></button>
+    Arabic texts: ['إلغاء'] [HAS data-i18n]
+  Line 1241: <button type="submit" class="btn btn-primary"><span data-i18n="buttons.add">إضافة ونشر العرض</span></button>
+    Arabic texts: ['إضافة ونشر العرض'] [HAS data-i18n]
+  Line 1251: <h3><i class="fa-solid fa-pen-to-square"></i> تعديل بيانات عرض السكن</h3>
+    Arabic texts: ['تعديل بيانات عرض السكن'] [NO TRANSLATION KEY]
+  Line 1257: <label>الشقة المرتبطة بالعرض:</label>
+    Arabic texts: ['الشقة المرتبطة بالعرض'] [NO TRANSLATION KEY]
+  Line 1263: <label>عنوان العرض:</label>
+    Arabic texts: ['عنوان العرض'] [NO TRANSLATION KEY]
+  Line 1264: <input type="text" id="editOfferTitle" required placeholder="عنوان العرض">
+    Arabic texts: ['عنوان العرض'] [NO TRANSLATION KEY]
+  Line 1268: <label>السعر الأصلي (دولار):</label>
+    Arabic texts: ['السعر الأصلي', 'دولار'] [NO TRANSLATION KEY]
+  Line 1272: <label>سعر العرض المخفض (دولار):</label>
+    Arabic texts: ['سعر العرض المخفض', 'دولار'] [NO TRANSLATION KEY]
+  Line 1278: <label>نص الشارة الترويجية (اختياري):</label>
+    Arabic texts: ['نص الشارة الترويجية', 'اختياري'] [NO TRANSLATION KEY]
+  Line 1282: <label>ترتيب العرض:</label>
+    Arabic texts: ['ترتيب العرض'] [NO TRANSLATION KEY]
+  Line 1288: <label>تاريخ ووقت بدء العرض (اختياري):</label>
+    Arabic texts: ['تاريخ ووقت بدء العرض', 'اختياري'] [NO TRANSLATION KEY]
+  Line 1292: <label>تاريخ ووقت انتهاء العرض (اختياري):</label>
+    Arabic texts: ['تاريخ ووقت انتهاء العرض', 'اختياري'] [NO TRANSLATION KEY]
+  Line 1297: <label>استبدال صورة العرض (اختياري - اتركه فارغاً للإبقاء على الصورة الحالية):</label>
+    Arabic texts: ['استبدال صورة العرض', 'اختياري', 'اتركه فارغاً للإبقاء على الصورة الحالية'] [NO TRANSLATION KEY]
+  Line 1305: <p style="font-size: 0.78rem; color: var(--text-muted); margin: 4px 0 0 0;">اترك بدون اختيار للإبقاء على الصورة الحالية.</p>
+    Arabic texts: ['اترك بدون اختيار للإبقاء على الصورة الحالية'] [NO TRANSLATION KEY]
+  Line 1308: <label>تفاصيل ووصف العرض:</label>
+    Arabic texts: ['تفاصيل ووصف العرض'] [NO TRANSLATION KEY]
+  Line 1309: <textarea id="editOfferDesc" rows="3" required placeholder="وصف العرض..."></textarea>
+    Arabic texts: ['وصف العرض'] [NO TRANSLATION KEY]
+  Line 1314: العرض نشط ومفعل حالياً
+    Arabic texts: ['العرض نشط ومفعل حالياً'] [NO TRANSLATION KEY]
+  Line 1318: <button type="button" class="btn btn-secondary" data-action="closeModal" data-modal="editOfferModal"><span data-i18n="buttons.cancel">إلغاء</span></button>
+    Arabic texts: ['إلغاء'] [HAS data-i18n]
+  Line 1319: <button type="submit" class="btn btn-primary"><i class="fa-solid fa-floppy-disk"></i> <span data-i18n="buttons.save">حفظ التعديلات</span></button>
+    Arabic texts: ['حفظ التعديلات'] [HAS data-i18n]
+
+File: js\api.js
+---------------
+  Line 65: statusEl.textContent = 'متصل';
+    Arabic texts: ['متصل'] [NO TRANSLATION KEY]
+  Line 71: statusEl.textContent = 'خطأ في استجابة الخادم';
+    Arabic texts: ['خطأ', 'في', 'استجابة', 'الخادم'] [NO TRANSLATION KEY]
+  Line 79: statusEl.textContent = 'غير متصل';
+    Arabic texts: ['غير', 'متصل'] [NO TRANSLATION KEY]
+
+File: js\auth.js
+----------------
+  Line 23: <h2 style="color:white;margin-bottom:15px;">تسجيل الدخول للإدارة</h2>
+    Arabic texts: ['تسجيل', 'الدخول', 'للإدارة'] [NO TRANSLATION KEY]
+  Line 24: <input type="text" id="adminIdent" placeholder="اسم المستخدم أو الإيميل" style="width:100%;padding:10px;margin-bottom:15px;background:#374151;color:white;border:1px solid #4b5563;border-radius:6px;">
+    Arabic texts: ['اسم', 'المستخدم', 'أو', 'الإيميل'] [NO TRANSLATION KEY]
+  Line 25: <input type="password" id="adminPass" placeholder="كلمة المرور" style="width:100%;padding:10px;margin-bottom:15px;background:#374151;color:white;border:1px solid #4b5563;border-radius:6px;">
+    Arabic texts: ['كلمة', 'المرور'] [NO TRANSLATION KEY]
+  Line 26: <button data-action="doAdminLogin" class="btn btn-primary" style="width:100%;padding:10px;background:#fbbf24;color:black;font-weight:bold;border-radius:6px;cursor:pointer;">دخول</button>
+    Arabic texts: ['دخول'] [NO TRANSLATION KEY]
+  Line 47: window.showToastGlobal('بيانات الدخول خاطئة!');
+    Arabic texts: ['بيانات', 'الدخول', 'خاطئة'] [NO TRANSLATION KEY]
+
+File: js\ui.js
+--------------
+  Line 185: export function showConfirmDialog({ title, message, confirmText = 'تأكيد', cancelText = 'إلغاء', variant = 'primary' }) {
+    Arabic texts: ['تأكيد', 'إلغاء'] [NO TRANSLATION KEY]
+  Line 221: <button class="close-btn" style="background: none; border: none; color: var(--text-muted); font-size: 1.3rem; cursor: pointer;" title="إغلاق"><i class="fa-solid fa-xmark"></i></button>
+    Arabic texts: ['إغلاق'] [NO TRANSLATION KEY]
+  Line 275: confirmBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> جاري...';
+    Arabic texts: ['جاري'] [NO TRANSLATION KEY]
+  Line 328: <button class="close-btn" style="background: none; border: none; color: var(--text-muted); font-size: 1.3rem; cursor: pointer;" title="إغلاق"><i class="fa-solid fa-xmark"></i></button>
+    Arabic texts: ['إغلاق'] [NO TRANSLATION KEY]
+  Line 335: <button class="btn btn-secondary prompt-cancel" style="padding: 0.6rem 1.2rem; border-radius: 10px; font-size: 0.85rem; font-weight: 700;">إلغاء</button>
+    Arabic texts: ['إلغاء'] [NO TRANSLATION KEY]
+  Line 336: <button class="btn prompt-ok" style="background: var(--primary); color: white; border: none; padding: 0.6rem 1.2rem; border-radius: 10px; font-size: 0.85rem; font-weight: 700;">تأكيد</button>
+    Arabic texts: ['تأكيد'] [NO TRANSLATION KEY]
+
+File: js\uploads.js
+-------------------
+  Line 46: showToast('⏳ جاري ضغط ورفع صورة الخدمة...');
+    Arabic texts: ['جاري', 'ضغط', 'ورفع', 'صورة', 'الخدمة'] [NO TRANSLATION KEY]
+  Line 62: showToast('تم رفع صورة الخدمة بنجاح! ️');
+    Arabic texts: ['تم', 'رفع', 'صورة', 'الخدمة', 'بنجاح'] [NO TRANSLATION KEY]
+  Line 78: showToast('تم اختيار الصورة ومُعاينتها بنجاح! ️');
+    Arabic texts: ['تم', 'اختيار', 'الصورة', 'ومُعاينتها', 'بنجاح'] [NO TRANSLATION KEY]
+  Line 94: showToast(`⏳ جاري ضغط ورفع ${input.files.length} صورة شقة...`);
+    Arabic texts: ['جاري', 'ضغط', 'ورفع', 'صورة', 'شقة'] [NO TRANSLATION KEY]
+  Line 125: showToast(`تم رفع ${uploadedUrls.length} صورة بنجاح! ️`);
+    Arabic texts: ['تم', 'رفع', 'صورة', 'بنجاح'] [NO TRANSLATION KEY]
+  Line 135: showToast('⏳ جاري رفع صورة الخبر...');
+    Arabic texts: ['جاري', 'رفع', 'صورة', 'الخبر'] [NO TRANSLATION KEY]
+  Line 145: showToast('تم رفع صورة الخبر بنجاح! ️');
+    Arabic texts: ['تم', 'رفع', 'صورة', 'الخبر', 'بنجاح'] [NO TRANSLATION KEY]
+  Line 147: showToast('فشل الرفع:'+ (data.message ||'خطأ غير معروف'));
+    Arabic texts: ['فشل', 'الرفع', 'خطأ', 'غير', 'معروف'] [NO TRANSLATION KEY]
+  Line 158: showToast('تم استخدام المعاينة المحلية للصورة! ️');
+    Arabic texts: ['تم', 'استخدام', 'المعاينة', 'المحلية', 'للصورة'] [NO TRANSLATION KEY]
+  Line 203: showToast(`⏳ جاري ضغط ورفع ${input.files.length} صورة شقة...`);
+    Arabic texts: ['جاري', 'ضغط', 'ورفع', 'صورة', 'شقة'] [NO TRANSLATION KEY]
+  Line 235: showToast(`تم رفع ${uploadedUrls.length} صورة جديدة للشقة ✅`);
+    Arabic texts: ['تم', 'رفع', 'صورة', 'جديدة', 'للشقة'] [NO TRANSLATION KEY]
+  Line 246: showToast('⏳ جاري ضغط ورفع صورة الخدمة...');
+    Arabic texts: ['جاري', 'ضغط', 'ورفع', 'صورة', 'الخدمة'] [NO TRANSLATION KEY]
+  Line 260: showToast('تم رفع صورة الخدمة بنجاح ✅');
+    Arabic texts: ['تم', 'رفع', 'صورة', 'الخدمة', 'بنجاح'] [NO TRANSLATION KEY]
+  Line 273: showToast('تم معاينة الصورة (سيتم الرفع عند الحفظ) ✅');
+    Arabic texts: ['تم', 'معاينة', 'الصورة', 'سيتم', 'الرفع', 'عند', 'الحفظ'] [NO TRANSLATION KEY]
+  Line 280: showToast('⏳ جاري ضغط ورفع صورة العرض...');
+    Arabic texts: ['جاري', 'ضغط', 'ورفع', 'صورة', 'العرض'] [NO TRANSLATION KEY]
+  Line 296: showToast('تم رفع صورة العرض بنجاح! ✅');
+    Arabic texts: ['تم', 'رفع', 'صورة', 'العرض', 'بنجاح'] [NO TRANSLATION KEY]
+  Line 311: showToast('تم اختيار الصورة ومُعاينتها بنجاح! ️');
+    Arabic texts: ['تم', 'اختيار', 'الصورة', 'ومُعاينتها', 'بنجاح'] [NO TRANSLATION KEY]
+  Line 318: showToast('⏳ جاري ضغط ورفع صورة العرض...');
+    Arabic texts: ['جاري', 'ضغط', 'ورفع', 'صورة', 'العرض'] [NO TRANSLATION KEY]
+  Line 334: showToast('تم رفع صورة العرض بنجاح! ✅');
+    Arabic texts: ['تم', 'رفع', 'صورة', 'العرض', 'بنجاح'] [NO TRANSLATION KEY]
+  Line 349: showToast('تم اختيار الصورة ومُعاينتها بنجاح! ️');
+    Arabic texts: ['تم', 'اختيار', 'الصورة', 'ومُعاينتها', 'بنجاح'] [NO TRANSLATION KEY]
+
+File: js\modules\apartments.js
+------------------------------
+  Line 13: const idMatch = apt.id?.toString() === searchVal || `#${apt.id}` === searchVal || `رقم ${apt.id}` === searchVal;
+    Arabic texts: ['رقم'] [NO TRANSLATION KEY]
+  Line 19: const rtLabels = { apartment: 'شقة كاملة', room_shared: 'غرفة مشتركة', studio: 'ستوديو' };
+    Arabic texts: ['شقة', 'كاملة', 'غرفة', 'مشتركة', 'ستوديو'] [NO TRANSLATION KEY]
+  Line 40: رقم الشقة: #${apt.id}
+    Arabic texts: ['رقم', 'الشقة'] [NO TRANSLATION KEY]
+  Line 42: ${apt.owner_phone ? `<span style="background: rgba(239, 68, 68, 0.15); color: #ef4444; border: 1px solid #ef4444; padding: 4px 10px; border-radius: 12px; font-weight: bold; font-size: 0.82rem; cursor: pointer;" onclick="navigator.clipboard.writeText('${apt.owner_phone}'); window.showToastGlobal && window.showToastGlobal('تم نسخ رقم المالك بنجاح')"><i class="fa-solid fa-lock"></i> هاتف المالك: ${apt.owner_phone}</span>` : ''}
+    Arabic texts: ['تم', 'نسخ', 'رقم', 'المالك', 'بنجاح', 'هاتف', 'المالك'] [NO TRANSLATION KEY]
+  Line 44: ${apt.rooms_count ? `<span style="background: rgba(37,211,102,0.15); color: #25D366; border: 1px solid #25D366; padding: 4px 10px; border-radius: 12px; font-size: 0.82rem; font-weight:bold;">${apt.rooms_count} غرف نوم</span>` : ''}
+    Arabic texts: ['غرف', 'نوم'] [NO TRANSLATION KEY]
+  Line 47: <p class="card-loc"><i class="fa-solid fa-location-dot"></i> ${tr('الحي السكني')}: ${apt.location}</p>
+    Arabic texts: ['الحي', 'السكني'] [NO TRANSLATION KEY]
+  Line 50: ${tr('عدد الغرف')}: ${apt.capacity || tr('3 غرف')}
+    Arabic texts: ['عدد', 'الغرف', 'غرف'] [NO TRANSLATION KEY]
+  Line 55: ${apt.roommate_reqs ? `<div style="margin-bottom: 4px;"><strong style="color: #fbbf24;"> ${tr('شروط الشريك')}:</strong> ${apt.roommate_reqs}</div>` : ''}
+    Arabic texts: ['شروط', 'الشريك'] [NO TRANSLATION KEY]
+  Line 56: ${apt.roommate_facilities ? `<div><strong style="color: #fbbf24;"> ${tr('المتاح للشريك')}:</strong> ${apt.roommate_facilities}</div>` : ''}
+    Arabic texts: ['المتاح', 'للشريك'] [NO TRANSLATION KEY]
+  Line 68: <span style="font-size:0.8rem; color:var(--accent-green); align-self:center;">${tr('نشطة في التطبيق')} </span>
+    Arabic texts: ['نشطة', 'في', 'التطبيق'] [NO TRANSLATION KEY]
+  Line 77: const bathrooms = document.getElementById('aptBathrooms')?.value || '1 حمام';
+    Arabic texts: ['حمام'] [NO TRANSLATION KEY]
+  Line 78: const rentalTypeDisplay = document.getElementById('aptRentalType')?.value || 'شقة';
+    Arabic texts: ['شقة'] [NO TRANSLATION KEY]
+  Line 82: const capacity = document.getElementById('aptCapacity')?.value || '3 غرف';
+    Arabic texts: ['غرف'] [NO TRANSLATION KEY]
+  Line 88: 'شقة': 'apartment', 'شقة كاملة': 'apartment',
+    Arabic texts: ['شقة', 'شقة', 'كاملة'] [NO TRANSLATION KEY]
+  Line 89: 'غرفة في شقة': 'room_shared', 'مشترك': 'room_shared',
+    Arabic texts: ['غرفة', 'في', 'شقة', 'مشترك'] [NO TRANSLATION KEY]
+  Line 90: 'ستوديو': 'studio', 'studio': 'studio',
+    Arabic texts: ['ستوديو'] [NO TRANSLATION KEY]
+  Line 101: proxList.push(`${cb.value} (${timeVal} دقيقة)`);
+    Arabic texts: ['دقيقة'] [NO TRANSLATION KEY]
+  Line 107: const finalProximity = proxList.length > 0 ? `${baseProx} | ${proxList.join('،')}` : baseProx;
+    Arabic texts: ['،'] [NO TRANSLATION KEY]
+  Line 109: let featArr = document.getElementById('aptFeatures').value.split('،').map(f => f.trim());
+    Arabic texts: ['،'] [NO TRANSLATION KEY]
+  Line 111: if (rentalTypeDisplay === 'غرفة في شقة' && !featArr.includes('استئجار مع شريك')) featArr.push('استئجار مع شريك');
+    Arabic texts: ['غرفة', 'في', 'شقة', 'استئجار', 'مع', 'شريك', 'استئجار', 'مع', 'شريك'] [NO TRANSLATION KEY]
+  Line 112: if (rentalTypeDisplay === 'شقة' && !featArr.includes('شقة بمفردك')) featArr.push('شقة بمفردك');
+    Arabic texts: ['شقة', 'شقة', 'بمفردك', 'شقة', 'بمفردك'] [NO TRANSLATION KEY]
+  Line 132: move_in_type: 'فوري',
+    Arabic texts: ['فوري'] [NO TRANSLATION KEY]
+  Line 133: move_in_date: 'انتقال فوري',
+    Arabic texts: ['انتقال', 'فوري'] [NO TRANSLATION KEY]
+  Line 135: roommate_reqs: rentalTypeDisplay === 'غرفة في شقة' ? roomReqs : null,
+    Arabic texts: ['غرفة', 'في', 'شقة'] [NO TRANSLATION KEY]
+  Line 136: roommate_facilities: rentalTypeDisplay === 'غرفة في شقة' ? roomFacs : null,
+    Arabic texts: ['غرفة', 'في', 'شقة'] [NO TRANSLATION KEY]
+  Line 155: showToast('تمت إضافة الشقة بنجاح ونشرها في التطبيق!');
+    Arabic texts: ['تمت', 'إضافة', 'الشقة', 'بنجاح', 'ونشرها', 'في', 'التطبيق'] [NO TRANSLATION KEY]
+  Line 157: showToast('حدث خطأ أثناء الإضافة: ' + (data.message || ''));
+    Arabic texts: ['حدث', 'خطأ', 'أثناء', 'الإضافة'] [NO TRANSLATION KEY]
+  Line 161: showToast('خطأ في الاتصال بالخادم');
+    Arabic texts: ['خطأ', 'في', 'الاتصال', 'بالخادم'] [NO TRANSLATION KEY]
+  Line 168: showToast('لم يتم العثور على الشقة');
+    Arabic texts: ['لم', 'يتم', 'العثور', 'على', 'الشقة'] [NO TRANSLATION KEY]
+  Line 185: document.getElementById('editAptFeatures').value = featsArr.join(' ، ');
+    Arabic texts: ['،'] [NO TRANSLATION KEY]
+  Line 194: distSel.innerHTML = '<option value="">-- اختر الحي --</option>' + (appData.districts || []).map(d =>
+    Arabic texts: ['اختر', 'الحي'] [NO TRANSLATION KEY]
+  Line 208: ? existingImages.map(url => `<img src="${resolveImgUrl(url)}" onerror="this.style.display='none'" style="width:60px;height:60px;border-radius:8px;object-fit:cover;border:2px solid var(--accent-amber);" title="الصورة الحالية">`).join('')
+    Arabic texts: ['الصورة', 'الحالية'] [NO TRANSLATION KEY]
+  Line 209: : '<span style="font-size:0.8rem;color:var(--text-muted);">لا توجد صور حالية</span>';
+    Arabic texts: ['لا', 'توجد', 'صور', 'حالية'] [NO TRANSLATION KEY]
+  Line 238: if (!id) { showToast('معرّف الشقة غير موجود'); return; }
+    Arabic texts: ['معرّف', 'الشقة', 'غير', 'موجود'] [NO TRANSLATION KEY]
+  Line 241: const featArr = featuresRaw.split(/[،,]/).map(f => f.trim()).filter(Boolean);
+    Arabic texts: ['،'] [NO TRANSLATION KEY]
+  Line 273: move_in_type: existing.move_in_type || 'فوري',
+    Arabic texts: ['فوري'] [NO TRANSLATION KEY]
+  Line 274: move_in_date: existing.move_in_date || 'انتقال فوري',
+    Arabic texts: ['انتقال', 'فوري'] [NO TRANSLATION KEY]
+  Line 288: showToast('تم تحديث الشقة بنجاح ✅');
+    Arabic texts: ['تم', 'تحديث', 'الشقة', 'بنجاح'] [NO TRANSLATION KEY]
+  Line 290: showToast('حدث خطأ أثناء التحديث: ' + (data.message || ''));
+    Arabic texts: ['حدث', 'خطأ', 'أثناء', 'التحديث'] [NO TRANSLATION KEY]
+  Line 294: showToast('خطأ في الاتصال بالخادم');
+    Arabic texts: ['خطأ', 'في', 'الاتصال', 'بالخادم'] [NO TRANSLATION KEY]
+  Line 301: title: 'تأكيد ' + tr('حذف الشقة'),
+    Arabic texts: ['تأكيد', 'حذف', 'الشقة'] [NO TRANSLATION KEY]
+  Line 302: message: tr('هل أنت متأكد من رغبتك في حذف هذه الشقة؟'),
+    Arabic texts: ['هل', 'أنت', 'متأكد', 'من', 'رغبتك', 'في', 'حذف', 'هذه', 'الشقة؟'] [NO TRANSLATION KEY]
+  Line 322: showToast('تم حذف الشقة بنجاح 🗑️');
+    Arabic texts: ['تم', 'حذف', 'الشقة', 'بنجاح'] [NO TRANSLATION KEY]
+  Line 325: title: 'تأكيد حذف الشقة والعروض',
+    Arabic texts: ['تأكيد', 'حذف', 'الشقة', 'والعروض'] [NO TRANSLATION KEY]
+  Line 335: showToast('حدث خطأ أثناء الحذف: ' + (data.message || ''));
+    Arabic texts: ['حدث', 'خطأ', 'أثناء', 'الحذف'] [NO TRANSLATION KEY]
+  Line 339: showToast('خطأ في الاتصال بالخادم');
+    Arabic texts: ['خطأ', 'في', 'الاتصال', 'بالخادم'] [NO TRANSLATION KEY]
+  Line 345: if (sec) sec.style.display = val && val.includes('غرفة') ? 'block' : 'none';
+    Arabic texts: ['غرفة'] [NO TRANSLATION KEY]
+  Line 350: if (grp) grp.style.display = (val === 'ميعاد') ? 'block' : 'none';
+    Arabic texts: ['ميعاد'] [NO TRANSLATION KEY]
+
+File: js\modules\chats.js
+-------------------------
+  Line 54: c => !c.status.includes('تم الرد') && !c.status.includes('مكتمل')
+    Arabic texts: ['تم', 'الرد', 'مكتمل'] [NO TRANSLATION KEY]
+  Line 69: <span style="font-size: 0.75rem; color: #25D366; font-weight: bold;">${chat.time && chat.time !== 'الآن' ? chat.time : ''}</span>
+    Arabic texts: ['الآن'] [NO TRANSLATION KEY]
+  Line 75: <span style="font-size: 0.75rem; background: ${chat.status.includes('جديدة') ? '#25D366' : 'rgba(255,255,255,0.1)'}; color: ${chat.status.includes('جديدة') ? '#fff' : 'var(--text-muted)'}; padding: 2px 8px; border-radius: 10px; font-weight: bold;">
+    Arabic texts: ['جديدة', 'جديدة'] [NO TRANSLATION KEY]
+  Line 124: document.getElementById('waDirectBtn').href = `https://wa.me/${cleanPhone}?text=${encodeURIComponent('مرحباً ' + chat.student_name + '، معك خدمة عملاء تطبيق أبشر')}`;
+    Arabic texts: ['مرحباً', '،', 'معك', 'خدمة', 'عملاء', 'تطبيق', 'أبشر'] [NO TRANSLATION KEY]
+  Line 135: { sender: 'student', text: chat.last_msg || 'مرحباً خدمة العملاء', time: chat.time || 'الآن' }
+    Arabic texts: ['مرحباً', 'خدمة', 'العملاء', 'الآن'] [NO TRANSLATION KEY]
+  Line 144: ${m.sender === 'admin' ? '️ خدمة العملاء (أبشر)' : '' + chat.student_name}
+    Arabic texts: ['خدمة', 'العملاء', 'أبشر'] [NO TRANSLATION KEY]
+  Line 147: <button type="button" onclick="window.quoteWaMessageGlobal && window.quoteWaMessageGlobal(${idx})" title="الرد على هذه الرسالة" style="background:none; border:none; color:#fff; cursor:pointer; padding:0 2px;"><i class="fa-solid fa-reply"></i></button>
+    Arabic texts: ['الرد', 'على', 'هذه', 'الرسالة'] [NO TRANSLATION KEY]
+  Line 149: <button type="button" onclick="window.editWaMessageGlobal && window.editWaMessageGlobal(${idx})" title="تعديل الرسالة" style="background:none; border:none; color:#fbbf24; cursor:pointer; padding:0 2px;"><i class="fa-solid fa-pen"></i></button>
+    Arabic texts: ['تعديل', 'الرسالة'] [NO TRANSLATION KEY]
+  Line 150: <button type="button" onclick="window.deleteWaMessageGlobal && window.deleteWaMessageGlobal(${idx})" title="حذف الرسالة" style="background:none; border:none; color:#ef4444; cursor:pointer; padding:0 2px;"><i class="fa-solid fa-trash"></i></button>
+    Arabic texts: ['حذف', 'الرسالة'] [NO TRANSLATION KEY]
+  Line 156: <strong style="color: #25D366; display: block; font-size: 0.75rem;">↩️ رد على ${m.quoteSender === 'admin' ? 'خدمة العملاء' : chat.student_name}:</strong>
+    Arabic texts: ['رد', 'على', 'خدمة', 'العملاء'] [NO TRANSLATION KEY]
+  Line 169: <strong style="display: block; font-size: 0.85rem; color: #60a5fa;">رابط مرفق</strong>
+    Arabic texts: ['رابط', 'مرفق'] [NO TRANSLATION KEY]
+  Line 223: const currentText = chat.messages[idx].text.replace('(معدلة)', '');
+    Arabic texts: ['معدلة'] [NO TRANSLATION KEY]
+  Line 225: title: 'تعديل الرسالة',
+    Arabic texts: ['تعديل', 'الرسالة'] [NO TRANSLATION KEY]
+  Line 226: message: 'تعديل نص الرسالة:',
+    Arabic texts: ['تعديل', 'نص', 'الرسالة'] [NO TRANSLATION KEY]
+  Line 228: placeholder: 'اكتب الرسالة المعدلة هنا...'
+    Arabic texts: ['اكتب', 'الرسالة', 'المعدلة', 'هنا'] [NO TRANSLATION KEY]
+  Line 231: chat.messages[idx].text = newText.trim() + ' (معدلة)';
+    Arabic texts: ['معدلة'] [NO TRANSLATION KEY]
+  Line 233: showToast('تم تعديل الرسالة بنجاح ✏️');
+    Arabic texts: ['تم', 'تعديل', 'الرسالة', 'بنجاح'] [NO TRANSLATION KEY]
+  Line 242: title: 'مسح الرسالة',
+    Arabic texts: ['مسح', 'الرسالة'] [NO TRANSLATION KEY]
+  Line 243: message: 'هل أنت متأكد من رغبتك في مسح هذه الرسالة؟',
+    Arabic texts: ['هل', 'أنت', 'متأكد', 'من', 'رغبتك', 'في', 'مسح', 'هذه', 'الرسالة؟'] [NO TRANSLATION KEY]
+  Line 244: confirmText: 'مسح',
+    Arabic texts: ['مسح'] [NO TRANSLATION KEY]
+  Line 245: cancelText: 'إلغاء',
+    Arabic texts: ['إلغاء'] [NO TRANSLATION KEY]
+  Line 249: chat.messages[idx].text = 'تم حذف هذه الرسالة من قبل خدمة العملاء';
+    Arabic texts: ['تم', 'حذف', 'هذه', 'الرسالة', 'من', 'قبل', 'خدمة', 'العملاء'] [NO TRANSLATION KEY]
+  Line 252: showToast('تم حذف الرسالة بنجاح 🗑️');
+    Arabic texts: ['تم', 'حذف', 'الرسالة', 'بنجاح'] [NO TRANSLATION KEY]
+  Line 261: title: 'حظر الطالب وإغلاق الشات',
+    Arabic texts: ['حظر', 'الطالب', 'وإغلاق', 'الشات'] [NO TRANSLATION KEY]
+  Line 262: message: `هل أنت متأكد من حظر الطالب (${chat.student_name}) وإغلاق الشات؟`,
+    Arabic texts: ['هل', 'أنت', 'متأكد', 'من', 'حظر', 'الطالب', 'وإغلاق', 'الشات؟'] [NO TRANSLATION KEY]
+  Line 263: confirmText: 'حظر',
+    Arabic texts: ['حظر'] [NO TRANSLATION KEY]
+  Line 264: cancelText: 'إلغاء',
+    Arabic texts: ['إلغاء'] [NO TRANSLATION KEY]
+  Line 268: chat.status = 'محظور';
+    Arabic texts: ['محظور'] [NO TRANSLATION KEY]
+  Line 272: text: 'تم حظر هذا الحساب من قبل إدارة خدمة العملاء ولن يتم استقبال رسائل جديدة.',
+    Arabic texts: ['تم', 'حظر', 'هذا', 'الحساب', 'من', 'قبل', 'إدارة', 'خدمة', 'العملاء', 'ولن', 'يتم', 'استقبال', 'رسائل', 'جديدة'] [NO TRANSLATION KEY]
+  Line 273: time: 'الآن'
+    Arabic texts: ['الآن'] [NO TRANSLATION KEY]
+  Line 275: chat.last_msg = 'تم حظر الطالب';
+    Arabic texts: ['تم', 'حظر', 'الطالب'] [NO TRANSLATION KEY]
+  Line 278: showToast('تم حظر الطالب وإغلاق المحادثة بنجاح');
+    Arabic texts: ['تم', 'حظر', 'الطالب', 'وإغلاق', 'المحادثة', 'بنجاح'] [NO TRANSLATION KEY]
+  Line 342: showToast('تم إرسال ردك إلى الطالب وحفظه في السيرفر! ✅');
+    Arabic texts: ['تم', 'إرسال', 'ردك', 'إلى', 'الطالب', 'وحفظه', 'في', 'السيرفر'] [NO TRANSLATION KEY]
+  Line 344: showToast('فشل في إرسال الرسالة');
+    Arabic texts: ['فشل', 'في', 'إرسال', 'الرسالة'] [NO TRANSLATION KEY]
+  Line 348: showToast('خطأ في الاتصال بالخادم');
+    Arabic texts: ['خطأ', 'في', 'الاتصال', 'بالخادم'] [NO TRANSLATION KEY]
+  Line 373: showToast('فشل في إرسال الرسالة');
+    Arabic texts: ['فشل', 'في', 'إرسال', 'الرسالة'] [NO TRANSLATION KEY]
+  Line 377: showToast('خطأ في الاتصال بالخادم');
+    Arabic texts: ['خطأ', 'في', 'الاتصال', 'بالخادم'] [NO TRANSLATION KEY]
+  Line 384: if (!chat) { showToast('يرجى تحديد محادثة أولاً'); return; }
+    Arabic texts: ['يرجى', 'تحديد', 'محادثة', 'أولاً'] [NO TRANSLATION KEY]
+  Line 386: title: 'إرسال رابط',
+    Arabic texts: ['إرسال', 'رابط'] [NO TRANSLATION KEY]
+  Line 387: message: 'أدخل الرابط الذي تريد إرساله للطالب:',
+    Arabic texts: ['أدخل', 'الرابط', 'الذي', 'تريد', 'إرساله', 'للطالب'] [NO TRANSLATION KEY]
+  Line 392: sendCustomWaMessage({ type: 'link', text: `رابط مرفق: ${linkUrl.trim()}`, imageUrl: linkUrl.trim() });
+    Arabic texts: ['رابط', 'مرفق'] [NO TRANSLATION KEY]
+  Line 397: showToast('جاري تسجيل فويس نوت... (تحدث الآن)');
+    Arabic texts: ['جاري', 'تسجيل', 'فويس', 'نوت', 'تحدث', 'الآن'] [NO TRANSLATION KEY]
+  Line 399: sendCustomWaMessage({ type: 'voice', text: 'فويس نوت صوتي مسجل' });
+    Arabic texts: ['فويس', 'نوت', 'صوتي', 'مسجل'] [NO TRANSLATION KEY]
+  Line 400: showToast('تم إرسال التسجيل الصوتي بنجاح');
+    Arabic texts: ['تم', 'إرسال', 'التسجيل', 'الصوتي', 'بنجاح'] [NO TRANSLATION KEY]
+  Line 428: showToast('⏳ جاري ضغط ورفع الصورة...');
+    Arabic texts: ['جاري', 'ضغط', 'ورفع', 'الصورة'] [NO TRANSLATION KEY]
+  Line 444: text: 'صورة مرفقة من الإدارة',
+    Arabic texts: ['صورة', 'مرفقة', 'من', 'الإدارة'] [NO TRANSLATION KEY]
+  Line 447: showToast('تم إرسال الصورة بنجاح! ✅');
+    Arabic texts: ['تم', 'إرسال', 'الصورة', 'بنجاح'] [NO TRANSLATION KEY]
+  Line 449: showToast('فشل رفع الصورة: ' + (data.message || 'خطأ غير معروف'));
+    Arabic texts: ['فشل', 'رفع', 'الصورة', 'خطأ', 'غير', 'معروف'] [NO TRANSLATION KEY]
+  Line 453: showToast('خطأ أثناء رفع الصورة');
+    Arabic texts: ['خطأ', 'أثناء', 'رفع', 'الصورة'] [NO TRANSLATION KEY]
+  Line 480: showToast('⏳ جاري ضغط ورفع الصورة...');
+    Arabic texts: ['جاري', 'ضغط', 'ورفع', 'الصورة'] [NO TRANSLATION KEY]
+  Line 495: text: 'صورة مرفقة من الإدارة',
+    Arabic texts: ['صورة', 'مرفقة', 'من', 'الإدارة'] [NO TRANSLATION KEY]
+  Line 498: showToast('تم إرسال الصورة بنجاح! ✅');
+    Arabic texts: ['تم', 'إرسال', 'الصورة', 'بنجاح'] [NO TRANSLATION KEY]
+  Line 500: showToast('فشل رفع الصورة: ' + (data.message || 'خطأ غير معروف'));
+    Arabic texts: ['فشل', 'رفع', 'الصورة', 'خطأ', 'غير', 'معروف'] [NO TRANSLATION KEY]
+  Line 504: showToast('خطأ أثناء رفع الصورة');
+    Arabic texts: ['خطأ', 'أثناء', 'رفع', 'الصورة'] [NO TRANSLATION KEY]
+
+File: js\modules\dashboard.js
+-----------------------------
+  Line 16: const pendingReqs = appData.requests.filter(r => r.status === 'قيد المراجعة' || r.status === 'under_review' || r.status === 'pending_cash' || r.status === 'انتظار الدفع النقدي');
+    Arabic texts: ['قيد', 'المراجعة', 'انتظار', 'الدفع', 'النقدي'] [NO TRANSLATION KEY]
+  Line 22: c => !c.status.includes('تم الرد') && !c.status.includes('مكتمل')
+    Arabic texts: ['تم', 'الرد', 'مكتمل'] [NO TRANSLATION KEY]
+  Line 86: serviceContainer.innerHTML = '<p style="color: var(--text-muted); text-align: center; font-size: 0.9rem; padding: 1rem;">لا توجد إحصائيات خدمات بعد</p>';
+    Arabic texts: ['لا', 'توجد', 'إحصائيات', 'خدمات', 'بعد'] [NO TRANSLATION KEY]
+  Line 91: const serviceTitle = req ? req.service_title : tr('عام / شهادة عملاء');
+    Arabic texts: ['عام', 'شهادة', 'عملاء'] [NO TRANSLATION KEY]
+  Line 111: <span style="color: var(--accent-amber); font-weight: bold;">${item.avg} ★ (${item.count} ${tr('تقييمات')})</span>
+    Arabic texts: ['تقييمات'] [NO TRANSLATION KEY]
+
+File: js\modules\districts.js
+-----------------------------
+  Line 37: showToast('تمت إضافة الحي بنجاح');
+    Arabic texts: ['تمت', 'إضافة', 'الحي', 'بنجاح'] [NO TRANSLATION KEY]
+  Line 41: showToast('حدث خطأ أثناء إضافة الحي');
+    Arabic texts: ['حدث', 'خطأ', 'أثناء', 'إضافة', 'الحي'] [NO TRANSLATION KEY]
+  Line 45: showToast('خطأ في الاتصال بالخادم');
+    Arabic texts: ['خطأ', 'في', 'الاتصال', 'بالخادم'] [NO TRANSLATION KEY]
+  Line 51: title: 'تأكيد حذف الحي',
+    Arabic texts: ['تأكيد', 'حذف', 'الحي'] [NO TRANSLATION KEY]
+  Line 52: message: 'هل أنت متأكد من حذف هذا الحي؟',
+    Arabic texts: ['هل', 'أنت', 'متأكد', 'من', 'حذف', 'هذا', 'الحي؟'] [NO TRANSLATION KEY]
+  Line 67: showToast('تم حذف الحي بنجاح ️');
+    Arabic texts: ['تم', 'حذف', 'الحي', 'بنجاح'] [NO TRANSLATION KEY]
+  Line 69: showToast('حدث خطأ أثناء الحذف');
+    Arabic texts: ['حدث', 'خطأ', 'أثناء', 'الحذف'] [NO TRANSLATION KEY]
+  Line 73: showToast('خطأ في الاتصال بالخادم');
+    Arabic texts: ['خطأ', 'في', 'الاتصال', 'بالخادم'] [NO TRANSLATION KEY]
+  Line 81: districtSelect.innerHTML = '<option value="">-- اختر الحي --</option>' + (appData.districts || []).map(dist => `
+    Arabic texts: ['اختر', 'الحي'] [NO TRANSLATION KEY]
+  Line 91: locationInput.placeholder = `مثال: ${appData.districts[0].name}، شارع بيكيني`;
+    Arabic texts: ['مثال', '،', 'شارع', 'بيكيني'] [NO TRANSLATION KEY]
+
+File: js\modules\feedback.js
+----------------------------
+  Line 35: لا توجد تذاكر بلاغات أو مقترحات مطابقة
+    Arabic texts: ['لا', 'توجد', 'تذاكر', 'بلاغات', 'أو', 'مقترحات', 'مطابقة'] [NO TRANSLATION KEY]
+  Line 45: let statusText = 'قيد الانتظار';
+    Arabic texts: ['قيد', 'الانتظار'] [NO TRANSLATION KEY]
+  Line 50: statusText = 'تمت المراجعة';
+    Arabic texts: ['تمت', 'المراجعة'] [NO TRANSLATION KEY]
+  Line 54: statusText = 'تم حلها';
+    Arabic texts: ['تم', 'حلها'] [NO TRANSLATION KEY]
+  Line 61: 'suggestion':      { ar: 'مقترح',                     en: 'Suggestion',     style: 'background: rgba(139, 92, 246, 0.15); color: #8b5cf6;' },
+    Arabic texts: ['مقترح'] [NO TRANSLATION KEY]
+  Line 62: 'bug':             { ar: 'بلاغ عطل',                   en: 'Bug Report',     style: 'background: rgba(239, 68, 68, 0.15); color: #ef4444;' },
+    Arabic texts: ['بلاغ', 'عطل'] [NO TRANSLATION KEY]
+  Line 63: 'ux':              { ar: 'ملاحظة واجهة المستخدم',      en: 'UX Feedback',    style: 'background: rgba(245, 158, 11, 0.15); color: #f59e0b;' },
+    Arabic texts: ['ملاحظة', 'واجهة', 'المستخدم'] [NO TRANSLATION KEY]
+  Line 64: 'feature':         { ar: 'طلب ميزة جديدة',              en: 'Feature Request', style: 'background: rgba(16, 185, 129, 0.15); color: #10b981;' }
+    Arabic texts: ['طلب', 'ميزة', 'جديدة'] [NO TRANSLATION KEY]
+  Line 82: <td style="font-weight: bold; color: var(--text-main); white-space: nowrap;">${item.student_name || 'طالب مجهول'}</td>
+    Arabic texts: ['طالب', 'مجهول'] [NO TRANSLATION KEY]
+  Line 105: <option value="pending" ${item.status === 'pending' ? 'selected' : ''}>${tr('قيد الانتظار')}</option>
+    Arabic texts: ['قيد', 'الانتظار'] [NO TRANSLATION KEY]
+  Line 106: <option value="reviewed" ${item.status === 'reviewed' ? 'selected' : ''}>${tr('تمت المراجعة')}</option>
+    Arabic texts: ['تمت', 'المراجعة'] [NO TRANSLATION KEY]
+  Line 107: <option value="resolved" ${item.status === 'resolved' ? 'selected' : ''}>${tr('تم حلها')}</option>
+    Arabic texts: ['تم', 'حلها'] [NO TRANSLATION KEY]
+  Line 139: showToast('تم تحديث حالة التذكرة بنجاح ️');
+    Arabic texts: ['تم', 'تحديث', 'حالة', 'التذكرة', 'بنجاح'] [NO TRANSLATION KEY]
+  Line 141: showToast('خطأ: ' + (data.message || ''));
+    Arabic texts: ['خطأ'] [NO TRANSLATION KEY]
+  Line 145: showToast('خطأ في الاتصال بالخادم');
+    Arabic texts: ['خطأ', 'في', 'الاتصال', 'بالخادم'] [NO TRANSLATION KEY]
+  Line 155: title: 'تأكيد حذف التذكرة',
+    Arabic texts: ['تأكيد', 'حذف', 'التذكرة'] [NO TRANSLATION KEY]
+  Line 156: message: 'هل أنت متأكد من رغبتك في حذف هذه التذكرة؟',
+    Arabic texts: ['هل', 'أنت', 'متأكد', 'من', 'رغبتك', 'في', 'حذف', 'هذه', 'التذكرة؟'] [NO TRANSLATION KEY]
+  Line 157: confirmText: 'حذف',
+    Arabic texts: ['حذف'] [NO TRANSLATION KEY]
+  Line 158: cancelText: 'إلغاء',
+    Arabic texts: ['إلغاء'] [NO TRANSLATION KEY]
+  Line 178: showToast('تم حذف تذكرة الملاحظات بنجاح ️');
+    Arabic texts: ['تم', 'حذف', 'تذكرة', 'الملاحظات', 'بنجاح'] [NO TRANSLATION KEY]
+  Line 180: showToast('حدث خطأ أثناء الحذف: ' + (data.message || ''));
+    Arabic texts: ['حدث', 'خطأ', 'أثناء', 'الحذف'] [NO TRANSLATION KEY]
+  Line 185: showToast('خطأ في الاتصال بالخادم');
+    Arabic texts: ['خطأ', 'في', 'الاتصال', 'بالخادم'] [NO TRANSLATION KEY]
+
+File: js\modules\news.js
+------------------------
+  Line 17: container.innerHTML = `<tr><td colspan="6" style="text-align: center; color: var(--text-muted);">${tr('لا يوجد أخبار أو تنبيهات منشورة حالياً')} </td></tr>`;
+    Arabic texts: ['لا', 'يوجد', 'أخبار', 'أو', 'تنبيهات', 'منشورة', 'حالياً'] [NO TRANSLATION KEY]
+  Line 35: ` : `<span style="color: var(--text-muted); font-size: 0.8rem;">${tr('لا توجد صورة')}</span>`}
+    Arabic texts: ['لا', 'توجد', 'صورة'] [NO TRANSLATION KEY]
+  Line 39: <td>${item.date || item.created_at || tr('الآن')}</td>
+    Arabic texts: ['الآن'] [NO TRANSLATION KEY]
+  Line 69: showToast(result.message || 'تم نشر الخبر بنجاح!');
+    Arabic texts: ['تم', 'نشر', 'الخبر', 'بنجاح'] [NO TRANSLATION KEY]
+  Line 71: showToast('خطأ: ' + (result.message || ''));
+    Arabic texts: ['خطأ'] [NO TRANSLATION KEY]
+  Line 75: showToast('خطأ في الاتصال بالخادم');
+    Arabic texts: ['خطأ', 'في', 'الاتصال', 'بالخادم'] [NO TRANSLATION KEY]
+  Line 91: title: 'تأكيد حذف الخبر',
+    Arabic texts: ['تأكيد', 'حذف', 'الخبر'] [NO TRANSLATION KEY]
+  Line 92: message: 'هل أنت متأكد من رغبتك في حذف هذا الخبر نهائياً؟',
+    Arabic texts: ['هل', 'أنت', 'متأكد', 'من', 'رغبتك', 'في', 'حذف', 'هذا', 'الخبر', 'نهائياً؟'] [NO TRANSLATION KEY]
+  Line 107: showToast(result.message || 'تم حذف الخبر بنجاح ️');
+    Arabic texts: ['تم', 'حذف', 'الخبر', 'بنجاح'] [NO TRANSLATION KEY]
+  Line 109: showToast('خطأ: ' + (result.message || ''));
+    Arabic texts: ['خطأ'] [NO TRANSLATION KEY]
+  Line 113: showToast('خطأ في الاتصال بالخادم');
+    Arabic texts: ['خطأ', 'في', 'الاتصال', 'بالخادم'] [NO TRANSLATION KEY]
+
+File: js\modules\notifications.js
+---------------------------------
+  Line 10: container.innerHTML = `<tr><td colspan="6" style="text-align: center; color: var(--text-muted);">${tr('لا يوجد تنبيهات عاجلة منشورة حالياً')} </td></tr>`;
+    Arabic texts: ['لا', 'يوجد', 'تنبيهات', 'عاجلة', 'منشورة', 'حالياً'] [NO TRANSLATION KEY]
+  Line 29: ? `<span style="background: rgba(239, 68, 68, 0.15); color: #ef4444; border: 1px solid #ef4444; padding: 4px 10px; border-radius: 12px; font-weight: bold; font-size: 0.8rem;">${tr('منتهي الصلاحية (مضى 48 ساعة)')} </span>`
+    Arabic texts: ['منتهي', 'الصلاحية', 'مضى', 'ساعة'] [NO TRANSLATION KEY]
+  Line 30: : `<span style="background: rgba(37, 211, 102, 0.18); color: #25D366; border: 1px solid #25D366; padding: 4px 10px; border-radius: 12px; font-weight: bold; font-size: 0.8rem;">${tr('نشط وفعال للطالب')} </span>`;
+    Arabic texts: ['نشط', 'وفعال', 'للطالب'] [NO TRANSLATION KEY]
+  Line 37: <td>${item.date || item.created_at || tr('الآن')}</td>
+    Arabic texts: ['الآن'] [NO TRANSLATION KEY]
+  Line 68: showToast(result.message || 'تم نشر التنبيه بنجاح');
+    Arabic texts: ['تم', 'نشر', 'التنبيه', 'بنجاح'] [NO TRANSLATION KEY]
+  Line 70: showToast('خطأ: ' + (result.message || ''));
+    Arabic texts: ['خطأ'] [NO TRANSLATION KEY]
+  Line 74: showToast('خطأ في الاتصال بالخادم');
+    Arabic texts: ['خطأ', 'في', 'الاتصال', 'بالخادم'] [NO TRANSLATION KEY]
+  Line 80: title: 'تأكيد حذف التنبيه',
+    Arabic texts: ['تأكيد', 'حذف', 'التنبيه'] [NO TRANSLATION KEY]
+  Line 81: message: 'هل أنت متأكد من رغبتك في حذف هذا التنبيه نهائياً؟',
+    Arabic texts: ['هل', 'أنت', 'متأكد', 'من', 'رغبتك', 'في', 'حذف', 'هذا', 'التنبيه', 'نهائياً؟'] [NO TRANSLATION KEY]
+  Line 96: showToast(result.message || 'تم حذف التنبيه بنجاح ️');
+    Arabic texts: ['تم', 'حذف', 'التنبيه', 'بنجاح'] [NO TRANSLATION KEY]
+  Line 98: showToast('خطأ: ' + (result.message || ''));
+    Arabic texts: ['خطأ'] [NO TRANSLATION KEY]
+  Line 102: showToast('خطأ في الاتصال بالخادم');
+    Arabic texts: ['خطأ', 'في', 'الاتصال', 'بالخادم'] [NO TRANSLATION KEY]
+
+File: js\modules\offers.js
+--------------------------
+  Line 32: active: 'نشط حالياً',
+    Arabic texts: ['نشط', 'حالياً'] [NO TRANSLATION KEY]
+  Line 33: scheduled: 'مجدول مستقبلاً',
+    Arabic texts: ['مجدول', 'مستقبلاً'] [NO TRANSLATION KEY]
+  Line 34: expired: 'منتهي الصلاحية',
+    Arabic texts: ['منتهي', 'الصلاحية'] [NO TRANSLATION KEY]
+  Line 35: disabled: 'معطل / غير نشط'
+    Arabic texts: ['معطل', 'غير', 'نشط'] [NO TRANSLATION KEY]
+  Line 56: <p>لا يوجد عروض سكن حالية مطابقة للبحث.</p>
+    Arabic texts: ['لا', 'يوجد', 'عروض', 'سكن', 'حالية', 'مطابقة', 'للبحث'] [NO TRANSLATION KEY]
+  Line 70: const aptTitle = apt ? apt.title : 'شقة غير معروفة';
+    Arabic texts: ['شقة', 'غير', 'معروفة'] [NO TRANSLATION KEY]
+  Line 99: خصم ${discount}%
+    Arabic texts: ['خصم'] [NO TRANSLATION KEY]
+  Line 104: <i class="fa-solid fa-building" style="color: var(--accent-amber);"></i> الشقة: <strong>#${ho.apartment_id} - ${aptTitle}</strong>
+    Arabic texts: ['الشقة'] [NO TRANSLATION KEY]
+  Line 107: ${tr('السعر الأصلي')}: <span style="text-decoration: lineThrough; color: var(--text-muted);">${ho.original_price} $</span>
+    Arabic texts: ['السعر', 'الأصلي'] [NO TRANSLATION KEY]
+  Line 109: ${ho.starts_at ? `<p style="margin: 4px 0; font-size: 0.78rem; color: var(--text-muted);"><i class="fa-solid fa-calendar-check"></i> ${tr('يبدأ')}: ${ho.starts_at}</p>` : ''}
+    Arabic texts: ['يبدأ'] [NO TRANSLATION KEY]
+  Line 110: ${ho.expires_at ? `<p style="margin: 4px 0; font-size: 0.78rem; color: var(--text-muted);"><i class="fa-solid fa-calendar-xmark"></i> ${tr('ينتهي')}: ${ho.expires_at}</p>` : ''}
+    Arabic texts: ['ينتهي'] [NO TRANSLATION KEY]
+  Line 113: <span style="font-size: 0.85rem; color: var(--text-muted);">${tr('الترتيب')}: <strong>${ho.display_order}</strong></span>
+    Arabic texts: ['الترتيب'] [NO TRANSLATION KEY]
+  Line 114: <button class="btn btn-secondary" style="padding: 2px 8px; font-size: 0.8rem;" onclick="window.moveOfferGlobal(${ho.id}, 'up')" title="نقل لأعلى"><i class="fa-solid fa-chevron-up"></i></button>
+    Arabic texts: ['نقل', 'لأعلى'] [NO TRANSLATION KEY]
+  Line 115: <button class="btn btn-secondary" style="padding: 2px 8px; font-size: 0.8rem;" onclick="window.moveOfferGlobal(${ho.id}, 'down')" title="نقل لأسفل"><i class="fa-solid fa-chevron-down"></i></button>
+    Arabic texts: ['نقل', 'لأسفل'] [NO TRANSLATION KEY]
+  Line 141: select.innerHTML = '<option value="">-- اختر الشقة المرتبطة بالعرض --</option>' + availableApts.map(apt => `
+    Arabic texts: ['اختر', 'الشقة', 'المرتبطة', 'بالعرض'] [NO TRANSLATION KEY]
+  Line 156: if (orig <= 0) { showToast('يجب أن يكون السعر الأصلي أكبر من الصفر'); return; }
+    Arabic texts: ['يجب', 'أن', 'يكون', 'السعر', 'الأصلي', 'أكبر', 'من', 'الصفر'] [NO TRANSLATION KEY]
+  Line 157: if (off < 0) { showToast('يجب أن يكون سعر العرض أكبر من أو يساوي الصفر'); return; }
+    Arabic texts: ['يجب', 'أن', 'يكون', 'سعر', 'العرض', 'أكبر', 'من', 'أو', 'يساوي', 'الصفر'] [NO TRANSLATION KEY]
+  Line 158: if (off >= orig) { showToast('يجب أن يكون سعر العرض أقل من السعر الأصلي'); return; }
+    Arabic texts: ['يجب', 'أن', 'يكون', 'سعر', 'العرض', 'أقل', 'من', 'السعر', 'الأصلي'] [NO TRANSLATION KEY]
+  Line 160: showToast('يجب أن يكون تاريخ البدء قبل تاريخ الانتهاء');
+    Arabic texts: ['يجب', 'أن', 'يكون', 'تاريخ', 'البدء', 'قبل', 'تاريخ', 'الانتهاء'] [NO TRANSLATION KEY]
+  Line 178: if (!payload.apartment_id) { showToast('يرجى اختيار الشقة المرتبطة'); return; }
+    Arabic texts: ['يرجى', 'اختيار', 'الشقة', 'المرتبطة'] [NO TRANSLATION KEY]
+  Line 179: if (!payload.title) { showToast('يرجى إدخال عنوان العرض'); return; }
+    Arabic texts: ['يرجى', 'إدخال', 'عنوان', 'العرض'] [NO TRANSLATION KEY]
+  Line 195: showToast('تمت إضافة العرض بنجاح ✅');
+    Arabic texts: ['تمت', 'إضافة', 'العرض', 'بنجاح'] [NO TRANSLATION KEY]
+  Line 197: showToast('فشل الإضافة: ' + (data.message || 'خطأ غير معروف'));
+    Arabic texts: ['فشل', 'الإضافة', 'خطأ', 'غير', 'معروف'] [NO TRANSLATION KEY]
+  Line 201: showToast('خطأ في الاتصال بالخادم');
+    Arabic texts: ['خطأ', 'في', 'الاتصال', 'بالخادم'] [NO TRANSLATION KEY]
+  Line 208: showToast('العرض غير موجود');
+    Arabic texts: ['العرض', 'غير', 'موجود'] [NO TRANSLATION KEY]
+  Line 252: if (!id) { showToast('معرف غير موجود'); return; }
+    Arabic texts: ['معرف', 'غير', 'موجود'] [NO TRANSLATION KEY]
+  Line 253: if (orig <= 0) { showToast('يجب أن يكون السعر الأصلي أكبر من الصفر'); return; }
+    Arabic texts: ['يجب', 'أن', 'يكون', 'السعر', 'الأصلي', 'أكبر', 'من', 'الصفر'] [NO TRANSLATION KEY]
+  Line 254: if (off < 0) { showToast('يجب أن يكون سعر العرض أكبر من أو يساوي الصفر'); return; }
+    Arabic texts: ['يجب', 'أن', 'يكون', 'سعر', 'العرض', 'أكبر', 'من', 'أو', 'يساوي', 'الصفر'] [NO TRANSLATION KEY]
+  Line 255: if (off >= orig) { showToast('يجب أن يكون سعر العرض أقل من السعر الأصلي'); return; }
+    Arabic texts: ['يجب', 'أن', 'يكون', 'سعر', 'العرض', 'أقل', 'من', 'السعر', 'الأصلي'] [NO TRANSLATION KEY]
+  Line 257: showToast('يجب أن يكون تاريخ البدء قبل تاريخ الانتهاء');
+    Arabic texts: ['يجب', 'أن', 'يكون', 'تاريخ', 'البدء', 'قبل', 'تاريخ', 'الانتهاء'] [NO TRANSLATION KEY]
+  Line 276: if (!payload.apartment_id) { showToast('يرجى اختيار الشقة المرتبطة'); return; }
+    Arabic texts: ['يرجى', 'اختيار', 'الشقة', 'المرتبطة'] [NO TRANSLATION KEY]
+  Line 277: if (!payload.title) { showToast('يرجى إدخال عنوان العرض'); return; }
+    Arabic texts: ['يرجى', 'إدخال', 'عنوان', 'العرض'] [NO TRANSLATION KEY]
+  Line 289: showToast('تم تحديث العرض بنجاح ✅');
+    Arabic texts: ['تم', 'تحديث', 'العرض', 'بنجاح'] [NO TRANSLATION KEY]
+  Line 291: showToast('فشل التحديث: ' + (data.message || 'خطأ غير معروف'));
+    Arabic texts: ['فشل', 'التحديث', 'خطأ', 'غير', 'معروف'] [NO TRANSLATION KEY]
+  Line 295: showToast('خطأ في الاتصال بالخادم');
+    Arabic texts: ['خطأ', 'في', 'الاتصال', 'بالخادم'] [NO TRANSLATION KEY]
+  Line 301: title: 'تأكيد حذف العرض الحصري',
+    Arabic texts: ['تأكيد', 'حذف', 'العرض', 'الحصري'] [NO TRANSLATION KEY]
+  Line 302: message: 'هل أنت متأكد من رغبتك في حذف هذا العرض الحصري؟',
+    Arabic texts: ['هل', 'أنت', 'متأكد', 'من', 'رغبتك', 'في', 'حذف', 'هذا', 'العرض', 'الحصري؟'] [NO TRANSLATION KEY]
+  Line 317: showToast('تم حذف العرض بنجاح 🗑️');
+    Arabic texts: ['تم', 'حذف', 'العرض', 'بنجاح'] [NO TRANSLATION KEY]
+  Line 319: showToast('فشل الحذف: ' + data.message);
+    Arabic texts: ['فشل', 'الحذف'] [NO TRANSLATION KEY]
+  Line 323: showToast('خطأ في الاتصال بالخادم');
+    Arabic texts: ['خطأ', 'في', 'الاتصال', 'بالخادم'] [NO TRANSLATION KEY]
+  Line 331: const actionText = isActive ? 'تفعيل' : 'تعطيل';
+    Arabic texts: ['تفعيل', 'تعطيل'] [NO TRANSLATION KEY]
+  Line 333: title: `تأكيد ${actionText} العرض`,
+    Arabic texts: ['تأكيد', 'العرض'] [NO TRANSLATION KEY]
+  Line 334: message: `هل أنت متأكد من رغبتك في ${actionText} هذا العرض الحصري؟`,
+    Arabic texts: ['هل', 'أنت', 'متأكد', 'من', 'رغبتك', 'في', 'هذا', 'العرض', 'الحصري؟'] [NO TRANSLATION KEY]
+  Line 336: cancelText: 'إلغاء',
+    Arabic texts: ['إلغاء'] [NO TRANSLATION KEY]
+  Line 365: showToast(isActive ? 'تم تفعيل العرض بنجاح ✅' : 'تم تعطيل العرض بنجاح ❌');
+    Arabic texts: ['تم', 'تفعيل', 'العرض', 'بنجاح', 'تم', 'تعطيل', 'العرض', 'بنجاح'] [NO TRANSLATION KEY]
+  Line 367: showToast('فشل تحديث حالة العرض: ' + data.message);
+    Arabic texts: ['فشل', 'تحديث', 'حالة', 'العرض'] [NO TRANSLATION KEY]
+  Line 371: showToast('خطأ في الاتصال بالخادم');
+    Arabic texts: ['خطأ', 'في', 'الاتصال', 'بالخادم'] [NO TRANSLATION KEY]
+  Line 411: showToast('تم حفظ الترتيب الجديد بنجاح ✅');
+    Arabic texts: ['تم', 'حفظ', 'الترتيب', 'الجديد', 'بنجاح'] [NO TRANSLATION KEY]
+  Line 413: showToast('فشل إعادة الترتيب: ' + data.message);
+    Arabic texts: ['فشل', 'إعادة', 'الترتيب'] [NO TRANSLATION KEY]
+  Line 417: showToast('خطأ في الاتصال بالخادم');
+    Arabic texts: ['خطأ', 'في', 'الاتصال', 'بالخادم'] [NO TRANSLATION KEY]
+
+File: js\modules\requests.js
+----------------------------
+  Line 22: if (r.status === 'قيد المراجعة' || r.status === 'under_review' || r.status === 'pending_cash' || r.status === 'انتظار الدفع النقدي') countPending++;
+    Arabic texts: ['قيد', 'المراجعة', 'انتظار', 'الدفع', 'النقدي'] [NO TRANSLATION KEY]
+  Line 30: if (c.includes('الجامعة:')) uniStr = c.replace('الجامعة:', '').trim();
+    Arabic texts: ['الجامعة', 'الجامعة'] [NO TRANSLATION KEY]
+  Line 31: if (c.includes('الجنسية:')) natStr = c.replace('الجنسية:', '').trim();
+    Arabic texts: ['الجنسية', 'الجنسية'] [NO TRANSLATION KEY]
+  Line 36: if (req.status === 'under_review' || req.status === 'قيد المراجعة') {
+    Arabic texts: ['قيد', 'المراجعة'] [NO TRANSLATION KEY]
+  Line 38: } else if (req.status === 'pending_cash' || req.status === 'انتظار الدفع النقدي') {
+    Arabic texts: ['انتظار', 'الدفع', 'النقدي'] [NO TRANSLATION KEY]
+  Line 40: } else if (req.status === 'in_progress' || req.status === 'جاري التنفيذ') {
+    Arabic texts: ['جاري', 'التنفيذ'] [NO TRANSLATION KEY]
+  Line 42: } else if (req.status === 'completed' || req.status === 'مكتمل') {
+    Arabic texts: ['مكتمل'] [NO TRANSLATION KEY]
+  Line 56: <div style="font-weight: bold; color: var(--accent-amber); margin-bottom: 6px; font-size: 0.95rem;">${req.type || req.service_title || 'طلب خدمة'}</div>
+    Arabic texts: ['طلب', 'خدمة'] [NO TRANSLATION KEY]
+  Line 63: return `<span style="background: rgba(56, 189, 248, 0.15); color: #38bdf8; border: 1px solid #38bdf8; padding: 2px 8px; border-radius: 8px; font-size: 0.75rem; font-weight: bold;"> محفظة (خصم ${pc} نقاط)</span>`;
+    Arabic texts: ['محفظة', 'خصم', 'نقاط'] [NO TRANSLATION KEY]
+  Line 65: return `<span style="background: rgba(167, 139, 250, 0.15); color: #a78bfa; border: 1px solid #a78bfa; padding: 2px 8px; border-radius: 8px; font-size: 0.75rem; font-weight: bold;"> كاش (السعر: ${spp} نقاط)</span>`;
+    Arabic texts: ['كاش', 'السعر', 'نقاط'] [NO TRANSLATION KEY]
+  Line 67: return `<span style="background: rgba(34, 197, 94, 0.15); color: #22c55e; border: 1px solid #22c55e; padding: 2px 8px; border-radius: 8px; font-size: 0.75rem; font-weight: bold;"> مجانية</span>`;
+    Arabic texts: ['مجانية'] [NO TRANSLATION KEY]
+  Line 76: <option value="under_review" style="color:#fbbf24;" ${(req.status === 'under_review' || req.status === 'قيد المراجعة') ? 'selected' : ''}>⏳ ${tr('قيد المراجعة')}</option>
+    Arabic texts: ['قيد', 'المراجعة', 'قيد', 'المراجعة'] [NO TRANSLATION KEY]
+  Line 77: <option value="pending_cash" style="color:#a78bfa;" ${(req.status === 'pending_cash' || req.status === 'انتظار الدفع النقدي') ? 'selected' : ''}>💵 ${tr('انتظار الدفع النقدي')}</option>
+    Arabic texts: ['انتظار', 'الدفع', 'النقدي', 'انتظار', 'الدفع', 'النقدي'] [NO TRANSLATION KEY]
+  Line 78: <option value="in_progress" style="color:#38bdf8;" ${(req.status === 'in_progress' || req.status === 'جاري التنفيذ') ? 'selected' : ''}>⚙️ ${tr('جاري التنفيذ')}</option>
+    Arabic texts: ['جاري', 'التنفيذ', 'جاري', 'التنفيذ'] [NO TRANSLATION KEY]
+  Line 79: <option value="completed" style="color:#25D366;" ${(req.status === 'completed' || req.status === 'مكتمل') ? 'selected' : ''}>✅ ${tr('مكتمل')}</option>
+    Arabic texts: ['مكتمل', 'مكتمل'] [NO TRANSLATION KEY]
+  Line 86: title="فتح المحادثة مع الطالب">
+    Arabic texts: ['فتح', 'المحادثة', 'مع', 'الطالب'] [NO TRANSLATION KEY]
+  Line 87: <i class="fa-solid fa-comments"></i> ${tr('شات')}
+    Arabic texts: ['شات'] [NO TRANSLATION KEY]
+  Line 114: showToast('تم تحديث حالة الطلب بنجاح');
+    Arabic texts: ['تم', 'تحديث', 'حالة', 'الطلب', 'بنجاح'] [NO TRANSLATION KEY]
+  Line 116: showToast('حدث خطأ أثناء التحديث');
+    Arabic texts: ['حدث', 'خطأ', 'أثناء', 'التحديث'] [NO TRANSLATION KEY]
+  Line 120: showToast('خطأ في الاتصال بالخادم');
+    Arabic texts: ['خطأ', 'في', 'الاتصال', 'بالخادم'] [NO TRANSLATION KEY]
+  Line 126: title: 'تأكيد حذف الطلب',
+    Arabic texts: ['تأكيد', 'حذف', 'الطلب'] [NO TRANSLATION KEY]
+  Line 127: message: 'هل أنت متأكد من رغبتك في حذف هذا الطلب نهائياً؟',
+    Arabic texts: ['هل', 'أنت', 'متأكد', 'من', 'رغبتك', 'في', 'حذف', 'هذا', 'الطلب', 'نهائياً؟'] [NO TRANSLATION KEY]
+  Line 128: confirmText: 'حذف',
+    Arabic texts: ['حذف'] [NO TRANSLATION KEY]
+  Line 129: cancelText: 'إلغاء',
+    Arabic texts: ['إلغاء'] [NO TRANSLATION KEY]
+  Line 142: showToast('تم حذف الطلب بنجاح ️');
+    Arabic texts: ['تم', 'حذف', 'الطلب', 'بنجاح'] [NO TRANSLATION KEY]
+  Line 144: showToast('حدث خطأ أثناء الحذف: ' + (data.message || ''));
+    Arabic texts: ['حدث', 'خطأ', 'أثناء', 'الحذف'] [NO TRANSLATION KEY]
+  Line 148: showToast('خطأ في الاتصال بالخادم');
+    Arabic texts: ['خطأ', 'في', 'الاتصال', 'بالخادم'] [NO TRANSLATION KEY]
+  Line 160: showToast('لا توجد محادثة مفتوحة لهذا الطالب حتى الآن');
+    Arabic texts: ['لا', 'توجد', 'محادثة', 'مفتوحة', 'لهذا', 'الطالب', 'حتى', 'الآن'] [NO TRANSLATION KEY]
+
+File: js\modules\reviews.js
+---------------------------
+  Line 24: serviceTitle = tr('شهادة من محادثة خدمة العملاء');
+    Arabic texts: ['شهادة', 'من', 'محادثة', 'خدمة', 'العملاء'] [NO TRANSLATION KEY]
+  Line 25: sourceLabelText = 'testimonial شهادة عملاء';
+    Arabic texts: ['شهادة', 'عملاء'] [NO TRANSLATION KEY]
+  Line 27: sourceLabelText = 'service review تقييم خدمة';
+    Arabic texts: ['تقييم', 'خدمة'] [NO TRANSLATION KEY]
+  Line 33: serviceTitle = tr('عام / شهادة عملاء');
+    Arabic texts: ['عام', 'شهادة', 'عملاء'] [NO TRANSLATION KEY]
+  Line 63: لا توجد تقييمات مطابقة للفلاتر الحالية
+    Arabic texts: ['لا', 'توجد', 'تقييمات', 'مطابقة', 'للفلاتر', 'الحالية'] [NO TRANSLATION KEY]
+  Line 81: serviceTitle = tr('شهادة من محادثة خدمة العملاء');
+    Arabic texts: ['شهادة', 'من', 'محادثة', 'خدمة', 'العملاء'] [NO TRANSLATION KEY]
+  Line 87: serviceTitle = tr('عام / شهادة عملاء');
+    Arabic texts: ['عام', 'شهادة', 'عملاء'] [NO TRANSLATION KEY]
+  Line 95: let statusText = tr('قيد الانتظار');
+    Arabic texts: ['قيد', 'الانتظار'] [NO TRANSLATION KEY]
+  Line 98: statusText = tr('مقبول');
+    Arabic texts: ['مقبول'] [NO TRANSLATION KEY]
+  Line 101: statusText = tr('مرفوض');
+    Arabic texts: ['مرفوض'] [NO TRANSLATION KEY]
+  Line 111: ? `<span class="badge" style="background: rgba(139, 92, 246, 0.15); color: #8b5cf6; font-size: 0.72rem; padding: 2px 6px; border-radius: 4px; display: inline-block; margin-bottom: 4px; font-weight: bold;">${tr('شهادة عملاء')}</span>`
+    Arabic texts: ['شهادة', 'عملاء'] [NO TRANSLATION KEY]
+  Line 112: : `<span class="badge" style="background: rgba(59, 130, 246, 0.15); color: #3b82f6; font-size: 0.72rem; padding: 2px 6px; border-radius: 4px; display: inline-block; margin-bottom: 4px; font-weight: bold;">${tr('تقييم خدمة')}</span>`;
+    Arabic texts: ['تقييم', 'خدمة'] [NO TRANSLATION KEY]
+  Line 136: : `<em style="color: var(--text-muted); opacity: 0.6;">${tr('غير متاح')}</em>`
+    Arabic texts: ['غير', 'متاح'] [NO TRANSLATION KEY]
+  Line 159: <i class="fa-solid fa-check"></i> ${tr('قبول')}
+    Arabic texts: ['قبول'] [NO TRANSLATION KEY]
+  Line 165: <i class="fa-solid fa-ban"></i> ${tr('رفض')}
+    Arabic texts: ['رفض'] [NO TRANSLATION KEY]
+  Line 202: showToast('تم تحديث حالة التقييم بنجاح ️');
+    Arabic texts: ['تم', 'تحديث', 'حالة', 'التقييم', 'بنجاح'] [NO TRANSLATION KEY]
+  Line 204: showToast('خطأ: ' + (data.message || ''));
+    Arabic texts: ['خطأ'] [NO TRANSLATION KEY]
+  Line 208: showToast('خطأ في الاتصال بالخادم');
+    Arabic texts: ['خطأ', 'في', 'الاتصال', 'بالخادم'] [NO TRANSLATION KEY]
+  Line 219: title: 'تأكيد حذف التقييم',
+    Arabic texts: ['تأكيد', 'حذف', 'التقييم'] [NO TRANSLATION KEY]
+  Line 220: message: 'هل أنت متأكد من رغبتك في حذف هذا التقييم؟',
+    Arabic texts: ['هل', 'أنت', 'متأكد', 'من', 'رغبتك', 'في', 'حذف', 'هذا', 'التقييم؟'] [NO TRANSLATION KEY]
+  Line 221: confirmText: 'حذف',
+    Arabic texts: ['حذف'] [NO TRANSLATION KEY]
+  Line 222: cancelText: 'إلغاء',
+    Arabic texts: ['إلغاء'] [NO TRANSLATION KEY]
+  Line 245: showToast('تم حذف التقييم بنجاح ️');
+    Arabic texts: ['تم', 'حذف', 'التقييم', 'بنجاح'] [NO TRANSLATION KEY]
+  Line 247: showToast('حدث خطأ أثناء الحذف: ' + (data.message || ''));
+    Arabic texts: ['حدث', 'خطأ', 'أثناء', 'الحذف'] [NO TRANSLATION KEY]
+  Line 252: showToast('خطأ في الاتصال بالخادم');
+    Arabic texts: ['خطأ', 'في', 'الاتصال', 'بالخادم'] [NO TRANSLATION KEY]
+
+File: js\modules\services.js
+----------------------------
+  Line 20: <div style="margin-bottom:0.6rem;"><strong style="color:var(--accent-amber); font-size:0.9rem;">${tr('السعر')}: ${svc.price_points !== undefined ? svc.price_points : 0} ${tr('نقطة')}</strong></div>
+    Arabic texts: ['السعر', 'نقطة'] [NO TRANSLATION KEY]
+  Line 21: ${(svc.has_form == 1 || svc.has_form === undefined || svc.has_form === true) ? `<div style="margin-bottom:0.8rem;"><span style="background: rgba(37,211,102,0.15); color: #25D366; border: 1px solid #25D366; padding: 4px 10px; border-radius: 12px; font-size: 0.78rem; font-weight: bold;"> ${tr('يتضمن نموذج طلب للعميل (Form)')}</span></div>` : ''}
+    Arabic texts: ['يتضمن', 'نموذج', 'طلب', 'للعميل'] [NO TRANSLATION KEY]
+  Line 28: <span style="font-size:0.8rem; color:var(--accent-blue); align-self:center;">${tr('متاحة للطلب')} </span>
+    Arabic texts: ['متاحة', 'للطلب'] [NO TRANSLATION KEY]
+  Line 42: showToast('يرجى إدخال قيمة صحيحة وموجبة لنقاط السعر');
+    Arabic texts: ['يرجى', 'إدخال', 'قيمة', 'صحيحة', 'وموجبة', 'لنقاط', 'السعر'] [NO TRANSLATION KEY]
+  Line 55: showToast('يرجى إدخال اسم الخدمة');
+    Arabic texts: ['يرجى', 'إدخال', 'اسم', 'الخدمة'] [NO TRANSLATION KEY]
+  Line 73: showToast('تمت إضافة الخدمة بنجاح ️');
+    Arabic texts: ['تمت', 'إضافة', 'الخدمة', 'بنجاح'] [NO TRANSLATION KEY]
+  Line 75: showToast(`فشل في إضافة الخدمة: ${data.message || 'خطأ غير معروف'}`);
+    Arabic texts: ['فشل', 'في', 'إضافة', 'الخدمة', 'خطأ', 'غير', 'معروف'] [NO TRANSLATION KEY]
+  Line 78: showToast('حدث خطأ أثناء الاتصال بالخادم عند إضافة الخدمة.');
+    Arabic texts: ['حدث', 'خطأ', 'أثناء', 'الاتصال', 'بالخادم', 'عند', 'إضافة', 'الخدمة'] [NO TRANSLATION KEY]
+  Line 86: showToast('لم يتم العثور على الخدمة');
+    Arabic texts: ['لم', 'يتم', 'العثور', 'على', 'الخدمة'] [NO TRANSLATION KEY]
+  Line 125: if (!id) { showToast('معرّف الخدمة غير موجود'); return; }
+    Arabic texts: ['معرّف', 'الخدمة', 'غير', 'موجود'] [NO TRANSLATION KEY]
+  Line 129: showToast('يرجى إدخال قيمة صحيحة وموجبة لنقاط السعر');
+    Arabic texts: ['يرجى', 'إدخال', 'قيمة', 'صحيحة', 'وموجبة', 'لنقاط', 'السعر'] [NO TRANSLATION KEY]
+  Line 145: if (!payload.title) { showToast('يرجى إدخال اسم الخدمة'); return; }
+    Arabic texts: ['يرجى', 'إدخال', 'اسم', 'الخدمة'] [NO TRANSLATION KEY]
+  Line 157: showToast('تم تحديث الخدمة بنجاح ✅');
+    Arabic texts: ['تم', 'تحديث', 'الخدمة', 'بنجاح'] [NO TRANSLATION KEY]
+  Line 159: showToast('حدث خطأ أثناء التحديث: ' + (data.message || ''));
+    Arabic texts: ['حدث', 'خطأ', 'أثناء', 'التحديث'] [NO TRANSLATION KEY]
+  Line 163: showToast('خطأ في الاتصال بالخادم');
+    Arabic texts: ['خطأ', 'في', 'الاتصال', 'بالخادم'] [NO TRANSLATION KEY]
+  Line 169: title: 'تأكيد ' + tr('حذف الخدمة'),
+    Arabic texts: ['تأكيد', 'حذف', 'الخدمة'] [NO TRANSLATION KEY]
+  Line 170: message: tr('هل أنت متأكد من رغبتك في حذف هذه الخدمة؟'),
+    Arabic texts: ['هل', 'أنت', 'متأكد', 'من', 'رغبتك', 'في', 'حذف', 'هذه', 'الخدمة؟'] [NO TRANSLATION KEY]
+  Line 185: showToast('تم ' + tr('حذف الخدمة') + ' بنجاح ️');
+    Arabic texts: ['تم', 'حذف', 'الخدمة', 'بنجاح'] [NO TRANSLATION KEY]
+  Line 187: showToast('حدث خطأ أثناء الحذف: ' + (data.message || ''));
+    Arabic texts: ['حدث', 'خطأ', 'أثناء', 'الحذف'] [NO TRANSLATION KEY]
+  Line 191: showToast('خطأ في الاتصال بالخادم');
+    Arabic texts: ['خطأ', 'في', 'الاتصال', 'بالخادم'] [NO TRANSLATION KEY]
+
+File: js\modules\students.js
+----------------------------
+  Line 19: <td><span style="background:rgba(236,72,153,0.15); color:var(--secondary); padding:4px 10px; border-radius:12px; font-weight:bold;">${std.nationality || tr('غير محدد')}</span></td>
+    Arabic texts: ['غير', 'محدد'] [NO TRANSLATION KEY]
+  Line 20: <td dir="ltr">${std.created_at || tr('الآن')}</td>
+    Arabic texts: ['الآن'] [NO TRANSLATION KEY]
+  Line 25: <i class="fa-solid fa-coins"></i> ${tr('إدارة')}
+    Arabic texts: ['إدارة'] [NO TRANSLATION KEY]
+  Line 40: title: 'تأكيد حذف الطالب',
+    Arabic texts: ['تأكيد', 'حذف', 'الطالب'] [NO TRANSLATION KEY]
+  Line 41: message: 'هل أنت متأكد من حذف هذا الطالب نهائياً؟',
+    Arabic texts: ['هل', 'أنت', 'متأكد', 'من', 'حذف', 'هذا', 'الطالب', 'نهائياً؟'] [NO TRANSLATION KEY]
+  Line 42: confirmText: 'حذف',
+    Arabic texts: ['حذف'] [NO TRANSLATION KEY]
+  Line 43: cancelText: 'إلغاء',
+    Arabic texts: ['إلغاء'] [NO TRANSLATION KEY]
+  Line 56: showToast('تم حذف الطالب بنجاح ️');
+    Arabic texts: ['تم', 'حذف', 'الطالب', 'بنجاح'] [NO TRANSLATION KEY]
+  Line 58: showToast('حدث خطأ أثناء الحذف: ' + (data.message || ''));
+    Arabic texts: ['حدث', 'خطأ', 'أثناء', 'الحذف'] [NO TRANSLATION KEY]
+  Line 62: showToast('خطأ في الاتصال بالخادم');
+    Arabic texts: ['خطأ', 'في', 'الاتصال', 'بالخادم'] [NO TRANSLATION KEY]
+  Line 85: showToast('يرجى إدخال مبلغ صحيح أكبر من الصفر.');
+    Arabic texts: ['يرجى', 'إدخال', 'مبلغ', 'صحيح', 'أكبر', 'من', 'الصفر'] [NO TRANSLATION KEY]
+  Line 100: showToast(operation === 'add' ? 'تم إضافة النقاط بنجاح!' : 'تم خصم النقاط بنجاح!');
+    Arabic texts: ['تم', 'إضافة', 'النقاط', 'بنجاح', 'تم', 'خصم', 'النقاط', 'بنجاح'] [NO TRANSLATION KEY]
+  Line 102: showToast('خطأ: ' + (data.message || ''));
+    Arabic texts: ['خطأ'] [NO TRANSLATION KEY]
+  Line 106: showToast('خطأ في الاتصال بالخادم');
+    Arabic texts: ['خطأ', 'في', 'الاتصال', 'بالخادم'] [NO TRANSLATION KEY]
+
+File: js\modules\universities.js
+--------------------------------
+  Line 35: showToast('تم إضافة الجامعة بنجاح');
+    Arabic texts: ['تم', 'إضافة', 'الجامعة', 'بنجاح'] [NO TRANSLATION KEY]
+  Line 37: showToast('حدث خطأ أثناء الإضافة: ' + (data.message || ''));
+    Arabic texts: ['حدث', 'خطأ', 'أثناء', 'الإضافة'] [NO TRANSLATION KEY]
+  Line 41: showToast('حدث خطأ أثناء الاتصال بالخادم');
+    Arabic texts: ['حدث', 'خطأ', 'أثناء', 'الاتصال', 'بالخادم'] [NO TRANSLATION KEY]
+  Line 47: title: 'تأكيد حذف الجامعة',
+    Arabic texts: ['تأكيد', 'حذف', 'الجامعة'] [NO TRANSLATION KEY]
+  Line 48: message: 'هل أنت متأكد من حذف هذه الجامعة؟',
+    Arabic texts: ['هل', 'أنت', 'متأكد', 'من', 'حذف', 'هذه', 'الجامعة؟'] [NO TRANSLATION KEY]
+  Line 63: showToast('تم حذف الجامعة بنجاح ️');
+    Arabic texts: ['تم', 'حذف', 'الجامعة', 'بنجاح'] [NO TRANSLATION KEY]
+  Line 65: showToast('حدث خطأ أثناء الحذف: ' + (data.message || ''));
+    Arabic texts: ['حدث', 'خطأ', 'أثناء', 'الحذف'] [NO TRANSLATION KEY]
+  Line 69: showToast('خطأ في الاتصال بالخادم');
+    Arabic texts: ['خطأ', 'في', 'الاتصال', 'بالخادم'] [NO TRANSLATION KEY]
+  Line 109: <input type="number" id="uni_time_${uni.id}" placeholder="دقيقة" value="${timeValue}"
+    Arabic texts: ['دقيقة'] [NO TRANSLATION KEY]
+

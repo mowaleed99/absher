@@ -17,15 +17,15 @@ export function renderServices() {
             <div class="card-body">
                 <h3 class="card-title">${svc.title}</h3>
                 <p class="card-desc" style="margin-bottom:0.5rem;">${svc.description}</p>
-                <div style="margin-bottom:0.6rem;"><strong style="color:var(--accent-amber); font-size:0.9rem;">${t('services.price_label')}: ${svc.price_points !== undefined ? svc.price_points : 0} ${t('services.points_unit')}</strong></div>
-                ${(svc.has_form == 1 || svc.has_form === undefined || svc.has_form === true) ? `<div style="margin-bottom:0.8rem;"><span style="background: rgba(37,211,102,0.15); color: #25D366; border: 1px solid #25D366; padding: 4px 10px; border-radius: 12px; font-size: 0.78rem; font-weight: bold;"> ${t('services.has_form_badge')}</span></div>` : ''}
+                <div style="margin-bottom:0.6rem;"><strong style="color:var(--accent-amber); font-size:0.9rem;">${tr('السعر')}: ${svc.price_points !== undefined ? svc.price_points : 0} ${tr('نقطة')}</strong></div>
+                ${(svc.has_form == 1 || svc.has_form === undefined || svc.has_form === true) ? `<div style="margin-bottom:0.8rem;"><span style="background: rgba(37,211,102,0.15); color: #25D366; border: 1px solid #25D366; padding: 4px 10px; border-radius: 12px; font-size: 0.78rem; font-weight: bold;"> ${tr('يتضمن نموذج طلب للعميل (Form)')}</span></div>` : ''}
                 <div class="card-actions">
                     <button class="btn btn-primary" style="background: rgba(99,102,241,0.2); border: 1px solid #6366f1; color: #a5b4fc;"
                             onclick="window.openEditServiceModalGlobal && window.openEditServiceModalGlobal(${svc.id})">
-                        <i class="fa-solid fa-pen-to-square"></i> ${t('buttons.edit')}
+                        <i class="fa-solid fa-pen-to-square"></i> ${tr('تعديل')}
                     </button>
-                    <button class="btn btn-danger" onclick="window.deleteServiceGlobal && window.deleteServiceGlobal(${svc.id})"><i class="fa-solid fa-trash"></i> ${t('buttons.delete')}</button>
-                    <span style="font-size:0.8rem; color:var(--accent-blue); align-self:center;">${t('services.available_badge')} </span>
+                    <button class="btn btn-danger" onclick="window.deleteServiceGlobal && window.deleteServiceGlobal(${svc.id})"><i class="fa-solid fa-trash"></i> ${tr('حذف الخدمة')}</button>
+                    <span style="font-size:0.8rem; color:var(--accent-blue); align-self:center;">${tr('متاحة للطلب')} </span>
                 </div>
             </div>
         </div>
@@ -39,7 +39,7 @@ export async function handleAddService(e) {
     const pricePointsVal = document.getElementById('svcPricePoints').value;
 
     if (!/^\d+$/.test(pricePointsVal)) {
-        showToast(t('validation.service_price_positive'));
+        showToast('يرجى إدخال قيمة صحيحة وموجبة لنقاط السعر');
         return;
     }
 
@@ -52,7 +52,7 @@ export async function handleAddService(e) {
     };
 
     if (!newSvc.title) {
-        showToast(t('validation.service_name_required'));
+        showToast('يرجى إدخال اسم الخدمة');
         return;
     }
 
@@ -70,12 +70,12 @@ export async function handleAddService(e) {
             document.getElementById('svcImg').value = '';
             const prev = document.getElementById('svcImgPreview');
             if (prev) prev.style.display = 'none';
-            showToast(t('messages.service_added'));
+            showToast('تمت إضافة الخدمة بنجاح ️');
         } else {
-            showToast(t('messages.failed_add_service') + ': ' + (data.message || t('messages.error_occurred')));
+            showToast(`فشل في إضافة الخدمة: ${data.message || 'خطأ غير معروف'}`);
         }
     } catch (err) {
-        showToast(t('messages.service_conn_error'));
+        showToast('حدث خطأ أثناء الاتصال بالخادم عند إضافة الخدمة.');
         console.error('Error adding service:', err);
     }
 }
@@ -83,7 +83,7 @@ export async function handleAddService(e) {
 export function openEditServiceModal(svcId) {
     const svc = appData.services.find(s => s.id === svcId || s.id === String(svcId));
     if (!svc) {
-        showToast(t('validation.service_not_found'));
+        showToast('لم يتم العثور على الخدمة');
         return;
     }
 
@@ -122,11 +122,11 @@ export function openEditServiceModal(svcId) {
 export async function handleUpdateService(e) {
     e.preventDefault();
     const id = parseInt(document.getElementById('editSvcId').value, 10);
-    if (!id) { showToast(t('validation.service_id_missing')); return; }
+    if (!id) { showToast('معرّف الخدمة غير موجود'); return; }
 
     const pricePointsVal = document.getElementById('editSvcPricePoints').value;
     if (!/^\d+$/.test(pricePointsVal)) {
-        showToast(t('validation.service_price_positive'));
+        showToast('يرجى إدخال قيمة صحيحة وموجبة لنقاط السعر');
         return;
     }
 
@@ -142,7 +142,7 @@ export async function handleUpdateService(e) {
         price_points: parseInt(pricePointsVal, 10)
     };
 
-    if (!payload.title) { showToast(t('validation.service_name_required')); return; }
+    if (!payload.title) { showToast('يرجى إدخال اسم الخدمة'); return; }
 
     try {
         const res = await window.authFetch(`../api/admin_api.php?action=update_service`, {
@@ -154,22 +154,22 @@ export async function handleUpdateService(e) {
         if (data.status === 'success') {
             await loadDashboardData();
             window.closeModalGlobal && window.closeModalGlobal('editSvcModal');
-            showToast(t('messages.service_updated'));
+            showToast('تم تحديث الخدمة بنجاح ✅');
         } else {
-            showToast(t('messages.service_update_failed') + ': ' + (data.message || ''));
+            showToast('حدث خطأ أثناء التحديث: ' + (data.message || ''));
         }
     } catch (ex) {
         console.error(ex);
-        showToast(t('messages.conn_error'));
+        showToast('خطأ في الاتصال بالخادم');
     }
 }
 
 export async function deleteService(id) {
     const confirmed = await window.showConfirmDialog({
-        title: t('dialog.delete_service_title'),
-        message: t('dialog.delete_service_msg'),
-        confirmText: t('buttons.delete'),
-        cancelText: t('buttons.cancel'),
+        title: 'تأكيد ' + tr('حذف الخدمة'),
+        message: tr('هل أنت متأكد من رغبتك في حذف هذه الخدمة؟'),
+        confirmText: tr('حذف'),
+        cancelText: tr('إلغاء'),
         variant: 'danger'
     });
     if (!confirmed) return;
@@ -182,13 +182,13 @@ export async function deleteService(id) {
         const data = await res.json();
         if (data.status === 'success') {
             await loadDashboardData();
-            showToast(t('messages.service_deleted'));
+            showToast('تم ' + tr('حذف الخدمة') + ' بنجاح ️');
         } else {
-            showToast(t('messages.service_delete_failed') + ': ' + (data.message || ''));
+            showToast('حدث خطأ أثناء الحذف: ' + (data.message || ''));
         }
     } catch (ex) {
         console.error(ex);
-        showToast(t('messages.conn_error'));
+        showToast('خطأ في الاتصال بالخادم');
     }
 }
 

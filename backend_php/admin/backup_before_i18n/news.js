@@ -14,7 +14,7 @@ export function renderNews() {
     if (!container) return;
 
     if (!appData.news || appData.news.length === 0) {
-        container.innerHTML = `<tr><td colspan="6" style="text-align: center; color: var(--text-muted);">${t('messages.no_news_published')} </td></tr>`;
+        container.innerHTML = `<tr><td colspan="6" style="text-align: center; color: var(--text-muted);">${tr('لا يوجد أخبار أو تنبيهات منشورة حالياً')} </td></tr>`;
         return;
     }
 
@@ -32,15 +32,15 @@ export function renderNews() {
                     <img src="${resolveImgUrl(item.image_url)}"
                          onerror="this.style.display='none'"
                          style="width: 60px; height: 45px; object-fit: cover; border-radius: 6px; border: 1px solid var(--border-color);">
-                ` : `<span style="color: var(--text-muted); font-size: 0.8rem;">${t('messages.no_image')}</span>`}
+                ` : `<span style="color: var(--text-muted); font-size: 0.8rem;">${tr('لا توجد صورة')}</span>`}
             </td>
             <td style="font-weight: bold; color: var(--accent-amber);">${item.title}</td>
             <td style="max-width: 400px; white-space: normal; word-break: break-word; line-height: 1.5; color: var(--text-muted); font-size: 0.9rem;">${item.content}</td>
-            <td>${item.date || item.created_at || t('status.now')}</td>
+            <td>${item.date || item.created_at || tr('الآن')}</td>
             <td>
                 <button class="btn" style="background: rgba(239, 68, 68, 0.15); color: #ef4444; border: 1px solid #ef4444; padding: 6px 12px; border-radius: 8px; font-weight: bold; cursor: pointer;"
                         onclick="window.handleDeleteNewsGlobal && window.handleDeleteNewsGlobal(${item.id})">
-                    <i class="fa-solid fa-trash-can"></i> ${t('buttons.delete')}
+                    <i class="fa-solid fa-trash-can"></i> ${tr('حذف')}
                 </button>
             </td>
         </tr>
@@ -66,13 +66,13 @@ export async function handleAddNews(e) {
             await loadDashboardData();
             window.closeModalGlobal && window.closeModalGlobal('newsModal');
             resetNewsForm();
-            showToast(result.message || t('messages.news_added'));
+            showToast(result.message || 'تم نشر الخبر بنجاح!');
         } else {
-            showToast(t('status.error') + ': ' + (result.message || ''));
+            showToast('خطأ: ' + (result.message || ''));
         }
     } catch (err) {
         console.error(err);
-        showToast(t('messages.conn_error'));
+        showToast('خطأ في الاتصال بالخادم');
     }
 }
 
@@ -88,10 +88,10 @@ function resetNewsForm() {
 
 export async function handleDeleteNews(id) {
     const confirmed = await window.showConfirmDialog({
-        title: t('dialog.delete_news_title'),
-        message: t('dialog.delete_news_msg'),
-        confirmText: t('buttons.delete'),
-        cancelText: t('buttons.cancel'),
+        title: 'تأكيد حذف الخبر',
+        message: 'هل أنت متأكد من رغبتك في حذف هذا الخبر نهائياً؟',
+        confirmText: 'حذف',
+        cancelText: 'إلغاء',
         variant: 'danger'
     });
     if (!confirmed) return;
@@ -104,13 +104,13 @@ export async function handleDeleteNews(id) {
         const result = await res.json();
         if (result.status === 'success') {
             await loadDashboardData();
-            showToast(result.message || t('messages.news_deleted'));
+            showToast(result.message || 'تم حذف الخبر بنجاح ️');
         } else {
-            showToast(t('status.error') + ': ' + (result.message || ''));
+            showToast('خطأ: ' + (result.message || ''));
         }
     } catch (err) {
         console.error(err);
-        showToast(t('messages.conn_error'));
+        showToast('خطأ في الاتصال بالخادم');
     }
 }
 

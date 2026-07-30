@@ -56,6 +56,22 @@ export function renderChatsList() {
         countSpan.textContent = unreplied;
     }
 
+    // Helper to translate chat status
+    const getTranslatedStatus = (status) => {
+        if (!status) return '';
+        const statusMap = {
+            'جديدة': 'status.new_message',
+            'رسالة جديدة': 'status.new_message',
+            'تم الرد': 'status.replied',
+            'مكتمل': 'status.completed',
+            'محظور': 'status.blocked',
+            'طلب جديد': 'status.new_request',
+            'قيد المراجعة': 'status.under_review'
+        };
+        const key = statusMap[status] || statusMap[status.replace(' ️', '').trim()];
+        return key ? t(key) : t(status);
+    };
+
     container.innerHTML = appData.chats.map(chat => `
         <div class="wa-chat-item" id="waItem-${chat.id}"
              onclick="window.selectWaChatGlobal && window.selectWaChatGlobal(${chat.id})"
@@ -66,14 +82,14 @@ export function renderChatsList() {
             <div style="flex: 1; overflow: hidden;">
                 <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 4px;">
                     <h4 style="margin: 0; font-size: 1.05rem; font-weight: bold; color: var(--text-main); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${chat.student_name}</h4>
-                    <span style="font-size: 0.75rem; color: #25D366; font-weight: bold;">${chat.time && chat.time !== 'الآن' ? chat.time : ''}</span>
+                    <span style="font-size: 0.75rem; color: #25D366; font-weight: bold;">${chat.time && chat.time !== 'الآن' ? chat.time : t('status.now')}</span>
                 </div>
                 <div style="display: flex; justify-content: space-between; align-items: center;">
                     <p style="margin: 0; font-size: 0.85rem; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 180px;">
                         ${chat.last_msg}
                     </p>
                     <span style="font-size: 0.75rem; background: ${chat.status.includes('جديدة') ? '#25D366' : 'rgba(255,255,255,0.1)'}; color: ${chat.status.includes('جديدة') ? '#fff' : 'var(--text-muted)'}; padding: 2px 8px; border-radius: 10px; font-weight: bold;">
-                        ${chat.status}
+                        ${getTranslatedStatus(chat.status)}
                     </span>
                 </div>
             </div>
@@ -121,7 +137,7 @@ export function selectWaChat(chatId) {
     document.getElementById('waPhone').textContent = '' + chat.phone;
 
     const cleanPhone = chat.phone.replace(/[^0-9]/g, '');
-    document.getElementById('waDirectBtn').href = `https://wa.me/${cleanPhone}?text=${encodeURIComponent('مرحباً ' + chat.student_name + '، معك خدمة عملاء تطبيق أبشر')}`;
+    document.getElementById('waDirectBtn').href = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(t('messages.whatsapp_template', {name: chat.student_name}))}`;
 
     renderWaThread(chat);
 }
@@ -132,28 +148,30 @@ export function renderWaThread(chat) {
 
     if (!chat.messages || chat.messages.length === 0) {
         chat.messages = [
-            { sender: 'student', text: chat.last_msg || 'مرحباً خدمة العملاء', time: chat.time || 'الآن' }
+            { sender: 'student', text: chat.last_msg || t('messages.default_last_msg'), time: chat.time || 'الآن' }
         ];
     }
 
-    thread.innerHTML = chat.messages.map((m, idx) => `
+    thread.innerHTML = chat.messages.map((m, idx) => {
+        const quoteSenderName = m.quoteSender === 'admin' ? t('customer_service_absher') : chat.student_name;
+        return `
         <div style="display: flex; flex-direction: column; align-items: ${m.sender === 'admin' ? 'flex-end' : 'flex-start'};">
             <div style="max-width: 75%; padding: 10px 16px; border-radius: 12px; font-size: 0.95rem; line-height: 1.5; box-shadow: 0 1px 2px rgba(0,0,0,0.2); ${m.sender === 'admin' ? 'background: #005c4b; color: #fff; border-top-left-radius: 2px;' : 'background: #202c33; color: #e9edef; border-top-right-radius: 2px;'}">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; gap: 15px;">
                     <strong style="font-size: 0.78rem; color: ${m.sender === 'admin' ? '#53bdeb' : '#25D366'};">
-                        ${m.sender === 'admin' ? '️ خدمة العملاء (أبشر)' : '' + chat.student_name}
+                        ${m.sender === 'admin' ? t('customer_service_absher') : '' + chat.student_name}
                     </strong>
                     <div style="display: flex; gap: 6px; font-size: 0.75rem; opacity: 0.8;">
-                        <button type="button" onclick="window.quoteWaMessageGlobal && window.quoteWaMessageGlobal(${idx})" title="الرد على هذه الرسالة" style="background:none; border:none; color:#fff; cursor:pointer; padding:0 2px;"><i class="fa-solid fa-reply"></i></button>
+                        <button type="button" onclick="window.quoteWaMessageGlobal && window.quoteWaMessageGlobal(${idx})" title="${t('dialog.reply_to_message')}" style="background:none; border:none; color:#fff; cursor:pointer; padding:0 2px;"><i class="fa-solid fa-reply"></i></button>
                         ${m.sender === 'admin' && !m.deleted ? `
-                            <button type="button" onclick="window.editWaMessageGlobal && window.editWaMessageGlobal(${idx})" title="تعديل الرسالة" style="background:none; border:none; color:#fbbf24; cursor:pointer; padding:0 2px;"><i class="fa-solid fa-pen"></i></button>
-                            <button type="button" onclick="window.deleteWaMessageGlobal && window.deleteWaMessageGlobal(${idx})" title="حذف الرسالة" style="background:none; border:none; color:#ef4444; cursor:pointer; padding:0 2px;"><i class="fa-solid fa-trash"></i></button>
+                            <button type="button" onclick="window.editWaMessageGlobal && window.editWaMessageGlobal(${idx})" title="${t('dialog.edit_chat_msg_title')}" style="background:none; border:none; color:#fbbf24; cursor:pointer; padding:0 2px;"><i class="fa-solid fa-pen"></i></button>
+                            <button type="button" onclick="window.deleteWaMessageGlobal && window.deleteWaMessageGlobal(${idx})" title="${t('dialog.delete_chat_msg_title')}" style="background:none; border:none; color:#ef4444; cursor:pointer; padding:0 2px;"><i class="fa-solid fa-trash"></i></button>
                         ` : ''}
                     </div>
                 </div>
                 ${m.quoteText ? `
                     <div style="background: rgba(0,0,0,0.25); border-left: 3px solid #25D366; padding: 6px 10px; border-radius: 6px; margin-bottom: 6px; font-size: 0.8rem; color: rgba(255,255,255,0.8);">
-                        <strong style="color: #25D366; display: block; font-size: 0.75rem;">↩️ رد على ${m.quoteSender === 'admin' ? 'خدمة العملاء' : chat.student_name}:</strong>
+                        <strong style="color: #25D366; display: block; font-size: 0.75rem;">${t('dialog.reply_to_sender', {sender: quoteSenderName})}</strong>
                         ${m.quoteText}
                     </div>
                 ` : ''}
@@ -166,7 +184,7 @@ export function renderWaThread(chat) {
                     <div style="background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15); padding: 10px 14px; border-radius: 10px; margin: 6px 0; display: flex; align-items: center; gap: 10px;">
                         <i class="fa-solid fa-link" style="font-size: 1.3rem; color: #60a5fa;"></i>
                         <div style="overflow: hidden;">
-                            <strong style="display: block; font-size: 0.85rem; color: #60a5fa;">رابط مرفق</strong>
+                            <strong style="display: block; font-size: 0.85rem; color: #60a5fa;">${t('messages.attached_link')}</strong>
                             <a href="${m.imageUrl || m.text}" target="_blank" style="color: #93c5fd; font-size: 0.85rem; text-decoration: underline; word-break: break-all;">${m.imageUrl || m.text}</a>
                         </div>
                     </div>
@@ -220,17 +238,17 @@ export async function editWaMessage(idx) {
     const chatId = parseInt(document.getElementById('waActiveChatId').value);
     const chat = appData.chats.find(c => c.id === chatId);
     if (!chat || !chat.messages[idx]) return;
-    const currentText = chat.messages[idx].text.replace('(معدلة)', '');
+    const currentText = chat.messages[idx].text.replace('(معدلة)', '').replace('(Edited)', '');
     const newText = await window.showPromptDialog({
-        title: 'تعديل الرسالة',
-        message: 'تعديل نص الرسالة:',
+        title: t('dialog.edit_chat_msg_title'),
+        message: t('dialog.edit_chat_msg_msg'),
         defaultValue: currentText,
-        placeholder: 'اكتب الرسالة المعدلة هنا...'
+        placeholder: t('dialog.edit_chat_msg_placeholder')
     });
     if (newText !== null && newText.trim() !== '') {
-        chat.messages[idx].text = newText.trim() + ' (معدلة)';
+        chat.messages[idx].text = newText.trim() + ' (' + t('status.edited') + ')';
         renderWaThread(chat);
-        showToast('تم تعديل الرسالة بنجاح ✏️');
+        showToast(t('messages.chat_msg_edited'));
     }
 }
 
@@ -239,17 +257,17 @@ export async function deleteWaMessage(idx) {
     const chat = appData.chats.find(c => c.id === chatId);
     if (!chat || !chat.messages[idx]) return;
     const confirmed = await window.showConfirmDialog({
-        title: 'مسح الرسالة',
-        message: 'هل أنت متأكد من رغبتك في مسح هذه الرسالة؟',
-        confirmText: 'مسح',
-        cancelText: 'إلغاء',
+        title: t('dialog.delete_chat_msg_title'),
+        message: t('dialog.delete_chat_msg_msg'),
+        confirmText: t('buttons.delete'),
+        cancelText: t('buttons.cancel'),
         variant: 'danger'
     });
     if (confirmed) {
-        chat.messages[idx].text = 'تم حذف هذه الرسالة من قبل خدمة العملاء';
+        chat.messages[idx].text = t('messages.chat_msg_deleted_placeholder');
         chat.messages[idx].deleted = true;
         renderWaThread(chat);
-        showToast('تم حذف الرسالة بنجاح 🗑️');
+        showToast(t('messages.chat_msg_deleted'));
     }
 }
 
@@ -258,10 +276,10 @@ export async function blockWaStudent() {
     const chat = appData.chats.find(c => c.id === chatId);
     if (!chat) return;
     const confirmed = await window.showConfirmDialog({
-        title: 'حظر الطالب وإغلاق الشات',
-        message: `هل أنت متأكد من حظر الطالب (${chat.student_name}) وإغلاق الشات؟`,
-        confirmText: 'حظر',
-        cancelText: 'إلغاء',
+        title: t('dialog.block_student_title'),
+        message: t('dialog.block_student_msg', {name: chat.student_name}),
+        confirmText: t('buttons.block'),
+        cancelText: t('buttons.cancel'),
         variant: 'danger'
     });
     if (confirmed) {
@@ -269,13 +287,13 @@ export async function blockWaStudent() {
         if (!chat.messages) chat.messages = [];
         chat.messages.push({
             sender: 'admin',
-            text: 'تم حظر هذا الحساب من قبل إدارة خدمة العملاء ولن يتم استقبال رسائل جديدة.',
-            time: 'الآن'
+            text: t('messages.student_blocked_system_msg'),
+            time: t('status.now')
         });
-        chat.last_msg = 'تم حظر الطالب';
+        chat.last_msg = t('messages.student_blocked');
         renderWaThread(chat);
         renderChatsList();
-        showToast('تم حظر الطالب وإغلاق المحادثة بنجاح');
+        showToast(t('messages.student_blocked'));
     }
 }
 
@@ -339,13 +357,13 @@ export async function handleSendWaReply(e) {
                 // Reload all data from backend to show new message
                 const { loadDashboardData } = await import('../api.js');
                 await loadDashboardData();
-                showToast('تم إرسال ردك إلى الطالب وحفظه في السيرفر! ✅');
+                showToast(t('messages.chat_reply_sent'));
             } else {
-                showToast('فشل في إرسال الرسالة');
+                showToast(t('messages.chat_reply_failed'));
             }
         } catch (err) {
             console.error(err);
-            showToast('خطأ في الاتصال بالخادم');
+            showToast(t('messages.conn_error'));
         }
     }
 }
@@ -370,34 +388,34 @@ export async function sendCustomWaMessage(msgData) {
             const { loadDashboardData } = await import('../api.js');
             await loadDashboardData();
         } else {
-            showToast('فشل في إرسال الرسالة');
+            showToast(t('messages.chat_reply_failed'));
         }
     } catch (ex) {
         console.error(ex);
-        showToast('خطأ في الاتصال بالخادم');
+        showToast(t('messages.conn_error'));
     }
 }
 
 export async function triggerWaAttachmentUrl() {
     const chatId = parseInt(document.getElementById('waActiveChatId')?.value || document.getElementById('activeChatId')?.value);
     const chat = appData.chats.find(c => c.id === chatId);
-    if (!chat) { showToast('يرجى تحديد محادثة أولاً'); return; }
+    if (!chat) { showToast(t('messages.select_chat_first')); return; }
     const linkUrl = await window.showPromptDialog({
-        title: 'إرسال رابط',
-        message: 'أدخل الرابط الذي تريد إرساله للطالب:',
+        title: t('dialog.send_link_title'),
+        message: t('dialog.send_link_msg'),
         defaultValue: 'https://',
         placeholder: 'https://example.com'
     });
     if (linkUrl && linkUrl.trim() !== '' && linkUrl.trim() !== 'https://') {
-        sendCustomWaMessage({ type: 'link', text: `رابط مرفق: ${linkUrl.trim()}`, imageUrl: linkUrl.trim() });
+        sendCustomWaMessage({ type: 'link', text: t('messages.attached_link') + ': ' + linkUrl.trim(), imageUrl: linkUrl.trim() });
     }
 }
 
 export function recordWaVoiceNote() {
-    showToast('جاري تسجيل فويس نوت... (تحدث الآن)');
+    showToast(t('messages.recording_voice'));
     setTimeout(() => {
-        sendCustomWaMessage({ type: 'voice', text: 'فويس نوت صوتي مسجل' });
-        showToast('تم إرسال التسجيل الصوتي بنجاح');
+        sendCustomWaMessage({ type: 'voice', text: t('messages.recorded_voice') });
+        showToast(t('messages.voice_note_sent'));
     }, 1500);
 }
 
@@ -425,7 +443,7 @@ export function initChatsModule() {
             if (!file) return;
             console.log(`[LOG] waImageFileInput change -> File: ${file.name}, Size: ${file.size} bytes`);
 
-            showToast('⏳ جاري ضغط ورفع الصورة...');
+            showToast(t('messages.compressing_image'));
             const formData = new FormData();
             formData.append('file', file);
             formData.append('folder', 'chat');
@@ -441,16 +459,16 @@ export function initChatsModule() {
                     const imgUrl = data.url || data.data?.url;
                     await sendCustomWaMessage({
                         type: 'image',
-                        text: 'صورة مرفقة من الإدارة',
+                        text: t('messages.image_attached_cs'),
                         imageUrl: imgUrl
                     });
-                    showToast('تم إرسال الصورة بنجاح! ✅');
+                    showToast(t('messages.image_sent_success'));
                 } else {
-                    showToast('فشل رفع الصورة: ' + (data.message || 'خطأ غير معروف'));
+                    showToast(t('messages.upload_image_failed', {message: data.message || t('unspecified')}));
                 }
             } catch (err) {
                 console.error('[ERROR] Error uploading chat image:', err);
-                showToast('خطأ أثناء رفع الصورة');
+                showToast(t('messages.error_uploading_image'));
             }
         });
     }
@@ -477,7 +495,7 @@ export function initChatsModule() {
             const file = e.target.files?.[0];
             if (!file) return;
 
-            showToast('⏳ جاري ضغط ورفع الصورة...');
+            showToast(t('messages.compressing_image'));
             const formData = new FormData();
             formData.append('file', file);
             formData.append('folder', 'chat');
@@ -492,16 +510,16 @@ export function initChatsModule() {
                     const imgUrl = data.url || data.data?.url;
                     await sendCustomWaMessage({
                         type: 'image',
-                        text: 'صورة مرفقة من الإدارة',
+                        text: t('messages.image_attached_cs'),
                         imageUrl: imgUrl
                     });
-                    showToast('تم إرسال الصورة بنجاح! ✅');
+                    showToast(t('messages.image_sent_success'));
                 } else {
-                    showToast('فشل رفع الصورة: ' + (data.message || 'خطأ غير معروف'));
+                    showToast(t('messages.upload_image_failed', {message: data.message || t('unspecified')}));
                 }
             } catch (err) {
                 console.error(err);
-                showToast('خطأ أثناء رفع الصورة');
+                showToast(t('messages.error_uploading_image'));
             }
         });
     }

@@ -53,18 +53,18 @@ export function renderRequests(filterText = '') {
             </td>
             <td dir="ltr" style="font-family: monospace; color: #25D366; font-weight: bold; font-size: 1rem;">${req.student_phone}</td>
             <td>
-                <div style="font-weight: bold; color: var(--accent-amber); margin-bottom: 6px; font-size: 0.95rem;">${req.type || req.service_title || 'طلب خدمة'}</div>
+                <div style="font-weight: bold; color: var(--accent-amber); margin-bottom: 6px; font-size: 0.95rem;">${req.type || req.service_title || t('requests.default_service_label')}</div>
                 <div style="margin-bottom: 6px; display: flex; gap: 6px; flex-wrap: wrap;">
                     ${(() => {
                         const pm = req.payment_method || 'free';
                         const pc = parseInt(req.points_charged || '0');
                         const spp = parseInt(req.service_price_points || '0');
                         if (pm === 'wallet') {
-                            return `<span style="background: rgba(56, 189, 248, 0.15); color: #38bdf8; border: 1px solid #38bdf8; padding: 2px 8px; border-radius: 8px; font-size: 0.75rem; font-weight: bold;"> محفظة (خصم ${pc} نقاط)</span>`;
+                            return `<span style="background: rgba(56, 189, 248, 0.15); color: #38bdf8; border: 1px solid #38bdf8; padding: 2px 8px; border-radius: 8px; font-size: 0.75rem; font-weight: bold;"> ${t('requests.payment.wallet', {points: pc})}</span>`;
                         } else if (pm === 'cash') {
-                            return `<span style="background: rgba(167, 139, 250, 0.15); color: #a78bfa; border: 1px solid #a78bfa; padding: 2px 8px; border-radius: 8px; font-size: 0.75rem; font-weight: bold;"> كاش (السعر: ${spp} نقاط)</span>`;
+                            return `<span style="background: rgba(167, 139, 250, 0.15); color: #a78bfa; border: 1px solid #a78bfa; padding: 2px 8px; border-radius: 8px; font-size: 0.75rem; font-weight: bold;"> ${t('requests.payment.cash', {points: spp})}</span>`;
                         } else {
-                            return `<span style="background: rgba(34, 197, 94, 0.15); color: #22c55e; border: 1px solid #22c55e; padding: 2px 8px; border-radius: 8px; font-size: 0.75rem; font-weight: bold;"> مجانية</span>`;
+                            return `<span style="background: rgba(34, 197, 94, 0.15); color: #22c55e; border: 1px solid #22c55e; padding: 2px 8px; border-radius: 8px; font-size: 0.75rem; font-weight: bold;"> ${t('requests.payment.free')}</span>`;
                         }
                     })()}
                 </div>
@@ -73,18 +73,18 @@ export function renderRequests(filterText = '') {
             <td>
                 <select onchange="window.updateRequestStatusGlobal && window.updateRequestStatusGlobal(${req.id}, this.value)"
                         style="padding: 6px 12px; border-radius: 8px; background: #1e293b; color: ${statusColor}; border: 1px solid rgba(255,255,255,0.1); font-weight: bold; font-size: 0.95rem; cursor: pointer; outline: none;">
-                    <option value="under_review" style="color:#fbbf24;" ${(req.status === 'under_review' || req.status === 'قيد المراجعة') ? 'selected' : ''}>⏳ ${tr('قيد المراجعة')}</option>
-                    <option value="pending_cash" style="color:#a78bfa;" ${(req.status === 'pending_cash' || req.status === 'انتظار الدفع النقدي') ? 'selected' : ''}>💵 ${tr('انتظار الدفع النقدي')}</option>
-                    <option value="in_progress" style="color:#38bdf8;" ${(req.status === 'in_progress' || req.status === 'جاري التنفيذ') ? 'selected' : ''}>⚙️ ${tr('جاري التنفيذ')}</option>
-                    <option value="completed" style="color:#25D366;" ${(req.status === 'completed' || req.status === 'مكتمل') ? 'selected' : ''}>✅ ${tr('مكتمل')}</option>
+                    <option value="under_review" style="color:#fbbf24;" ${(req.status === 'under_review' || req.status === 'قيد المراجعة') ? 'selected' : ''}>⏳ ${t('status.under_review')}</option>
+                    <option value="pending_cash" style="color:#a78bfa;" ${(req.status === 'pending_cash' || req.status === 'انتظار الدفع النقدي') ? 'selected' : ''}>💵 ${t('status.pending_cash')}</option>
+                    <option value="in_progress" style="color:#38bdf8;" ${(req.status === 'in_progress' || req.status === 'جاري التنفيذ') ? 'selected' : ''}>⚙️ ${t('status.in_progress')}</option>
+                    <option value="completed" style="color:#25D366;" ${(req.status === 'completed' || req.status === 'مكتمل') ? 'selected' : ''}>✅ ${t('status.completed')}</option>
                 </select>
             </td>
             <td>
                 <button onclick="window.jumpToChatGlobal && window.jumpToChatGlobal('${req.student_phone}','${req.student_name}')"
                         class="btn btn-primary"
                         style="background: rgba(37,211,102,0.15); border: 1px solid #25D366; color: #25D366; padding: 8px 16px; border-radius: 10px; font-size: 0.9rem;"
-                        title="فتح المحادثة مع الطالب">
-                    <i class="fa-solid fa-comments"></i> ${tr('شات')}
+                        title="${t('requests.chat_tooltip')}">
+                    <i class="fa-solid fa-comments"></i> ${t('buttons.chat')}
                 </button>
             </td>
             <td>
@@ -111,22 +111,22 @@ export async function updateRequestStatus(id, newStatus) {
         const data = await res.json();
         if (data.status === 'success') {
             await loadDashboardData();
-            showToast('تم تحديث حالة الطلب بنجاح');
+            showToast(t('messages.request_status_updated', {status: newStatus}));
         } else {
-            showToast('حدث خطأ أثناء التحديث');
+            showToast(t('messages.request_status_update_failed'));
         }
     } catch (ex) {
         console.error(ex);
-        showToast('خطأ في الاتصال بالخادم');
+        showToast(t('messages.conn_error'));
     }
 }
 
 export async function deleteRequest(id) {
     const confirmed = await window.showConfirmDialog({
-        title: 'تأكيد حذف الطلب',
-        message: 'هل أنت متأكد من رغبتك في حذف هذا الطلب نهائياً؟',
-        confirmText: 'حذف',
-        cancelText: 'إلغاء',
+        title: t('dialog.delete_request_title'),
+        message: t('dialog.delete_request_msg'),
+        confirmText: t('buttons.delete'),
+        cancelText: t('buttons.cancel'),
         variant: 'danger'
     });
     if (!confirmed) return;
@@ -139,13 +139,13 @@ export async function deleteRequest(id) {
         const data = await res.json();
         if (data.status === 'success') {
             await loadDashboardData();
-            showToast('تم حذف الطلب بنجاح ️');
+            showToast(t('messages.request_deleted'));
         } else {
-            showToast('حدث خطأ أثناء الحذف: ' + (data.message || ''));
+            showToast(t('messages.request_delete_failed') + ': ' + (data.message || ''));
         }
     } catch (ex) {
         console.error(ex);
-        showToast('خطأ في الاتصال بالخادم');
+        showToast(t('messages.conn_error'));
     }
 }
 
@@ -157,7 +157,7 @@ export function jumpToChat(phone, name) {
 
     if (!chat) {
         // Navigate to chats tab; do NOT create a fake local chat
-        showToast('لا توجد محادثة مفتوحة لهذا الطالب حتى الآن');
+        showToast(t('requests.no_chat'));
         window.switchTabGlobal && window.switchTabGlobal('chats');
         return;
     }

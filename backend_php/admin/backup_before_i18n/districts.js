@@ -14,7 +14,7 @@ export function renderDistricts() {
             </div>
             <button class="btn" style="background:#ff4d4d; color:white; border:none;"
                     onclick="window.deleteDistrictGlobal && window.deleteDistrictGlobal(${dist.id})">
-                <i class="fa-solid fa-trash"></i> ${t('buttons.delete')}
+                <i class="fa-solid fa-trash"></i> ${tr('مسح')}
             </button>
         </div>
     `).join('');
@@ -34,24 +34,24 @@ export async function handleAddDistrict(event) {
         const data = await res.json();
         if (data.status === 'success') {
             await loadDashboardData();
-            showToast(t('messages.district_added'));
+            showToast('تمت إضافة الحي بنجاح');
             window.closeModalGlobal && window.closeModalGlobal('districtModal');
             document.getElementById('districtForm').reset();
         } else {
-            showToast(t('messages.error_add_district'));
+            showToast('حدث خطأ أثناء إضافة الحي');
         }
     } catch (ex) {
         console.error(ex);
-        showToast(t('messages.conn_error'));
+        showToast('خطأ في الاتصال بالخادم');
     }
 }
 
 export async function deleteDistrict(id) {
     const confirmed = await window.showConfirmDialog({
-        title: t('dialog.delete_district_title'),
-        message: t('dialog.delete_district_msg'),
-        confirmText: t('buttons.delete'),
-        cancelText: t('buttons.cancel'),
+        title: 'تأكيد حذف الحي',
+        message: 'هل أنت متأكد من حذف هذا الحي؟',
+        confirmText: 'حذف',
+        cancelText: 'إلغاء',
         variant: 'danger'
     });
     if (!confirmed) return;
@@ -64,13 +64,13 @@ export async function deleteDistrict(id) {
         const data = await res.json();
         if (data.status === 'success') {
             await loadDashboardData();
-            showToast(t('messages.district_deleted'));
+            showToast('تم حذف الحي بنجاح ️');
         } else {
-            showToast(t('messages.error_delete_district'));
+            showToast('حدث خطأ أثناء الحذف');
         }
     } catch (ex) {
         console.error(ex);
-        showToast(t('messages.conn_error'));
+        showToast('خطأ في الاتصال بالخادم');
     }
 }
 
@@ -78,7 +78,7 @@ export function populateAptLocationSelect() {
     const districtSelect = document.getElementById('aptDistrictId');
     if (districtSelect) {
         const currentValue = districtSelect.value;
-        districtSelect.innerHTML = `<option value="">${t('apartments.select_district')}</option>` + (appData.districts || []).map(dist => `
+        districtSelect.innerHTML = '<option value="">-- اختر الحي --</option>' + (appData.districts || []).map(dist => `
             <option value="${dist.id}">${dist.name}</option>
         `).join('');
         if (currentValue) {
@@ -88,7 +88,7 @@ export function populateAptLocationSelect() {
 
     const locationInput = document.getElementById('aptLocation');
     if (locationInput && appData.districts && appData.districts.length > 0 && !locationInput.value) {
-        locationInput.placeholder = t('example') + ': ' + appData.districts[0].name + t('districts.placeholder_example_suffix');
+        locationInput.placeholder = `مثال: ${appData.districts[0].name}، شارع بيكيني`;
     }
 }
 

@@ -16,13 +16,13 @@ export function renderStudents() {
             <td>${std.email}</td>
             <td dir="ltr" style="color:var(--accent-green); font-weight:bold;">${std.phone}</td>
             <td style="font-weight:600;">${std.university}</td>
-            <td><span style="background:rgba(236,72,153,0.15); color:var(--secondary); padding:4px 10px; border-radius:12px; font-weight:bold;">${std.nationality || tr('غير محدد')}</span></td>
-            <td dir="ltr">${std.created_at || tr('الآن')}</td>
+            <td><span style="background:rgba(236,72,153,0.15); color:var(--secondary); padding:4px 10px; border-radius:12px; font-weight:bold;">${std.nationality || t('students.unknown_nationality')}</span></td>
+            <td dir="ltr">${std.created_at || t('status.now')}</td>
             <td dir="ltr" style="font-weight:bold; color:var(--accent);">${std.points || 0}</td>
             <td>
                 <button class="btn btn-primary" style="padding:4px 8px; font-size:0.8rem;"
                         onclick="window.openPointsModalGlobal && window.openPointsModalGlobal(${std.id},'${std.full_name}', ${std.points || 0})">
-                    <i class="fa-solid fa-coins"></i> ${tr('إدارة')}
+                    <i class="fa-solid fa-coins"></i> ${t('buttons.manage')}
                 </button>
             </td>
             <td>
@@ -37,10 +37,10 @@ export function renderStudents() {
 
 export async function deleteStudent(id) {
     const confirmed = await window.showConfirmDialog({
-        title: 'تأكيد حذف الطالب',
-        message: 'هل أنت متأكد من حذف هذا الطالب نهائياً؟',
-        confirmText: 'حذف',
-        cancelText: 'إلغاء',
+        title: t('dialog.delete_student_title'),
+        message: t('dialog.delete_student_msg'),
+        confirmText: t('buttons.delete'),
+        cancelText: t('buttons.cancel'),
         variant: 'danger'
     });
     if (!confirmed) return;
@@ -53,13 +53,13 @@ export async function deleteStudent(id) {
         const data = await res.json();
         if (data.status === 'success') {
             await loadDashboardData();
-            showToast('تم حذف الطالب بنجاح ️');
+            showToast(t('messages.student_deleted'));
         } else {
-            showToast('حدث خطأ أثناء الحذف: ' + (data.message || ''));
+            showToast(t('messages.student_delete_failed') + ': ' + (data.message || ''));
         }
     } catch (ex) {
         console.error(ex);
-        showToast('خطأ في الاتصال بالخادم');
+        showToast(t('messages.conn_error'));
     }
 }
 
@@ -82,7 +82,7 @@ export async function handlePointsSubmit(e) {
     const operation = document.querySelector('input[name="pointsOperation"]:checked').value;
 
     if (isNaN(amount) || amount <= 0) {
-        showToast('يرجى إدخال مبلغ صحيح أكبر من الصفر.');
+        showToast(t('messages.invalid_points_amount'));
         return;
     }
 
@@ -97,13 +97,13 @@ export async function handlePointsSubmit(e) {
         if (data.status === 'success') {
             await loadDashboardData();
             window.closeModalGlobal && window.closeModalGlobal('pointsModal');
-            showToast(operation === 'add' ? 'تم إضافة النقاط بنجاح!' : 'تم خصم النقاط بنجاح!');
+            showToast(operation === 'add' ? t('messages.points_add_success') : t('messages.points_deduct_success'));
         } else {
-            showToast('خطأ: ' + (data.message || ''));
+            showToast(t('status.error') + ': ' + (data.message || ''));
         }
     } catch (ex) {
         console.error(ex);
-        showToast('خطأ في الاتصال بالخادم');
+        showToast(t('messages.conn_error'));
     }
 }
 
