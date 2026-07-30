@@ -92,13 +92,13 @@ export function renderReviews() {
         
         // Badges
         let statusClass = 'status-pending';
-        let statusText = 'قيد الانتظار';
+        let statusText = tr('قيد الانتظار');
         if (rev.status === 'approved') {
             statusClass = 'status-done';
-            statusText = 'مقبول';
+            statusText = tr('مقبول');
         } else if (rev.status === 'rejected') {
             statusClass = 'status-pending'; // fallback style
-            statusText = 'مرفوض';
+            statusText = tr('مرفوض');
         }
         
         // Status Badge Style overrides
@@ -156,13 +156,13 @@ export function renderReviews() {
                             ${!isApproved ? `
                                 <button class="btn btn-primary" style="padding: 6px 12px; font-size: 0.8rem; background: var(--accent-green);" 
                                         onclick="window.moderateReviewGlobal(${rev.id}, 'approved')" ${disabledAttr}>
-                                    <i class="fa-solid fa-check"></i> قبول
+                                    <i class="fa-solid fa-check"></i> ${tr('قبول')}
                                 </button>
                             ` : ''}
                             ${!isRejected ? `
                                 <button class="btn btn-secondary" style="padding: 6px 12px; font-size: 0.8rem; background: var(--accent-amber); color: black;" 
                                         onclick="window.moderateReviewGlobal(${rev.id}, 'rejected')" ${disabledAttr}>
-                                    <i class="fa-solid fa-ban"></i> رفض
+                                    <i class="fa-solid fa-ban"></i> ${tr('رفض')}
                                 </button>
                             ` : ''}
                             <button class="btn btn-danger" style="padding: 6px 12px; font-size: 0.8rem;" 

@@ -7,7 +7,7 @@ export function renderNotifications() {
     if (!container) return;
 
     if (!appData.notifications || appData.notifications.length === 0) {
-        container.innerHTML = `<tr><td colspan="6" style="text-align: center; color: var(--text-muted);">لا يوجد تنبيهات عاجلة منشورة حالياً </td></tr>`;
+        container.innerHTML = `<tr><td colspan="6" style="text-align: center; color: var(--text-muted);">${tr('لا يوجد تنبيهات عاجلة منشورة حالياً')} </td></tr>`;
         return;
     }
 
@@ -26,20 +26,20 @@ export function renderNotifications() {
         }
 
         const statusBadge = isExpired
-            ? `<span style="background: rgba(239, 68, 68, 0.15); color: #ef4444; border: 1px solid #ef4444; padding: 4px 10px; border-radius: 12px; font-weight: bold; font-size: 0.8rem;">منتهي الصلاحية (مضى 48 ساعة) </span>`
-            : `<span style="background: rgba(37, 211, 102, 0.18); color: #25D366; border: 1px solid #25D366; padding: 4px 10px; border-radius: 12px; font-weight: bold; font-size: 0.8rem;">نشط وفعال للطالب </span>`;
+            ? `<span style="background: rgba(239, 68, 68, 0.15); color: #ef4444; border: 1px solid #ef4444; padding: 4px 10px; border-radius: 12px; font-weight: bold; font-size: 0.8rem;">${tr('منتهي الصلاحية (مضى 48 ساعة)')} </span>`
+            : `<span style="background: rgba(37, 211, 102, 0.18); color: #25D366; border: 1px solid #25D366; padding: 4px 10px; border-radius: 12px; font-weight: bold; font-size: 0.8rem;">${tr('نشط وفعال للطالب')} </span>`;
 
         return `
             <tr>
                 <td>${idx + 1}</td>
                 <td style="font-weight: bold; color: var(--accent-amber);">${item.title}</td>
                 <td style="max-width: 400px; white-space: normal; word-break: break-word; line-height: 1.5; color: var(--text-muted); font-size: 0.9rem;">${item.content || item.body || ''}</td>
-                <td>${item.date || item.created_at || 'الآن'}</td>
+                <td>${item.date || item.created_at || tr('الآن')}</td>
                 <td>${statusBadge}</td>
                 <td>
                     <button class="btn" style="background: rgba(239, 68, 68, 0.15); color: #ef4444; border: 1px solid #ef4444; padding: 6px 12px; border-radius: 8px; font-weight: bold; cursor: pointer;"
                             onclick="window.handleDeleteNotificationGlobal && window.handleDeleteNotificationGlobal(${item.id})">
-                        <i class="fa-solid fa-trash-can"></i> حذف
+                        <i class="fa-solid fa-trash-can"></i> ${tr('حذف')}
                     </button>
                 </td>
             </tr>

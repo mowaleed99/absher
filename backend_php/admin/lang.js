@@ -164,6 +164,65 @@ translations.en.feedback = "Application Feedback";
 translations.ar.students_accounts = "بيانات وحسابات الطلاب";
 translations.en.students_accounts = "Student Accounts";
 
+
+// news, notifications and action button translation keys
+translations.ar.dist_title = "إدارة المناطق";
+translations.en.dist_title = "Manage Districts";
+
+translations.ar.req_title = "إدارة الحجوزات والطلبات وتجميع الشباب";
+translations.en.req_title = "Manage Bookings & Requests";
+
+translations.ar.reviews = "تقييمات الطلاب في الخدمات والتطبيق";
+translations.en.reviews = "Student Reviews & Ratings";
+
+translations.ar.chat_title = "محادثات خدمة العملاء (نظام محادثات فوري)";
+translations.en.chat_title = "Customer Service Chat";
+
+translations.ar.approve = "قبول";
+translations.en.approve = "Approve";
+
+translations.ar.reject = "رفض";
+translations.en.reject = "Reject";
+
+translations.ar.approved = "مقبول";
+translations.en.approved = "Approved";
+
+translations.ar.rejected = "مرفوض";
+translations.en.rejected = "Rejected";
+
+translations.ar.withdraw_points_title = "سحب نقاط";
+translations.en.withdraw_points_title = "Points Withdrawal";
+
+translations.ar["سحب نقاط"] = "سحب نقاط";
+translations.en["سحب نقاط"] = "Points Withdrawal";
+
+translations.ar.active_for_student = "نشط وفعال للطالب";
+translations.en.active_for_student = "Active for Student";
+
+translations.ar["نشط وفعال للطالب"] = "نشط وفعال للطالب";
+translations.en["نشط وفعال للطالب"] = "Active for Student";
+
+translations.ar["منتهي الصلاحية (مضى 48 ساعة)"] = "منتهي الصلاحية (مضى 48 ساعة)";
+translations.en["منتهي الصلاحية (مضى 48 ساعة)"] = "Expired (48 hours passed)";
+
+translations.ar["لا يوجد أخبار أو تنبيهات منشورة حالياً"] = "لا يوجد أخبار أو تنبيهات منشورة حالياً";
+translations.en["لا يوجد أخبار أو تنبيهات منشورة حالياً"] = "No news or alerts published currently";
+
+translations.ar["لا يوجد تنبيهات عاجلة منشورة حالياً"] = "لا يوجد تنبيهات عاجلة منشورة حالياً";
+translations.en["لا يوجد تنبيهات عاجلة منشورة حالياً"] = "No urgent alerts published currently";
+
+translations.ar["لا توجد صورة"] = "لا توجد صورة";
+translations.en["لا توجد صورة"] = "No image";
+
+translations.ar["شقة سكنية جديدة معروضة للإيجار"] = "شقة سكنية جديدة معروضة للإيجار";
+translations.en["شقة سكنية جديدة معروضة للإيجار"] = "New residential apartment for rent";
+
+translations.ar["️ خدمة طلابية جديدة متوفرة الآن"] = "️ خدمة طلابية جديدة متوفرة الآن";
+translations.en["️ خدمة طلابية جديدة متوفرة الآن"] = "New student service available now";
+
+translations.ar["انقطاع الكهرباء غداً في ديدوبي"] = "انقطاع الكهرباء غداً في ديدوبي";
+translations.en["انقطاع الكهرباء غداً في ديدوبي"] = "Power outage tomorrow in Didube";
+
 // Ensure language applies on load
 document.addEventListener("DOMContentLoaded", () => {
     if (currentLang ==='en') {

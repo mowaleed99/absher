@@ -14,7 +14,7 @@ export function renderNews() {
     if (!container) return;
 
     if (!appData.news || appData.news.length === 0) {
-        container.innerHTML = `<tr><td colspan="6" style="text-align: center; color: var(--text-muted);">لا يوجد أخبار أو تنبيهات منشورة حالياً </td></tr>`;
+        container.innerHTML = `<tr><td colspan="6" style="text-align: center; color: var(--text-muted);">${tr('لا يوجد أخبار أو تنبيهات منشورة حالياً')} </td></tr>`;
         return;
     }
 
@@ -32,15 +32,15 @@ export function renderNews() {
                     <img src="${resolveImgUrl(item.image_url)}"
                          onerror="this.style.display='none'"
                          style="width: 60px; height: 45px; object-fit: cover; border-radius: 6px; border: 1px solid var(--border-color);">
-                ` : `<span style="color: var(--text-muted); font-size: 0.8rem;">لا توجد صورة</span>`}
+                ` : `<span style="color: var(--text-muted); font-size: 0.8rem;">${tr('لا توجد صورة')}</span>`}
             </td>
             <td style="font-weight: bold; color: var(--accent-amber);">${item.title}</td>
             <td style="max-width: 400px; white-space: normal; word-break: break-word; line-height: 1.5; color: var(--text-muted); font-size: 0.9rem;">${item.content}</td>
-            <td>${item.date || item.created_at || 'الآن'}</td>
+            <td>${item.date || item.created_at || tr('الآن')}</td>
             <td>
                 <button class="btn" style="background: rgba(239, 68, 68, 0.15); color: #ef4444; border: 1px solid #ef4444; padding: 6px 12px; border-radius: 8px; font-weight: bold; cursor: pointer;"
                         onclick="window.handleDeleteNewsGlobal && window.handleDeleteNewsGlobal(${item.id})">
-                    <i class="fa-solid fa-trash-can"></i> حذف
+                    <i class="fa-solid fa-trash-can"></i> ${tr('حذف')}
                 </button>
             </td>
         </tr>
