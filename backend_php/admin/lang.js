@@ -147,6 +147,23 @@ translations.en.ux_feedback = "UX Feedback";
 translations.en.feature_request = "Feature Request";
 translations.en.all = "All";
 
+
+// Corrected sidebar keys to match index.html exactly
+translations.ar.bookings_requests = "الحجوزات وطلبات السكن";
+translations.en.bookings_requests = "Bookings & Requests";
+
+translations.ar.exclusive_offers = "عروض السكن الحصرية";
+translations.en.exclusive_offers = "Exclusive Housing Offers";
+
+translations.ar.reviews = "تقييمات وآراء الطلاب";
+translations.en.reviews = "Student Reviews";
+
+translations.ar.feedback = "ملاحظات التطبيق";
+translations.en.feedback = "Application Feedback";
+
+translations.ar.students_accounts = "بيانات وحسابات الطلاب";
+translations.en.students_accounts = "Student Accounts";
+
 // Ensure language applies on load
 document.addEventListener("DOMContentLoaded", () => {
     if (currentLang ==='en') {
