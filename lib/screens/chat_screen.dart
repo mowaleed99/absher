@@ -11,7 +11,8 @@ class ChatScreen extends StatefulWidget {
   final Student? user;
   final String? initialMessage;
   final String? orderStatus;
-  const ChatScreen({super.key, required this.user, this.initialMessage, this.orderStatus});
+  const ChatScreen(
+      {super.key, required this.user, this.initialMessage, this.orderStatus});
 
   @override
   State<ChatScreen> createState() => _ChatScreenState();
@@ -30,12 +31,13 @@ class _ChatScreenState extends State<ChatScreen> {
 
   String _getAbsoluteUrl(String path) {
     if (path.isEmpty) return '';
-    
+
     // Check if it is a standard web link and not local upload
-    if ((path.startsWith('http') || path.startsWith('https')) && !path.contains('/uploads/')) {
+    if ((path.startsWith('http') || path.startsWith('https')) &&
+        !path.contains('/uploads/')) {
       return path;
     }
-    
+
     try {
       final uri = Uri.parse(path);
       if (uri.pathSegments.isNotEmpty) {
@@ -43,19 +45,21 @@ class _ChatScreenState extends State<ChatScreen> {
         return '${ApiService.baseUrl}/media.php?file=$filename';
       }
     } catch (_) {}
-    
+
     // Fallback if parsing fails
     if (path.contains('/')) {
       final parts = path.split('/');
       return '${ApiService.baseUrl}/media.php?file=${parts.last}';
     }
-    
+
     return '${ApiService.baseUrl}/media.php?file=$path';
   }
 
   bool _isEmbeddableVideo(String url) {
     final lowerUrl = url.toLowerCase();
-    return lowerUrl.contains('youtube.com') || lowerUrl.contains('youtu.be') || lowerUrl.contains('drive.google.com');
+    return lowerUrl.contains('youtube.com') ||
+        lowerUrl.contains('youtu.be') ||
+        lowerUrl.contains('drive.google.com');
   }
 
   String _getEmbedUrl(String url) {
@@ -168,7 +172,7 @@ class _ChatScreenState extends State<ChatScreen> {
       if (_currentChatId == 0) return;
 
       final serverMessages = await ApiService.getMessages(_currentChatId);
-      
+
       if (serverMessages.isNotEmpty) {
         final List<Map<String, dynamic>> newMessages = [];
         newMessages.add({
@@ -190,7 +194,7 @@ class _ChatScreenState extends State<ChatScreen> {
         }
 
         // تحديث الواجهة فقط في حالة وجود اختلاف
-        if (newMessages.length != _messages.length || 
+        if (newMessages.length != _messages.length ||
             _messages.last['text'] != newMessages.last['text'] ||
             _messages.last['imageUrl'] != newMessages.last['imageUrl'] ||
             _messages.last['quoteText'] != newMessages.last['quoteText']) {
@@ -223,8 +227,11 @@ class _ChatScreenState extends State<ChatScreen> {
   Future<void> _sendMessage() async {
     if (_messageController.text.trim().isEmpty) return;
     final text = _messageController.text.trim();
-    final quoteText = _replyingToMsg != null ? _replyingToMsg!['text']?.toString() ?? '' : '';
-    final quoteSender = _replyingToMsg != null ? _replyingToMsg!['sender']?.toString() ?? '' : '';
+    final quoteText =
+        _replyingToMsg != null ? _replyingToMsg!['text']?.toString() ?? '' : '';
+    final quoteSender = _replyingToMsg != null
+        ? _replyingToMsg!['sender']?.toString() ?? ''
+        : '';
 
     setState(() => _replyingToMsg = null);
 
@@ -255,8 +262,11 @@ class _ChatScreenState extends State<ChatScreen> {
       context: context,
       builder: (_) => StatefulBuilder(
         builder: (context, setDialogState) => AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-          title: Text(LanguageService.tr('rate_customer_service'), style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold)),
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          title: Text(LanguageService.tr('rate_customer_service'),
+              style: const TextStyle(
+                  color: AppColors.primary, fontWeight: FontWeight.bold)),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -288,21 +298,28 @@ class _ChatScreenState extends State<ChatScreen> {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
-              child: Text(LanguageService.tr('cancel'), style: const TextStyle(color: AppColors.textMuted)),
+              child: Text(LanguageService.tr('cancel'),
+                  style: const TextStyle(color: AppColors.textMuted)),
             ),
             ElevatedButton(
-              style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary),
+              style:
+                  ElevatedButton.styleFrom(backgroundColor: AppColors.primary),
               onPressed: () {
                 Navigator.pop(context);
                 ApiService.submitReview(
                   studentName: widget.user?.fullName ?? '',
                   uni: widget.user?.university ?? '',
                   rating: rating,
-                  comment: commentController.text.trim().isNotEmpty ? commentController.text.trim() : LanguageService.tr('auto_trans_1030'),
+                  comment: commentController.text.trim().isNotEmpty
+                      ? commentController.text.trim()
+                      : LanguageService.tr('auto_trans_1030'),
                 );
-                ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(LanguageService.tr('rating_success_msg'))));
+                ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                    content: Text(LanguageService.tr('rating_success_msg'))));
               },
-              child: Text(LanguageService.tr('submit_rating'), style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+              child: Text(LanguageService.tr('submit_rating'),
+                  style: const TextStyle(
+                      color: Colors.white, fontWeight: FontWeight.bold)),
             ),
           ],
         ),
@@ -311,8 +328,11 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 
   Future<void> _sendMediaMessage(String type, String url, String text) async {
-    final quoteText = _replyingToMsg != null ? _replyingToMsg!['text']?.toString() ?? '' : '';
-    final quoteSender = _replyingToMsg != null ? _replyingToMsg!['sender']?.toString() ?? '' : '';
+    final quoteText =
+        _replyingToMsg != null ? _replyingToMsg!['text']?.toString() ?? '' : '';
+    final quoteSender = _replyingToMsg != null
+        ? _replyingToMsg!['sender']?.toString() ?? ''
+        : '';
 
     setState(() => _replyingToMsg = null);
 
@@ -348,14 +368,22 @@ class _ChatScreenState extends State<ChatScreen> {
           children: [
             const Icon(Icons.link, color: AppColors.primary, size: 28),
             const SizedBox(width: 8),
-            Text(LanguageService.tr('attach_link'), style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold, fontSize: 16)),
+            Text(LanguageService.tr('attach_link'),
+                style: const TextStyle(
+                    color: AppColors.primary,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16)),
           ],
         ),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(LanguageService.tr('enter_or_paste_link'), style: const TextStyle(fontSize: 13, color: AppColors.textMuted, fontFamily: 'Cairo')),
+            Text(LanguageService.tr('enter_or_paste_link'),
+                style: const TextStyle(
+                    fontSize: 13,
+                    color: AppColors.textMuted,
+                    fontFamily: 'Cairo')),
             const SizedBox(height: 14),
             TextField(
               controller: urlCtrl,
@@ -363,7 +391,8 @@ class _ChatScreenState extends State<ChatScreen> {
                 labelText: LanguageService.tr('url_label'),
                 hintText: 'https://example.com',
                 hintStyle: const TextStyle(fontSize: 12, color: Colors.grey),
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                border:
+                    OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                 prefixIcon: const Icon(Icons.link, color: AppColors.primary),
               ),
             ),
@@ -372,7 +401,8 @@ class _ChatScreenState extends State<ChatScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: Text(LanguageService.tr('auto_trans_1034'), style: const TextStyle(color: AppColors.textMuted)),
+            child: Text(LanguageService.tr('auto_trans_1034'),
+                style: const TextStyle(color: AppColors.textMuted)),
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary),
@@ -381,18 +411,21 @@ class _ChatScreenState extends State<ChatScreen> {
               if (url.isNotEmpty) {
                 String detectedType = 'text';
                 String msgText = url;
-                
+
                 if (_isEmbeddableVideo(url)) {
                   detectedType = 'video';
-                  msgText = 'فيديو مرفق: $url';
-                } else if (url.toLowerCase().contains('.mp4') || url.toLowerCase().contains('.mov')) {
+                  msgText = '${LanguageService.tr('attached_video')}: $url';
+                } else if (url.toLowerCase().contains('.mp4') ||
+                    url.toLowerCase().contains('.mov')) {
                   detectedType = 'video';
-                  msgText = 'فيديو مرفق: $url';
-                } else if (url.toLowerCase().contains('.png') || url.toLowerCase().contains('.jpg') || url.toLowerCase().contains('.jpeg')) {
+                  msgText = '${LanguageService.tr('attached_video')}: $url';
+                } else if (url.toLowerCase().contains('.png') ||
+                    url.toLowerCase().contains('.jpg') ||
+                    url.toLowerCase().contains('.jpeg')) {
                   detectedType = 'image';
-                  msgText = 'صورة مرفقة: $url';
+                  msgText = '${LanguageService.tr('attached_image')}: $url';
                 }
-                
+
                 Navigator.pop(context);
                 _sendMediaMessage(
                   detectedType,
@@ -401,7 +434,9 @@ class _ChatScreenState extends State<ChatScreen> {
                 );
               }
             },
-            child: Text(LanguageService.tr('send_now'), style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+            child: Text(LanguageService.tr('send_now'),
+                style: const TextStyle(
+                    color: Colors.white, fontWeight: FontWeight.bold)),
           ),
         ],
       ),
@@ -419,14 +454,22 @@ class _ChatScreenState extends State<ChatScreen> {
           children: [
             const Icon(Icons.video_library, color: AppColors.primary, size: 28),
             const SizedBox(width: 8),
-            Text(LanguageService.tr('attach_youtube_drive'), style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold, fontSize: 16)),
+            Text(LanguageService.tr('attach_youtube_drive'),
+                style: const TextStyle(
+                    color: AppColors.primary,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16)),
           ],
         ),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(LanguageService.tr('enter_youtube_drive_link'), style: const TextStyle(fontSize: 13, color: AppColors.textMuted, fontFamily: 'Cairo')),
+            Text(LanguageService.tr('enter_youtube_drive_link'),
+                style: const TextStyle(
+                    fontSize: 13,
+                    color: AppColors.textMuted,
+                    fontFamily: 'Cairo')),
             const SizedBox(height: 14),
             TextField(
               controller: urlCtrl,
@@ -434,8 +477,10 @@ class _ChatScreenState extends State<ChatScreen> {
                 labelText: LanguageService.tr('video_url_label'),
                 hintText: 'https://youtube.com/watch?v=...',
                 hintStyle: const TextStyle(fontSize: 11, color: Colors.grey),
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                prefixIcon: const Icon(Icons.videocam, color: AppColors.primary),
+                border:
+                    OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                prefixIcon:
+                    const Icon(Icons.videocam, color: AppColors.primary),
               ),
             ),
           ],
@@ -443,7 +488,8 @@ class _ChatScreenState extends State<ChatScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: Text(LanguageService.tr('auto_trans_1035'), style: const TextStyle(color: AppColors.textMuted)),
+            child: Text(LanguageService.tr('auto_trans_1035'),
+                style: const TextStyle(color: AppColors.textMuted)),
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary),
@@ -454,11 +500,13 @@ class _ChatScreenState extends State<ChatScreen> {
                 _sendMediaMessage(
                   'video',
                   url,
-                  'فيديو مرفق: $url',
+                  '${LanguageService.tr('attached_video')}: $url',
                 );
               }
             },
-            child: Text(LanguageService.tr('send_now'), style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+            child: Text(LanguageService.tr('send_now'),
+                style: const TextStyle(
+                    color: Colors.white, fontWeight: FontWeight.bold)),
           ),
         ],
       ),
@@ -468,7 +516,7 @@ class _ChatScreenState extends State<ChatScreen> {
   Future<void> _pickAndUploadMedia(bool isVideo) async {
     try {
       final ImagePicker picker = ImagePicker();
-      final XFile? file = isVideo 
+      final XFile? file = isVideo
           ? await picker.pickVideo(source: ImageSource.gallery)
           : await picker.pickImage(source: ImageSource.gallery);
 
@@ -483,7 +531,8 @@ class _ChatScreenState extends State<ChatScreen> {
             children: [
               const CircularProgressIndicator(color: AppColors.primary),
               const SizedBox(width: 20),
-              Expanded(child: Text(LanguageService.tr('uploading_file_loading'))),
+              Expanded(
+                  child: Text(LanguageService.tr('uploading_file_loading'))),
             ],
           ),
         ),
@@ -498,7 +547,9 @@ class _ChatScreenState extends State<ChatScreen> {
         _sendMediaMessage(
           isVideo ? 'video' : 'image',
           uploadedUrl,
-          isVideo ? LanguageService.tr('auto_trans_1036') : LanguageService.tr('auto_trans_1037'),
+          isVideo
+              ? LanguageService.tr('auto_trans_1036')
+              : LanguageService.tr('auto_trans_1037'),
         );
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(LanguageService.tr('file_upload_success'))),
@@ -534,7 +585,10 @@ class _ChatScreenState extends State<ChatScreen> {
                   padding: const EdgeInsets.all(16.0),
                   child: Text(
                     LanguageService.tr('attach_media_chat'),
-                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.primary),
+                    style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.primary),
                   ),
                 ),
                 ListTile(
@@ -546,7 +600,8 @@ class _ChatScreenState extends State<ChatScreen> {
                   },
                 ),
                 ListTile(
-                  leading: const Icon(Icons.video_library, color: AppColors.primary),
+                  leading:
+                      const Icon(Icons.video_library, color: AppColors.primary),
                   title: Text(LanguageService.tr('choose_video_gallery')),
                   onTap: () {
                     Navigator.pop(context);
@@ -580,12 +635,22 @@ class _ChatScreenState extends State<ChatScreen> {
           children: [
             Container(
               padding: const EdgeInsets.all(12),
-              decoration: const BoxDecoration(color: AppColors.primaryDark, borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+              decoration: const BoxDecoration(
+                  color: AppColors.primaryDark,
+                  borderRadius:
+                      BorderRadius.vertical(top: Radius.circular(20))),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(type == 'video' ? LanguageService.tr('preview_video_attachment') : LanguageService.tr('preview_image_attachment'), style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-                  IconButton(icon: const Icon(Icons.close, color: Colors.white), onPressed: () => Navigator.pop(context)),
+                  Text(
+                      type == 'video'
+                          ? LanguageService.tr('preview_video_attachment')
+                          : LanguageService.tr('preview_image_attachment'),
+                      style: const TextStyle(
+                          color: Colors.white, fontWeight: FontWeight.bold)),
+                  IconButton(
+                      icon: const Icon(Icons.close, color: Colors.white),
+                      onPressed: () => Navigator.pop(context)),
                 ],
               ),
             ),
@@ -597,24 +662,35 @@ class _ChatScreenState extends State<ChatScreen> {
                         Container(
                           height: 180,
                           width: double.infinity,
-                          decoration: BoxDecoration(color: Colors.black, borderRadius: BorderRadius.circular(12)),
+                          decoration: BoxDecoration(
+                              color: Colors.black,
+                              borderRadius: BorderRadius.circular(12)),
                           child: Column(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              const Icon(Icons.play_circle_fill, color: AppColors.accent, size: 60),
+                              const Icon(Icons.play_circle_fill,
+                                  color: AppColors.accent, size: 60),
                               const SizedBox(height: 8),
-                              Text(LanguageService.tr('video_player_active'), style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                              Text(LanguageService.tr('video_player_active'),
+                                  style: const TextStyle(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.bold)),
                             ],
                           ),
                         ),
                         const SizedBox(height: 12),
-                        SelectableText(url, style: const TextStyle(fontSize: 12, color: AppColors.primary)),
+                        SelectableText(url,
+                            style: const TextStyle(
+                                fontSize: 12, color: AppColors.primary)),
                       ],
                     )
                   : Image.network(
                       url,
                       fit: BoxFit.cover,
-                      errorBuilder: (_, __, ___) => const Icon(Icons.broken_image, size: 80, color: Colors.grey),
+                      errorBuilder: (_, __, ___) => const Icon(
+                          Icons.broken_image,
+                          size: 80,
+                          color: Colors.grey),
                     ),
             ),
           ],
@@ -637,21 +713,34 @@ class _ChatScreenState extends State<ChatScreen> {
               CircleAvatar(
                 backgroundColor: AppColors.accent,
                 radius: 18,
-                child: Image.asset('assets/images/logo.png', width: 22, errorBuilder: (_, __, ___) => const Icon(Icons.support_agent, color: AppColors.primary)),
+                child: Image.asset('assets/images/logo.png',
+                    width: 22,
+                    errorBuilder: (_, __, ___) => const Icon(
+                        Icons.support_agent,
+                        color: AppColors.primary)),
               ),
               const SizedBox(width: 10),
-              Text(LanguageService.tr('absher_support_chat_title'), style: const TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.bold)),
+              Text(LanguageService.tr('absher_support_chat_title'),
+                  style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 15,
+                      fontWeight: FontWeight.bold)),
             ],
           ),
           actions: [
             TextButton.icon(
               onPressed: _showRatingDialog,
               icon: const Icon(Icons.star, color: AppColors.accent, size: 18),
-              label: Text(LanguageService.tr('rate_button'), style: const TextStyle(color: AppColors.accent, fontWeight: FontWeight.bold)),
+              label: Text(LanguageService.tr('rate_button'),
+                  style: const TextStyle(
+                      color: AppColors.accent, fontWeight: FontWeight.bold)),
             ),
             IconButton(
               icon: const Icon(Icons.phone, color: AppColors.accent),
-              onPressed: () => ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(LanguageService.tr('direct_call_snackbar')))),
+              onPressed: () => ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                      content:
+                          Text(LanguageService.tr('direct_call_snackbar')))),
             ),
           ],
         ),
@@ -673,7 +762,8 @@ class _ChatScreenState extends State<ChatScreen> {
                   final mediaUrl = msg['imageUrl']?.toString() ?? '';
 
                   return Align(
-                    alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
+                    alignment:
+                        isMe ? Alignment.centerRight : Alignment.centerLeft,
                     child: GestureDetector(
                       onDoubleTap: () {
                         setState(() {
@@ -691,37 +781,56 @@ class _ChatScreenState extends State<ChatScreen> {
                           };
                         });
                         ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text(LanguageService.tr('reply_to_message_selected')), duration: const Duration(seconds: 1)),
+                          SnackBar(
+                              content: Text(LanguageService.tr(
+                                  'reply_to_message_selected')),
+                              duration: const Duration(seconds: 1)),
                         );
                       },
                       child: Container(
                         margin: const EdgeInsets.only(bottom: 12),
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                        constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.78),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 16, vertical: 12),
+                        constraints: BoxConstraints(
+                            maxWidth: MediaQuery.of(context).size.width * 0.78),
                         decoration: BoxDecoration(
                           color: isMe ? AppColors.primary : Colors.white,
                           borderRadius: BorderRadius.only(
                             topLeft: const Radius.circular(16),
                             topRight: const Radius.circular(16),
-                            bottomLeft: isMe ? const Radius.circular(16) : Radius.zero,
-                            bottomRight: isMe ? Radius.zero : const Radius.circular(16),
+                            bottomLeft:
+                                isMe ? const Radius.circular(16) : Radius.zero,
+                            bottomRight:
+                                isMe ? Radius.zero : const Radius.circular(16),
                           ),
-                          boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 5, offset: const Offset(0, 2))],
-                          border: isMe ? null : Border.all(color: Colors.grey.shade200),
+                          boxShadow: [
+                            BoxShadow(
+                                color: Colors.black.withValues(alpha: 0.05),
+                                blurRadius: 5,
+                                offset: const Offset(0, 2))
+                          ],
+                          border: isMe
+                              ? null
+                              : Border.all(color: Colors.grey.shade200),
                         ),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            if (msg['quoteText'] != null && msg['quoteText'].toString().isNotEmpty)
+                            if (msg['quoteText'] != null &&
+                                msg['quoteText'].toString().isNotEmpty)
                               Container(
                                 margin: const EdgeInsets.only(bottom: 8),
                                 padding: const EdgeInsets.all(8),
                                 decoration: BoxDecoration(
-                                  color: isMe ? Colors.white.withValues(alpha: 0.15) : Colors.black.withValues(alpha: 0.05),
+                                  color: isMe
+                                      ? Colors.white.withValues(alpha: 0.15)
+                                      : Colors.black.withValues(alpha: 0.05),
                                   borderRadius: BorderRadius.circular(8),
                                   border: Border(
                                     right: BorderSide(
-                                      color: isMe ? AppColors.accent : AppColors.primary,
+                                      color: isMe
+                                          ? AppColors.accent
+                                          : AppColors.primary,
                                       width: 4,
                                     ),
                                   ),
@@ -730,11 +839,15 @@ class _ChatScreenState extends State<ChatScreen> {
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Text(
-                                      msg['quoteSender'] == 'student' ? LanguageService.tr('you') : LanguageService.tr('tech_support'),
+                                      msg['quoteSender'] == 'student'
+                                          ? LanguageService.tr('you')
+                                          : LanguageService.tr('tech_support'),
                                       style: TextStyle(
                                         fontWeight: FontWeight.bold,
                                         fontSize: 11,
-                                        color: isMe ? AppColors.accent : AppColors.primary,
+                                        color: isMe
+                                            ? AppColors.accent
+                                            : AppColors.primary,
                                       ),
                                     ),
                                     const SizedBox(height: 2),
@@ -744,51 +857,76 @@ class _ChatScreenState extends State<ChatScreen> {
                                       overflow: TextOverflow.ellipsis,
                                       style: TextStyle(
                                         fontSize: 11,
-                                        color: isMe ? Colors.white70 : AppColors.textDark,
+                                        color: isMe
+                                            ? Colors.white70
+                                            : AppColors.textDark,
                                       ),
-                                    ),                                  ],
+                                    ),
+                                  ],
                                 ),
                               ),
-                            if (type == 'video' || (mediaUrl.isNotEmpty && (mediaUrl.contains('.mp4') || mediaUrl.contains('.mov') || _isEmbeddableVideo(mediaUrl)))) ...[
+                            if (type == 'video' ||
+                                (mediaUrl.isNotEmpty &&
+                                    (mediaUrl.contains('.mp4') ||
+                                        mediaUrl.contains('.mov') ||
+                                        _isEmbeddableVideo(mediaUrl)))) ...[
                               if (_isEmbeddableVideo(mediaUrl))
                                 Container(
                                   height: 180,
                                   width: double.infinity,
                                   decoration: BoxDecoration(
                                     borderRadius: BorderRadius.circular(12),
-                                    border: Border.all(color: AppColors.accent, width: 1.5),
+                                    border: Border.all(
+                                        color: AppColors.accent, width: 1.5),
                                   ),
                                   child: ClipRRect(
                                     borderRadius: BorderRadius.circular(10),
-                                    child: buildEmbedVideo(_getEmbedUrl(mediaUrl)),
+                                    child:
+                                        buildEmbedVideo(_getEmbedUrl(mediaUrl)),
                                   ),
                                 )
                               else
                                 GestureDetector(
-                                  onTap: () => _showMediaPreview(context, _getAbsoluteUrl(mediaUrl), 'video'),
+                                  onTap: () => _showMediaPreview(context,
+                                      _getAbsoluteUrl(mediaUrl), 'video'),
                                   child: Container(
                                     height: 130,
                                     width: double.infinity,
                                     decoration: BoxDecoration(
                                       color: Colors.black87,
                                       borderRadius: BorderRadius.circular(12),
-                                      border: Border.all(color: AppColors.accent, width: 1.5),
+                                      border: Border.all(
+                                          color: AppColors.accent, width: 1.5),
                                     ),
                                     child: Stack(
                                       alignment: Alignment.center,
                                       children: [
-                                        const Icon(Icons.play_circle_fill, color: AppColors.accent, size: 50),
+                                        const Icon(Icons.play_circle_fill,
+                                            color: AppColors.accent, size: 50),
                                         Positioned(
                                           bottom: 8,
                                           right: 8,
                                           child: Container(
-                                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                            decoration: BoxDecoration(color: Colors.black54, borderRadius: BorderRadius.circular(8)),
+                                            padding: const EdgeInsets.symmetric(
+                                                horizontal: 8, vertical: 4),
+                                            decoration: BoxDecoration(
+                                                color: Colors.black54,
+                                                borderRadius:
+                                                    BorderRadius.circular(8)),
                                             child: Row(
                                               children: [
-                                                const Icon(Icons.videocam, color: Colors.white, size: 14),
+                                                const Icon(Icons.videocam,
+                                                    color: Colors.white,
+                                                    size: 14),
                                                 const SizedBox(width: 4),
-                                                Text(LanguageService.tr('click_to_play_video'), style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold)),
+                                                Text(
+                                                    LanguageService.tr(
+                                                        'click_to_play_video'),
+                                                    style: const TextStyle(
+                                                        color: Colors.white,
+                                                        fontSize: 10,
+                                                        fontWeight:
+                                                            FontWeight.bold)),
                                               ],
                                             ),
                                           ),
@@ -798,25 +936,35 @@ class _ChatScreenState extends State<ChatScreen> {
                                   ),
                                 ),
                               const SizedBox(height: 8),
-                            ] else if (type == 'image' || (mediaUrl.isNotEmpty && (mediaUrl.contains('.png') || mediaUrl.contains('.jpg') || mediaUrl.contains('http')))) ...[
+                            ] else if (type == 'image' ||
+                                (mediaUrl.isNotEmpty &&
+                                    (mediaUrl.contains('.png') ||
+                                        mediaUrl.contains('.jpg') ||
+                                        mediaUrl.contains('http')))) ...[
                               GestureDetector(
-                                onTap: () => _showMediaPreview(context, _getAbsoluteUrl(mediaUrl), 'image'),
+                                onTap: () => _showMediaPreview(context,
+                                    _getAbsoluteUrl(mediaUrl), 'image'),
                                 child: ClipRRect(
                                   borderRadius: BorderRadius.circular(12),
-                                    child: Image.network(
-                                      _getAbsoluteUrl(mediaUrl),
-                                      height: 150,
-                                      width: double.infinity,
-                                      fit: BoxFit.cover,
-                                      errorBuilder: (_, __, ___) => Container(height: 100, color: Colors.grey.shade300, child: const Icon(Icons.image, size: 40)),
-                                      frameBuilder: (context, child, frame, wasSynchronouslyLoaded) {
-                                        if (wasSynchronouslyLoaded) return child;
-                                        if (frame != null) {
-                                          _scrollToBottom();
-                                        }
-                                        return child;
-                                      },
-                                    ),
+                                  child: Image.network(
+                                    _getAbsoluteUrl(mediaUrl),
+                                    height: 150,
+                                    width: double.infinity,
+                                    fit: BoxFit.cover,
+                                    errorBuilder: (_, __, ___) => Container(
+                                        height: 100,
+                                        color: Colors.grey.shade300,
+                                        child:
+                                            const Icon(Icons.image, size: 40)),
+                                    frameBuilder: (context, child, frame,
+                                        wasSynchronouslyLoaded) {
+                                      if (wasSynchronouslyLoaded) return child;
+                                      if (frame != null) {
+                                        _scrollToBottom();
+                                      }
+                                      return child;
+                                    },
+                                  ),
                                 ),
                               ),
                               const SizedBox(height: 8),
@@ -824,13 +972,22 @@ class _ChatScreenState extends State<ChatScreen> {
                             if (type != 'image' && type != 'video') ...[
                               Text(
                                 msg['text'] as String,
-                                style: TextStyle(color: isMe ? Colors.white : AppColors.textDark, fontSize: 14, height: 1.4),
+                                style: TextStyle(
+                                    color: isMe
+                                        ? Colors.white
+                                        : AppColors.textDark,
+                                    fontSize: 14,
+                                    height: 1.4),
                               ),
                               const SizedBox(height: 4),
                             ],
                             Text(
                               msg['time'] as String,
-                              style: TextStyle(color: isMe ? Colors.white70 : AppColors.textMuted, fontSize: 10),
+                              style: TextStyle(
+                                  color: isMe
+                                      ? Colors.white70
+                                      : AppColors.textMuted,
+                                  fontSize: 10),
                             ),
                           ],
                         ),
@@ -846,7 +1003,12 @@ class _ChatScreenState extends State<ChatScreen> {
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
                 color: Colors.white,
-                boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 10, offset: const Offset(0, -2))],
+                boxShadow: [
+                  BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.05),
+                      blurRadius: 10,
+                      offset: const Offset(0, -2))
+                ],
               ),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
@@ -854,35 +1016,53 @@ class _ChatScreenState extends State<ChatScreen> {
                   if (_replyingToMsg != null)
                     Container(
                       margin: const EdgeInsets.only(bottom: 8),
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 6),
                       decoration: BoxDecoration(
                         color: Colors.grey.shade100,
                         borderRadius: BorderRadius.circular(8),
-                        border: const Border(right: BorderSide(color: AppColors.primary, width: 4)),
+                        border: Border(
+                          left: LanguageService.isRtl
+                              ? BorderSide.none
+                              : const BorderSide(
+                                  color: AppColors.primary, width: 4),
+                          right: LanguageService.isRtl
+                              ? const BorderSide(
+                                  color: AppColors.primary, width: 4)
+                              : BorderSide.none,
+                        ),
                       ),
                       child: Row(
                         children: [
-                          const Icon(Icons.reply, size: 16, color: AppColors.primary),
+                          const Icon(Icons.reply,
+                              size: 16, color: AppColors.primary),
                           const SizedBox(width: 8),
                           Expanded(
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  _replyingToMsg!['sender'] == 'student' ? LanguageService.tr('reply_to_yourself') : LanguageService.tr('reply_to_support'),
-                                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 11, color: AppColors.primary),
+                                  _replyingToMsg!['sender'] == 'student'
+                                      ? LanguageService.tr('reply_to_yourself')
+                                      : LanguageService.tr('reply_to_support'),
+                                  style: const TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 11,
+                                      color: AppColors.primary),
                                 ),
                                 Text(
                                   _replyingToMsg!['text'] as String,
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
-                                  style: const TextStyle(fontSize: 11, color: AppColors.textDark),
+                                  style: const TextStyle(
+                                      fontSize: 11, color: AppColors.textDark),
                                 ),
                               ],
                             ),
                           ),
                           IconButton(
-                            icon: const Icon(Icons.close, size: 16, color: Colors.grey),
+                            icon: const Icon(Icons.close,
+                                size: 16, color: Colors.grey),
                             padding: EdgeInsets.zero,
                             constraints: const BoxConstraints(),
                             onPressed: () {
@@ -899,21 +1079,24 @@ class _ChatScreenState extends State<ChatScreen> {
                       IconButton(
                         padding: const EdgeInsets.symmetric(horizontal: 4),
                         constraints: const BoxConstraints(),
-                        icon: const Icon(Icons.image, color: AppColors.primary, size: 22),
+                        icon: const Icon(Icons.image,
+                            color: AppColors.primary, size: 22),
                         tooltip: LanguageService.tr('attach_image_tooltip'),
                         onPressed: () => _pickAndUploadMedia(false),
                       ),
                       IconButton(
                         padding: const EdgeInsets.symmetric(horizontal: 4),
                         constraints: const BoxConstraints(),
-                        icon: const Icon(Icons.videocam, color: AppColors.primary, size: 22),
+                        icon: const Icon(Icons.videocam,
+                            color: AppColors.primary, size: 22),
                         tooltip: LanguageService.tr('attach_video_tooltip'),
                         onPressed: _showAttachVideoLinkDialog,
                       ),
                       IconButton(
                         padding: const EdgeInsets.symmetric(horizontal: 4),
                         constraints: const BoxConstraints(),
-                        icon: const Icon(Icons.link, color: AppColors.primary, size: 22),
+                        icon: const Icon(Icons.link,
+                            color: AppColors.primary, size: 22),
                         tooltip: LanguageService.tr('attach_link_tooltip'),
                         onPressed: _showAttachMediaDialog,
                       ),
@@ -923,10 +1106,13 @@ class _ChatScreenState extends State<ChatScreen> {
                           controller: _messageController,
                           decoration: InputDecoration(
                             hintText: LanguageService.tr('type_message_hint'),
-                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(24), borderSide: BorderSide.none),
+                            border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(24),
+                                borderSide: BorderSide.none),
                             filled: true,
                             fillColor: AppColors.background,
-                            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                            contentPadding: const EdgeInsets.symmetric(
+                                horizontal: 16, vertical: 10),
                           ),
                         ),
                       ),
@@ -935,7 +1121,8 @@ class _ChatScreenState extends State<ChatScreen> {
                         backgroundColor: AppColors.accent,
                         radius: 22,
                         child: IconButton(
-                          icon: const Icon(Icons.send, color: AppColors.textDark, size: 20),
+                          icon: const Icon(Icons.send,
+                              color: AppColors.textDark, size: 20),
                           onPressed: _sendMessage,
                         ),
                       ),

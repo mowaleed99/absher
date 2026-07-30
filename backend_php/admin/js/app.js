@@ -14,7 +14,7 @@ import { initOffersModule } from './modules/offers.js';
 import { initAuthModule, authFetch, doAdminLogin, checkAuth } from './auth.js';
 import { initUploadsModule } from './uploads.js';
 import { initNavigation, switchTab } from './router.js';
-import { initThemeToggle, initModalDelegation, openModal, closeModal, showToast } from './ui.js';
+import { initThemeToggle, initModalDelegation, openModal, closeModal, showToast, showConfirmDialog, showPromptDialog } from './ui.js';
 import { loadDashboardData } from './api.js';
 import { currentLang, setCurrentLang } from './state.js';
 
@@ -26,6 +26,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     window.openModalGlobal  = openModal;
     window.closeModalGlobal = closeModal;
     window.showToastGlobal  = showToast;
+    window.showConfirmDialog = showConfirmDialog;
+    window.showPromptDialog = showPromptDialog;
     window.openImageLightboxGlobal = function(url) {
         const imgEl = document.getElementById('lightboxImg');
         const modal = document.getElementById('imageLightboxModal');

@@ -49,7 +49,9 @@ void main() {
       expect(offer.apartment!.title, 'شقة سابورتالو الراقية');
     });
 
-    test('Parse housing offer with string-encoded numeric values and fallback discount', () {
+    test(
+        'Parse housing offer with string-encoded numeric values and fallback discount',
+        () {
       final json = {
         'id': '202',
         'apartment_id': '99',

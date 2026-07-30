@@ -49,16 +49,33 @@ void main() {
     test('Verify prompt display eligibility logic', () {
       // Mock data for requests and reviews
       final requests = [
-        {'id': 1, 'service_title': 'خدمة أ', 'status': 'مكتمل'}, // Completed, not reviewed
-        {'id': 2, 'service_title': 'خدمة ب', 'status': 'مكتمل'}, // Completed, reviewed
-        {'id': 3, 'service_title': 'خدمة ج', 'status': 'قيد التنفيذ'}, // In-progress
-        {'id': 4, 'service_title': 'خدمة د', 'status': 'مكتمل'}, // Completed, in cooldown
+        {
+          'id': 1,
+          'service_title': 'خدمة أ',
+          'status': 'مكتمل'
+        }, // Completed, not reviewed
+        {
+          'id': 2,
+          'service_title': 'خدمة ب',
+          'status': 'مكتمل'
+        }, // Completed, reviewed
+        {
+          'id': 3,
+          'service_title': 'خدمة ج',
+          'status': 'قيد التنفيذ'
+        }, // In-progress
+        {
+          'id': 4,
+          'service_title': 'خدمة د',
+          'status': 'مكتمل'
+        }, // Completed, in cooldown
       ];
 
       final reviewedRequestIds = {2}; // Set of reviewed request IDs
       final now = DateTime.now().millisecondsSinceEpoch;
       final mockPreferences = {
-        'service_review_reminder_4': now + (2 * 60 * 60 * 1000), // Request 4 has active cooldown
+        'service_review_reminder_4':
+            now + (2 * 60 * 60 * 1000), // Request 4 has active cooldown
       };
 
       final eligibleRequestIds = <int>[];
@@ -74,7 +91,8 @@ void main() {
         if (reviewedRequestIds.contains(reqId)) continue;
 
         // Check if in cooldown
-        final reminderTime = mockPreferences['service_review_reminder_$reqId'] ?? 0;
+        final reminderTime =
+            mockPreferences['service_review_reminder_$reqId'] ?? 0;
         if (reminderTime > 0 && now < reminderTime) continue;
 
         eligibleRequestIds.add(reqId);

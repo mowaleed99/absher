@@ -76,7 +76,14 @@ export async function handleAddNotification(e) {
 }
 
 export async function handleDeleteNotification(id) {
-    if (!confirm('هل أنت متأكد من رغبتك في حذف هذا التنبيه نهائياً؟')) return;
+    const confirmed = await window.showConfirmDialog({
+        title: 'تأكيد حذف التنبيه',
+        message: 'هل أنت متأكد من رغبتك في حذف هذا التنبيه نهائياً؟',
+        confirmText: 'حذف',
+        cancelText: 'إلغاء',
+        variant: 'danger'
+    });
+    if (!confirmed) return;
     try {
         const res = await window.authFetch(`../api/admin_api.php?action=delete_notification`, {
             method: 'POST',

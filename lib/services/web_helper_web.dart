@@ -5,7 +5,7 @@ import 'dart:html' as html;
 
 Widget buildEmbedVideo(String embedUrl) {
   final String viewType = 'iframe-${embedUrl.hashCode}';
-  
+
   // تسجيل مصنع العرض لـ IFrameElement
   ui.platformViewRegistry.registerViewFactory(viewType, (int viewId) {
     return html.IFrameElement()

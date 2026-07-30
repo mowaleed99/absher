@@ -44,7 +44,11 @@ class _GeorgiaNewsScreenState extends State<GeorgiaNewsScreen> {
             backgroundColor: AppColors.background,
             appBar: AppBar(
               backgroundColor: AppColors.primary,
-              title: Text(LanguageService.tr('auto_trans_1047'), style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18)),
+              title: Text(LanguageService.tr('auto_trans_1047'),
+                  style: const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 18)),
               iconTheme: const IconThemeData(color: Colors.white),
               centerTitle: true,
               actions: [
@@ -56,15 +60,21 @@ class _GeorgiaNewsScreenState extends State<GeorgiaNewsScreen> {
               ],
             ),
             body: _isLoading
-                ? const Center(child: CircularProgressIndicator(color: AppColors.primary))
+                ? const Center(
+                    child: CircularProgressIndicator(color: AppColors.primary))
                 : _newsList.isEmpty
                     ? Center(
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            Icon(Icons.newspaper_outlined, size: 80, color: Colors.grey.shade400),
+                            Icon(Icons.newspaper_outlined,
+                                size: 80, color: Colors.grey.shade400),
                             const SizedBox(height: 16),
-                            Text(LanguageService.tr('auto_trans_1049'), style: const TextStyle(fontSize: 16, color: Colors.grey, fontWeight: FontWeight.bold)),
+                            Text(LanguageService.tr('auto_trans_1049'),
+                                style: const TextStyle(
+                                    fontSize: 16,
+                                    color: Colors.grey,
+                                    fontWeight: FontWeight.bold)),
                           ],
                         ),
                       )
@@ -72,19 +82,23 @@ class _GeorgiaNewsScreenState extends State<GeorgiaNewsScreen> {
                         onRefresh: _fetchNews,
                         color: AppColors.primary,
                         child: ListView.builder(
-                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 16, vertical: 16),
                           itemCount: _newsList.length,
                           itemBuilder: (context, index) {
                             final news = _newsList[index];
                             final imgUrl = news.imageUrl ?? '';
-                            const fallbackImg = 'https://images.unsplash.com/photo-1504711434969-e33886168f5c?auto=format&fit=crop&w=500&q=80';
+                            const fallbackImg =
+                                'https://images.unsplash.com/photo-1504711434969-e33886168f5c?auto=format&fit=crop&w=500&q=80';
 
                             return Card(
                               margin: const EdgeInsets.only(bottom: 20),
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                              shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(20)),
                               elevation: 4,
                               clipBehavior: Clip.antiAlias,
-                              shadowColor: AppColors.primary.withValues(alpha: 0.08),
+                              shadowColor:
+                                  AppColors.primary.withValues(alpha: 0.08),
                               child: InkWell(
                                 onTap: () => _showNewsDetail(context, news),
                                 child: Stack(
@@ -97,7 +111,8 @@ class _GeorgiaNewsScreenState extends State<GeorgiaNewsScreen> {
                                       errorBuilder: (_, __, ___) => Container(
                                         height: 200,
                                         color: AppColors.primaryDark,
-                                        child: const Icon(Icons.newspaper, size: 50, color: AppColors.accent),
+                                        child: const Icon(Icons.newspaper,
+                                            size: 50, color: AppColors.accent),
                                       ),
                                     ),
                                     Positioned.fill(
@@ -108,8 +123,10 @@ class _GeorgiaNewsScreenState extends State<GeorgiaNewsScreen> {
                                             end: Alignment.bottomCenter,
                                             colors: [
                                               Colors.transparent,
-                                              Colors.black.withValues(alpha: 0.15),
-                                              Colors.black.withValues(alpha: 0.8),
+                                              Colors.black
+                                                  .withValues(alpha: 0.15),
+                                              Colors.black
+                                                  .withValues(alpha: 0.8),
                                             ],
                                           ),
                                         ),
@@ -151,7 +168,8 @@ class _GeorgiaNewsScreenState extends State<GeorgiaNewsScreen> {
 
   void _showNewsDetail(BuildContext context, News news) {
     final imgUrl = news.imageUrl ?? '';
-    const fallbackImg = 'https://images.unsplash.com/photo-1504711434969-e33886168f5c?auto=format&fit=crop&w=500&q=80';
+    const fallbackImg =
+        'https://images.unsplash.com/photo-1504711434969-e33886168f5c?auto=format&fit=crop&w=500&q=80';
 
     showModalBottomSheet(
       context: context,
@@ -172,7 +190,9 @@ class _GeorgiaNewsScreenState extends State<GeorgiaNewsScreen> {
                 height: 5,
                 width: 50,
                 margin: const EdgeInsets.symmetric(vertical: 10),
-                decoration: BoxDecoration(color: Colors.grey.shade300, borderRadius: BorderRadius.circular(10)),
+                decoration: BoxDecoration(
+                    color: Colors.grey.shade300,
+                    borderRadius: BorderRadius.circular(10)),
               ),
               Expanded(
                 child: SingleChildScrollView(
@@ -187,7 +207,8 @@ class _GeorgiaNewsScreenState extends State<GeorgiaNewsScreen> {
                         errorBuilder: (_, __, ___) => Container(
                           height: 220,
                           color: AppColors.primaryDark,
-                          child: const Icon(Icons.newspaper, size: 60, color: AppColors.accent),
+                          child: const Icon(Icons.newspaper,
+                              size: 60, color: AppColors.accent),
                         ),
                       ),
                       Padding(
@@ -197,23 +218,35 @@ class _GeorgiaNewsScreenState extends State<GeorgiaNewsScreen> {
                           children: [
                             Row(
                               children: [
-                                const Icon(Icons.schedule, color: AppColors.accent, size: 18),
+                                const Icon(Icons.schedule,
+                                    color: AppColors.accent, size: 18),
                                 const SizedBox(width: 6),
                                 Text(
-                                  news.date ?? LanguageService.tr('auto_trans_1050'),
-                                  style: const TextStyle(fontSize: 12, color: AppColors.textMuted, fontWeight: FontWeight.bold),
+                                  news.date ??
+                                      LanguageService.tr('auto_trans_1050'),
+                                  style: const TextStyle(
+                                      fontSize: 12,
+                                      color: AppColors.textMuted,
+                                      fontWeight: FontWeight.bold),
                                 ),
                               ],
                             ),
                             const SizedBox(height: 12),
                             Text(
                               news.title,
-                              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.primaryDark, height: 1.4),
+                              style: const TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                  color: AppColors.primaryDark,
+                                  height: 1.4),
                             ),
                             const Divider(height: 24, thickness: 1.2),
                             Text(
                               news.content,
-                              style: const TextStyle(fontSize: 14, color: AppColors.textDark, height: 1.6),
+                              style: const TextStyle(
+                                  fontSize: 14,
+                                  color: AppColors.textDark,
+                                  height: 1.6),
                             ),
                             const SizedBox(height: 20),
                           ],

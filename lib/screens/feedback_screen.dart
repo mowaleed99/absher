@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import '../theme/app_colors.dart';
 import '../services/api_service.dart';
 import '../services/language_service.dart';
+import '../core/loading_state_widget.dart';
+import '../core/error_state_widget.dart';
+import '../core/empty_state_widget.dart';
 
 class FeedbackScreen extends StatefulWidget {
   const FeedbackScreen({super.key});
@@ -92,32 +95,27 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
           _selectedType = 'suggestion';
         });
         messenger.showSnackBar(
-          SnackBar(content: Text(res['message']), backgroundColor: AppColors.success),
+          SnackBar(
+              content: Text(res['message']),
+              backgroundColor: AppColors.success),
         );
         _loadFeedbackHistory();
       } else {
         messenger.showSnackBar(
-          SnackBar(content: Text(res['message']), backgroundColor: AppColors.error),
+          SnackBar(
+              content: Text(res['message']), backgroundColor: AppColors.error),
         );
       }
     }
   }
 
   String _getTypeLabel(String type) {
-    final match = _feedbackTypes.firstWhere((t) => t['value'] == type, orElse: () => {'ar': type, 'en': type});
+    final match = _feedbackTypes.firstWhere((t) => t['value'] == type,
+        orElse: () => {'ar': type, 'en': type});
     return LanguageService.isRtl ? match['ar']! : match['en']!;
   }
 
-  String _getStatusLabel(String status) {
-    final isAr = LanguageService.isRtl;
-    if (status == 'resolved') {
-      return isAr ? 'تم حلها' : 'Resolved';
-    } else if (status == 'reviewed') {
-      return isAr ? 'تمت المراجعة' : 'Reviewed';
-    } else {
-      return isAr ? 'قيد الانتظار' : 'Pending';
-    }
-  }
+  // _getStatusLabel has been replaced by LanguageService.getLocalizedFeedbackStatus
 
   Color _getStatusColor(String status) {
     if (status == 'resolved') {
@@ -141,7 +139,8 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
           backgroundColor: AppColors.primary,
           title: Text(
             LanguageService.tr('feedback_menu_option'),
-            style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+            style: const TextStyle(
+                color: Colors.white, fontWeight: FontWeight.bold),
           ),
           centerTitle: true,
           iconTheme: const IconThemeData(color: Colors.white),
@@ -153,7 +152,8 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
               // Submit form container
               Card(
                 margin: const EdgeInsets.all(16),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16)),
                 elevation: 2,
                 color: AppColors.cardBg,
                 child: Padding(
@@ -175,11 +175,14 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
                         value: _selectedType,
                         decoration: InputDecoration(
                           labelText: LanguageService.tr('feedback_type'),
-                          labelStyle: const TextStyle(color: AppColors.textMuted),
-                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                          labelStyle:
+                              const TextStyle(color: AppColors.textMuted),
+                          border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12)),
                         ),
                         dropdownColor: AppColors.cardBg,
-                        style: const TextStyle(color: AppColors.textDark, fontSize: 14),
+                        style: const TextStyle(
+                            color: AppColors.textDark, fontSize: 14),
                         items: _feedbackTypes.map((type) {
                           return DropdownMenuItem<String>(
                             value: type['value'],
@@ -204,16 +207,20 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
                         enabled: !_isSubmitting,
                         decoration: InputDecoration(
                           labelText: LanguageService.tr('feedback_comment'),
-                          labelStyle: const TextStyle(color: AppColors.textMuted),
+                          labelStyle:
+                              const TextStyle(color: AppColors.textMuted),
                           hintText: isRtl
                               ? 'اكتب هنا تفاصيل المقترح أو البلاغ بالتفصيل...'
                               : 'Write detailed comments or bug reports here...',
-                          hintStyle: const TextStyle(color: AppColors.textMuted, fontSize: 13),
+                          hintStyle: const TextStyle(
+                              color: AppColors.textMuted, fontSize: 13),
                           alignLabelWithHint: true,
-                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                          border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12)),
                           focusedBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
-                            borderSide: const BorderSide(color: AppColors.primary, width: 1.5),
+                            borderSide: const BorderSide(
+                                color: AppColors.primary, width: 1.5),
                           ),
                         ),
                         style: const TextStyle(color: AppColors.textDark),
@@ -227,14 +234,16 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
                           onPressed: _isSubmitting ? null : _submitFeedback,
                           style: ElevatedButton.styleFrom(
                             backgroundColor: AppColors.primary,
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                            shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12)),
                             elevation: 0,
                           ),
                           child: _isSubmitting
                               ? const SizedBox(
                                   width: 24,
                                   height: 24,
-                                  child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                                  child: CircularProgressIndicator(
+                                      color: Colors.white, strokeWidth: 2),
                                 )
                               : Text(
                                   LanguageService.tr('submit_feedback'),
@@ -253,9 +262,10 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
 
               // Title for History section
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
                 child: Align(
-                  alignment: isRtl ? Alignment.centerRight : Alignment.centerLeft,
+                  alignment: AlignmentDirectional.centerStart,
                   child: Text(
                     LanguageService.tr('my_feedback'),
                     style: const TextStyle(
@@ -270,78 +280,26 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
               // History list
               Expanded(
                 child: _isLoadingHistory
-                    ? const Center(child: CircularProgressIndicator(color: AppColors.accent))
+                    ? const LoadingStateWidget(messageKey: 'loading_data')
                     : _historyError != null
-                        ? RefreshIndicator(
-                            onRefresh: _loadFeedbackHistory,
-                            child: ListView(
-                              children: [
-                                SizedBox(height: MediaQuery.of(context).size.height * 0.1),
-                                Center(
-                                  child: Padding(
-                                    padding: const EdgeInsets.all(16.0),
-                                    child: Column(
-                                      children: [
-                                        const Icon(Icons.error_outline, size: 40, color: AppColors.error),
-                                        const SizedBox(height: 8),
-                                        Text(_historyError!, style: const TextStyle(color: AppColors.textDark)),
-                                        const SizedBox(height: 8),
-                                        ElevatedButton(
-                                          onPressed: _loadFeedbackHistory,
-                                          style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary),
-                                          child: Text(LanguageService.tr('retry')),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
+                        ? ErrorStateWidget(
+                            message: _historyError!,
+                            onRetry: _loadFeedbackHistory,
                           )
                         : _feedbackHistory.isEmpty
                             ? RefreshIndicator(
                                 onRefresh: _loadFeedbackHistory,
                                 child: ListView(
                                   children: [
-                                    SizedBox(height: MediaQuery.of(context).size.height * 0.05),
-                                    Container(
-                                      margin: const EdgeInsets.symmetric(horizontal: 24),
-                                      padding: const EdgeInsets.all(24),
-                                      decoration: BoxDecoration(
-                                        color: AppColors.cardBg,
-                                        borderRadius: BorderRadius.circular(24),
-                                        boxShadow: [
-                                          BoxShadow(
-                                            color: Colors.black.withValues(alpha: 0.03),
-                                            blurRadius: 10,
-                                            offset: const Offset(0, 4),
-                                          )
-                                        ],
-                                      ),
-                                      child: Column(
-                                        mainAxisSize: MainAxisSize.min,
-                                        children: [
-                                          CircleAvatar(
-                                            radius: 36,
-                                            backgroundColor: AppColors.primary.withValues(alpha: 0.06),
-                                            child: const Icon(Icons.history_toggle_off, size: 36, color: AppColors.primary),
-                                          ),
-                                          const SizedBox(height: 20),
-                                          Text(
-                                            isRtl ? 'لا توجد مقترحات أو بلاغات سابقة' : 'No feedback history found',
-                                            style: const TextStyle(color: AppColors.textDark, fontSize: 15, fontWeight: FontWeight.bold),
-                                            textAlign: TextAlign.center,
-                                          ),
-                                          const SizedBox(height: 8),
-                                          Text(
-                                            isRtl
-                                                ? 'سجل بلاغات الأعطال ومقترحاتك لتطوير التطبيق سيظهر هنا بمجرد إرسالها.'
-                                                : 'Your bug reports and development suggestions will appear here once submitted.',
-                                            style: const TextStyle(color: AppColors.textMuted, fontSize: 12, height: 1.4),
-                                            textAlign: TextAlign.center,
-                                          ),
-                                        ],
-                                      ),
+                                    SizedBox(
+                                        height:
+                                            MediaQuery.of(context).size.height *
+                                                0.05),
+                                    const EmptyStateWidget(
+                                      titleKey:
+                                          'no_search_results_title', // Translates to "No Search Results" / "لا توجد نتائج بحث"
+                                      descriptionKey: 'no_search_results_desc',
+                                      icon: Icons.history_toggle_off,
                                     ),
                                   ],
                                 ),
@@ -349,27 +307,38 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
                             : RefreshIndicator(
                                 onRefresh: _loadFeedbackHistory,
                                 child: ListView.builder(
-                                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 16, vertical: 8),
                                   itemCount: _feedbackHistory.length,
                                   itemBuilder: (context, index) {
                                     final fb = _feedbackHistory[index];
-                                    final type = fb['feedback_type']?.toString() ?? '';
-                                    final comment = fb['comment']?.toString() ?? '';
-                                    final status = fb['status']?.toString() ?? 'pending';
-                                    final date = fb['date']?.toString() ?? fb['created_at']?.toString() ?? '';
+                                    final type =
+                                        fb['feedback_type']?.toString() ?? '';
+                                    final comment =
+                                        fb['comment']?.toString() ?? '';
+                                    final status =
+                                        fb['status']?.toString() ?? 'pending';
+                                    final date = fb['date']?.toString() ??
+                                        fb['created_at']?.toString() ??
+                                        '';
 
                                     return Card(
                                       color: AppColors.cardBg,
                                       margin: const EdgeInsets.only(bottom: 12),
-                                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                                      shape: RoundedRectangleBorder(
+                                          borderRadius:
+                                              BorderRadius.circular(14)),
                                       elevation: 1,
                                       child: Padding(
                                         padding: const EdgeInsets.all(12.0),
                                         child: Column(
-                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
                                           children: [
                                             Row(
-                                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                              mainAxisAlignment:
+                                                  MainAxisAlignment
+                                                      .spaceBetween,
                                               children: [
                                                 Text(
                                                   _getTypeLabel(type),
@@ -380,16 +349,28 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
                                                   ),
                                                 ),
                                                 Container(
-                                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                                  padding: const EdgeInsets
+                                                      .symmetric(
+                                                      horizontal: 8,
+                                                      vertical: 2),
                                                   decoration: BoxDecoration(
-                                                    color: _getStatusColor(status).withValues(alpha: 0.1),
-                                                    borderRadius: BorderRadius.circular(8),
+                                                    color:
+                                                        _getStatusColor(status)
+                                                            .withValues(
+                                                                alpha: 0.1),
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                            8),
                                                   ),
                                                   child: Text(
-                                                    _getStatusLabel(status),
+                                                    LanguageService
+                                                        .getLocalizedFeedbackStatus(
+                                                            status),
                                                     style: TextStyle(
-                                                      color: _getStatusColor(status),
-                                                      fontWeight: FontWeight.bold,
+                                                      color: _getStatusColor(
+                                                          status),
+                                                      fontWeight:
+                                                          FontWeight.bold,
                                                       fontSize: 11,
                                                     ),
                                                   ),
@@ -399,15 +380,25 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
                                             const SizedBox(height: 8),
                                             Text(
                                               comment,
-                                              style: const TextStyle(color: AppColors.textDark, fontSize: 13),
+                                              style: const TextStyle(
+                                                  color: AppColors.textDark,
+                                                  fontSize: 13),
                                             ),
                                             const SizedBox(height: 8),
                                             const Divider(),
                                             Align(
-                                              alignment: Alignment.centerLeft,
-                                              child: Text(
-                                                date,
-                                                style: const TextStyle(color: AppColors.textMuted, fontSize: 11),
+                                              alignment: AlignmentDirectional
+                                                  .centerStart,
+                                              child: Directionality(
+                                                textDirection:
+                                                    TextDirection.ltr,
+                                                child: Text(
+                                                  date,
+                                                  style: const TextStyle(
+                                                      color:
+                                                          AppColors.textMuted,
+                                                      fontSize: 11),
+                                                ),
                                               ),
                                             ),
                                           ],

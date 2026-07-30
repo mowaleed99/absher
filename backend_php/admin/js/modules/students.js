@@ -36,7 +36,14 @@ export function renderStudents() {
 }
 
 export async function deleteStudent(id) {
-    if (!confirm('هل أنت متأكد من حذف هذا الطالب نهائياً؟')) return;
+    const confirmed = await window.showConfirmDialog({
+        title: 'تأكيد حذف الطالب',
+        message: 'هل أنت متأكد من حذف هذا الطالب نهائياً؟',
+        confirmText: 'حذف',
+        cancelText: 'إلغاء',
+        variant: 'danger'
+    });
+    if (!confirmed) return;
     try {
         const res = await window.authFetch(`../api/admin_api.php?action=delete_student`, {
             method: 'POST',

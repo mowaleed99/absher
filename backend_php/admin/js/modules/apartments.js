@@ -296,7 +296,16 @@ export async function handleUpdateApartment(e) {
 }
 
 export async function deleteApartment(id, confirmDeleteOffers = false) {
-    if (!confirmDeleteOffers && !confirm('هل أنت متأكد من رغبتك في حذف هذه الشقة؟')) return;
+    if (!confirmDeleteOffers) {
+        const confirmed = await window.showConfirmDialog({
+            title: 'تأكيد حذف الشقة',
+            message: 'هل أنت متأكد من رغبتك في حذف هذه الشقة؟',
+            confirmText: 'حذف',
+            cancelText: 'إلغاء',
+            variant: 'danger'
+        });
+        if (!confirmed) return;
+    }
     try {
         const payload = { id };
         if (confirmDeleteOffers) {
@@ -310,9 +319,16 @@ export async function deleteApartment(id, confirmDeleteOffers = false) {
         const data = await res.json();
         if (data.status === 'success') {
             await loadDashboardData();
-            showToast('تم حذف الشقة بنجاح ️');
+            showToast('تم حذف الشقة بنجاح 🗑️');
         } else if (data.status === 'warning' && data.requires_confirmation) {
-            if (confirm(data.message)) {
+            const confirmed = await window.showConfirmDialog({
+                title: 'تأكيد حذف الشقة والعروض',
+                message: data.message,
+                confirmText: 'تأكيد الحذف',
+                cancelText: 'إلغاء',
+                variant: 'danger'
+            });
+            if (confirmed) {
                 await deleteApartment(id, true);
             }
         } else {

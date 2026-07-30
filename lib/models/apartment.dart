@@ -19,6 +19,7 @@ class Apartment {
   final String? moveInDate;
   final String? proximity;
   final bool? isAvailable;
+  final String? rentalType;
 
   String get primaryImage => images.isNotEmpty ? images.first.imageUrl : '';
 
@@ -39,6 +40,7 @@ class Apartment {
     this.moveInDate,
     this.proximity,
     this.isAvailable,
+    this.rentalType,
   });
 
   factory Apartment.fromJson(Map<String, dynamic> json) {
@@ -76,14 +78,20 @@ class Apartment {
     }
 
     return Apartment(
-      id: json['id'] is int ? json['id'] : int.tryParse(json['id']?.toString() ?? '0') ?? 0,
+      id: json['id'] is int
+          ? json['id']
+          : int.tryParse(json['id']?.toString() ?? '0') ?? 0,
       title: json['title'] ?? '',
       description: json['description'] ?? '',
       price: json['price']?.toString() ?? '0',
       currency: json['currency'] ?? 'GEL',
-      capacity: json['capacity'] != null ? int.tryParse(json['capacity'].toString()) : null,
+      capacity: json['capacity'] != null
+          ? int.tryParse(json['capacity'].toString())
+          : null,
       district: json['district'] ?? json['location'] ?? '',
-      districtId: json['district_id'] != null ? int.tryParse(json['district_id'].toString()) : null,
+      districtId: json['district_id'] != null
+          ? int.tryParse(json['district_id'].toString())
+          : null,
       status: json['status'],
       images: parsedImages,
       features: parsedFeatures,
@@ -91,7 +99,10 @@ class Apartment {
       moveInType: json['move_in_type'],
       moveInDate: json['move_in_date'],
       proximity: json['proximity'],
-      isAvailable: json['is_available'] == 1 || json['is_available'] == true || json['is_available'] == '1',
+      isAvailable: json['is_available'] == 1 ||
+          json['is_available'] == true ||
+          json['is_available'] == '1',
+      rentalType: json['rental_type']?.toString(),
     );
   }
 
@@ -113,6 +124,7 @@ class Apartment {
       'move_in_date': moveInDate,
       'proximity': proximity,
       'is_available': isAvailable == true ? 1 : 0,
+      'rental_type': rentalType,
     };
   }
 }

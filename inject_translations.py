@@ -136,8 +136,8 @@ trans_dict = {
     'ستوديو منفرد': 'Single Studio',
     'عروض السكن الطلابي الحصرية 🏢': 'Exclusive Student Housing Offers 🏢',
     'لا توجد شقق تطابق هذا الفلتر حالياً': 'No apartments match this filter currently',
-    '🇪🇬 العربية (Arabic)': '🇪🇬 Arabic (العربية)',
-    '🇬🇧 English (الإنجليزي)': '🇬🇧 English',
+    ' العربية (Arabic)': ' Arabic (العربية)',
+    ' English (الإنجليزي)': ' English',
     'جامعة تبليسي الطبية (TSMU)': 'TSMU',
 }
 

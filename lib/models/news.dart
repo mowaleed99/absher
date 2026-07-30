@@ -15,7 +15,9 @@ class News {
 
   factory News.fromJson(Map<String, dynamic> json) {
     return News(
-      id: json['id'] is int ? json['id'] : int.tryParse(json['id'].toString()) ?? 0,
+      id: json['id'] is int
+          ? json['id']
+          : int.tryParse(json['id'].toString()) ?? 0,
       title: json['title'] ?? '',
       content: json['content'] ?? '',
       imageUrl: json['image_url'],

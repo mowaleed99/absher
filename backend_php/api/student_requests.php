@@ -27,10 +27,6 @@ set_exception_handler(function($e) {
 });
 
 // ملف استقبال طلبات الطلاب والحجوزات (Service & Booking Requests API)
-header("Access-Control-Allow-Origin: *");
-header("Access-Control-Allow-Headers: *");
-header("Content-Type: application/json; charset=UTF-8");
-
 require_once __DIR__ . '/../config/db.php';
 require_once __DIR__ . '/middleware/auth.php';
 
@@ -378,7 +374,7 @@ if ($action === 'submit') {
             $chatId = $chatRow ? (int)$chatRow['id'] : null;
 
             if (!$chatId) {
-                $createChat = $conn->prepare("INSERT INTO chats (student_id, student_name, student_uni, phone, status, updated_at) VALUES (?, ?, ?, ?, 'رسالة جديدة 🔔', NOW())");
+                $createChat = $conn->prepare("INSERT INTO chats (student_id, student_name, student_uni, phone, last_msg, status, updated_at) VALUES (?, ?, ?, ?, '', 'رسالة جديدة 🔔', NOW())");
                 $createChat->execute([$studentId, $studentName, $studentUni, $studentPhone]);
                 $chatId = (int)$conn->lastInsertId();
             }

@@ -44,7 +44,7 @@ export async function doAdminLogin() {
         document.getElementById('loginOverlay').remove();
         loadDashboardData();
     } else {
-        alert('بيانات الدخول خاطئة!');
+        window.showToastGlobal('بيانات الدخول خاطئة!');
     }
 }
 

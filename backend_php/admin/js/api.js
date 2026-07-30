@@ -62,7 +62,7 @@ export async function loadDashboardData() {
 
             const statusEl = document.getElementById('serverStatus');
             if (statusEl) {
-                statusEl.textContent = 'متصل (قاعدة البيانات المباشرة MySQL)';
+                statusEl.textContent = 'متصل';
                 statusEl.className = 'status-online';
             }
         } else {

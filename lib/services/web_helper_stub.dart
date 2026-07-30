@@ -13,7 +13,8 @@ Widget buildEmbedVideo(String embedUrl) {
           const SizedBox(height: 8),
           Text(
             LanguageService.tr('auto_trans_1387'),
-            style: const TextStyle(color: Colors.white70, fontSize: 12, fontFamily: 'Cairo'),
+            style: const TextStyle(
+                color: Colors.white70, fontSize: 12, fontFamily: 'Cairo'),
           ),
         ],
       ),

@@ -47,7 +47,14 @@ export async function handleAddDistrict(event) {
 }
 
 export async function deleteDistrict(id) {
-    if (!confirm('هل أنت متأكد من حذف هذا الحي؟')) return;
+    const confirmed = await window.showConfirmDialog({
+        title: 'تأكيد حذف الحي',
+        message: 'هل أنت متأكد من حذف هذا الحي؟',
+        confirmText: 'حذف',
+        cancelText: 'إلغاء',
+        variant: 'danger'
+    });
+    if (!confirmed) return;
     try {
         const res = await window.authFetch(`../api/admin_api.php?action=delete_district`, {
             method: 'POST',

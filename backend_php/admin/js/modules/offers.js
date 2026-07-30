@@ -297,7 +297,14 @@ export async function handleUpdateOffer(e) {
 }
 
 export async function deleteOffer(id) {
-    if (!confirm('هل أنت متأكد من رغبتك في حذف هذا العرض الحصري؟')) return;
+    const confirmed = await window.showConfirmDialog({
+        title: 'تأكيد حذف العرض الحصري',
+        message: 'هل أنت متأكد من رغبتك في حذف هذا العرض الحصري؟',
+        confirmText: 'حذف',
+        cancelText: 'إلغاء',
+        variant: 'danger'
+    });
+    if (!confirmed) return;
     try {
         const res = await window.authFetch('../api/admin_api.php?action=delete_housing_offer', {
             method: 'POST',
@@ -320,6 +327,16 @@ export async function deleteOffer(id) {
 export async function toggleOfferStatus(id, isActive) {
     const ho = appData.housing_offers.find(o => o.id === id || o.id === String(id));
     if (!ho) return;
+
+    const actionText = isActive ? 'تفعيل' : 'تعطيل';
+    const confirmed = await window.showConfirmDialog({
+        title: `تأكيد ${actionText} العرض`,
+        message: `هل أنت متأكد من رغبتك في ${actionText} هذا العرض الحصري؟`,
+        confirmText: actionText,
+        cancelText: 'إلغاء',
+        variant: isActive ? 'success' : 'warning'
+    });
+    if (!confirmed) return;
 
     const payload = {
         id,

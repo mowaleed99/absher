@@ -24,7 +24,8 @@ class HomeScreen extends StatefulWidget {
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver, RouteAware {
+class _HomeScreenState extends State<HomeScreen>
+    with WidgetsBindingObserver, RouteAware {
   int _currentIndex = 0;
   List<News> _newsList = [];
   List<Map<String, dynamic>> _notificationsList = [];
@@ -37,15 +38,14 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver, Ro
   // Server-side filter state — null means "no filter" (show all)
   List<String> _selectedUniversities = [];
   int? _maxPriceFilter;
-  String? _rentalTypeFilter;   // null | 'apartment' | 'room_shared' | 'studio'
-  int?    _districtIdFilter;   // null | district.id
-  int?    _roomsCountFilter;   // null | exact count
+  String? _rentalTypeFilter; // null | 'apartment' | 'room_shared' | 'studio'
+  int? _districtIdFilter; // null | district.id
+  int? _roomsCountFilter; // null | exact count
 
   final PageController _adController = PageController();
   final ValueNotifier<int> _currentAdPage = ValueNotifier<int>(0);
   Timer? _adTimer;
   int _activeRequestId = 0;
-
 
   // إعلانات متحركة بصور حقيقية وأحداث وتخفيضات
   final List<Map<String, String>> _adBanners = [
@@ -53,28 +53,32 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver, Ro
       'title': LanguageService.tr('auto_trans_1051'),
       'desc': LanguageService.tr('auto_trans_1052'),
       'sub': LanguageService.tr('auto_trans_1053'),
-      'img': 'https://images.unsplash.com/photo-1541339907198-e08756dedf3f?auto=format&fit=crop&w=800&q=80',
+      'img':
+          'https://images.unsplash.com/photo-1541339907198-e08756dedf3f?auto=format&fit=crop&w=800&q=80',
       'badge': LanguageService.tr('auto_trans_1054')
     },
     {
       'title': LanguageService.tr('auto_trans_1055'),
       'desc': LanguageService.tr('auto_trans_1056'),
       'sub': LanguageService.tr('auto_trans_1057'),
-      'img': 'https://images.unsplash.com/photo-1529156069898-49953e39b3ac?auto=format&fit=crop&w=800&q=80',
+      'img':
+          'https://images.unsplash.com/photo-1529156069898-49953e39b3ac?auto=format&fit=crop&w=800&q=80',
       'badge': LanguageService.tr('auto_trans_1058')
     },
     {
       'title': LanguageService.tr('auto_trans_1059'),
       'desc': LanguageService.tr('auto_trans_1060'),
       'sub': LanguageService.tr('auto_trans_1061'),
-      'img': 'https://images.unsplash.com/photo-1530521954074-e64f6810b32d?auto=format&fit=crop&w=800&q=80',
+      'img':
+          'https://images.unsplash.com/photo-1530521954074-e64f6810b32d?auto=format&fit=crop&w=800&q=80',
       'badge': LanguageService.tr('auto_trans_1062')
     },
     {
       'title': LanguageService.tr('auto_trans_1063'),
       'desc': LanguageService.tr('auto_trans_1064'),
       'sub': LanguageService.tr('auto_trans_1065'),
-      'img': 'https://images.unsplash.com/photo-1523050854058-8df90110c9f1?auto=format&fit=crop&w=800&q=80',
+      'img':
+          'https://images.unsplash.com/photo-1523050854058-8df90110c9f1?auto=format&fit=crop&w=800&q=80',
       'badge': LanguageService.tr('auto_trans_1066')
     },
   ];
@@ -95,7 +99,15 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver, Ro
         'assets/images/apt3.png',
         'assets/images/apt4.png',
       ],
-      'features': [LanguageService.tr('auto_trans_1073'), LanguageService.tr('auto_trans_1074'), LanguageService.tr('auto_trans_1075'), LanguageService.tr('auto_trans_1076'), LanguageService.tr('auto_trans_1077'), LanguageService.tr('auto_trans_1078'), LanguageService.tr('auto_trans_1079')],
+      'features': [
+        LanguageService.tr('auto_trans_1073'),
+        LanguageService.tr('auto_trans_1074'),
+        LanguageService.tr('auto_trans_1075'),
+        LanguageService.tr('auto_trans_1076'),
+        LanguageService.tr('auto_trans_1077'),
+        LanguageService.tr('auto_trans_1078'),
+        LanguageService.tr('auto_trans_1079')
+      ],
       'description': LanguageService.tr('auto_trans_1080')
     },
     {
@@ -111,7 +123,14 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver, Ro
         'assets/images/apt2.png',
         'assets/images/apt1.png',
       ],
-      'features': [LanguageService.tr('auto_trans_1087'), LanguageService.tr('auto_trans_1088'), LanguageService.tr('auto_trans_1089'), LanguageService.tr('auto_trans_1090'), LanguageService.tr('auto_trans_1091'), LanguageService.tr('auto_trans_1092')],
+      'features': [
+        LanguageService.tr('auto_trans_1087'),
+        LanguageService.tr('auto_trans_1088'),
+        LanguageService.tr('auto_trans_1089'),
+        LanguageService.tr('auto_trans_1090'),
+        LanguageService.tr('auto_trans_1091'),
+        LanguageService.tr('auto_trans_1092')
+      ],
       'description': LanguageService.tr('auto_trans_1093')
     },
     {
@@ -130,7 +149,14 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver, Ro
         'assets/images/apt4.png',
         'assets/images/apt2.png',
       ],
-      'features': [LanguageService.tr('auto_trans_1102'), LanguageService.tr('auto_trans_1103'), LanguageService.tr('auto_trans_1104'), LanguageService.tr('auto_trans_1105'), LanguageService.tr('auto_trans_1106'), LanguageService.tr('auto_trans_1107')],
+      'features': [
+        LanguageService.tr('auto_trans_1102'),
+        LanguageService.tr('auto_trans_1103'),
+        LanguageService.tr('auto_trans_1104'),
+        LanguageService.tr('auto_trans_1105'),
+        LanguageService.tr('auto_trans_1106'),
+        LanguageService.tr('auto_trans_1107')
+      ],
       'description': LanguageService.tr('auto_trans_1108')
     },
     {
@@ -145,7 +171,14 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver, Ro
         'assets/images/apt2.png',
         'assets/images/apt3.png',
       ],
-      'features': [LanguageService.tr('auto_trans_1115'), LanguageService.tr('auto_trans_1116'), LanguageService.tr('auto_trans_1117'), LanguageService.tr('auto_trans_1118'), LanguageService.tr('auto_trans_1119'), LanguageService.tr('auto_trans_1120')],
+      'features': [
+        LanguageService.tr('auto_trans_1115'),
+        LanguageService.tr('auto_trans_1116'),
+        LanguageService.tr('auto_trans_1117'),
+        LanguageService.tr('auto_trans_1118'),
+        LanguageService.tr('auto_trans_1119'),
+        LanguageService.tr('auto_trans_1120')
+      ],
       'description': LanguageService.tr('auto_trans_1121')
     },
     {
@@ -162,7 +195,13 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver, Ro
         'assets/images/apt1.png',
         'assets/images/apt4.png',
       ],
-      'features': [LanguageService.tr('auto_trans_1130'), LanguageService.tr('auto_trans_1131'), LanguageService.tr('auto_trans_1132'), LanguageService.tr('auto_trans_1133'), LanguageService.tr('auto_trans_1134')],
+      'features': [
+        LanguageService.tr('auto_trans_1130'),
+        LanguageService.tr('auto_trans_1131'),
+        LanguageService.tr('auto_trans_1132'),
+        LanguageService.tr('auto_trans_1133'),
+        LanguageService.tr('auto_trans_1134')
+      ],
       'description': LanguageService.tr('auto_trans_1135')
     },
   ];
@@ -194,7 +233,8 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver, Ro
     _adTimer = Timer.periodic(const Duration(milliseconds: 3500), (timer) {
       if (_adController.hasClients) {
         int nextPage = _currentAdPage.value + 1;
-        final listLength = _newsList.isNotEmpty ? _newsList.length : _adBanners.length;
+        final listLength =
+            _newsList.isNotEmpty ? _newsList.length : _adBanners.length;
         if (nextPage >= listLength) nextPage = 0;
         _adController.animateToPage(
           nextPage,
@@ -228,17 +268,16 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver, Ro
       }
       // Admin JS sends value="completed" (English); legacy rows may store 'مكتمل' (Arabic).
       // Accept both so the popup fires regardless of which value the backend stored.
-      final completedRequests = _myRequests
-          .where((r) {
-            final s = (r['status'] ?? '').toString().trim().toLowerCase();
-            return s == 'completed' || s == 'مكتمل';
-          })
-          .toList();
+      final completedRequests = _myRequests.where((r) {
+        final s = (r['status'] ?? '').toString().trim().toLowerCase();
+        return s == 'completed' || s == 'مكتمل';
+      }).toList();
       if (completedRequests.isEmpty) return;
 
       final reviews = await ApiService.getMyServiceReviews();
       final reviewedRequestIds = reviews
-          .map((rev) => int.tryParse(rev['service_request_id']?.toString() ?? '0') ?? 0)
+          .map((rev) =>
+              int.tryParse(rev['service_request_id']?.toString() ?? '0') ?? 0)
           .where((id) => id > 0)
           .toSet();
 
@@ -254,7 +293,8 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver, Ro
           continue;
         }
 
-        final reminderTime = prefs.getInt('service_review_reminder_$reqId') ?? 0;
+        final reminderTime =
+            prefs.getInt('service_review_reminder_$reqId') ?? 0;
         if (reminderTime > 0 && now < reminderTime) {
           continue;
         }
@@ -275,7 +315,8 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver, Ro
   void _showRatingPromptDialog(Map<String, dynamic> request) {
     final isAr = LanguageService.isRtl;
     final reqId = int.tryParse(request['id']?.toString() ?? '0') ?? 0;
-    final serviceTitle = request['service_title'] ?? LanguageService.tr('service_requests');
+    final serviceTitle =
+        request['service_title'] ?? LanguageService.tr('service_requests');
 
     showDialog(
       context: context,
@@ -283,16 +324,16 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver, Ro
       builder: (promptCtx) {
         return AlertDialog(
           backgroundColor: AppColors.cardBg,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
           title: Text(
-            isAr ? 'يرجى تقييم الخدمة' : 'Rate Service',
-            style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.primary),
+            LanguageService.tr('rate_service_prompt'),
+            style: const TextStyle(
+                fontWeight: FontWeight.bold, color: AppColors.primary),
             textAlign: TextAlign.center,
           ),
           content: Text(
-            isAr
-                ? 'لقد تم إكمال طلبك لـ ($serviceTitle). ما رأيك في جودة الخدمة؟'
-                : 'Your request for ($serviceTitle) has been completed. What is your feedback?',
+            LanguageService.formatRatingPromptMessage(serviceTitle),
             style: const TextStyle(color: AppColors.textDark),
             textAlign: TextAlign.center,
           ),
@@ -301,8 +342,10 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver, Ro
             TextButton(
               onPressed: () async {
                 final prefs = await SharedPreferences.getInstance();
-                final cooldownTime = DateTime.now().millisecondsSinceEpoch + (2 * 60 * 60 * 1000);
-                await prefs.setInt('service_review_reminder_$reqId', cooldownTime);
+                final cooldownTime = DateTime.now().millisecondsSinceEpoch +
+                    (2 * 60 * 60 * 1000);
+                await prefs.setInt(
+                    'service_review_reminder_$reqId', cooldownTime);
                 if (mounted) {
                   setState(() {
                     _isRatingPromptShowing = false;
@@ -314,7 +357,8 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver, Ro
               },
               child: Text(
                 LanguageService.tr('remind_later'),
-                style: const TextStyle(color: AppColors.textMuted, fontWeight: FontWeight.bold),
+                style: const TextStyle(
+                    color: AppColors.textMuted, fontWeight: FontWeight.bold),
               ),
             ),
             ElevatedButton(
@@ -324,11 +368,13 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver, Ro
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.primary,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12)),
               ),
               child: Text(
                 LanguageService.tr('rate_now'),
-                style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                style: const TextStyle(
+                    color: Colors.white, fontWeight: FontWeight.bold),
               ),
             ),
           ],
@@ -339,7 +385,8 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver, Ro
 
   void _showRatingFormDialog(Map<String, dynamic> request) {
     final reqId = int.tryParse(request['id']?.toString() ?? '0') ?? 0;
-    final serviceTitle = request['service_title'] ?? LanguageService.tr('service_requests');
+    final serviceTitle =
+        request['service_title'] ?? LanguageService.tr('service_requests');
     int selectedRating = 5;
     final commentCtrl = TextEditingController();
     bool isSaving = false;
@@ -352,10 +399,12 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver, Ro
           builder: (formCtx, setFormState) {
             return AlertDialog(
               backgroundColor: AppColors.cardBg,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(20)),
               title: Text(
                 LanguageService.tr('rate_customer_service'),
-                style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.textDark),
+                style: const TextStyle(
+                    fontWeight: FontWeight.bold, color: AppColors.textDark),
                 textAlign: TextAlign.center,
               ),
               content: SingleChildScrollView(
@@ -364,7 +413,10 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver, Ro
                   children: [
                     Text(
                       serviceTitle,
-                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: AppColors.primary),
+                      style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                          color: AppColors.primary),
                       textAlign: TextAlign.center,
                     ),
                     const SizedBox(height: 16),
@@ -374,7 +426,9 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver, Ro
                         final starValue = index + 1;
                         return IconButton(
                           icon: Icon(
-                            starValue <= selectedRating ? Icons.star : Icons.star_border,
+                            starValue <= selectedRating
+                                ? Icons.star
+                                : Icons.star_border,
                             color: Colors.amber,
                             size: 36,
                           ),
@@ -396,10 +450,12 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver, Ro
                       decoration: InputDecoration(
                         hintText: LanguageService.tr('comment_optional'),
                         hintStyle: const TextStyle(color: AppColors.textMuted),
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                        border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12)),
                         focusedBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
-                          borderSide: const BorderSide(color: AppColors.primary, width: 1.5),
+                          borderSide: const BorderSide(
+                              color: AppColors.primary, width: 1.5),
                         ),
                       ),
                       style: const TextStyle(color: AppColors.textDark),
@@ -441,7 +497,8 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver, Ro
                             if (mounted) {
                               setState(() {
                                 _isRatingPromptShowing = false;
-                                _myRequestsLoaded = false; // Reset to reload on next opportunity
+                                _myRequestsLoaded =
+                                    false; // Reset to reload on next opportunity
                               });
                             }
                             if (formCtx.mounted) {
@@ -454,7 +511,8 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver, Ro
                               ),
                             );
                             final prefs = await SharedPreferences.getInstance();
-                            await prefs.remove('service_review_reminder_$reqId');
+                            await prefs
+                                .remove('service_review_reminder_$reqId');
                           } else {
                             setFormState(() {
                               isSaving = false;
@@ -469,17 +527,20 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver, Ro
                         },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.primary,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12)),
                   ),
                   child: isSaving
                       ? const SizedBox(
                           width: 20,
                           height: 20,
-                          child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                          child: CircularProgressIndicator(
+                              color: Colors.white, strokeWidth: 2),
                         )
                       : Text(
                           LanguageService.tr('submit_review'),
-                          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                          style: const TextStyle(
+                              color: Colors.white, fontWeight: FontWeight.bold),
                         ),
                 ),
               ],
@@ -489,7 +550,6 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver, Ro
       },
     );
   }
-
 
   Future<void> _loadApartments() async {
     final requestId = ++_activeRequestId;
@@ -551,7 +611,8 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver, Ro
   void _showNotificationsDialog(BuildContext context) {
     showModalBottomSheet(
       context: context,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+      shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
       isScrollControlled: true,
       builder: (_) => Container(
         padding: const EdgeInsets.all(20),
@@ -561,9 +622,14 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver, Ro
           children: [
             Row(
               children: [
-                const Icon(Icons.notifications_active, color: AppColors.accent, size: 28),
+                const Icon(Icons.notifications_active,
+                    color: AppColors.accent, size: 28),
                 const SizedBox(width: 10),
-                Text(LanguageService.tr('auto_trans_1136'), style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.primary)),
+                Text(LanguageService.tr('auto_trans_1136'),
+                    style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.primary)),
               ],
             ),
             const SizedBox(height: 16),
@@ -572,7 +638,10 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver, Ro
                   ? Center(
                       child: Text(
                         LanguageService.tr('auto_trans_1137'),
-                        style: const TextStyle(fontSize: 14, color: Colors.grey, fontWeight: FontWeight.bold),
+                        style: const TextStyle(
+                            fontSize: 14,
+                            color: Colors.grey,
+                            fontWeight: FontWeight.bold),
                       ),
                     )
                   : ListView.builder(
@@ -598,7 +667,10 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver, Ro
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(color: AppColors.accentLight, borderRadius: BorderRadius.circular(12), border: Border.all(color: AppColors.accent.withValues(alpha: 0.3))),
+      decoration: BoxDecoration(
+          color: AppColors.accentLight,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: AppColors.accent.withValues(alpha: 0.3))),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -608,21 +680,25 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver, Ro
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: AppColors.textDark)),
+                Text(title,
+                    style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 14,
+                        color: AppColors.textDark)),
                 const SizedBox(height: 4),
-                Text(desc, style: const TextStyle(fontSize: 12, color: AppColors.textMuted)),
+                Text(desc,
+                    style: const TextStyle(
+                        fontSize: 12, color: AppColors.textMuted)),
               ],
             ),
           ),
-          Text(time, style: const TextStyle(fontSize: 10, color: AppColors.primaryDark)),
+          Text(time,
+              style:
+                  const TextStyle(fontSize: 10, color: AppColors.primaryDark)),
         ],
       ),
     );
   }
-
-
-
-
 
   Widget _buildFilterChipDropdown({
     required String label,
@@ -630,9 +706,12 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver, Ro
     required List<String> items,
     required ValueChanged<String?> onChanged,
   }) {
-    final isSelected = value != 'all' && value != 'all_districts' && value != 'all_flats';
+    final isSelected =
+        value != 'all' && value != 'all_districts' && value != 'all_flats';
     final bgColor = isSelected ? AppColors.primary : const Color(0xFFF1F5F9);
-    final borderColor = isSelected ? AppColors.primary : AppColors.primary.withValues(alpha: 0.06);
+    final borderColor = isSelected
+        ? AppColors.primary
+        : AppColors.primary.withValues(alpha: 0.06);
     final textColor = isSelected ? Colors.white : Colors.black87;
     final iconColor = isSelected ? Colors.white : Colors.black54;
 
@@ -663,13 +742,19 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver, Ro
           ),
           dropdownColor: Colors.white,
           items: items.map((item) {
-            final bool isAllItem = item == 'all' || item == 'all_flats' || item == 'all_districts' || item == LanguageService.tr('auto_trans_1139');
+            final bool isAllItem = item == 'all' ||
+                item == 'all_flats' ||
+                item == 'all_districts' ||
+                item == LanguageService.tr('auto_trans_1139');
             return DropdownMenuItem(
               value: item,
               child: Text(
                 isAllItem ? label : LanguageService.tr(item),
                 overflow: TextOverflow.ellipsis,
-                style: const TextStyle(fontSize: 12, color: AppColors.textDark, fontWeight: FontWeight.normal),
+                style: const TextStyle(
+                    fontSize: 12,
+                    color: AppColors.textDark,
+                    fontWeight: FontWeight.normal),
               ),
             );
           }).toList(),
@@ -685,7 +770,9 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver, Ro
     required VoidCallback onTap,
   }) {
     final bgColor = isSelected ? AppColors.primary : const Color(0xFFF1F5F9);
-    final borderColor = isSelected ? AppColors.primary : AppColors.primary.withValues(alpha: 0.06);
+    final borderColor = isSelected
+        ? AppColors.primary
+        : AppColors.primary.withValues(alpha: 0.06);
     final textColor = isSelected ? Colors.white : Colors.black87;
     final iconColor = isSelected ? Colors.white : Colors.black54;
 
@@ -746,8 +833,13 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver, Ro
         return StatefulBuilder(
           builder: (context, setDialogState) {
             return AlertDialog(
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-              title: Text(LanguageService.tr('select_universities'), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: AppColors.primary)),
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(20)),
+              title: Text(LanguageService.tr('select_universities'),
+                  style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                      color: AppColors.primary)),
               content: SizedBox(
                 width: double.maxFinite,
                 child: Column(
@@ -777,15 +869,18 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver, Ro
                     setState(() => _selectedUniversities = []);
                     Navigator.pop(context);
                   },
-                  child: Text(LanguageService.tr('no_results'), style: const TextStyle(color: AppColors.textMuted)),
+                  child: Text(LanguageService.tr('no_results'),
+                      style: const TextStyle(color: AppColors.textMuted)),
                 ),
                 ElevatedButton(
-                  style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary),
+                  style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.primary),
                   onPressed: () {
                     setState(() => _selectedUniversities = tempSelected);
                     Navigator.pop(context);
                   },
-                  child: Text(LanguageService.tr('apply_filter'), style: const TextStyle(color: Colors.white)),
+                  child: Text(LanguageService.tr('apply_filter'),
+                      style: const TextStyle(color: Colors.white)),
                 ),
               ],
             );
@@ -796,24 +891,33 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver, Ro
   }
 
   void _showPriceDialog() {
-    final controller = TextEditingController(text: _maxPriceFilter != null ? _maxPriceFilter.toString() : '');
+    final controller = TextEditingController(
+        text: _maxPriceFilter != null ? _maxPriceFilter.toString() : '');
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Text(LanguageService.tr('budget_title'), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: AppColors.primary)),
+        title: Text(LanguageService.tr('budget_title'),
+            style: const TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 16,
+                color: AppColors.primary)),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text(LanguageService.tr('enter_budget_hint'), style: const TextStyle(fontSize: 13, color: AppColors.textMuted)),
+            Text(LanguageService.tr('enter_budget_hint'),
+                style:
+                    const TextStyle(fontSize: 13, color: AppColors.textMuted)),
             const SizedBox(height: 12),
             TextField(
               controller: controller,
               keyboardType: TextInputType.number,
               decoration: InputDecoration(
                 hintText: LanguageService.tr('search_flats'),
-                prefixIcon: const Icon(Icons.attach_money, color: AppColors.primary),
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                prefixIcon:
+                    const Icon(Icons.attach_money, color: AppColors.primary),
+                border:
+                    OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
               ),
             ),
           ],
@@ -824,7 +928,8 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver, Ro
               setState(() => _maxPriceFilter = null);
               Navigator.pop(context);
             },
-            child: Text(LanguageService.tr('cancel_filter'), style: const TextStyle(color: AppColors.textMuted)),
+            child: Text(LanguageService.tr('cancel_filter'),
+                style: const TextStyle(color: AppColors.textMuted)),
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary),
@@ -833,21 +938,25 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver, Ro
               setState(() => _maxPriceFilter = val);
               Navigator.pop(context);
             },
-            child: Text(LanguageService.tr('apply'), style: const TextStyle(color: Colors.white)),
+            child: Text(LanguageService.tr('apply'),
+                style: const TextStyle(color: Colors.white)),
           ),
         ],
       ),
     );
   }
 
-
-
   // محتوى التبويب الرئيسي (Home)
   Widget _buildHomeTab(Student? usr) {
-
     List<Map<String, dynamic>> filteredApts = List.from(_apartments);
-    final List<Map<String, dynamic>> carouselItems = _newsList.isNotEmpty 
-        ? _newsList.map((n) => {'title': n.title, 'content': n.content, 'image_url': n.imageUrl}).toList()
+    final List<Map<String, dynamic>> carouselItems = _newsList.isNotEmpty
+        ? _newsList
+            .map((n) => {
+                  'title': n.title,
+                  'content': n.content,
+                  'image_url': n.imageUrl
+                })
+            .toList()
         : _adBanners.map((e) => Map<String, dynamic>.from(e)).toList();
 
     // Server-side filters (rental_type, rooms_count, district_id) are applied via API.
@@ -856,9 +965,12 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver, Ro
     // University filter (client-side — stored as JSON array, not easily filterable in SQL)
     if (_selectedUniversities.isNotEmpty) {
       filteredApts = filteredApts.where((a) {
-        final aptUnis = (a['universities'] as List?)?.map((e) => e.toString()).toList() ?? [];
+        final aptUnis =
+            (a['universities'] as List?)?.map((e) => e.toString()).toList() ??
+                [];
         if (aptUnis.isNotEmpty) {
-          return _selectedUniversities.any((selected) => aptUnis.contains(selected));
+          return _selectedUniversities
+              .any((selected) => aptUnis.contains(selected));
         }
         final prox = (a['proximity'] ?? '').toString();
         final tit = (a['title'] ?? '').toString();
@@ -874,559 +986,762 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver, Ro
     // Price filter (client-side — price is a free-text string like "450 دولار")
     if (_maxPriceFilter != null && _maxPriceFilter! > 0) {
       filteredApts = filteredApts.where((a) {
-        final priceStr = a['price'].toString().replaceAll(RegExp(r'[^0-9]'), '');
+        final priceStr =
+            a['price'].toString().replaceAll(RegExp(r'[^0-9]'), '');
         final p = int.tryParse(priceStr) ?? 0;
         return p <= _maxPriceFilter!;
       }).toList();
     }
-
-
 
     return RefreshIndicator(
       onRefresh: _loadApartments,
       child: CustomScrollView(
         slivers: [
           SliverToBoxAdapter(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-          // 1. App Bar علوي مخصص يحتوي على اللوجو وصورة الشخص واسمه
-          Container(
-            padding: const EdgeInsets.only(top: 16, bottom: 20, left: 20, right: 20),
-            decoration: const BoxDecoration(
-              gradient: LinearGradient(colors: [AppColors.primaryDark, AppColors.primary]),
-              borderRadius: BorderRadius.vertical(bottom: Radius.circular(28)),
-            ),
-            child: Row(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                CircleAvatar(
-                  radius: 26,
-                  backgroundColor: AppColors.accent,
-                  child: CircleAvatar(
-                    radius: 24,
-                    backgroundColor: Colors.white,
-                    child: Icon(widget.isGuest ? Icons.person_outline : Icons.person, color: AppColors.primary, size: 30),
-                  ),
-                ),
-                const SizedBox(width: 14),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        '${LanguageService.tr('welcome')} ${usr?.fullName ?? LanguageService.tr('auto_trans_1160')}',
-                        style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        (usr?.universityId != null && usr!.universityId! > 0) ? 'University #${usr.universityId}' : LanguageService.tr('auto_trans_1161'),
-                        style: const TextStyle(color: AppColors.accentLight, fontSize: 13),
-                      ),
-                    ],
-                  ),
-                ),
-
-                IconButton(
-                  onPressed: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => NotificationsScreen(user: usr))),
-                  icon: Stack(
-                    children: [
-                      const Icon(Icons.notifications_outlined, color: Colors.white, size: 28),
-                      if (_notificationsList.isNotEmpty)
-                        Positioned(
-                          right: 0,
-                          top: 0,
-                          child: Container(
-                            padding: const EdgeInsets.all(4),
-                            decoration: const BoxDecoration(color: Colors.redAccent, shape: BoxShape.circle),
-                            child: Text(
-                              _notificationsList.length.toString(),
-                              style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
-                            ),
-                          ),
-                        ),
-                    ],
-                  ),
-                  tooltip: LanguageService.tr('notifications'),
-                ),
-                const SizedBox(width: 8),
+                // 1. App Bar علوي مخصص يحتوي على اللوجو وصورة الشخص واسمه
                 Container(
-                  width: 48,
-                  height: 48,
-                  padding: const EdgeInsets.all(4),
-                  decoration: BoxDecoration(color: AppColors.primaryDark, shape: BoxShape.circle, border: Border.all(color: AppColors.accent, width: 1.5)),
-                  child: ClipOval(child: Image.asset('assets/images/logo.png', fit: BoxFit.contain, errorBuilder: (_, __, ___) => const Icon(Icons.star, color: AppColors.accent))),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 20),
-
-          // 2. بانر الإعلانات المتحرك أفقياً (Carousel / PageView) مع صور حقيقية كثيرة
-          Column(
-            children: [
-              SizedBox(
-                height: 165,
-                child: PageView.builder(
-                  controller: _adController,
-                  onPageChanged: (idx) => _currentAdPage.value = idx,
-                  itemCount: carouselItems.length,
-                  itemBuilder: (context, idx) {
-                    final ad = carouselItems[idx];
-                    final String imgUrl = ad['image_url']?.toString() ?? ad['img']?.toString() ?? '';
-                    const String fallbackImg = 'https://images.unsplash.com/photo-1504711434969-e33886168f5c?auto=format&fit=crop&w=500&q=80';
-                    final String title = ad['title']?.toString() ?? '';
-                    final String desc = ad['content']?.toString() ?? ad['desc']?.toString() ?? '';
-                    final String sub = ad['date']?.toString() ?? ad['sub']?.toString() ?? LanguageService.tr('auto_trans_1164');
-
-                    return GestureDetector(
-                      onTap: () => _showNewsDetail(context, ad),
-                      child: Container(
-                        margin: const EdgeInsets.symmetric(horizontal: 20),
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(22),
-                          boxShadow: [BoxShadow(color: AppColors.primaryDark.withValues(alpha: 0.25), blurRadius: 15, offset: const Offset(0, 8))],
-                        ),
-                        child: ClipRRect(
-                          borderRadius: BorderRadius.circular(22),
-                          child: Stack(
-                            fit: StackFit.expand,
-                            children: [
-                              // صورة الإعلان الحقيقية
-                              Image.network(
-                                imgUrl.isNotEmpty ? imgUrl : fallbackImg,
-                                cacheWidth: 800,
-                                fit: BoxFit.cover,
-                                errorBuilder: (_, __, ___) => Container(
-                                  color: AppColors.primaryDark,
-                                  child: const Icon(Icons.newspaper, size: 50, color: AppColors.accent),
-                                ),
-                              ),
-                              // تدرج لوني داكن وذهبي لحماية النصوص
-                              Container(
-                                decoration: BoxDecoration(
-                                  gradient: LinearGradient(
-                                    begin: Alignment.bottomRight,
-                                    end: Alignment.topLeft,
-                                    colors: [
-                                      AppColors.primaryDark.withValues(alpha: 0.95),
-                                      AppColors.primaryDark.withValues(alpha: 0.6),
-                                      Colors.transparent,
-                                    ],
-                                  ),
-                                ),
-                              ),
-                              // محتوى الشريحة
-                              Padding(
-                                padding: const EdgeInsets.all(18),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    Row(
-                                      mainAxisAlignment: MainAxisAlignment.end,
-                                      children: [
-                                        Text('${idx + 1} / ${carouselItems.length}', style: const TextStyle(color: Colors.white70, fontSize: 11, fontWeight: FontWeight.bold)),
-                                      ],
-                                    ),
-                                    const Spacer(),
-                                    Text(
-                                      title,
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                      style: const TextStyle(color: AppColors.accent, fontSize: 16, fontWeight: FontWeight.w900),
-                                    ),
-                                    const SizedBox(height: 4),
-                                    Text(
-                                      desc,
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                      style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold),
-                                    ),
-                                    const SizedBox(height: 2),
-                                    Text(
-                                      sub,
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                      style: const TextStyle(color: Colors.white70, fontSize: 11),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    );
-                  },
-                ),
-              ),
-              const SizedBox(height: 10),
-              // نقاط المؤشر المؤكدة للحركة
-              ValueListenableBuilder<int>(
-                valueListenable: _currentAdPage,
-                builder: (context, currentPage, _) {
-                  return Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: List.generate(carouselItems.length, (index) {
-                      final isActive = index == currentPage;
-                      return AnimatedContainer(
-                        duration: const Duration(milliseconds: 300),
-                        margin: const EdgeInsets.symmetric(horizontal: 3),
-                        width: isActive ? 22 : 8,
-                        height: 8,
-                        decoration: BoxDecoration(
-                          color: isActive ? AppColors.accent : Colors.grey.shade400,
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                      );
-                    }),
-                  );
-                },
-              ),
-            ],
-          ),
-          const SizedBox(height: 20),
-
-          // 3. كارت حجز السكن الطلابى (بمفردي أو مع شريك سكن)
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20),
-            child: GestureDetector(
-              onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => RentFlatScreen(user: usr, apartments: _apartments))),
-              child: Container(
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(22),
-                  border: Border.all(color: AppColors.accent, width: 2),
-                  boxShadow: [BoxShadow(color: AppColors.primary.withValues(alpha: 0.15), blurRadius: 15, offset: const Offset(0, 6))],
-                ),
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(20),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      SizedBox(
-                        height: 160, // تم تقليل الارتفاع بناءً على الطلب
-                        child: Image.asset(
-                          'assets/images/new_card_bg.jpg',
-                          fit: BoxFit.cover,
-                        ),
-                      ),
-                      Container(
-                        padding: const EdgeInsets.all(16),
-                        color: AppColors.primary,
-                        child: Row(
-                          children: [
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(LanguageService.tr('book_apartment_title'), style: const TextStyle(color: AppColors.accent, fontSize: 17, fontWeight: FontWeight.w900)),
-                                  const SizedBox(height: 6),
-                                  Text(LanguageService.tr('book_apartment_desc'), style: const TextStyle(color: Colors.white, fontSize: 13, height: 1.4, fontWeight: FontWeight.w600)),
-                                ],
-                              ),
-                            ),
-                            const SizedBox(width: 12),
-                            Container(
-                              padding: const EdgeInsets.all(10),
-                              decoration: const BoxDecoration(color: AppColors.accent, shape: BoxShape.circle),
-                              child: const Icon(Icons.arrow_forward_ios, color: AppColors.textDark, size: 18),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
+                  padding: const EdgeInsets.only(
+                      top: 16, bottom: 20, left: 20, right: 20),
+                  decoration: const BoxDecoration(
+                    gradient: LinearGradient(
+                        colors: [AppColors.primaryDark, AppColors.primary]),
+                    borderRadius:
+                        BorderRadius.vertical(bottom: Radius.circular(28)),
                   ),
-                ),
-              ),
-            ),
-          ),
-          const SizedBox(height: 16),
-
-          // 5. الفلتر داخل كارت كبير
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20),
-            child: Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: Colors.grey.shade300, width: 1.5),
-                boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 10, offset: const Offset(0, 4))],
-              ),
-              child: Column(
-                children: [
-                  if (_selectedUniversities.isNotEmpty || _maxPriceFilter != null || _rentalTypeFilter != null || _districtIdFilter != null || _roomsCountFilter != null)
-                    Align(
-                      alignment: Alignment.centerLeft,
-                      child: InkWell(
-                        onTap: () {
-                          setState(() {
-                            _selectedUniversities = [];
-                            _maxPriceFilter = null;
-                            _rentalTypeFilter = null;
-                            _districtIdFilter = null;
-                            _roomsCountFilter = null;
-                          });
-                          _loadApartments();
-                        },
-                        child: Padding(
-                          padding: const EdgeInsets.only(bottom: 12),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              const Icon(Icons.refresh, size: 18, color: Colors.red),
-                              const SizedBox(width: 4),
-                              Text(LanguageService.tr('clear_filter'), style: const TextStyle(color: Colors.red, fontSize: 13, fontWeight: FontWeight.bold)),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ),
-                  Row(
+                  child: Row(
                     children: [
-                      Expanded(
-                        flex: 6,
-                        child: _buildCustomFilterChip(
-                          label: _selectedUniversities.isEmpty ? LanguageService.tr('auto_trans_1165') : _selectedUniversities.join(" + "),
-                          isSelected: _selectedUniversities.isNotEmpty,
-                          onTap: _showUniversitiesDialog,
+                      CircleAvatar(
+                        radius: 26,
+                        backgroundColor: AppColors.accent,
+                        child: CircleAvatar(
+                          radius: 24,
+                          backgroundColor: Colors.white,
+                          child: Icon(
+                              widget.isGuest
+                                  ? Icons.person_outline
+                                  : Icons.person,
+                              color: AppColors.primary,
+                              size: 30),
                         ),
                       ),
-                      const SizedBox(width: 8),
+                      const SizedBox(width: 14),
                       Expanded(
-                        flex: 5,
-                        child: _buildCustomFilterChip(
-                          label: _maxPriceFilter == null ? LanguageService.tr('auto_trans_1166') : '${LanguageService.tr("up_to_price")} $_maxPriceFilter\$',
-                          isSelected: _maxPriceFilter != null,
-                          onTap: _showPriceDialog,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: _buildFilterChipDropdown(
-                          label: LanguageService.tr('auto_trans_1167'),
-                          value: _districtIdFilter != null
-                              ? (_districtsList.firstWhere(
-                                  (d) => d['id']?.toString() == _districtIdFilter.toString(),
-                                  orElse: () => {'name': 'all_districts'},
-                                )['name'] as String)
-                              : 'all_districts',
-                          items: ['all_districts', ..._districtsList.map((e) => e['name'].toString())],
-                          onChanged: (val) {
-                            if (val == null || val == 'all_districts') {
-                              setState(() => _districtIdFilter = null);
-                            } else {
-                              final d = _districtsList.firstWhere(
-                                  (d) => d['name'].toString() == val, orElse: () => {});
-                              setState(() => _districtIdFilter = d['id'] != null ? int.tryParse(d['id'].toString()) : null);
-                            }
-                            _loadApartments();
-                          },
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: _buildFilterChipDropdown(
-                          label: LanguageService.tr('auto_trans_1171'),
-                          value: _rentalTypeFilter ?? 'all_flats',
-                          items: const ['all_flats', 'apartment', 'room_shared', 'studio'],
-                          onChanged: (val) {
-                            setState(() => _rentalTypeFilter = (val == null || val == 'all_flats') ? null : val);
-                            _loadApartments();
-                          },
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: _buildFilterChipDropdown(
-                          label: LanguageService.tr('auto_trans_1172'),
-                          value: _roomsCountFilter != null ? _roomsCountFilter.toString() : 'all',
-                          items: const ['all', '1', '2', '3', '4', '5'],
-                          onChanged: (val) {
-                            setState(() => _roomsCountFilter = (val == null || val == 'all') ? null : int.tryParse(val));
-                            _loadApartments();
-                          },
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: _buildCustomFilterChip(
-                          label: _selectedUniversities.isEmpty ? LanguageService.tr('auto_trans_1165') : _selectedUniversities.join(" + "),
-                          isSelected: _selectedUniversities.isNotEmpty,
-                          onTap: _showUniversitiesDialog,
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-          ),
-          const SizedBox(height: 16),
-            ],
-          ),
-        ),
-
-        // 6. قائمة الشقق
-        SliverPadding(
-          padding: const EdgeInsets.symmetric(horizontal: 20),
-          sliver: SliverList(
-            delegate: SliverChildBuilderDelegate(
-              (context, idx) {
-              final apt = filteredApts[idx];
-              final imagesList = List<String>.from((apt['images'] as List?)?.map((e) => e.toString()) ?? ['assets/images/apt1.png']);
-              final firstImg = imagesList.isNotEmpty ? imagesList.first : 'assets/images/apt1.png';
-              final moveInStr = apt['move_in_date']?.toString() ?? LanguageService.tr('auto_trans_1177');
-              final isScheduled = apt['move_in_type'] == LanguageService.tr('auto_trans_1178') || moveInStr.contains(LanguageService.tr('auto_trans_1179')) || moveInStr.contains(LanguageService.tr('auto_trans_1180'));
-
-              return GestureDetector(
-                onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => ApartmentDetailScreen(apartment: apt, user: usr))),
-                child: Container(
-                  margin: const EdgeInsets.only(bottom: 20),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(22),
-                    boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.06), blurRadius: 15, offset: const Offset(0, 5))],
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      ClipRRect(
-                        borderRadius: const BorderRadius.vertical(top: Radius.circular(22)),
-                        child: firstImg.startsWith('assets/')
-                            ? Image.asset(
-                                firstImg,
-                                height: 200,
-                                width: double.infinity,
-                                fit: BoxFit.cover,
-                                errorBuilder: (_, __, ___) => Image.asset('assets/images/apt1.png', height: 200, width: double.infinity, fit: BoxFit.cover),
-                              )
-                            : Image.network(
-                                ApiService.resolveImageUrl(firstImg),
-                                cacheWidth: 800,
-                                height: 200,
-                                width: double.infinity,
-                                fit: BoxFit.cover,
-                                errorBuilder: (_, __, ___) => Image.asset('assets/images/apt1.png', height: 200, width: double.infinity, fit: BoxFit.cover),
-                              ),
-                      ),
-                      Padding(
-                        padding: const EdgeInsets.all(18),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Row(
-                                  children: [
-                                    Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-                                      decoration: BoxDecoration(color: AppColors.primaryDark, borderRadius: BorderRadius.circular(12)),
-                                      child: Text(apt['price'] as String, style: const TextStyle(color: AppColors.accent, fontWeight: FontWeight.bold, fontSize: 15)),
-                                    ),
-                                    const SizedBox(width: 8),
-                                    Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                                      decoration: BoxDecoration(
-                                        color: AppColors.accentLight,
-                                        borderRadius: BorderRadius.circular(12),
-                                        border: Border.all(color: AppColors.accent),
-                                      ),
-                                      child: Text(
-                                        (() {
-                                          final t = apt['rental_type']?.toString() ?? '';
-                                          if (t == 'apartment') return 'شقة كاملة';
-                                          if (t == 'studio') return 'استوديو';
-                                          if (t == 'room_shared') return 'غرفة في شقة مشتركة';
-                                          return 'غير محدد';
-                                        })(),
-                                        style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold, fontSize: 12),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                                  decoration: BoxDecoration(
-                                    color: isScheduled ? const Color(0xFFFFF3E0) : const Color(0xFFE8F5E9),
-                                    borderRadius: BorderRadius.circular(10),
-                                  ),
-                                  child: Text(
-                                    moveInStr,
-                                    style: TextStyle(
-                                      color: isScheduled ? const Color(0xFFE65100) : const Color(0xFF2E7D32),
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 12,
-                                    ),
-                                  ),
-                                ),
-                              ],
+                            Text(
+                              '${LanguageService.tr('welcome')} ${usr?.fullName ?? LanguageService.tr('auto_trans_1160')}',
+                              style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold),
                             ),
-                            const SizedBox(height: 12),
-                            Text(apt['title'] as String, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.textDark)),
-                            const SizedBox(height: 8),
-                            Row(
-                              children: [
-                                const Icon(Icons.location_on, color: AppColors.accent, size: 18),
-                                const SizedBox(width: 6),
-                                Expanded(
-                                  child: Text(
-                                    apt['location'] as String,
-                                    style: const TextStyle(fontSize: 13, color: AppColors.textMuted),
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 6),
-                            Row(
-                              children: [
-                                const Icon(Icons.school, color: AppColors.primary, size: 18),
-                                const SizedBox(width: 6),
-                                Expanded(
-                                  child: Text(
-                                    apt['proximity'] as String,
-                                    style: const TextStyle(fontSize: 13, color: AppColors.primary, fontWeight: FontWeight.w600),
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                ),
-                              ],
-                            ),
-                            const Divider(height: 24),
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Text(LanguageService.tr('auto_trans_1181'), style: const TextStyle(color: AppColors.accent, fontWeight: FontWeight.bold, fontSize: 13)),
-                                const Icon(Icons.arrow_back, color: AppColors.primary, size: 18),
-                              ],
+                            const SizedBox(height: 4),
+                            Text(
+                              (usr?.universityId != null &&
+                                      usr!.universityId! > 0)
+                                  ? 'University #${usr.universityId}'
+                                  : LanguageService.tr('auto_trans_1161'),
+                              style: const TextStyle(
+                                  color: AppColors.accentLight, fontSize: 13),
                             ),
                           ],
                         ),
                       ),
+                      IconButton(
+                        onPressed: () => Navigator.of(context).push(
+                            MaterialPageRoute(
+                                builder: (_) =>
+                                    NotificationsScreen(user: usr))),
+                        icon: Stack(
+                          children: [
+                            const Icon(Icons.notifications_outlined,
+                                color: Colors.white, size: 28),
+                            if (_notificationsList.isNotEmpty)
+                              Positioned(
+                                right: 0,
+                                top: 0,
+                                child: Container(
+                                  padding: const EdgeInsets.all(4),
+                                  decoration: const BoxDecoration(
+                                      color: Colors.redAccent,
+                                      shape: BoxShape.circle),
+                                  child: Text(
+                                    _notificationsList.length.toString(),
+                                    style: const TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 10,
+                                        fontWeight: FontWeight.bold),
+                                  ),
+                                ),
+                              ),
+                          ],
+                        ),
+                        tooltip: LanguageService.tr('notifications'),
+                      ),
+                      const SizedBox(width: 8),
+                      Container(
+                        width: 48,
+                        height: 48,
+                        padding: const EdgeInsets.all(4),
+                        decoration: BoxDecoration(
+                            color: AppColors.primaryDark,
+                            shape: BoxShape.circle,
+                            border: Border.all(
+                                color: AppColors.accent, width: 1.5)),
+                        child: ClipOval(
+                            child: Image.asset('assets/images/logo.png',
+                                fit: BoxFit.contain,
+                                errorBuilder: (_, __, ___) => const Icon(
+                                    Icons.star,
+                                    color: AppColors.accent))),
+                      ),
                     ],
                   ),
                 ),
-              );
-            },
-            childCount: filteredApts.length,
+                const SizedBox(height: 20),
+
+                // 2. بانر الإعلانات المتحرك أفقياً (Carousel / PageView) مع صور حقيقية كثيرة
+                Column(
+                  children: [
+                    SizedBox(
+                      height: 165,
+                      child: PageView.builder(
+                        controller: _adController,
+                        onPageChanged: (idx) => _currentAdPage.value = idx,
+                        itemCount: carouselItems.length,
+                        itemBuilder: (context, idx) {
+                          final ad = carouselItems[idx];
+                          final String imgUrl = ad['image_url']?.toString() ??
+                              ad['img']?.toString() ??
+                              '';
+                          const String fallbackImg =
+                              'https://images.unsplash.com/photo-1504711434969-e33886168f5c?auto=format&fit=crop&w=500&q=80';
+                          final String title = ad['title']?.toString() ?? '';
+                          final String desc = ad['content']?.toString() ??
+                              ad['desc']?.toString() ??
+                              '';
+                          final String sub = ad['date']?.toString() ??
+                              ad['sub']?.toString() ??
+                              LanguageService.tr('auto_trans_1164');
+
+                          return GestureDetector(
+                            onTap: () => _showNewsDetail(context, ad),
+                            child: Container(
+                              margin:
+                                  const EdgeInsets.symmetric(horizontal: 20),
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(22),
+                                boxShadow: [
+                                  BoxShadow(
+                                      color: AppColors.primaryDark
+                                          .withValues(alpha: 0.25),
+                                      blurRadius: 15,
+                                      offset: const Offset(0, 8))
+                                ],
+                              ),
+                              child: ClipRRect(
+                                borderRadius: BorderRadius.circular(22),
+                                child: Stack(
+                                  fit: StackFit.expand,
+                                  children: [
+                                    // صورة الإعلان الحقيقية
+                                    Image.network(
+                                      imgUrl.isNotEmpty ? imgUrl : fallbackImg,
+                                      cacheWidth: 800,
+                                      fit: BoxFit.cover,
+                                      errorBuilder: (_, __, ___) => Container(
+                                        color: AppColors.primaryDark,
+                                        child: const Icon(Icons.newspaper,
+                                            size: 50, color: AppColors.accent),
+                                      ),
+                                    ),
+                                    // تدرج لوني داكن وذهبي لحماية النصوص
+                                    Container(
+                                      decoration: BoxDecoration(
+                                        gradient: LinearGradient(
+                                          begin: Alignment.bottomRight,
+                                          end: Alignment.topLeft,
+                                          colors: [
+                                            AppColors.primaryDark
+                                                .withValues(alpha: 0.95),
+                                            AppColors.primaryDark
+                                                .withValues(alpha: 0.6),
+                                            Colors.transparent,
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                    // محتوى الشريحة
+                                    Padding(
+                                      padding: const EdgeInsets.all(18),
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.center,
+                                        children: [
+                                          Row(
+                                            mainAxisAlignment:
+                                                MainAxisAlignment.end,
+                                            children: [
+                                              Text(
+                                                  '${idx + 1} / ${carouselItems.length}',
+                                                  style: const TextStyle(
+                                                      color: Colors.white70,
+                                                      fontSize: 11,
+                                                      fontWeight:
+                                                          FontWeight.bold)),
+                                            ],
+                                          ),
+                                          const Spacer(),
+                                          Text(
+                                            title,
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
+                                            style: const TextStyle(
+                                                color: AppColors.accent,
+                                                fontSize: 16,
+                                                fontWeight: FontWeight.w900),
+                                          ),
+                                          const SizedBox(height: 4),
+                                          Text(
+                                            desc,
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
+                                            style: const TextStyle(
+                                                color: Colors.white,
+                                                fontSize: 14,
+                                                fontWeight: FontWeight.bold),
+                                          ),
+                                          const SizedBox(height: 2),
+                                          Text(
+                                            sub,
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
+                                            style: const TextStyle(
+                                                color: Colors.white70,
+                                                fontSize: 11),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    // نقاط المؤشر المؤكدة للحركة
+                    ValueListenableBuilder<int>(
+                      valueListenable: _currentAdPage,
+                      builder: (context, currentPage, _) {
+                        return Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children:
+                              List.generate(carouselItems.length, (index) {
+                            final isActive = index == currentPage;
+                            return AnimatedContainer(
+                              duration: const Duration(milliseconds: 300),
+                              margin: const EdgeInsets.symmetric(horizontal: 3),
+                              width: isActive ? 22 : 8,
+                              height: 8,
+                              decoration: BoxDecoration(
+                                color: isActive
+                                    ? AppColors.accent
+                                    : Colors.grey.shade400,
+                                borderRadius: BorderRadius.circular(4),
+                              ),
+                            );
+                          }),
+                        );
+                      },
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 20),
+
+                // 3. كارت حجز السكن الطلابى (بمفردي أو مع شريك سكن)
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  child: GestureDetector(
+                    onTap: () => Navigator.of(context).push(MaterialPageRoute(
+                        builder: (_) => RentFlatScreen(
+                            user: usr, apartments: _apartments))),
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(22),
+                        border: Border.all(color: AppColors.accent, width: 2),
+                        boxShadow: [
+                          BoxShadow(
+                              color: AppColors.primary.withValues(alpha: 0.15),
+                              blurRadius: 15,
+                              offset: const Offset(0, 6))
+                        ],
+                      ),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(20),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            SizedBox(
+                              height: 160, // تم تقليل الارتفاع بناءً على الطلب
+                              child: Image.asset(
+                                'assets/images/new_card_bg.jpg',
+                                fit: BoxFit.cover,
+                              ),
+                            ),
+                            Container(
+                              padding: const EdgeInsets.all(16),
+                              color: AppColors.primary,
+                              child: Row(
+                                children: [
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                            LanguageService.tr(
+                                                'book_apartment_title'),
+                                            style: const TextStyle(
+                                                color: AppColors.accent,
+                                                fontSize: 17,
+                                                fontWeight: FontWeight.w900)),
+                                        const SizedBox(height: 6),
+                                        Text(
+                                            LanguageService.tr(
+                                                'book_apartment_desc'),
+                                            style: const TextStyle(
+                                                color: Colors.white,
+                                                fontSize: 13,
+                                                height: 1.4,
+                                                fontWeight: FontWeight.w600)),
+                                      ],
+                                    ),
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Container(
+                                    padding: const EdgeInsets.all(10),
+                                    decoration: const BoxDecoration(
+                                        color: AppColors.accent,
+                                        shape: BoxShape.circle),
+                                    child: Icon(
+                                        LanguageService.isRtl
+                                            ? Icons.arrow_back_ios
+                                            : Icons.arrow_forward_ios,
+                                        color: AppColors.textDark,
+                                        size: 18),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+
+                // 5. الفلتر داخل كارت كبير
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  child: Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(20),
+                      border:
+                          Border.all(color: Colors.grey.shade300, width: 1.5),
+                      boxShadow: [
+                        BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.04),
+                            blurRadius: 10,
+                            offset: const Offset(0, 4))
+                      ],
+                    ),
+                    child: Column(
+                      children: [
+                        if (_selectedUniversities.isNotEmpty ||
+                            _maxPriceFilter != null ||
+                            _rentalTypeFilter != null ||
+                            _districtIdFilter != null ||
+                            _roomsCountFilter != null)
+                          Align(
+                            alignment: AlignmentDirectional.centerStart,
+                            child: InkWell(
+                              onTap: () {
+                                setState(() {
+                                  _selectedUniversities = [];
+                                  _maxPriceFilter = null;
+                                  _rentalTypeFilter = null;
+                                  _districtIdFilter = null;
+                                  _roomsCountFilter = null;
+                                });
+                                _loadApartments();
+                              },
+                              child: Padding(
+                                padding: const EdgeInsets.only(bottom: 12),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    const Icon(Icons.refresh,
+                                        size: 18, color: Colors.red),
+                                    const SizedBox(width: 4),
+                                    Text(LanguageService.tr('clear_filter'),
+                                        style: const TextStyle(
+                                            color: Colors.red,
+                                            fontSize: 13,
+                                            fontWeight: FontWeight.bold)),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+                        Row(
+                          children: [
+                            Expanded(
+                              flex: 6,
+                              child: _buildCustomFilterChip(
+                                label: _selectedUniversities.isEmpty
+                                    ? LanguageService.tr('auto_trans_1165')
+                                    : _selectedUniversities.join(" + "),
+                                isSelected: _selectedUniversities.isNotEmpty,
+                                onTap: _showUniversitiesDialog,
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              flex: 5,
+                              child: _buildCustomFilterChip(
+                                label: _maxPriceFilter == null
+                                    ? LanguageService.tr('auto_trans_1166')
+                                    : '${LanguageService.tr("up_to_price")} $_maxPriceFilter\$',
+                                isSelected: _maxPriceFilter != null,
+                                onTap: _showPriceDialog,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: _buildFilterChipDropdown(
+                                label: LanguageService.tr('auto_trans_1167'),
+                                value: _districtIdFilter != null
+                                    ? (_districtsList.firstWhere(
+                                        (d) =>
+                                            d['id']?.toString() ==
+                                            _districtIdFilter.toString(),
+                                        orElse: () => {'name': 'all_districts'},
+                                      )['name'] as String)
+                                    : 'all_districts',
+                                items: [
+                                  'all_districts',
+                                  ..._districtsList
+                                      .map((e) => e['name'].toString())
+                                ],
+                                onChanged: (val) {
+                                  if (val == null || val == 'all_districts') {
+                                    setState(() => _districtIdFilter = null);
+                                  } else {
+                                    final d = _districtsList.firstWhere(
+                                        (d) => d['name'].toString() == val,
+                                        orElse: () => {});
+                                    setState(() => _districtIdFilter =
+                                        d['id'] != null
+                                            ? int.tryParse(d['id'].toString())
+                                            : null);
+                                  }
+                                  _loadApartments();
+                                },
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: _buildFilterChipDropdown(
+                                label: LanguageService.tr('auto_trans_1171'),
+                                value: _rentalTypeFilter ?? 'all_flats',
+                                items: const [
+                                  'all_flats',
+                                  'apartment',
+                                  'room_shared',
+                                  'studio'
+                                ],
+                                onChanged: (val) {
+                                  setState(() => _rentalTypeFilter =
+                                      (val == null || val == 'all_flats')
+                                          ? null
+                                          : val);
+                                  _loadApartments();
+                                },
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: _buildFilterChipDropdown(
+                                label: LanguageService.tr('auto_trans_1172'),
+                                value: _roomsCountFilter != null
+                                    ? _roomsCountFilter.toString()
+                                    : 'all',
+                                items: const ['all', '1', '2', '3', '4', '5'],
+                                onChanged: (val) {
+                                  setState(() => _roomsCountFilter =
+                                      (val == null || val == 'all')
+                                          ? null
+                                          : int.tryParse(val));
+                                  _loadApartments();
+                                },
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: _buildCustomFilterChip(
+                                label: _selectedUniversities.isEmpty
+                                    ? LanguageService.tr('auto_trans_1165')
+                                    : _selectedUniversities.join(" + "),
+                                isSelected: _selectedUniversities.isNotEmpty,
+                                onTap: _showUniversitiesDialog,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+              ],
+            ),
           ),
-        ),
-        ),
-        const SliverPadding(padding: EdgeInsets.only(bottom: 24)),
-      ],
-    ),
+
+          // 6. قائمة الشقق
+          SliverPadding(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            sliver: SliverList(
+              delegate: SliverChildBuilderDelegate(
+                (context, idx) {
+                  final apt = filteredApts[idx];
+                  final imagesList = List<String>.from(
+                      (apt['images'] as List?)?.map((e) => e.toString()) ??
+                          ['assets/images/apt1.png']);
+                  final firstImg = imagesList.isNotEmpty
+                      ? imagesList.first
+                      : 'assets/images/apt1.png';
+                  final moveInStr = apt['move_in_date']?.toString() ??
+                      LanguageService.tr('auto_trans_1177');
+                  final isScheduled = apt['move_in_type'] ==
+                          LanguageService.tr('auto_trans_1178') ||
+                      moveInStr
+                          .contains(LanguageService.tr('auto_trans_1179')) ||
+                      moveInStr.contains(LanguageService.tr('auto_trans_1180'));
+
+                  return GestureDetector(
+                    onTap: () => Navigator.of(context).push(MaterialPageRoute(
+                        builder: (_) =>
+                            ApartmentDetailScreen(apartment: apt, user: usr))),
+                    child: Container(
+                      margin: const EdgeInsets.only(bottom: 20),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(22),
+                        boxShadow: [
+                          BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.06),
+                              blurRadius: 15,
+                              offset: const Offset(0, 5))
+                        ],
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          ClipRRect(
+                            borderRadius: const BorderRadius.vertical(
+                                top: Radius.circular(22)),
+                            child: firstImg.startsWith('assets/')
+                                ? Image.asset(
+                                    firstImg,
+                                    height: 200,
+                                    width: double.infinity,
+                                    fit: BoxFit.cover,
+                                    errorBuilder: (_, __, ___) => Image.asset(
+                                        'assets/images/apt1.png',
+                                        height: 200,
+                                        width: double.infinity,
+                                        fit: BoxFit.cover),
+                                  )
+                                : Image.network(
+                                    ApiService.resolveImageUrl(firstImg),
+                                    cacheWidth: 800,
+                                    height: 200,
+                                    width: double.infinity,
+                                    fit: BoxFit.cover,
+                                    errorBuilder: (_, __, ___) => Image.asset(
+                                        'assets/images/apt1.png',
+                                        height: 200,
+                                        width: double.infinity,
+                                        fit: BoxFit.cover),
+                                  ),
+                          ),
+                          Padding(
+                            padding: const EdgeInsets.all(18),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Row(
+                                      children: [
+                                        Container(
+                                          padding: const EdgeInsets.symmetric(
+                                              horizontal: 14, vertical: 6),
+                                          decoration: BoxDecoration(
+                                              color: AppColors.primaryDark,
+                                              borderRadius:
+                                                  BorderRadius.circular(12)),
+                                          child: Text(apt['price'] as String,
+                                              style: const TextStyle(
+                                                  color: AppColors.accent,
+                                                  fontWeight: FontWeight.bold,
+                                                  fontSize: 15)),
+                                        ),
+                                        const SizedBox(width: 8),
+                                        Container(
+                                          padding: const EdgeInsets.symmetric(
+                                              horizontal: 10, vertical: 6),
+                                          decoration: BoxDecoration(
+                                            color: AppColors.accentLight,
+                                            borderRadius:
+                                                BorderRadius.circular(12),
+                                            border: Border.all(
+                                                color: AppColors.accent),
+                                          ),
+                                          child: Text(
+                                            LanguageService
+                                                .getLocalizedHousingType(
+                                                    apt['rental_type']
+                                                        ?.toString()),
+                                            style: const TextStyle(
+                                                color: AppColors.primary,
+                                                fontWeight: FontWeight.bold,
+                                                fontSize: 12),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(
+                                          horizontal: 10, vertical: 4),
+                                      decoration: BoxDecoration(
+                                        color: isScheduled
+                                            ? const Color(0xFFFFF3E0)
+                                            : const Color(0xFFE8F5E9),
+                                        borderRadius: BorderRadius.circular(10),
+                                      ),
+                                      child: Text(
+                                        moveInStr,
+                                        style: TextStyle(
+                                          color: isScheduled
+                                              ? const Color(0xFFE65100)
+                                              : const Color(0xFF2E7D32),
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 12,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 12),
+                                Text(apt['title'] as String,
+                                    style: const TextStyle(
+                                        fontSize: 18,
+                                        fontWeight: FontWeight.bold,
+                                        color: AppColors.textDark)),
+                                const SizedBox(height: 8),
+                                Row(
+                                  children: [
+                                    const Icon(Icons.location_on,
+                                        color: AppColors.accent, size: 18),
+                                    const SizedBox(width: 6),
+                                    Expanded(
+                                      child: Text(
+                                        apt['location'] as String,
+                                        style: const TextStyle(
+                                            fontSize: 13,
+                                            color: AppColors.textMuted),
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 6),
+                                Row(
+                                  children: [
+                                    const Icon(Icons.school,
+                                        color: AppColors.primary, size: 18),
+                                    const SizedBox(width: 6),
+                                    Expanded(
+                                      child: Text(
+                                        apt['proximity'] as String,
+                                        style: const TextStyle(
+                                            fontSize: 13,
+                                            color: AppColors.primary,
+                                            fontWeight: FontWeight.w600),
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                const Divider(height: 24),
+                                Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Text(LanguageService.tr('auto_trans_1181'),
+                                        style: const TextStyle(
+                                            color: AppColors.accent,
+                                            fontWeight: FontWeight.bold,
+                                            fontSize: 13)),
+                                    Icon(
+                                        LanguageService.isRtl
+                                            ? Icons.arrow_back
+                                            : Icons.arrow_forward,
+                                        color: AppColors.primary,
+                                        size: 18),
+                                  ],
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                },
+                childCount: filteredApts.length,
+              ),
+            ),
+          ),
+          const SliverPadding(padding: EdgeInsets.only(bottom: 24)),
+        ],
+      ),
     );
   }
 
@@ -1437,7 +1752,12 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver, Ro
         height: 95,
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(16),
-          boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.08), blurRadius: 8, offset: const Offset(0, 3))],
+          boxShadow: [
+            BoxShadow(
+                color: Colors.black.withValues(alpha: 0.08),
+                blurRadius: 8,
+                offset: const Offset(0, 3))
+          ],
         ),
         child: ClipRRect(
           borderRadius: BorderRadius.circular(16),
@@ -1447,7 +1767,9 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver, Ro
               Image.network(
                 imageUrl,
                 fit: BoxFit.cover,
-                errorBuilder: (_, __, ___) => Container(color: AppColors.primaryDark, child: const Icon(Icons.build, color: AppColors.accent)),
+                errorBuilder: (_, __, ___) => Container(
+                    color: AppColors.primaryDark,
+                    child: const Icon(Icons.build, color: AppColors.accent)),
               ),
               Container(
                 decoration: BoxDecoration(
@@ -1471,7 +1793,10 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver, Ro
                   textAlign: TextAlign.center,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Colors.white),
+                  style: const TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white),
                 ),
               ),
             ],
@@ -1491,11 +1816,20 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver, Ro
           child: Scaffold(
             backgroundColor: AppColors.background,
             body: SafeArea(
-              child: _buildPages(widget.user ?? Student(id: 0, fullName: LanguageService.tr('auto_trans_1182')))[_currentIndex],
+              child: _buildPages(widget.user ??
+                      Student(
+                          id: 0,
+                          fullName: LanguageService.tr('auto_trans_1182')))[
+                  _currentIndex],
             ),
             bottomNavigationBar: Container(
               decoration: BoxDecoration(
-                boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.1), blurRadius: 20, offset: const Offset(0, -5))],
+                boxShadow: [
+                  BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.1),
+                      blurRadius: 20,
+                      offset: const Offset(0, -5))
+                ],
               ),
               child: BottomNavigationBar(
                 currentIndex: _currentIndex,
@@ -1504,13 +1838,29 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver, Ro
                 backgroundColor: Colors.white,
                 selectedItemColor: AppColors.primary,
                 unselectedItemColor: AppColors.textMuted,
-                selectedLabelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
+                selectedLabelStyle:
+                    const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
                 items: [
-                  BottomNavigationBarItem(icon: const Icon(Icons.home_outlined), activeIcon: const Icon(Icons.home), label: LanguageService.tr('home')),
-                  BottomNavigationBarItem(icon: const Icon(Icons.build_circle_outlined), activeIcon: const Icon(Icons.build_circle), label: LanguageService.tr('services')),
-                  BottomNavigationBarItem(icon: const Icon(Icons.chat_bubble_outline), activeIcon: const Icon(Icons.chat_bubble), label: LanguageService.tr('chat')),
-                  BottomNavigationBarItem(icon: const Icon(Icons.local_offer_outlined), activeIcon: const Icon(Icons.local_offer), label: LanguageService.tr('offers')),
-                  BottomNavigationBarItem(icon: const Icon(Icons.person_outline), activeIcon: const Icon(Icons.person), label: LanguageService.tr('profile')),
+                  BottomNavigationBarItem(
+                      icon: const Icon(Icons.home_outlined),
+                      activeIcon: const Icon(Icons.home),
+                      label: LanguageService.tr('home')),
+                  BottomNavigationBarItem(
+                      icon: const Icon(Icons.build_circle_outlined),
+                      activeIcon: const Icon(Icons.build_circle),
+                      label: LanguageService.tr('services')),
+                  BottomNavigationBarItem(
+                      icon: const Icon(Icons.chat_bubble_outline),
+                      activeIcon: const Icon(Icons.chat_bubble),
+                      label: LanguageService.tr('chat')),
+                  BottomNavigationBarItem(
+                      icon: const Icon(Icons.local_offer_outlined),
+                      activeIcon: const Icon(Icons.local_offer),
+                      label: LanguageService.tr('offers')),
+                  BottomNavigationBarItem(
+                      icon: const Icon(Icons.person_outline),
+                      activeIcon: const Icon(Icons.person),
+                      label: LanguageService.tr('profile')),
                 ],
               ),
             ),
@@ -1521,10 +1871,15 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver, Ro
   }
 
   void _showNewsDetail(BuildContext context, Map<String, dynamic> news) {
-    final imgUrl = news['image_url']?.toString() ?? news['img']?.toString() ?? '';
-    const fallbackImg = 'https://images.unsplash.com/photo-1504711434969-e33886168f5c?auto=format&fit=crop&w=500&q=80';
-    final content = news['content']?.toString() ?? news['desc']?.toString() ?? '';
-    final date = news['date']?.toString() ?? news['sub']?.toString() ?? LanguageService.tr('auto_trans_1184');
+    final imgUrl =
+        news['image_url']?.toString() ?? news['img']?.toString() ?? '';
+    const fallbackImg =
+        'https://images.unsplash.com/photo-1504711434969-e33886168f5c?auto=format&fit=crop&w=500&q=80';
+    final content =
+        news['content']?.toString() ?? news['desc']?.toString() ?? '';
+    final date = news['date']?.toString() ??
+        news['sub']?.toString() ??
+        LanguageService.tr('auto_trans_1184');
 
     showModalBottomSheet(
       context: context,
@@ -1545,7 +1900,9 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver, Ro
                 height: 5,
                 width: 50,
                 margin: const EdgeInsets.symmetric(vertical: 10),
-                decoration: BoxDecoration(color: Colors.grey.shade300, borderRadius: BorderRadius.circular(10)),
+                decoration: BoxDecoration(
+                    color: Colors.grey.shade300,
+                    borderRadius: BorderRadius.circular(10)),
               ),
               Expanded(
                 child: SingleChildScrollView(
@@ -1561,7 +1918,8 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver, Ro
                         errorBuilder: (_, __, ___) => Container(
                           height: 220,
                           color: AppColors.primaryDark,
-                          child: const Icon(Icons.newspaper, size: 60, color: AppColors.accent),
+                          child: const Icon(Icons.newspaper,
+                              size: 60, color: AppColors.accent),
                         ),
                       ),
                       Padding(
@@ -1571,23 +1929,34 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver, Ro
                           children: [
                             Row(
                               children: [
-                                const Icon(Icons.schedule, color: AppColors.accent, size: 18),
+                                const Icon(Icons.schedule,
+                                    color: AppColors.accent, size: 18),
                                 const SizedBox(width: 6),
                                 Text(
                                   date,
-                                  style: const TextStyle(fontSize: 12, color: AppColors.textMuted, fontWeight: FontWeight.bold),
+                                  style: const TextStyle(
+                                      fontSize: 12,
+                                      color: AppColors.textMuted,
+                                      fontWeight: FontWeight.bold),
                                 ),
                               ],
                             ),
                             const SizedBox(height: 12),
                             Text(
                               news['title']?.toString() ?? '',
-                              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.primaryDark, height: 1.4),
+                              style: const TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                  color: AppColors.primaryDark,
+                                  height: 1.4),
                             ),
                             const Divider(height: 24, thickness: 1.2),
                             Text(
                               content,
-                              style: const TextStyle(fontSize: 14, color: AppColors.textDark, height: 1.6),
+                              style: const TextStyle(
+                                  fontSize: 14,
+                                  color: AppColors.textDark,
+                                  height: 1.6),
                             ),
                             const SizedBox(height: 20),
                           ],

@@ -11,7 +11,8 @@ class RentFlatScreen extends StatefulWidget {
   final Student? user;
   final List<Map<String, dynamic>> apartments;
 
-  const RentFlatScreen({super.key, required this.user, required this.apartments});
+  const RentFlatScreen(
+      {super.key, required this.user, required this.apartments});
 
   @override
   State<RentFlatScreen> createState() => _RentFlatScreenState();
@@ -23,10 +24,10 @@ class _RentFlatScreenState extends State<RentFlatScreen> {
   late TextEditingController _nameController;
   final _nationalityController = TextEditingController();
   String _selectedGender = 'male';
-  
+
   String? _selectedUniId;
   List<Map<String, dynamic>> _unisList = [];
-  
+
   final _majorController = TextEditingController();
   late TextEditingController _wpController;
   String _moveInDate = 'choose_date';
@@ -35,9 +36,13 @@ class _RentFlatScreenState extends State<RentFlatScreen> {
   @override
   void initState() {
     super.initState();
-    final isGuest = widget.user == null || widget.user!.id == 0 || widget.user!.fullName.contains(LanguageService.tr('auto_trans_1211'));
-    _nameController = TextEditingController(text: !isGuest ? (widget.user?.fullName ?? '') : '');
-    _wpController = TextEditingController(text: !isGuest ? (widget.user?.phone ?? '') : '');
+    final isGuest = widget.user == null ||
+        widget.user!.id == 0 ||
+        widget.user!.fullName.contains(LanguageService.tr('auto_trans_1211'));
+    _nameController = TextEditingController(
+        text: !isGuest ? (widget.user?.fullName ?? '') : '');
+    _wpController =
+        TextEditingController(text: !isGuest ? (widget.user?.phone ?? '') : '');
     _loadUniversities(!isGuest ? widget.user?.universityId : null);
   }
 
@@ -46,7 +51,9 @@ class _RentFlatScreenState extends State<RentFlatScreen> {
     if (mounted) {
       setState(() {
         _unisList = list;
-        if (userUniId != null && userUniId > 0 && _unisList.any((u) => u['id']?.toString() == userUniId.toString())) {
+        if (userUniId != null &&
+            userUniId > 0 &&
+            _unisList.any((u) => u['id']?.toString() == userUniId.toString())) {
           _selectedUniId = userUniId.toString();
         } else if (_unisList.isNotEmpty) {
           _selectedUniId = _unisList.first['id']?.toString();
@@ -66,26 +73,35 @@ class _RentFlatScreenState extends State<RentFlatScreen> {
   }
 
   bool _checkGuest() {
-    final isGuest = widget.user == null || widget.user!.id == 0 || widget.user!.fullName.contains(LanguageService.tr('auto_trans_1214'));
+    final isGuest = widget.user == null ||
+        widget.user!.id == 0 ||
+        widget.user!.fullName.contains(LanguageService.tr('auto_trans_1214'));
     if (isGuest) {
       showDialog(
         context: context,
         builder: (_) => AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-          title: Text(LanguageService.tr('guest_alert_title'), style: const TextStyle(fontWeight: FontWeight.bold)),
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          title: Text(LanguageService.tr('guest_alert_title'),
+              style: const TextStyle(fontWeight: FontWeight.bold)),
           content: Text(LanguageService.tr('guest_alert_body_booking')),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
-              child: Text(LanguageService.tr('cancel'), style: const TextStyle(color: AppColors.textMuted)),
+              child: Text(LanguageService.tr('cancel'),
+                  style: const TextStyle(color: AppColors.textMuted)),
             ),
             ElevatedButton(
-              style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary),
+              style:
+                  ElevatedButton.styleFrom(backgroundColor: AppColors.primary),
               onPressed: () {
                 Navigator.pop(context);
-                Navigator.push(context, MaterialPageRoute(builder: (_) => const LoginScreen()));
+                Navigator.push(context,
+                    MaterialPageRoute(builder: (_) => const LoginScreen()));
               },
-              child: Text(LanguageService.tr('auto_trans_1215'), style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+              child: Text(LanguageService.tr('auto_trans_1215'),
+                  style: const TextStyle(
+                      color: Colors.white, fontWeight: FontWeight.bold)),
             ),
           ],
         ),
@@ -103,17 +119,27 @@ class _RentFlatScreenState extends State<RentFlatScreen> {
       (u) => u['id']?.toString() == _selectedUniId,
       orElse: () => <String, dynamic>{},
     );
-    final selectedUniName = selectedUniMap['name']?.toString() ?? 'جامعة غير محددة';
+    final selectedUniName =
+        selectedUniMap['name']?.toString() ?? 'جامعة غير محددة';
+
+    final String resolvedGender = _selectedGender == 'male'
+        ? (LanguageService.currentLang.value == 'ar' ? 'ذكر' : 'Male')
+        : (LanguageService.currentLang.value == 'ar' ? 'أنثى' : 'Female');
+    final String resolvedNotes = _noteController.text.isNotEmpty
+        ? _noteController.text
+        : LanguageService.tr('auto_trans_1217');
 
     final msg = LanguageService.tr('auto_trans_1216') +
-        'الاسم: ${_nameController.text}\n'
-        'الجنسية: ${_nationalityController.text}\n'
-        'النوع: $_selectedGender\n'
-        'الجامعة: $selectedUniName\n'
-        'التخصص: ${_majorController.text}\n'
-        'رقم الواتساب: ${_wpController.text}\n'
-        'موعد النقل: $_moveInDate\n'
-        'ملاحظات: ${_noteController.text.isNotEmpty ? _noteController.text : LanguageService.tr('auto_trans_1217')}';
+        LanguageService.formatRentRequestMessage(
+          name: _nameController.text,
+          nationality: _nationalityController.text,
+          gender: resolvedGender,
+          university: selectedUniName,
+          major: _majorController.text,
+          whatsapp: _wpController.text,
+          moveInDate: _moveInDate,
+          notes: resolvedNotes,
+        );
 
     // Show loading spinner
     showDialog(
@@ -124,7 +150,9 @@ class _RentFlatScreenState extends State<RentFlatScreen> {
           children: [
             const CircularProgressIndicator(color: AppColors.primary),
             const SizedBox(width: 20),
-            Expanded(child: Text(LanguageService.tr('auto_trans_1218'), style: const TextStyle(fontFamily: 'Cairo'))),
+            Expanded(
+                child: Text(LanguageService.tr('auto_trans_1218'),
+                    style: const TextStyle(fontFamily: 'Cairo'))),
           ],
         ),
       ),
@@ -150,7 +178,9 @@ class _RentFlatScreenState extends State<RentFlatScreen> {
       if (!context.mounted) return;
       Navigator.pop(context); // Dismiss loading spinner
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('${LanguageService.tr('error_sending_request')}: $e')),
+        SnackBar(
+            content:
+                Text('${LanguageService.tr('error_sending_request')}: $e')),
       );
     });
   }
@@ -167,7 +197,9 @@ class _RentFlatScreenState extends State<RentFlatScreen> {
           children: [
             const CircularProgressIndicator(color: AppColors.primary),
             const SizedBox(width: 20),
-            Expanded(child: Text(LanguageService.tr('auto_trans_1222'), style: const TextStyle(fontFamily: 'Cairo'))),
+            Expanded(
+                child: Text(LanguageService.tr('auto_trans_1222'),
+                    style: const TextStyle(fontFamily: 'Cairo'))),
           ],
         ),
       ),
@@ -195,7 +227,8 @@ class _RentFlatScreenState extends State<RentFlatScreen> {
       if (!context.mounted) return;
       Navigator.pop(context); // Dismiss loading spinner
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('${LanguageService.tr('connection_error')}: $e')),
+        SnackBar(
+            content: Text('${LanguageService.tr('connection_error')}: $e')),
       );
     });
   }
@@ -209,7 +242,9 @@ class _RentFlatScreenState extends State<RentFlatScreen> {
         appBar: AppBar(
           backgroundColor: AppColors.primary,
           elevation: 0,
-          title: Text(LanguageService.tr('auto_trans_1227'), style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+          title: Text(LanguageService.tr('auto_trans_1227'),
+              style: const TextStyle(
+                  color: Colors.white, fontWeight: FontWeight.bold)),
           iconTheme: const IconThemeData(color: Colors.white),
           actions: [
             IconButton(
@@ -227,21 +262,36 @@ class _RentFlatScreenState extends State<RentFlatScreen> {
               Container(
                 padding: const EdgeInsets.all(18),
                 decoration: BoxDecoration(
-                  gradient: const LinearGradient(colors: [AppColors.primaryDark, AppColors.primary]),
+                  gradient: const LinearGradient(
+                      colors: [AppColors.primaryDark, AppColors.primary]),
                   borderRadius: BorderRadius.circular(20),
-                  boxShadow: [BoxShadow(color: AppColors.primary.withValues(alpha: 0.3), blurRadius: 15, offset: const Offset(0, 6))],
+                  boxShadow: [
+                    BoxShadow(
+                        color: AppColors.primary.withValues(alpha: 0.3),
+                        blurRadius: 15,
+                        offset: const Offset(0, 6))
+                  ],
                 ),
                 child: Row(
                   children: [
-                    const Icon(Icons.real_estate_agent, color: AppColors.accent, size: 40),
+                    const Icon(Icons.real_estate_agent,
+                        color: AppColors.accent, size: 40),
                     const SizedBox(width: 14),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(LanguageService.tr('choose_housing_method'), style: const TextStyle(color: AppColors.accent, fontWeight: FontWeight.bold, fontSize: 17)),
+                          Text(LanguageService.tr('choose_housing_method'),
+                              style: const TextStyle(
+                                  color: AppColors.accent,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 17)),
                           const SizedBox(height: 4),
-                          Text(LanguageService.tr('housing_method_desc'), style: const TextStyle(color: Colors.white, fontSize: 13, height: 1.4)),
+                          Text(LanguageService.tr('housing_method_desc'),
+                              style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 13,
+                                  height: 1.4)),
                         ],
                       ),
                     ),
@@ -308,12 +358,16 @@ class _RentFlatScreenState extends State<RentFlatScreen> {
             ),
           ),
         ),
-
       ],
     );
   }
 
-  Widget _buildAloneCard({required String title, required String subtitle, required IconData icon, required VoidCallback onTap, bool isPrimary = false}) {
+  Widget _buildAloneCard(
+      {required String title,
+      required String subtitle,
+      required IconData icon,
+      required VoidCallback onTap,
+      bool isPrimary = false}) {
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(20),
@@ -321,14 +375,23 @@ class _RentFlatScreenState extends State<RentFlatScreen> {
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
           gradient: LinearGradient(
-            colors: isPrimary ? [AppColors.primaryDark, AppColors.primary] : [Colors.white, const Color(0xFFF8F9FA)],
+            colors: isPrimary
+                ? [AppColors.primaryDark, AppColors.primary]
+                : [Colors.white, const Color(0xFFF8F9FA)],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ),
           borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: isPrimary ? AppColors.primary : Colors.grey.shade200, width: 1.5),
+          border: Border.all(
+              color: isPrimary ? AppColors.primary : Colors.grey.shade200,
+              width: 1.5),
           boxShadow: [
-            BoxShadow(color: isPrimary ? AppColors.primary.withValues(alpha: 0.3) : Colors.black.withValues(alpha: 0.06), blurRadius: 15, offset: const Offset(0, 5))
+            BoxShadow(
+                color: isPrimary
+                    ? AppColors.primary.withValues(alpha: 0.3)
+                    : Colors.black.withValues(alpha: 0.06),
+                blurRadius: 15,
+                offset: const Offset(0, 5))
           ],
         ),
         child: Row(
@@ -336,23 +399,43 @@ class _RentFlatScreenState extends State<RentFlatScreen> {
             Container(
               padding: const EdgeInsets.all(14),
               decoration: BoxDecoration(
-                color: isPrimary ? Colors.white.withValues(alpha: 0.2) : AppColors.primary.withValues(alpha: 0.1),
+                color: isPrimary
+                    ? Colors.white.withValues(alpha: 0.2)
+                    : AppColors.primary.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(16),
               ),
-              child: Icon(icon, color: isPrimary ? Colors.white : AppColors.primary, size: 28),
+              child: Icon(icon,
+                  color: isPrimary ? Colors.white : AppColors.primary,
+                  size: 28),
             ),
             const SizedBox(width: 18),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(title, style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold, color: isPrimary ? Colors.white : AppColors.textDark)),
+                  Text(title,
+                      style: TextStyle(
+                          fontSize: 17,
+                          fontWeight: FontWeight.bold,
+                          color:
+                              isPrimary ? Colors.white : AppColors.textDark)),
                   const SizedBox(height: 6),
-                  Text(subtitle, style: TextStyle(fontSize: 13, color: isPrimary ? Colors.white.withValues(alpha: 0.8) : AppColors.textMuted, height: 1.5)),
+                  Text(subtitle,
+                      style: TextStyle(
+                          fontSize: 13,
+                          color: isPrimary
+                              ? Colors.white.withValues(alpha: 0.8)
+                              : AppColors.textMuted,
+                          height: 1.5)),
                 ],
               ),
             ),
-            Icon(Icons.arrow_forward_ios, color: isPrimary ? Colors.white : Colors.grey.shade400, size: 18),
+            Icon(
+                LanguageService.isRtl
+                    ? Icons.arrow_back_ios
+                    : Icons.arrow_forward_ios,
+                color: isPrimary ? Colors.white : Colors.grey.shade400,
+                size: 18),
           ],
         ),
       ),
@@ -366,16 +449,27 @@ class _RentFlatScreenState extends State<RentFlatScreen> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
-        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 15, offset: const Offset(0, 5))],
+        boxShadow: [
+          BoxShadow(
+              color: Colors.black.withValues(alpha: 0.05),
+              blurRadius: 15,
+              offset: const Offset(0, 5))
+        ],
       ),
       child: Form(
         key: _formKey,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(LanguageService.tr('auto_trans_1232'), style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.textDark)),
+            Text(LanguageService.tr('auto_trans_1232'),
+                style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.textDark)),
             const SizedBox(height: 6),
-            Text(LanguageService.tr('auto_trans_1233'), style: const TextStyle(fontSize: 13, color: AppColors.textMuted)),
+            Text(LanguageService.tr('auto_trans_1233'),
+                style:
+                    const TextStyle(fontSize: 13, color: AppColors.textMuted)),
             const SizedBox(height: 20),
 
             // 1. Name
@@ -383,10 +477,13 @@ class _RentFlatScreenState extends State<RentFlatScreen> {
               controller: _nameController,
               decoration: InputDecoration(
                 labelText: LanguageService.tr('auto_trans_1234'),
-                prefixIcon: const Icon(Icons.person_outline, color: AppColors.primary),
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
+                prefixIcon:
+                    const Icon(Icons.person_outline, color: AppColors.primary),
+                border:
+                    OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
               ),
-              validator: (v) => v!.isEmpty ? LanguageService.tr('auto_trans_1235') : null,
+              validator: (v) =>
+                  v!.isEmpty ? LanguageService.tr('auto_trans_1235') : null,
             ),
             const SizedBox(height: 14),
 
@@ -395,10 +492,13 @@ class _RentFlatScreenState extends State<RentFlatScreen> {
               controller: _nationalityController,
               decoration: InputDecoration(
                 labelText: LanguageService.tr('auto_trans_1236'),
-                prefixIcon: const Icon(Icons.flag_outlined, color: AppColors.primary),
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
+                prefixIcon:
+                    const Icon(Icons.flag_outlined, color: AppColors.primary),
+                border:
+                    OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
               ),
-              validator: (v) => v!.isEmpty ? LanguageService.tr('auto_trans_1237') : null,
+              validator: (v) =>
+                  v!.isEmpty ? LanguageService.tr('auto_trans_1237') : null,
             ),
             const SizedBox(height: 14),
 
@@ -407,26 +507,36 @@ class _RentFlatScreenState extends State<RentFlatScreen> {
               initialValue: _selectedGender,
               decoration: InputDecoration(
                 labelText: LanguageService.tr('gender_label'),
-                prefixIcon: const Icon(Icons.wc_outlined, color: AppColors.primary),
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
+                prefixIcon:
+                    const Icon(Icons.wc_outlined, color: AppColors.primary),
+                border:
+                    OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
               ),
-              items: ['male', 'female'].map((g) => DropdownMenuItem(value: g, child: Text(LanguageService.tr(g)))).toList(),
+              items: ['male', 'female']
+                  .map((g) => DropdownMenuItem(
+                      value: g, child: Text(LanguageService.tr(g))))
+                  .toList(),
               onChanged: (val) => setState(() => _selectedGender = val!),
             ),
             const SizedBox(height: 14),
 
             // 4. Uni
             DropdownButtonFormField<String?>(
-              value: _unisList.any((u) => u['id']?.toString() == _selectedUniId) ? _selectedUniId : null,
+              value: _unisList.any((u) => u['id']?.toString() == _selectedUniId)
+                  ? _selectedUniId
+                  : null,
               decoration: InputDecoration(
                 labelText: LanguageService.tr('auto_trans_1238'),
-                prefixIcon: const Icon(Icons.school_outlined, color: AppColors.primary),
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
+                prefixIcon:
+                    const Icon(Icons.school_outlined, color: AppColors.primary),
+                border:
+                    OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
               ),
               items: _unisList.map((uni) {
                 return DropdownMenuItem<String?>(
                   value: uni['id']?.toString(),
-                  child: Text(uni['name']?.toString() ?? '', style: const TextStyle(fontSize: 13)),
+                  child: Text(uni['name']?.toString() ?? '',
+                      style: const TextStyle(fontSize: 13)),
                 );
               }).toList(),
               onChanged: (val) => setState(() => _selectedUniId = val),
@@ -438,10 +548,13 @@ class _RentFlatScreenState extends State<RentFlatScreen> {
               controller: _majorController,
               decoration: InputDecoration(
                 labelText: LanguageService.tr('auto_trans_1239'),
-                prefixIcon: const Icon(Icons.menu_book_outlined, color: AppColors.primary),
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
+                prefixIcon: const Icon(Icons.menu_book_outlined,
+                    color: AppColors.primary),
+                border:
+                    OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
               ),
-              validator: (v) => v!.isEmpty ? LanguageService.tr('auto_trans_1240') : null,
+              validator: (v) =>
+                  v!.isEmpty ? LanguageService.tr('auto_trans_1240') : null,
             ),
             const SizedBox(height: 14),
 
@@ -451,10 +564,13 @@ class _RentFlatScreenState extends State<RentFlatScreen> {
               keyboardType: TextInputType.phone,
               decoration: InputDecoration(
                 labelText: LanguageService.tr('auto_trans_1241'),
-                prefixIcon: const Icon(Icons.phone_android_outlined, color: AppColors.primary),
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
+                prefixIcon: const Icon(Icons.phone_android_outlined,
+                    color: AppColors.primary),
+                border:
+                    OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
               ),
-              validator: (v) => v!.isEmpty ? LanguageService.tr('auto_trans_1242') : null,
+              validator: (v) =>
+                  v!.isEmpty ? LanguageService.tr('auto_trans_1242') : null,
             ),
             const SizedBox(height: 14),
 
@@ -464,8 +580,10 @@ class _RentFlatScreenState extends State<RentFlatScreen> {
               controller: TextEditingController(text: _moveInDate),
               decoration: InputDecoration(
                 labelText: LanguageService.tr('auto_trans_1243'),
-                prefixIcon: const Icon(Icons.calendar_month_outlined, color: AppColors.primary),
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
+                prefixIcon: const Icon(Icons.calendar_month_outlined,
+                    color: AppColors.primary),
+                border:
+                    OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
               ),
               onTap: () async {
                 final date = await showDatePicker(
@@ -476,11 +594,14 @@ class _RentFlatScreenState extends State<RentFlatScreen> {
                 );
                 if (date != null) {
                   setState(() {
-                    _moveInDate = '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
+                    _moveInDate =
+                        '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
                   });
                 }
               },
-              validator: (v) => _moveInDate == 'choose_date' ? LanguageService.tr('auto_trans_1244') : null,
+              validator: (v) => _moveInDate == 'choose_date'
+                  ? LanguageService.tr('auto_trans_1244')
+                  : null,
             ),
             const SizedBox(height: 14),
 
@@ -490,8 +611,10 @@ class _RentFlatScreenState extends State<RentFlatScreen> {
               maxLines: 3,
               decoration: InputDecoration(
                 labelText: LanguageService.tr('auto_trans_1245'),
-                prefixIcon: const Icon(Icons.note_alt_outlined, color: AppColors.primary),
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
+                prefixIcon: const Icon(Icons.note_alt_outlined,
+                    color: AppColors.primary),
+                border:
+                    OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
               ),
             ),
             const SizedBox(height: 24),
@@ -501,12 +624,19 @@ class _RentFlatScreenState extends State<RentFlatScreen> {
               width: double.infinity,
               child: ElevatedButton.icon(
                 onPressed: _submitRoommateForm,
-                icon: const Icon(Icons.support_agent, color: Colors.white, size: 24),
-                label: Text(LanguageService.tr('auto_trans_1246'), style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
+                icon: const Icon(Icons.support_agent,
+                    color: Colors.white, size: 24),
+                label: Text(LanguageService.tr('auto_trans_1246'),
+                    style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold)),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF10B981), // Green color representing WhatsApp / Customer Service
+                  backgroundColor: const Color(
+                      0xFF10B981), // Green color representing WhatsApp / Customer Service
                   padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14)),
                   elevation: 2,
                 ),
               ),

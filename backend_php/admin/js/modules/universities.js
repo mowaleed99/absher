@@ -43,7 +43,14 @@ export async function handleAddUniversity(e) {
 }
 
 export async function deleteUniversity(id) {
-    if (!confirm('هل أنت متأكد من حذف هذه الجامعة؟')) return;
+    const confirmed = await window.showConfirmDialog({
+        title: 'تأكيد حذف الجامعة',
+        message: 'هل أنت متأكد من حذف هذه الجامعة؟',
+        confirmText: 'حذف',
+        cancelText: 'إلغاء',
+        variant: 'danger'
+    });
+    if (!confirmed) return;
     try {
         const res = await window.authFetch(`../api/admin_api.php?action=delete_university`, {
             method: 'POST',

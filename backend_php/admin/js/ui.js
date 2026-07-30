@@ -181,3 +181,244 @@ export function initModalDelegation() {
         }
     });
 }
+
+export function showConfirmDialog({ title, message, confirmText = 'تأكيد', cancelText = 'إلغاء', variant = 'primary' }) {
+    return new Promise((resolve) => {
+        const triggeringElement = document.activeElement;
+
+        // Create overlay container
+        const overlay = document.createElement('div');
+        overlay.id = 'confirmDialogOverlay';
+        overlay.className = 'modal-overlay';
+        overlay.style.zIndex = '2100'; // above normal modals
+
+        // Pick icon and colors based on variant
+        let iconClass = 'fa-solid fa-triangle-exclamation';
+        let iconColor = 'var(--accent-amber)';
+        let confirmBtnStyle = 'background: var(--primary); color: white; border: none;';
+        
+        if (variant === 'danger') {
+            iconClass = 'fa-solid fa-trash-can';
+            iconColor = '#ef4444';
+            confirmBtnStyle = 'background: #ef4444; color: white; border: none;';
+        } else if (variant === 'success') {
+            iconClass = 'fa-solid fa-circle-check';
+            iconColor = 'var(--accent-green)';
+            confirmBtnStyle = 'background: var(--accent-green); color: white; border: none;';
+        } else if (variant === 'warning') {
+            iconClass = 'fa-solid fa-circle-exclamation';
+            iconColor = 'var(--accent-amber)';
+            confirmBtnStyle = 'background: var(--accent-amber); color: var(--bg-sidebar); border: none; font-weight: bold;';
+        }
+
+        overlay.innerHTML = `
+            <div class="modal-box" style="max-width: 460px; transform: scale(0.95); transition: transform 0.2s ease; border-radius: 20px;">
+                <div class="modal-header" style="direction: rtl; border-bottom: 1px solid var(--border-color); padding: 1.2rem 1.5rem; display: flex; justify-content: space-between; align-items: center;">
+                    <h3 style="margin: 0; display: flex; align-items: center; gap: 10px; font-size: 1.2rem; color: var(--text-main); font-weight: 700;">
+                        <i class="${iconClass}" style="color: ${iconColor}; font-size: 1.3rem;"></i>
+                        <span>${title}</span>
+                    </h3>
+                    <button class="close-btn" style="background: none; border: none; color: var(--text-muted); font-size: 1.3rem; cursor: pointer;" title="إغلاق"><i class="fa-solid fa-xmark"></i></button>
+                </div>
+                <div style="padding: 1.5rem; direction: rtl; text-align: right; color: var(--text-main); font-size: 0.95rem; line-height: 1.6;">
+                    <p style="margin: 0;">${message}</p>
+                </div>
+                <div style="padding: 1rem 1.5rem; border-top: 1px solid var(--border-color); display: flex; justify-content: flex-end; gap: 12px; direction: rtl; background: rgba(0,0,0,0.15); border-bottom-left-radius: 20px; border-bottom-right-radius: 20px;">
+                    <button class="btn btn-secondary confirm-cancel" style="padding: 0.6rem 1.2rem; border-radius: 10px; font-size: 0.85rem; font-weight: 700;">${cancelText}</button>
+                    <button class="btn confirm-ok" style="${confirmBtnStyle} padding: 0.6rem 1.2rem; border-radius: 10px; font-size: 0.85rem; font-weight: 700;">${confirmText}</button>
+                </div>
+            </div>
+        `;
+
+        document.body.appendChild(overlay);
+
+        // Force reflow
+        overlay.offsetHeight;
+        overlay.classList.add('active');
+        const box = overlay.querySelector('.modal-box');
+        if (box) box.style.transform = 'scale(1)';
+
+        const confirmBtn = overlay.querySelector('.confirm-ok');
+        const cancelBtn = overlay.querySelector('.confirm-cancel');
+        const closeBtn = overlay.querySelector('.close-btn');
+
+        let resolved = false;
+
+        const handleClose = (result) => {
+            if (resolved) return;
+            resolved = true;
+            
+            // Disable buttons immediately to prevent duplicate clicks
+            confirmBtn.disabled = true;
+            cancelBtn.disabled = true;
+            if (closeBtn) closeBtn.disabled = true;
+            
+            // Animate exit
+            overlay.classList.remove('active');
+            if (box) box.style.transform = 'scale(0.95)';
+            
+            // Clean up elements after transition
+            setTimeout(() => {
+                overlay.remove();
+                document.removeEventListener('keydown', handleKeyDown);
+                
+                // Restore focus
+                if (triggeringElement && typeof triggeringElement.focus === 'function') {
+                    triggeringElement.focus();
+                }
+                
+                resolve(result);
+            }, 200);
+        };
+
+        confirmBtn.addEventListener('click', () => {
+            confirmBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> جاري...';
+            handleClose(true);
+        });
+
+        cancelBtn.addEventListener('click', () => handleClose(false));
+        if (closeBtn) closeBtn.addEventListener('click', () => handleClose(false));
+
+        // Close on clicking outside
+        overlay.addEventListener('click', (e) => {
+            if (e.target === overlay) {
+                handleClose(false);
+            }
+        });
+
+        // Close on Escape, confirm on Enter
+        const handleKeyDown = (e) => {
+            if (e.key === 'Escape') {
+                e.preventDefault();
+                handleClose(false);
+            } else if (e.key === 'Enter') {
+                if (document.activeElement === cancelBtn || document.activeElement === closeBtn) {
+                    return;
+                }
+                e.preventDefault();
+                confirmBtn.click();
+            }
+        };
+        document.addEventListener('keydown', handleKeyDown);
+
+        // Initial focus on Cancel button
+        setTimeout(() => {
+            if (cancelBtn) cancelBtn.focus();
+        }, 50);
+    });
+}
+
+export function showPromptDialog({ title, message, defaultValue = '', placeholder = '' }) {
+    return new Promise((resolve) => {
+        const triggeringElement = document.activeElement;
+
+        // Create overlay container
+        const overlay = document.createElement('div');
+        overlay.id = 'promptDialogOverlay';
+        overlay.className = 'modal-overlay';
+        overlay.style.zIndex = '2100'; // above normal modals
+
+        overlay.innerHTML = `
+            <div class="modal-box" style="max-width: 460px; transform: scale(0.95); transition: transform 0.2s ease; border-radius: 20px;">
+                <div class="modal-header" style="direction: rtl; border-bottom: 1px solid var(--border-color); padding: 1.2rem 1.5rem; display: flex; justify-content: space-between; align-items: center;">
+                    <h3 style="margin: 0; display: flex; align-items: center; gap: 10px; font-size: 1.2rem; color: var(--text-main); font-weight: 700;">
+                        <i class="fa-solid fa-pen-to-square" style="color: var(--primary); font-size: 1.3rem;"></i>
+                        <span>${title}</span>
+                    </h3>
+                    <button class="close-btn" style="background: none; border: none; color: var(--text-muted); font-size: 1.3rem; cursor: pointer;" title="إغلاق"><i class="fa-solid fa-xmark"></i></button>
+                </div>
+                <div style="padding: 1.5rem; direction: rtl; text-align: right; color: var(--text-main); font-size: 0.95rem; display: flex; flex-direction: column; gap: 10px;">
+                    <label style="margin: 0; font-weight: 600;">${message}</label>
+                    <input type="text" id="promptDialogInput" style="width: 100%; padding: 0.8rem 1rem; border-radius: 12px; border: 1px solid var(--border-color); background: rgba(0,0,0,0.2); color: var(--text-main); font-size: 0.95rem; box-sizing: border-box;">
+                </div>
+                <div style="padding: 1rem 1.5rem; border-top: 1px solid var(--border-color); display: flex; justify-content: flex-end; gap: 12px; direction: rtl; background: rgba(0,0,0,0.15); border-bottom-left-radius: 20px; border-bottom-right-radius: 20px;">
+                    <button class="btn btn-secondary prompt-cancel" style="padding: 0.6rem 1.2rem; border-radius: 10px; font-size: 0.85rem; font-weight: 700;">إلغاء</button>
+                    <button class="btn prompt-ok" style="background: var(--primary); color: white; border: none; padding: 0.6rem 1.2rem; border-radius: 10px; font-size: 0.85rem; font-weight: 700;">تأكيد</button>
+                </div>
+            </div>
+        `;
+
+        document.body.appendChild(overlay);
+
+        // Force reflow
+        overlay.offsetHeight;
+        overlay.classList.add('active');
+        const box = overlay.querySelector('.modal-box');
+        if (box) box.style.transform = 'scale(1)';
+
+        const inputEl = overlay.querySelector('#promptDialogInput');
+        const confirmBtn = overlay.querySelector('.prompt-ok');
+        const cancelBtn = overlay.querySelector('.prompt-cancel');
+        const closeBtn = overlay.querySelector('.close-btn');
+
+        // Set default value and placeholder
+        if (inputEl) {
+            inputEl.value = defaultValue;
+            inputEl.placeholder = placeholder;
+        }
+
+        let resolved = false;
+
+        const handleClose = (resultValue) => {
+            if (resolved) return;
+            resolved = true;
+            
+            // Disable inputs immediately to prevent duplicate submissions
+            confirmBtn.disabled = true;
+            cancelBtn.disabled = true;
+            if (closeBtn) closeBtn.disabled = true;
+            if (inputEl) inputEl.disabled = true;
+            
+            // Animate exit
+            overlay.classList.remove('active');
+            if (box) box.style.transform = 'scale(0.95)';
+            
+            // Clean up elements after transition
+            setTimeout(() => {
+                overlay.remove();
+                document.removeEventListener('keydown', handleKeyDown);
+                
+                // Restore focus
+                if (triggeringElement && typeof triggeringElement.focus === 'function') {
+                    triggeringElement.focus();
+                }
+                
+                resolve(resultValue);
+            }, 200);
+        };
+
+        confirmBtn.addEventListener('click', () => {
+            handleClose(inputEl.value);
+        });
+
+        cancelBtn.addEventListener('click', () => handleClose(null));
+        if (closeBtn) closeBtn.addEventListener('click', () => handleClose(null));
+
+        // Close on clicking outside
+        overlay.addEventListener('click', (e) => {
+            if (e.target === overlay) {
+                handleClose(null);
+            }
+        });
+
+        // Close on Escape, confirm on Enter
+        const handleKeyDown = (e) => {
+            if (e.key === 'Escape') {
+                e.preventDefault();
+                handleClose(null);
+            } else if (e.key === 'Enter') {
+                e.preventDefault();
+                confirmBtn.click();
+            }
+        };
+        document.addEventListener('keydown', handleKeyDown);
+
+        // Initial focus and selection on input field
+        setTimeout(() => {
+            if (inputEl) {
+                inputEl.focus();
+                inputEl.select();
+            }
+        }, 50);
+    });
+}

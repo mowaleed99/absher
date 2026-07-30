@@ -87,7 +87,14 @@ function resetNewsForm() {
 }
 
 export async function handleDeleteNews(id) {
-    if (!confirm('هل أنت متأكد من رغبتك في حذف هذا الخبر نهائياً؟')) return;
+    const confirmed = await window.showConfirmDialog({
+        title: 'تأكيد حذف الخبر',
+        message: 'هل أنت متأكد من رغبتك في حذف هذا الخبر نهائياً؟',
+        confirmText: 'حذف',
+        cancelText: 'إلغاء',
+        variant: 'danger'
+    });
+    if (!confirmed) return;
     try {
         const res = await window.authFetch(`../api/admin_api.php?action=delete_news`, {
             method: 'POST',

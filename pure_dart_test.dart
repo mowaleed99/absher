@@ -88,12 +88,11 @@ void main() async {
   final testImagePath = 'real_test_image.jpg';
   final testImageFile = File(testImagePath);
 
-
   try {
     print('\n--- Testing Apartment Upload with Image ---');
     final rawUrl = await uploadImage(testImagePath, 'apartments');
     print('Upload Image Response Path: $rawUrl');
-    
+
     if (rawUrl != null && rawUrl.isNotEmpty) {
       final payload = {
         'title': 'Test Apartment ${DateTime.now().millisecondsSinceEpoch}',
@@ -118,7 +117,7 @@ void main() async {
     print('\n--- Testing Service Upload with Image ---');
     final serviceRawUrl = await uploadImage(testImagePath, 'services');
     print('Upload Image Response Path: $serviceRawUrl');
-    
+
     if (serviceRawUrl != null && serviceRawUrl.isNotEmpty) {
       final servicePayload = {
         'title': 'Test Service ${DateTime.now().millisecondsSinceEpoch}',
@@ -137,13 +136,12 @@ void main() async {
     final failedUrl = await uploadImage(largeFile.path, 'apartments');
     print('Upload Image Failed Result: $failedUrl');
     if (failedUrl == null || failedUrl.isEmpty) {
-      print('Upload correctly returned null/empty. The save operation would be blocked.');
+      print(
+          'Upload correctly returned null/empty. The save operation would be blocked.');
     } else {
       print('Upload unexpectedly succeeded.');
     }
-
   } finally {
-
     final largeFile = File('large_test.jpg');
     if (await largeFile.exists()) {
       await largeFile.delete();

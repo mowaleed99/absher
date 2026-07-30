@@ -79,34 +79,34 @@ export function renderFeedback() {
 
         return `
             <tr id="feedback-row-${item.id}" style="${isProcessing ? 'opacity: 0.6;' : ''}">
-                <td style="font-weight: bold; color: var(--text-main);">${item.student_name || 'طالب مجهول'}</td>
-                <td><span style="font-size: 0.85rem; color: var(--text-muted);">${item.student_uni || '-'}</span></td>
-                <td>
+                <td style="font-weight: bold; color: var(--text-main); white-space: nowrap;">${item.student_name || 'طالب مجهول'}</td>
+                <td style="white-space: nowrap;"><span style="font-size: 0.85rem; color: var(--text-muted);">${item.student_uni || '-'}</span></td>
+                <td style="white-space: nowrap;">
                     <span style="padding: 4px 8px; border-radius: 6px; font-size: 0.8rem; font-weight: bold; ${typeInfo.style}">
                         ${typeInfo.ar} / ${typeInfo.en}
                     </span>
                 </td>
-                <td style="max-width: 400px; white-space: normal; word-break: break-all; font-style: italic;">
+                <td style="max-width: 400px; white-space: normal; word-break: normal; overflow-wrap: break-word; font-style: italic;">
                     "${item.comment || '-'}"
                 </td>
-                <td>
-                    <span class="status-badge ${statusClass}" style="${badgeStyle}">${statusText}</span>
+                <td style="white-space: nowrap;">
+                    <span class="status-badge ${statusClass}" style="${badgeStyle} white-space: nowrap;">${statusText}</span>
                 </td>
-                <td><span style="font-size: 0.82rem; color: var(--text-muted);">${item.created_at || '-'}</span></td>
-                <td><span style="font-weight: 600; color: var(--text-main);">${moderatorName}</span></td>
-                <td><span style="font-size: 0.82rem; color: var(--text-muted);">${moderationTime}</span></td>
-                <td>
-                    <div style="display: flex; gap: 8px; align-items: center; justify-content: flex-end;">
+                <td style="white-space: nowrap;"><span style="font-size: 0.82rem; color: var(--text-muted);">${item.created_at || '-'}</span></td>
+                <td style="white-space: nowrap;"><span style="font-weight: 600; color: var(--text-main);">${moderatorName}</span></td>
+                <td style="white-space: nowrap;"><span style="font-size: 0.82rem; color: var(--text-muted);">${moderationTime}</span></td>
+                <td style="white-space: nowrap;">
+                    <div style="display: flex; gap: 8px; align-items: center; justify-content: flex-end; white-space: nowrap;">
                         ${isProcessing ? `
                             <i class="fa-solid fa-spinner fa-spin" style="color: var(--primary); font-size: 1.2rem;"></i>
                         ` : `
-                            <select style="padding: 6px; border-radius: 8px; border: 1px solid var(--border-color); background: var(--bg-card); color: var(--text-main); font-size: 0.8rem; cursor: pointer;"
+                            <select style="padding: 6px; border-radius: 8px; border: 1px solid var(--border-color); background: var(--bg-card); color: var(--text-main); font-size: 0.8rem; cursor: pointer; white-space: nowrap;"
                                     onchange="window.updateFeedbackStatusGlobal(${item.id}, this.value)" ${disabledAttr}>
-                                <option value="pending" ${item.status === 'pending' ? 'selected' : ''}>قيد الانتظار / Pending</option>
-                                <option value="reviewed" ${item.status === 'reviewed' ? 'selected' : ''}>تمت المراجعة / Reviewed</option>
-                                <option value="resolved" ${item.status === 'resolved' ? 'selected' : ''}>تم حلها / Resolved</option>
+                                <option value="pending" ${item.status === 'pending' ? 'selected' : ''}>قيد الانتظار</option>
+                                <option value="reviewed" ${item.status === 'reviewed' ? 'selected' : ''}>تمت المراجعة</option>
+                                <option value="resolved" ${item.status === 'resolved' ? 'selected' : ''}>تم حلها</option>
                             </select>
-                            <button class="btn btn-danger" style="padding: 6px 12px; font-size: 0.8rem;"
+                            <button class="btn btn-danger" style="padding: 6px 12px; font-size: 0.8rem; white-space: nowrap;"
                                     onclick="window.deleteFeedbackGlobal(${item.id})" ${disabledAttr}>
                                 <i class="fa-solid fa-trash"></i>
                             </button>
@@ -151,7 +151,14 @@ export async function updateFeedbackStatus(id, status) {
 }
 
 export async function deleteFeedback(id) {
-    if (!confirm('هل أنت متأكد من رغبتك في حذف هذه التذكرة؟')) return;
+    const confirmed = await window.showConfirmDialog({
+        title: 'تأكيد حذف التذكرة',
+        message: 'هل أنت متأكد من رغبتك في حذف هذه التذكرة؟',
+        confirmText: 'حذف',
+        cancelText: 'إلغاء',
+        variant: 'danger'
+    });
+    if (!confirmed) return;
 
     const item = appData.application_feedback.find(x => x.id === id);
     if (!item) return;

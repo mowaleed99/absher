@@ -31,14 +31,6 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
     super.dispose();
   }
 
-  String _localTr(String key, String fallbackAr, String fallbackEn) {
-    final translation = LanguageService.tr(key);
-    if (translation == key) {
-      return LanguageService.currentLang.value == 'ar' ? fallbackAr : fallbackEn;
-    }
-    return translation;
-  }
-
   Future<void> _handleChangePassword() async {
     if (!_formKey.currentState!.validate()) return;
 
@@ -58,12 +50,13 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
         setState(() => _isSaving = false);
         if (result['success'] == true) {
           setState(() {
-            _successMessage = result['message'] ?? _localTr('password_changed_success', 'تم تغيير كلمة المرور بنجاح.', 'Password changed successfully.');
+            _successMessage = result['message'] ??
+                LanguageService.tr('password_changed_success');
             _currentPasswordController.clear();
             _newPasswordController.clear();
             _confirmPasswordController.clear();
           });
-          
+
           // Show success snackbar and pop after 1.5 seconds
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
@@ -76,7 +69,8 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
           });
         } else {
           setState(() {
-            _errorMessage = result['message'] ?? _localTr('error_occurred', 'حدث خطأ ما', 'An error occurred');
+            _errorMessage =
+                result['message'] ?? LanguageService.tr('error_occurred');
           });
         }
       }
@@ -92,7 +86,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final title = _localTr('change_password', 'تغيير كلمة المرور', 'Change Password');
+    final title = LanguageService.tr('change_password');
 
     return Directionality(
       textDirection: LanguageService.textDirection,
@@ -101,11 +95,12 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
         appBar: AppBar(
           backgroundColor: AppColors.primary,
           elevation: 0,
-          leading: IconButton(
-            icon: const Icon(Icons.arrow_back, color: Colors.white),
-            onPressed: () => Navigator.pop(context),
-          ),
-          title: Text(title, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18)),
+          leading: const BackButton(color: Colors.white),
+          title: Text(title,
+              style: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 18)),
         ),
         body: SingleChildScrollView(
           padding: const EdgeInsets.all(24),
@@ -127,7 +122,10 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                       children: [
                         const Icon(Icons.error_outline, color: AppColors.error),
                         const SizedBox(width: 10),
-                        Expanded(child: Text(_errorMessage, style: const TextStyle(color: AppColors.error, fontSize: 13))),
+                        Expanded(
+                            child: Text(_errorMessage,
+                                style: const TextStyle(
+                                    color: AppColors.error, fontSize: 13))),
                       ],
                     ),
                   ),
@@ -143,9 +141,13 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                     ),
                     child: Row(
                       children: [
-                        const Icon(Icons.check_circle_outline, color: AppColors.success),
+                        const Icon(Icons.check_circle_outline,
+                            color: AppColors.success),
                         const SizedBox(width: 10),
-                        Expanded(child: Text(_successMessage, style: const TextStyle(color: AppColors.success, fontSize: 13))),
+                        Expanded(
+                            child: Text(_successMessage,
+                                style: const TextStyle(
+                                    color: AppColors.success, fontSize: 13))),
                       ],
                     ),
                   ),
@@ -155,17 +157,24 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                   controller: _currentPasswordController,
                   obscureText: _obscureCurrent,
                   decoration: InputDecoration(
-                    labelText: _localTr('current_password', 'كلمة المرور الحالية', 'Current Password'),
-                    prefixIcon: const Icon(Icons.lock_outline, color: AppColors.primary),
+                    labelText: LanguageService.tr('current_password'),
+                    prefixIcon: const Icon(Icons.lock_outline,
+                        color: AppColors.primary),
                     suffixIcon: IconButton(
-                      icon: Icon(_obscureCurrent ? Icons.visibility_off : Icons.visibility, color: AppColors.textMuted),
-                      onPressed: () => setState(() => _obscureCurrent = !_obscureCurrent),
+                      icon: Icon(
+                          _obscureCurrent
+                              ? Icons.visibility_off
+                              : Icons.visibility,
+                          color: AppColors.textMuted),
+                      onPressed: () =>
+                          setState(() => _obscureCurrent = !_obscureCurrent),
                     ),
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                    border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12)),
                   ),
                   validator: (val) {
                     if (val == null || val.isEmpty) {
-                      return _localTr('required_field', 'حقل مطلوب', 'Required field');
+                      return LanguageService.tr('required_field');
                     }
                     return null;
                   },
@@ -177,23 +186,28 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                   controller: _newPasswordController,
                   obscureText: _obscureNew,
                   decoration: InputDecoration(
-                    labelText: _localTr('new_password_label', 'كلمة المرور الجديدة', 'New Password'),
-                    prefixIcon: const Icon(Icons.lock_outline, color: AppColors.primary),
+                    labelText: LanguageService.tr('new_password_label'),
+                    prefixIcon: const Icon(Icons.lock_outline,
+                        color: AppColors.primary),
                     suffixIcon: IconButton(
-                      icon: Icon(_obscureNew ? Icons.visibility_off : Icons.visibility, color: AppColors.textMuted),
-                      onPressed: () => setState(() => _obscureNew = !_obscureNew),
+                      icon: Icon(
+                          _obscureNew ? Icons.visibility_off : Icons.visibility,
+                          color: AppColors.textMuted),
+                      onPressed: () =>
+                          setState(() => _obscureNew = !_obscureNew),
                     ),
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                    border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12)),
                   ),
                   validator: (val) {
                     if (val == null || val.isEmpty) {
-                      return _localTr('required_field', 'حقل مطلوب', 'Required field');
+                      return LanguageService.tr('required_field');
                     }
                     if (val.length < 8) {
-                      return _localTr('pw_min_8', 'كلمة المرور قصيرة (8 أحرف على الأقل)', 'Password must be at least 8 characters');
+                      return LanguageService.tr('pw_min_8');
                     }
                     if (val.length > 128) {
-                      return _localTr('pw_max_128', 'كلمة المرور طويلة جداً (128 حرفاً كحد أقصى)', 'Password must be under 128 characters');
+                      return LanguageService.tr('pw_max_128');
                     }
                     return null;
                   },
@@ -205,20 +219,27 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                   controller: _confirmPasswordController,
                   obscureText: _obscureConfirm,
                   decoration: InputDecoration(
-                    labelText: _localTr('confirm_password_label', 'تأكيد كلمة المرور الجديدة', 'Confirm New Password'),
-                    prefixIcon: const Icon(Icons.lock_outline, color: AppColors.primary),
+                    labelText: LanguageService.tr('confirm_password_label'),
+                    prefixIcon: const Icon(Icons.lock_outline,
+                        color: AppColors.primary),
                     suffixIcon: IconButton(
-                      icon: Icon(_obscureConfirm ? Icons.visibility_off : Icons.visibility, color: AppColors.textMuted),
-                      onPressed: () => setState(() => _obscureConfirm = !_obscureConfirm),
+                      icon: Icon(
+                          _obscureConfirm
+                              ? Icons.visibility_off
+                              : Icons.visibility,
+                          color: AppColors.textMuted),
+                      onPressed: () =>
+                          setState(() => _obscureConfirm = !_obscureConfirm),
                     ),
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                    border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12)),
                   ),
                   validator: (val) {
                     if (val == null || val.isEmpty) {
-                      return _localTr('required_field', 'حقل مطلوب', 'Required field');
+                      return LanguageService.tr('required_field');
                     }
                     if (val != _newPasswordController.text) {
-                      return _localTr('passwords_dont_match', 'كلمات المرور غير متطابقة', 'Passwords do not match');
+                      return LanguageService.tr('passwords_dont_match');
                     }
                     return null;
                   },
@@ -233,17 +254,22 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                     onPressed: _isSaving ? null : _handleChangePassword,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.primary,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14)),
                     ),
                     child: _isSaving
                         ? const SizedBox(
                             width: 24,
                             height: 24,
-                            child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2.5),
+                            child: CircularProgressIndicator(
+                                color: Colors.white, strokeWidth: 2.5),
                           )
                         : Text(
-                            _localTr('change_password_btn', 'تغيير كلمة المرور', 'Change Password'),
-                            style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+                            LanguageService.tr('change_password_btn'),
+                            style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold),
                           ),
                   ),
                 ),

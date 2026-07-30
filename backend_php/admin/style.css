@@ -692,3 +692,33 @@ form {
     transform: translateY(20px);
     pointer-events: none;
 }
+
+/* Card layout improvements for Apartments, Offers and Services */
+#apartmentsList .item-card,
+#offersList .item-card,
+#servicesList .item-card {
+    height: auto;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    align-self: start;
+}
+
+#apartmentsList .item-card .card-body,
+#offersList .item-card .card-body,
+#servicesList .item-card .card-body {
+    flex: 1 1 auto;
+    display: flex;
+    flex-direction: column;
+}
+
+#apartmentsList .item-card .card-actions,
+#offersList .item-card .card-actions,
+#servicesList .item-card .card-actions {
+    margin-top: 1.25rem; /* ~20px consistent gap */
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    justify-content: space-between;
+    align-items: center;
+}

@@ -165,7 +165,14 @@ export async function handleUpdateService(e) {
 }
 
 export async function deleteService(id) {
-    if (!confirm('هل أنت متأكد من رغبتك في حذف هذه الخدمة؟')) return;
+    const confirmed = await window.showConfirmDialog({
+        title: 'تأكيد حذف الخدمة',
+        message: 'هل أنت متأكد من رغبتك في حذف هذه الخدمة؟',
+        confirmText: 'حذف',
+        cancelText: 'إلغاء',
+        variant: 'danger'
+    });
+    if (!confirmed) return;
     try {
         const res = await window.authFetch(`../api/admin_api.php?action=delete_service`, {
             method: 'POST',

@@ -17,11 +17,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
   final _emailController = TextEditingController();
-  final _phoneController = TextEditingController();
+  // Local 9-digit part only (user types: 5XXXXXXXX)
+  final _localPhoneController = TextEditingController();
   final _passwordController = TextEditingController();
-  
+  static const String _countryCode = '+995';
+
   final _customUniController = TextEditingController();
-  
+
   String _selectedUni = LanguageService.tr('auto_trans_1205');
   List<String> _universities = [
     LanguageService.tr('auto_trans_1206'),
@@ -39,7 +41,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
     if (mounted) {
       setState(() {
         if (unis.isNotEmpty) {
-          _universities = unis.map((u) => (u['name'] ?? '').toString()).where((n) => n.isNotEmpty).toList();
+          _universities = unis
+              .map((u) => (u['name'] ?? '').toString())
+              .where((n) => n.isNotEmpty)
+              .toList();
           _universities.add(LanguageService.tr('other_uni_manual'));
           if (!_universities.contains(_selectedUni)) {
             _selectedUni = _universities.first;
@@ -53,6 +58,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
   bool _obscurePassword = true;
   String _errorMessage = '';
 
+  /// Returns the full phone number in E.164 format: +995XXXXXXXXX
+  String get _fullPhone => _countryCode + _localPhoneController.text.trim();
+
   Future<void> _handleRegister() async {
     if (!_formKey.currentState!.validate()) return;
 
@@ -65,15 +73,18 @@ class _RegisterScreenState extends State<RegisterScreen> {
       final result = await ApiService.register(
         fullName: _nameController.text.trim(),
         email: _emailController.text.trim(),
-        phone: _phoneController.text.trim(),
-        university: _selectedUni == LanguageService.tr('other_uni_manual') ? _customUniController.text.trim() : _selectedUni,
+        phone: _fullPhone,
+        university: _selectedUni == LanguageService.tr('other_uni_manual')
+            ? _customUniController.text.trim()
+            : _selectedUni,
         password: _passwordController.text,
       );
 
       setState(() => _isLoading = false);
 
       if (result['status'] == 'success' && result['user'] != null) {
-        final student = Student.fromJson(result['user'] as Map<String, dynamic>);
+        final student =
+            Student.fromJson(result['user'] as Map<String, dynamic>);
         if (mounted) {
           Navigator.of(context).pushAndRemoveUntil(
             MaterialPageRoute(
@@ -84,7 +95,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
         }
       } else {
         setState(() {
-          _errorMessage = result['message']?.toString() ?? LanguageService.tr('register_fail');
+          _errorMessage = result['message']?.toString() ??
+              LanguageService.tr('register_fail');
         });
       }
     } catch (e) {
@@ -96,7 +108,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
   }
 
   void _enterAsGuest() {
-    final guestUser = Student(id: 0, fullName: LanguageService.tr('guest_name'));
+    final guestUser =
+        Student(id: 0, fullName: LanguageService.tr('guest_name'));
     Navigator.of(context).pushAndRemoveUntil(
       MaterialPageRoute(
         builder: (_) => HomeScreen(
@@ -133,7 +146,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   Text(
                     LanguageService.tr('create_account_subtitle'),
                     textAlign: TextAlign.center,
-                    style: const TextStyle(fontSize: 14, color: AppColors.textMuted),
+                    style: const TextStyle(
+                        fontSize: 14, color: AppColors.textMuted),
                   ),
                   const SizedBox(height: 24),
 
@@ -148,7 +162,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       ),
                       child: Text(
                         _errorMessage,
-                        style: const TextStyle(color: AppColors.error, fontSize: 13),
+                        style: const TextStyle(
+                            color: AppColors.error, fontSize: 13),
                       ),
                     ),
 
@@ -175,10 +190,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             controller: _nameController,
                             decoration: InputDecoration(
                               labelText: LanguageService.tr('full_name'),
-                              prefixIcon: const Icon(Icons.badge_outlined, color: AppColors.primary),
-                              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                              prefixIcon: const Icon(Icons.badge_outlined,
+                                  color: AppColors.primary),
+                              border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12)),
                             ),
-                            validator: (value) => value == null || value.isEmpty ? LanguageService.tr('required_field') : null,
+                            validator: (value) => value == null || value.isEmpty
+                                ? LanguageService.tr('required_field')
+                                : null,
                           ),
                           const SizedBox(height: 16),
 
@@ -188,23 +207,121 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             keyboardType: TextInputType.emailAddress,
                             decoration: InputDecoration(
                               labelText: LanguageService.tr('email'),
-                              prefixIcon: const Icon(Icons.email_outlined, color: AppColors.primary),
-                              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                              prefixIcon: const Icon(Icons.email_outlined,
+                                  color: AppColors.primary),
+                              border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12)),
                             ),
-                            validator: (value) => value == null || !value.contains('@') ? LanguageService.tr('invalid_email') : null,
+                            validator: (value) =>
+                                value == null || !value.contains('@')
+                                    ? LanguageService.tr('invalid_email')
+                                    : null,
                           ),
                           const SizedBox(height: 16),
 
-                          // رقم الهاتف
-                          TextFormField(
-                            controller: _phoneController,
-                            keyboardType: TextInputType.phone,
-                            decoration: InputDecoration(
-                              labelText: LanguageService.tr('phone_example'),
-                              prefixIcon: const Icon(Icons.phone_outlined, color: AppColors.primary),
-                              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                            ),
-                            validator: (value) => value == null || value.isEmpty ? LanguageService.tr('required_field') : null,
+                          // رقم الهاتف — fixed +995 prefix + local 9-digit input
+                          FormField<String>(
+                            validator: (_) {
+                              final local = _localPhoneController.text.trim();
+                              if (local.isEmpty) {
+                                return LanguageService.tr('required_field');
+                              }
+                              // Must be exactly 9 digits starting with 5
+                              final reg = RegExp(r'^5[0-9]{8}$');
+                              if (!reg.hasMatch(local)) {
+                                return LanguageService.currentLang.value == 'ar'
+                                    ? 'رقم الهاتف غير صالح. أدخل 9 أرقام تبدأ بـ 5 (مثال: 555123456)'
+                                    : 'Invalid number. Enter 9 digits starting with 5 (e.g. 555123456)';
+                              }
+                              return null;
+                            },
+                            builder: (fieldState) {
+                              return Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  InputDecorator(
+                                    decoration: InputDecoration(
+                                      labelText: LanguageService.tr('phone_example'),
+                                      prefixIcon: const Icon(
+                                          Icons.phone_outlined,
+                                          color: AppColors.primary),
+                                      border: OutlineInputBorder(
+                                          borderRadius:
+                                              BorderRadius.circular(12)),
+                                      errorBorder: OutlineInputBorder(
+                                        borderRadius:
+                                            BorderRadius.circular(12),
+                                        borderSide: const BorderSide(
+                                            color: AppColors.error),
+                                      ),
+                                      contentPadding:
+                                          const EdgeInsets.symmetric(
+                                              horizontal: 12, vertical: 14),
+                                    ),
+                                    child: Row(
+                                      children: [
+                                        // ── Fixed non-editable prefix ──
+                                        Container(
+                                          padding: const EdgeInsets.symmetric(
+                                              horizontal: 10, vertical: 6),
+                                          decoration: BoxDecoration(
+                                            color: AppColors.primary
+                                                .withValues(alpha: 0.12),
+                                            borderRadius:
+                                                BorderRadius.circular(8),
+                                          ),
+                                          child: const Text(
+                                            '+995',
+                                            style: TextStyle(
+                                              color: AppColors.primary,
+                                              fontWeight: FontWeight.bold,
+                                              fontSize: 15,
+                                              letterSpacing: 0.5,
+                                            ),
+                                          ),
+                                        ),
+                                        const SizedBox(width: 8),
+                                        // ── Editable local number ──
+                                        Expanded(
+                                          child: TextField(
+                                            controller:
+                                                _localPhoneController,
+                                            keyboardType:
+                                                TextInputType.number,
+                                            maxLength: 9,
+                                            decoration:
+                                                const InputDecoration(
+                                              hintText: '5XXXXXXXX',
+                                              border: InputBorder.none,
+                                              counterText: '',
+                                              isDense: true,
+                                            ),
+                                            style: const TextStyle(
+                                                fontSize: 15),
+                                            onChanged: (_) =>
+                                                fieldState.didChange(
+                                                    _localPhoneController
+                                                        .text),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  if (fieldState.hasError)
+                                    Padding(
+                                      padding: const EdgeInsets.only(
+                                          top: 6, left: 12),
+                                      child: Text(
+                                        fieldState.errorText!,
+                                        style: const TextStyle(
+                                          color: AppColors.error,
+                                          fontSize: 12,
+                                        ),
+                                      ),
+                                    ),
+                                ],
+                              );
+                            },
                           ),
                           const SizedBox(height: 16),
 
@@ -213,25 +330,39 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             initialValue: _selectedUni,
                             decoration: InputDecoration(
                               labelText: LanguageService.tr('georgia_uni'),
-                              prefixIcon: const Icon(Icons.school_outlined, color: AppColors.primary),
-                              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                              prefixIcon: const Icon(Icons.school_outlined,
+                                  color: AppColors.primary),
+                              border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12)),
                             ),
                             items: _universities.map((uni) {
-                              return DropdownMenuItem(value: uni, child: Text(uni, style: const TextStyle(fontSize: 13)));
+                              return DropdownMenuItem(
+                                  value: uni,
+                                  child: Text(uni,
+                                      style: const TextStyle(fontSize: 13)));
                             }).toList(),
-                            onChanged: (val) => setState(() => _selectedUni = val!),
+                            onChanged: (val) =>
+                                setState(() => _selectedUni = val!),
                           ),
                           const SizedBox(height: 16),
 
-                          if (_selectedUni == LanguageService.tr('other_uni_manual')) ...[
+                          if (_selectedUni ==
+                              LanguageService.tr('other_uni_manual')) ...[
                             TextFormField(
                               controller: _customUniController,
                               decoration: InputDecoration(
-                                labelText: LanguageService.tr('uni_and_district'),
-                                prefixIcon: const Icon(Icons.edit_location_alt_outlined, color: AppColors.primary),
-                                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                                labelText:
+                                    LanguageService.tr('uni_and_district'),
+                                prefixIcon: const Icon(
+                                    Icons.edit_location_alt_outlined,
+                                    color: AppColors.primary),
+                                border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(12)),
                               ),
-                              validator: (value) => value == null || value.isEmpty ? LanguageService.tr('please_enter_uni_dist') : null,
+                              validator: (value) => value == null ||
+                                      value.isEmpty
+                                  ? LanguageService.tr('please_enter_uni_dist')
+                                  : null,
                             ),
                             const SizedBox(height: 16),
                           ],
@@ -242,14 +373,22 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             obscureText: _obscurePassword,
                             decoration: InputDecoration(
                               labelText: LanguageService.tr('password'),
-                              prefixIcon: const Icon(Icons.lock_outline, color: AppColors.primary),
+                              prefixIcon: const Icon(Icons.lock_outline,
+                                  color: AppColors.primary),
                               suffixIcon: IconButton(
-                                icon: Icon(_obscurePassword ? Icons.visibility_off : Icons.visibility),
-                                onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
+                                icon: Icon(_obscurePassword
+                                    ? Icons.visibility_off
+                                    : Icons.visibility),
+                                onPressed: () => setState(
+                                    () => _obscurePassword = !_obscurePassword),
                               ),
-                              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                              border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12)),
                             ),
-                            validator: (value) => value != null && value.length < 6 ? LanguageService.tr('pw_min_6') : null,
+                            validator: (value) =>
+                                value != null && value.length < 6
+                                    ? LanguageService.tr('pw_min_6')
+                                    : null,
                           ),
                           const SizedBox(height: 24),
 
@@ -260,11 +399,19 @@ class _RegisterScreenState extends State<RegisterScreen> {
                               backgroundColor: AppColors.primary,
                               foregroundColor: Colors.white,
                               padding: const EdgeInsets.symmetric(vertical: 16),
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                              shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12)),
                             ),
                             child: _isLoading
-                                ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(color: Colors.white))
-                                : Text(LanguageService.tr('create_account_btn'), style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                                ? const SizedBox(
+                                    width: 24,
+                                    height: 24,
+                                    child: CircularProgressIndicator(
+                                        color: Colors.white))
+                                : Text(LanguageService.tr('create_account_btn'),
+                                    style: const TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.bold)),
                           ),
                         ],
                       ),
@@ -277,16 +424,23 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     width: double.infinity,
                     child: OutlinedButton.icon(
                       onPressed: _enterAsGuest,
-                      icon: const Icon(Icons.explore_outlined, color: AppColors.accent),
+                      icon: const Icon(Icons.explore_outlined,
+                          color: AppColors.accent),
                       label: Text(
                         LanguageService.tr('enter_as_guest'),
-                        style: const TextStyle(color: AppColors.textDark, fontSize: 16, fontWeight: FontWeight.bold),
+                        style: const TextStyle(
+                            color: AppColors.textDark,
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold),
                       ),
                       style: OutlinedButton.styleFrom(
                         padding: const EdgeInsets.symmetric(vertical: 16),
-                        side: const BorderSide(color: AppColors.accent, width: 2),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                        backgroundColor: AppColors.accentLight.withValues(alpha: 0.4),
+                        side:
+                            const BorderSide(color: AppColors.accent, width: 2),
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12)),
+                        backgroundColor:
+                            AppColors.accentLight.withValues(alpha: 0.4),
                       ),
                     ),
                   ),
@@ -295,14 +449,19 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Text(LanguageService.tr('already_have_account'), style: const TextStyle(color: AppColors.textMuted)),
+                      Text(LanguageService.tr('already_have_account'),
+                          style: const TextStyle(color: AppColors.textMuted)),
                       TextButton(
                         onPressed: () {
                           Navigator.of(context).pushReplacement(
-                            MaterialPageRoute(builder: (_) => const LoginScreen()),
+                            MaterialPageRoute(
+                                builder: (_) => const LoginScreen()),
                           );
                         },
-                        child: Text(LanguageService.tr('login_btn'), style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold)),
+                        child: Text(LanguageService.tr('login_btn'),
+                            style: const TextStyle(
+                                color: AppColors.primary,
+                                fontWeight: FontWeight.bold)),
                       ),
                     ],
                   ),

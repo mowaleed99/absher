@@ -42,29 +42,28 @@
             <nav class="nav-links">
                 <a href="#stats"class="nav-item active"data-tab="stats"><i class="fa-solid fa-chart-pie"></i>
                     الإحصائيات العامة</a>
-                <a href="#chats"class="nav-item"data-tab="chats"><i class="fa-solid fa-headset"></i> شات خدمة العملاء
+                <a href="#chats"class="nav-item"data-tab="chats"><i class="fa-solid fa-headset"></i> محادثات خدمة العملاء
                     <span class="notify-badge"id="chatCountBadge">3</span></a>
                 <a href="#requests"class="nav-item"data-tab="requests"><i class="fa-solid fa-bell"></i> الحجوزات
                     وطلبات السكن <span class="notify-badge"id="reqCountBadge">4</span></a>
-                <a href="#apartments"class="nav-item"data-tab="apartments"><i class="fa-solid fa-building"></i> إدارة
-                    الشقق (مع السعة)</a>
+                <a href="#apartments"class="nav-item"data-tab="apartments"><i class="fa-solid fa-building"></i> إدارة الشقق والسعة</a>
                 <a href="#offers"class="nav-item"data-tab="offers"><i class="fa-solid fa-tags"></i> عروض السكن الحصرية</a>
                 <a href="#services"class="nav-item"data-tab="services"><i class="fa-solid fa-screwdriver-wrench"></i>
-                    الخدمات الطلابية</a>
+                    خدمات الطلاب</a>
                 <a href="#universities"class="nav-item"data-tab="universities"><i class="fa-solid fa-university"></i>
                     الجامعات</a>
                 <a href="#districts"class="nav-item"data-tab="districts"><i class="fa-solid fa-map-location-dot"></i>
-                    الأحياء السكنية</a>
+                    المناطق</a>
                 <a href="#reviews"class="nav-item"data-tab="reviews"><i class="fa-solid fa-star"></i> تقييمات وآراء
                     الطلاب</a>
-                <a href="#feedback"class="nav-item"data-tab="feedback"><i class="fa-solid fa-comments"></i> <span data-tr="feedback">مقترحات وبلاغات الأعطال</span></a>
+                <a href="#feedback"class="nav-item"data-tab="feedback"><i class="fa-solid fa-comments"></i> <span data-tr="feedback">ملاحظات التطبيق</span></a>
                 <a href="#students"class="nav-item"data-tab="students"><i class="fa-solid fa-users"></i> بيانات
                     وحسابات الطلاب</a>
                 <a href="#news"class="nav-item"data-tab="news"><i class="fa-solid fa-newspaper"></i> أخبار جورجيا </a>
                 <a href="#notifications"class="nav-item"data-tab="notifications"><i class="fa-solid fa-bell"></i> التنبيهات والإشعارات </a>
             </nav>
             <div class="sidebar-footer">
-                <p><i class="fa-solid fa-server"></i> الاتصال بالخادم: <span id="serverStatus"class="status-online">متصل (المحاكاة نشطة)</span></p>
+                <p><i class="fa-solid fa-server"></i> حالة الاتصال: <span id="serverStatus" class="status-online">متصل</span></p>
             </div>
         </aside>
 
@@ -229,7 +228,7 @@
             <section id="tab-services"class="tab-pane">
                 <div class="section-header">
                     <div class="section-title">
-                        <h2><i class="fa-solid fa-screwdriver-wrench"></i> إدارة الخدمات الطلابية</h2>
+                        <h2><i class="fa-solid fa-screwdriver-wrench"></i> إدارة خدمات الطلاب</h2>
                         <p>التحكم في خدمات الصيانة والإقامة والاستقبال</p>
                     </div>
                     <button class="btn btn-glow"data-action="openModal" data-modal="svcModal"><i class="fa-solid fa-plus-circle"></i>
@@ -261,8 +260,8 @@
             <section id="tab-districts"class="tab-pane">
                 <div class="section-header">
                     <div class="section-title">
-                        <h2><i class="fa-solid fa-map-location-dot"></i> إدارة الأحياء السكنية</h2>
-                        <p>إضافة أو حذف الأحياء السكنية المتاحة في تبليسي والتي سيتم استخدامها في فلتر السكن</p>
+                        <h2><i class="fa-solid fa-map-location-dot"></i> إدارة المناطق</h2>
+                        <p>إضافة أو حذف المناطق المتاحة في تبليسي والتي سيتم استخدامها في فلتر السكن</p>
                     </div>
                     <button class="btn btn-glow"data-action="openModal" data-modal="districtModal"><i class="fa-solid fa-plus-circle"></i>
                         إضافة حي جديد</button>
@@ -276,7 +275,7 @@
             <!-- Tab: Customer Service Chats -->
             <section id="tab-chats"class="tab-pane">
                 <div class="section-title">
-                    <h2><i class="fa-brands fa-whatsapp"style="color: #25D366;"></i> شات خدمة العملاء (نظام محادثات
+                    <h2><i class="fa-brands fa-whatsapp"style="color: #25D366;"></i> محادثات خدمة العملاء (نظام محادثات
                         فوري)</h2>
                     <p>المحادثات مرتبة تحت بعضها بشكل عمودي حسب الأحدث وقتاً للرد المباشر والسريع على استفسارات وحجوزات
                         الطلاب</p>
@@ -386,7 +385,7 @@
             <!-- Tab 4: Service & Booking Requests -->
             <section id="tab-requests"class="tab-pane">
                 <div class="section-title">
-                    <h2><i class="fa-solid fa-bell"></i> إدارة الحجوزات وطلبات السكن وتجميع الشباب</h2>
+                    <h2><i class="fa-solid fa-bell"></i> إدارة الحجوزات والطلبات وتجميع الشباب</h2>
                     <p>متابعة وتحديث حالات طلبات الطلاب الجامعيين مع تفاصيل الحجز الكاملة وإمكانية الرد عبر الواتساب</p>
                 </div>
 
@@ -416,7 +415,7 @@
             <!-- Tab: Reviews -->
             <section id="tab-reviews" class="tab-pane">
                 <div class="section-title">
-                    <h2><i class="fa-solid fa-star"></i> <span data-tr="reviews">تقييمات وآراء الطلاب في الخدمات والتطبيق</span></h2>
+                    <h2><i class="fa-solid fa-star"></i> <span data-tr="reviews">تقييمات الطلاب في الخدمات والتطبيق</span></h2>
                     <p data-tr="rev_desc">عرض آراء وانطباعات الطلاب الجامعيين في تبليسي</p>
                 </div>
 
@@ -425,14 +424,14 @@
                     <input type="text" id="revSearchInput" placeholder="ابحث باسم الطالب أو اسم الخدمة..." style="padding: 12px 18px; border-radius: 12px; border: 1px solid var(--border-color); background: var(--bg-card); color: var(--text-main); font-size: 0.95rem;">
                     
                     <select id="revStatusFilter" style="padding: 12px; border-radius: 12px; border: 1px solid var(--border-color); background: var(--bg-card); color: var(--text-main); font-weight: 600; outline: none; cursor: pointer;">
-                        <option value="all">كل الحالات / All Statuses</option>
-                        <option value="pending">قيد الانتظار / Pending</option>
-                        <option value="approved">مقبول / Approved</option>
-                        <option value="rejected">مرفوض / Rejected</option>
+                        <option value="all">كل الحالات</option>
+                        <option value="pending">قيد الانتظار</option>
+                        <option value="approved">مقبول</option>
+                        <option value="rejected">مرفوض</option>
                     </select>
 
                     <select id="revRatingFilter" style="padding: 12px; border-radius: 12px; border: 1px solid var(--border-color); background: var(--bg-card); color: var(--text-main); font-weight: 600; outline: none; cursor: pointer;">
-                        <option value="all">كل التقييمات / All Ratings</option>
+                        <option value="all">كل التقييمات</option>
                         <option value="5">5 ★</option>
                         <option value="4">4 ★</option>
                         <option value="3">3 ★</option>
@@ -441,8 +440,8 @@
                     </select>
 
                     <select id="revSortOrder" style="padding: 12px; border-radius: 12px; border: 1px solid var(--border-color); background: var(--bg-card); color: var(--text-main); font-weight: 600; outline: none; cursor: pointer;">
-                        <option value="newest">الأحدث أولاً / Newest First</option>
-                        <option value="oldest">الأقدم أولاً / Oldest First</option>
+                        <option value="newest">الأحدث أولاً</option>
+                        <option value="oldest">الأقدم أولاً</option>
                     </select>
                 </div>
 
@@ -473,30 +472,30 @@
             <!-- Tab: Application Feedback -->
             <section id="tab-feedback" class="tab-pane">
                 <div class="section-title">
-                    <h2><i class="fa-solid fa-comments"></i> <span data-tr="feedback">مقترحات وبلاغات الأعطال</span></h2>
+                    <h2><i class="fa-solid fa-comments"></i> <span data-tr="feedback">ملاحظات التطبيق</span></h2>
                     <p data-tr="feedback_desc">إدارة وحل بلاغات الأعطال ومقترحات تطوير التطبيق المقدمة من الطلاب</p>
                 </div>
 
                 <!-- Filters -->
                 <div style="margin: 0 0 20px 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; align-items: center;">
                     <select id="feedStatusFilter" style="padding: 12px; border-radius: 12px; border: 1px solid var(--border-color); background: var(--bg-card); color: var(--text-main); font-weight: 600; outline: none; cursor: pointer;">
-                        <option value="all">كل الحالات / All Statuses</option>
-                        <option value="pending">قيد الانتظار / Pending</option>
-                        <option value="reviewed">تمت المراجعة / Reviewed</option>
-                        <option value="resolved">تم حلها / Resolved</option>
+                        <option value="all">كل الحالات</option>
+                        <option value="pending">قيد الانتظار</option>
+                        <option value="reviewed">تمت المراجعة</option>
+                        <option value="resolved">تم حلها</option>
                     </select>
 
                     <select id="feedTypeFilter" style="padding: 12px; border-radius: 12px; border: 1px solid var(--border-color); background: var(--bg-card); color: var(--text-main); font-weight: 600; outline: none; cursor: pointer;">
-                        <option value="all">كل الأنواع / All Types</option>
-                        <option value="suggestion">مقترح / Suggestion</option>
-                        <option value="bug">بلاغ عطل / Bug Report</option>
-                        <option value="ux">ملاحظة واجهة المستخدم / UX Feedback</option>
-                        <option value="feature">طلب ميزة جديدة / Feature Request</option>
+                        <option value="all">كل الأنواع</option>
+                        <option value="suggestion">مقترح</option>
+                        <option value="bug">بلاغ عطل</option>
+                        <option value="ux">ملاحظة واجهة المستخدم</option>
+                        <option value="feature">طلب ميزة جديدة</option>
                     </select>
                 </div>
 
                 <div class="table-container">
-                    <table class="custom-table">
+                    <table class="custom-table" id="feedbackTable" style="min-width: 1200px; table-layout: auto;">
                         <thead>
                             <tr>
                                 <th data-tr="student_name_label">اسم الطالب</th>
@@ -632,7 +631,7 @@
                         <input type="text" id="aptPrice" required placeholder="مثال: 450 دولار / شهر">
                     </div>
                     <div class="form-group">
-                        <label>الحي السكني — district_id (مربوط بقاعدة البيانات):</label>
+                        <label>الحي السكني:</label>
                         <select id="aptDistrictId" required
                             style="width:100%; padding:10px; border-radius:8px; border:1px solid var(--border-color); background:var(--bg-card); color:var(--text-main);">
                             <option value="">-- اختر الحي --</option>
@@ -641,20 +640,20 @@
                     </div>
                 </div>
                 <div class="form-group">
-                    <label>العنوان التفصيلي (الشارع / أقرب معلم) — location:</label>
+                    <label>العنوان التفصيلي (الشارع / أقرب معلم):</label>
                     <input type="text" id="aptLocation" required placeholder="مثال: شارع بيكيني رقم 15، بالقرب من كارفور">
                 </div>
                 <div class="form-row">
                     <div class="form-group">
-                        <label>نوع الإيجار (canonical):</label>
+                        <label>نوع الإيجار:</label>
                         <select id="aptRentalType" style="width:100%; padding:10px; border-radius:8px; border:1px solid var(--border-color); background:var(--bg-card); color:var(--text-main);">
-                            <option value="شقة كاملة">شقة كاملة (apartment)</option>
-                            <option value="غرفة في شقة">غرفة مشتركة (room_shared)</option>
-                            <option value="ستوديو">ستوديو (studio)</option>
+                            <option value="شقة كاملة">شقة كاملة</option>
+                            <option value="غرفة في شقة">غرفة مشتركة</option>
+                            <option value="ستوديو">ستوديو</option>
                         </select>
                     </div>
                     <div class="form-group">
-                        <label>عدد غرف النوم (rooms_count):</label>
+                        <label>عدد غرف النوم:</label>
                         <input type="number" id="aptRoomsCount" min="1" max="10" placeholder="مثال: 3" style="width:100%; padding:10px; border-radius:8px; border:1px solid var(--border-color); background:var(--bg-card); color:var(--text-main);">
                     </div>
                 </div>
@@ -757,7 +756,7 @@
                     <input type="hidden" id="svcImg" value="">
                 </div>
                 <div class="form-group">
-                    <label>سعر الخدمة بالنقاط (price_points):</label>
+                    <label>سعر الخدمة بالنقاط:</label>
                     <input type="number" id="svcPricePoints" required min="0" step="1" value="0" placeholder="مثال: 50">
                 </div>
                 <div class="form-group"style="margin-top: 10px; background: rgba(37,211,102,0.08); padding: 12px; border-radius: 10px; border: 1px dashed #25D366;">
@@ -905,7 +904,7 @@
             <form id="newsForm">
                 <div class="form-group">
                     <label>عنوان الخبر:</label>
-                    <input type="text"id="newsTitle"required placeholder="مثال: افتتاح مركز الخدمات الطلابية الجديد بتبليسي">
+                    <input type="text"id="newsTitle"required placeholder="مثال: افتتاح مركز خدمات الطلاب الجديد بتبليسي">
                 </div>
                 <div class="form-group">
                     <label>تفاصيل ومحتوى الخبر:</label>
@@ -1050,7 +1049,7 @@
                         <input type="text" id="editAptPrice" required placeholder="مثال: 450 دولار / شهر">
                     </div>
                     <div class="form-group">
-                        <label>الحي السكني (district_id):</label>
+                        <label>الحي السكني:</label>
                         <select id="editAptDistrictId" style="width:100%; padding:10px; border-radius:8px; border:1px solid var(--border-color); background:var(--bg-card); color:var(--text-main);">
                             <option value="">-- اختر الحي --</option>
                         </select>
@@ -1060,13 +1059,13 @@
                     <div class="form-group">
                         <label>نوع الإيجار:</label>
                         <select id="editAptRentalType" style="width:100%; padding:10px; border-radius:8px; border:1px solid var(--border-color); background:var(--bg-card); color:var(--text-main);">
-                            <option value="apartment">شقة كاملة (apartment)</option>
-                            <option value="room_shared">غرفة مشتركة (room_shared)</option>
-                            <option value="studio">ستوديو (studio)</option>
+                            <option value="apartment">شقة كاملة</option>
+                            <option value="room_shared">غرفة مشتركة</option>
+                            <option value="studio">ستوديو</option>
                         </select>
                     </div>
                     <div class="form-group">
-                        <label>عدد غرف النوم (rooms_count):</label>
+                        <label>عدد غرف النوم:</label>
                         <input type="number" id="editAptRoomsCount" min="1" max="10" placeholder="مثال: 3" style="width:100%; padding:10px; border-radius:8px; border:1px solid var(--border-color); background:var(--bg-card); color:var(--text-main);">
                     </div>
                 </div>
@@ -1155,7 +1154,7 @@
                     <p style="font-size: 0.78rem; color: var(--text-muted); margin: 4px 0 0 0;">اترك بدون اختيار للإبقاء على الصورة الحالية.</p>
                 </div>
                 <div class="form-group">
-                    <label>سعر الخدمة بالنقاط (price_points):</label>
+                    <label>سعر الخدمة بالنقاط:</label>
                     <input type="number" id="editSvcPricePoints" required min="0" step="1" placeholder="مثال: 50">
                 </div>
                 <div class="form-group" style="margin-top: 10px; background: rgba(37,211,102,0.08); padding: 12px; border-radius: 10px; border: 1px dashed #25D366;">
@@ -1202,11 +1201,11 @@
                 </div>
                 <div class="form-row">
                     <div class="form-group">
-                        <label>نص الشارة الترويجية (Badge - اختياري):</label>
+                        <label>نص الشارة الترويجية (اختياري):</label>
                         <input type="text" id="offerBadgeText" placeholder="مثال: لقطة ، عرض محدود">
                     </div>
                     <div class="form-group">
-                        <label>ترتيب العرض (display_order):</label>
+                        <label>ترتيب العرض:</label>
                         <input type="number" id="offerDisplayOrder" value="0" min="0" placeholder="مثال: 0 (الأولوية للأصغر)">
                     </div>
                 </div>
@@ -1279,11 +1278,11 @@
                 </div>
                 <div class="form-row">
                     <div class="form-group">
-                        <label>نص الشارة الترويجية (Badge - اختياري):</label>
+                        <label>نص الشارة الترويجية (اختياري):</label>
                         <input type="text" id="editOfferBadgeText">
                     </div>
                     <div class="form-group">
-                        <label>ترتيب العرض (display_order):</label>
+                        <label>ترتيب العرض:</label>
                         <input type="number" id="editOfferDisplayOrder" min="0">
                     </div>
                 </div>

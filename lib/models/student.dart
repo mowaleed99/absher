@@ -23,14 +23,20 @@ class Student {
 
   factory Student.fromJson(Map<String, dynamic> json) {
     return Student(
-      id: json['id'] is int ? json['id'] : int.tryParse(json['id'].toString()) ?? 0,
+      id: json['id'] is int
+          ? json['id']
+          : int.tryParse(json['id'].toString()) ?? 0,
       fullName: json['full_name'] ?? json['name'] ?? '',
       email: json['email'],
       phone: json['phone'],
-      universityId: json['university_id'] != null ? int.tryParse(json['university_id'].toString()) : null,
+      universityId: json['university_id'] != null
+          ? int.tryParse(json['university_id'].toString())
+          : null,
       university: json['university'] ?? json['uni'],
       avatarUrl: json['avatar_url'],
-      pointsBalance: json['points_balance'] is int ? json['points_balance'] : int.tryParse(json['points_balance']?.toString() ?? '0') ?? 0,
+      pointsBalance: json['points_balance'] is int
+          ? json['points_balance']
+          : int.tryParse(json['points_balance']?.toString() ?? '0') ?? 0,
       createdAt: json['created_at'],
     );
   }

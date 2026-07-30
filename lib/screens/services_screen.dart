@@ -18,13 +18,9 @@ class ServicesScreen extends StatefulWidget {
 
 class _ServicesScreenState extends State<ServicesScreen> {
   int? _pointsBalance;
-  List<Map<String, dynamic>> _services = [
-    {'title': LanguageService.tr('auto_trans_1267'), 'desc': LanguageService.tr('auto_trans_1268'), 'img': 'assets/images/10_20260712_212013_0001.png'},
-    {'title': LanguageService.tr('auto_trans_1269'), 'desc': LanguageService.tr('auto_trans_1270'), 'img': 'assets/images/13_20260712_212014_0004.png'},
-    {'title': LanguageService.tr('auto_trans_1271'), 'desc': LanguageService.tr('auto_trans_1272'), 'img': 'assets/images/14_20260712_212014_0005.png'},
-    {'title': LanguageService.tr('auto_trans_1273'), 'desc': LanguageService.tr('auto_trans_1274'), 'img': 'assets/images/15_20260712_212014_0006.png'},
-    {'title': LanguageService.tr('auto_trans_1275'), 'desc': LanguageService.tr('auto_trans_1276'), 'img': 'assets/images/16_20260712_212014_0007.png'},
-  ];
+  List<Map<String, dynamic>> _services = [];
+  bool _isLoading = true;
+  String? _loadErrorKey;
 
   @override
   void initState() {
@@ -34,11 +30,26 @@ class _ServicesScreenState extends State<ServicesScreen> {
   }
 
   Future<void> _loadServices() async {
-    final list = await ApiService.getServices();
-    if (mounted) {
-      setState(() {
-        _services = list;
-      });
+    if (!mounted) return;
+    setState(() {
+      _isLoading = true;
+      _loadErrorKey = null;
+    });
+    try {
+      final list = await ApiService.getServices();
+      if (mounted) {
+        setState(() {
+          _services = list;
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _loadErrorKey = 'failed_load_services';
+          _isLoading = false;
+        });
+      }
     }
   }
 
@@ -78,7 +89,9 @@ class _ServicesScreenState extends State<ServicesScreen> {
   }
 
   Future<void> _handleServiceTap(Map<String, dynamic> service) async {
-    final isGuest = widget.user == null || widget.user!.id == 0 || widget.user!.fullName.contains(LanguageService.tr('auto_trans_1277'));
+    final isGuest = widget.user == null ||
+        widget.user!.id == 0 ||
+        widget.user!.fullName.contains(LanguageService.tr('auto_trans_1277'));
     if (isGuest) {
       _showServiceForm(context, service);
       return;
@@ -109,32 +122,42 @@ class _ServicesScreenState extends State<ServicesScreen> {
   }
 
   void _showServiceForm(BuildContext context, Map<String, dynamic> service) {
-    final isGuest = widget.user == null || widget.user!.id == 0 || widget.user!.fullName.contains(LanguageService.tr('auto_trans_1277'));
+    final isGuest = widget.user == null ||
+        widget.user!.id == 0 ||
+        widget.user!.fullName.contains(LanguageService.tr('auto_trans_1277'));
     if (isGuest) {
       showDialog(
         context: context,
         builder: (_) => AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
           title: Row(
             children: [
               const Icon(Icons.lock_outline, color: AppColors.accent, size: 28),
               const SizedBox(width: 8),
-              Text(LanguageService.tr('guest_alert_title'), style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold)),
+              Text(LanguageService.tr('guest_alert_title'),
+                  style: const TextStyle(
+                      color: AppColors.primary, fontWeight: FontWeight.bold)),
             ],
           ),
           content: Text(LanguageService.tr('guest_alert_body_services')),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
-              child: Text(LanguageService.tr('cancel'), style: const TextStyle(color: AppColors.textMuted)),
+              child: Text(LanguageService.tr('cancel'),
+                  style: const TextStyle(color: AppColors.textMuted)),
             ),
             ElevatedButton(
-              style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary),
+              style:
+                  ElevatedButton.styleFrom(backgroundColor: AppColors.primary),
               onPressed: () {
                 Navigator.pop(context);
-                Navigator.push(context, MaterialPageRoute(builder: (_) => const LoginScreen()));
+                Navigator.push(context,
+                    MaterialPageRoute(builder: (_) => const LoginScreen()));
               },
-              child: Text(LanguageService.tr('auto_trans_1278'), style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+              child: Text(LanguageService.tr('auto_trans_1278'),
+                  style: const TextStyle(
+                      color: Colors.white, fontWeight: FontWeight.bold)),
             ),
           ],
         ),
@@ -148,7 +171,8 @@ class _ServicesScreenState extends State<ServicesScreen> {
     final nameCtrl = TextEditingController(text: widget.user?.fullName ?? '');
     final phoneCtrl = TextEditingController(text: widget.user?.phone ?? '');
     final addressCtrl = TextEditingController();
-    final dateCtrl = TextEditingController(text: LanguageService.tr('auto_trans_1279'));
+    final dateCtrl =
+        TextEditingController(text: LanguageService.tr('auto_trans_1279'));
     final detailsCtrl = TextEditingController();
     final promoCtrl = TextEditingController();
     final roomsCtrl = TextEditingController(text: '2');
@@ -161,7 +185,8 @@ class _ServicesScreenState extends State<ServicesScreen> {
     Future<void> pickImage(StateSetter setDialogState) async {
       try {
         final ImagePicker picker = ImagePicker();
-        final XFile? image = await picker.pickImage(source: ImageSource.gallery);
+        final XFile? image =
+            await picker.pickImage(source: ImageSource.gallery);
         if (image != null) {
           setDialogState(() {
             attachedImageFile = image;
@@ -187,9 +212,11 @@ class _ServicesScreenState extends State<ServicesScreen> {
           initialTime: TimeOfDay.now(),
         );
         if (time != null) {
-          final dt = DateTime(date.year, date.month, date.day, time.hour, time.minute);
-          final formated = "${dt.year}-${dt.month.toString().padLeft(2, '0')}-${dt.day.toString().padLeft(2, '0')} "
-               "${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}";
+          final dt =
+              DateTime(date.year, date.month, date.day, time.hour, time.minute);
+          final formated =
+              "${dt.year}-${dt.month.toString().padLeft(2, '0')}-${dt.day.toString().padLeft(2, '0')} "
+              "${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}";
           setDialogState(() {
             dateCtrl.text = formated;
           });
@@ -202,10 +229,14 @@ class _ServicesScreenState extends State<ServicesScreen> {
       barrierDismissible: false,
       builder: (_) => StatefulBuilder(
         builder: (context, setDialogState) {
-          final currentSvc = _services.firstWhere((s) => s['id']?.toString() == selectedServiceId, orElse: () => service);
+          final currentSvc = _services.firstWhere(
+              (s) => s['id']?.toString() == selectedServiceId,
+              orElse: () => service);
           final currentTitle = currentSvc['title']?.toString() ?? '';
-          final currentPrice = int.tryParse(currentSvc['price_points']?.toString() ?? '0') ?? 0;
-          final currentIsCleanHome = currentTitle.contains("تنظيف") || currentTitle.contains("Clean");
+          final currentPrice =
+              int.tryParse(currentSvc['price_points']?.toString() ?? '0') ?? 0;
+          final currentIsCleanHome =
+              currentTitle.contains("تنظيف") || currentTitle.contains("Clean");
 
           if (currentIsCleanHome) {
             final double m2 = double.tryParse(metersCtrl.text) ?? 0;
@@ -214,12 +245,19 @@ class _ServicesScreenState extends State<ServicesScreen> {
           }
 
           return AlertDialog(
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+            shape:
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
             title: Row(
               children: [
-                const Icon(Icons.design_services, color: AppColors.accent, size: 28),
+                const Icon(Icons.design_services,
+                    color: AppColors.accent, size: 28),
                 const SizedBox(width: 8),
-                Expanded(child: Text(LanguageService.tr('request_service_title'), style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold, fontSize: 16))),
+                Expanded(
+                    child: Text(LanguageService.tr('request_service_title'),
+                        style: const TextStyle(
+                            color: AppColors.primary,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16))),
               ],
             ),
             content: SingleChildScrollView(
@@ -227,21 +265,30 @@ class _ServicesScreenState extends State<ServicesScreen> {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   DropdownButtonFormField<String?>(
-                    value: _services.any((s) => s['id']?.toString() == selectedServiceId) ? selectedServiceId : null,
+                    value: _services.any(
+                            (s) => s['id']?.toString() == selectedServiceId)
+                        ? selectedServiceId
+                        : null,
                     decoration: InputDecoration(
                       labelText: LanguageService.tr('selected_service'),
-                      prefixIcon: const Icon(Icons.build, color: AppColors.accent),
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                      prefixIcon:
+                          const Icon(Icons.build, color: AppColors.accent),
+                      border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12)),
                     ),
-                    items: _services.map((s) => DropdownMenuItem<String?>(
-                      value: s['id']?.toString(), 
-                      child: Text("${s['title']} (${s['price_points'] ?? 0} نقطة)", style: const TextStyle(fontSize: 12))
-                    )).toList(),
+                    items: _services
+                        .map((s) => DropdownMenuItem<String?>(
+                            value: s['id']?.toString(),
+                            child: Text(
+                                "${s['title']} (${LanguageService.formatServiceCost(int.tryParse(s['price_points']?.toString() ?? '0') ?? 0)})",
+                                style: const TextStyle(fontSize: 12))))
+                        .toList(),
                     onChanged: (val) {
                       if (val != null) {
                         setDialogState(() {
                           selectedServiceId = val;
-                          selectedPaymentMethod = 'wallet'; // Reset payment method to wallet when service changes
+                          selectedPaymentMethod =
+                              'wallet'; // Reset payment method to wallet when service changes
                         });
                       }
                     },
@@ -250,17 +297,36 @@ class _ServicesScreenState extends State<ServicesScreen> {
                   // Prominent price layout under the dropdown
                   Container(
                     width: double.infinity,
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 16, vertical: 10),
                     decoration: BoxDecoration(
-                      color: currentPrice > 0 ? AppColors.accentLight : Colors.green.shade50,
+                      color: currentPrice > 0
+                          ? AppColors.accentLight
+                          : Colors.green.shade50,
                       borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: currentPrice > 0 ? AppColors.accent : Colors.green.shade300),
+                      border: Border.all(
+                          color: currentPrice > 0
+                              ? AppColors.accent
+                              : Colors.green.shade300),
                     ),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        const Text("تكلفة الخدمة:", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: AppColors.primary)),
-                        Text(currentPrice > 0 ? "$currentPrice نقطة" : "مجانية (0 نقاط)", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: currentPrice > 0 ? AppColors.primary : Colors.green.shade700)),
+                        const Text("تكلفة الخدمة:",
+                            style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 13,
+                                color: AppColors.primary)),
+                        Text(
+                            currentPrice > 0
+                                ? "$currentPrice نقطة"
+                                : "مجانية (0 نقاط)",
+                            style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 14,
+                                color: currentPrice > 0
+                                    ? AppColors.primary
+                                    : Colors.green.shade700)),
                       ],
                     ),
                   ),
@@ -268,27 +334,34 @@ class _ServicesScreenState extends State<ServicesScreen> {
                   TextField(
                     controller: nameCtrl,
                     decoration: InputDecoration(
-                      labelText: LanguageService.tr('fullName'),
-                      prefixIcon: const Icon(Icons.person, color: AppColors.accent),
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                      labelText: LanguageService.tr('full_name'),
+                      prefixIcon:
+                          const Icon(Icons.person, color: AppColors.accent),
+                      border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12)),
                     ),
                   ),
                   const SizedBox(height: 10),
                   TextField(
                     controller: phoneCtrl,
                     decoration: InputDecoration(
-                      labelText: LanguageService.tr('phone'),
-                      prefixIcon: const Icon(Icons.phone, color: AppColors.accent),
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                      labelText: LanguageService.tr('whatsapp_number'),
+                      prefixIcon:
+                          const Icon(Icons.phone, color: AppColors.accent),
+                      border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12)),
                     ),
                   ),
                   const SizedBox(height: 10),
                   TextField(
                     controller: addressCtrl,
                     decoration: InputDecoration(
-                      labelText: LanguageService.tr('auto_trans_1280'),
-                      prefixIcon: const Icon(Icons.location_on, color: AppColors.accent),
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                      labelText: LanguageService.tr('detailed_address'),
+                      hintText: LanguageService.tr('detailed_address_hint'),
+                      prefixIcon: const Icon(Icons.location_on,
+                          color: AppColors.accent),
+                      border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12)),
                     ),
                   ),
                   const SizedBox(height: 10),
@@ -299,8 +372,10 @@ class _ServicesScreenState extends State<ServicesScreen> {
                         controller: dateCtrl,
                         decoration: InputDecoration(
                           labelText: LanguageService.tr('execution_time'),
-                          prefixIcon: const Icon(Icons.calendar_today, color: AppColors.accent),
-                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                          prefixIcon: const Icon(Icons.calendar_today,
+                              color: AppColors.accent),
+                          border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12)),
                         ),
                       ),
                     ),
@@ -313,7 +388,10 @@ class _ServicesScreenState extends State<ServicesScreen> {
                           child: TextField(
                             controller: roomsCtrl,
                             keyboardType: TextInputType.number,
-                            decoration: InputDecoration(labelText: "عدد الغرف", border: OutlineInputBorder(borderRadius: BorderRadius.circular(12))),
+                            decoration: InputDecoration(
+                                labelText: "عدد الغرف",
+                                border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(12))),
                             onChanged: (val) => setDialogState(() {}),
                           ),
                         ),
@@ -322,7 +400,10 @@ class _ServicesScreenState extends State<ServicesScreen> {
                           child: TextField(
                             controller: metersCtrl,
                             keyboardType: TextInputType.number,
-                            decoration: InputDecoration(labelText: "المساحة (م²)", border: OutlineInputBorder(borderRadius: BorderRadius.circular(12))),
+                            decoration: InputDecoration(
+                                labelText: "المساحة (م²)",
+                                border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(12))),
                             onChanged: (val) => setDialogState(() {}),
                           ),
                         ),
@@ -331,22 +412,43 @@ class _ServicesScreenState extends State<ServicesScreen> {
                     const SizedBox(height: 8),
                     Container(
                       padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(color: AppColors.accentLight, borderRadius: BorderRadius.circular(8)),
-                      child: Text("السعر التقديري للتنظيف: $calcPrice لاري (يدفع كاش للفني)", style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 11, color: AppColors.primary)),
+                      decoration: BoxDecoration(
+                          color: AppColors.accentLight,
+                          borderRadius: BorderRadius.circular(8)),
+                      child: Text(
+                          LanguageService.formatCleaningEstimate(
+                              calcPrice.toString()),
+                          style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 11,
+                              color: AppColors.primary)),
                     ),
                     const SizedBox(height: 10),
                   ],
                   InkWell(
                     onTap: () => pickImage(setDialogState),
                     child: Container(
-                      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-                      decoration: BoxDecoration(border: Border.all(color: Colors.grey.shade400), borderRadius: BorderRadius.circular(12)),
+                      padding: const EdgeInsets.symmetric(
+                          vertical: 12, horizontal: 16),
+                      decoration: BoxDecoration(
+                          border: Border.all(color: Colors.grey.shade400),
+                          borderRadius: BorderRadius.circular(12)),
                       child: Row(
                         children: [
                           const Icon(Icons.image, color: AppColors.accent),
                           const SizedBox(width: 10),
-                          Expanded(child: Text(hasAttachedImage ? "تم إرفاق صورة بنجاح" : "إرفاق صورة للمشكلة (اختياري)", style: TextStyle(color: hasAttachedImage ? Colors.green : Colors.grey.shade600, fontSize: 13))),
-                          if (hasAttachedImage) const Icon(Icons.check_circle, color: Colors.green),
+                          Expanded(
+                              child: Text(
+                                  hasAttachedImage
+                                      ? "تم إرفاق صورة بنجاح"
+                                      : "إرفاق صورة للمشكلة (اختياري)",
+                                  style: TextStyle(
+                                      color: hasAttachedImage
+                                          ? Colors.green
+                                          : Colors.grey.shade600,
+                                      fontSize: 13))),
+                          if (hasAttachedImage)
+                            const Icon(Icons.check_circle, color: Colors.green),
                         ],
                       ),
                     ),
@@ -357,8 +459,10 @@ class _ServicesScreenState extends State<ServicesScreen> {
                     maxLines: 2,
                     decoration: InputDecoration(
                       labelText: LanguageService.tr('additional_details'),
-                      prefixIcon: const Icon(Icons.description, color: AppColors.accent),
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                      prefixIcon: const Icon(Icons.description,
+                          color: AppColors.accent),
+                      border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12)),
                     ),
                   ),
                   const SizedBox(height: 10),
@@ -366,8 +470,10 @@ class _ServicesScreenState extends State<ServicesScreen> {
                     controller: promoCtrl,
                     decoration: InputDecoration(
                       labelText: LanguageService.tr('promo_code'),
-                      prefixIcon: const Icon(Icons.discount, color: AppColors.accent),
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                      prefixIcon:
+                          const Icon(Icons.discount, color: AppColors.accent),
+                      border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12)),
                     ),
                   ),
                   if (currentPrice > 0) ...[
@@ -383,22 +489,29 @@ class _ServicesScreenState extends State<ServicesScreen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text(
-                            "طريقة الدفع للخدمة:",
-                            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: AppColors.primary),
+                          Text(
+                            LanguageService.tr('payment_method'),
+                            style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 13,
+                                color: AppColors.primary),
                           ),
                           const SizedBox(height: 6),
                           RadioListTile<String>(
                             title: Text(
-                              "خصم من محفظة النقاط ($currentPrice نقطة)",
-                              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+                              "${LanguageService.tr('auto_trans_1286')} ($currentPrice ${LanguageService.tr('points_unit')})",
+                              style: const TextStyle(
+                                  fontSize: 12, fontWeight: FontWeight.bold),
                             ),
                             subtitle: Text(
-                              "رصيدك الحالي: ${_pointsBalance ?? 0} نقطة",
+                              LanguageService.formatCurrentBalance(
+                                  _pointsBalance ?? 0),
                               style: TextStyle(
                                 fontSize: 11,
                                 fontWeight: FontWeight.bold,
-                                color: (_pointsBalance ?? 0) >= currentPrice ? Colors.green : Colors.red,
+                                color: (_pointsBalance ?? 0) >= currentPrice
+                                    ? Colors.green
+                                    : Colors.red,
                               ),
                             ),
                             value: 'wallet',
@@ -406,17 +519,21 @@ class _ServicesScreenState extends State<ServicesScreen> {
                             activeColor: AppColors.accent,
                             contentPadding: EdgeInsets.zero,
                             onChanged: (val) {
-                              setDialogState(() => selectedPaymentMethod = val ?? 'wallet');
+                              setDialogState(() =>
+                                  selectedPaymentMethod = val ?? 'wallet');
                             },
                           ),
                           RadioListTile<String>(
-                            title: const Text(
-                              "الدفع نقداً عند تنفيذ الخدمة",
-                              style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+                            title: Text(
+                              LanguageService.tr('auto_trans_1287'),
+                              style: const TextStyle(
+                                  fontSize: 12, fontWeight: FontWeight.bold),
                             ),
-                            subtitle: const Text(
-                              "يتم تحديد التكلفة النقدية مع خدمة العملاء",
-                              style: TextStyle(
+                            subtitle: Text(
+                              LanguageService.currentLang.value == 'ar'
+                                  ? "يتم تحديد التكلفة النقدية مع خدمة العملاء"
+                                  : "Cash cost is determined with customer service",
+                              style: const TextStyle(
                                 fontSize: 11,
                                 color: Colors.blue,
                                 fontWeight: FontWeight.bold,
@@ -427,7 +544,8 @@ class _ServicesScreenState extends State<ServicesScreen> {
                             activeColor: AppColors.accent,
                             contentPadding: EdgeInsets.zero,
                             onChanged: (val) {
-                              setDialogState(() => selectedPaymentMethod = val ?? 'cash');
+                              setDialogState(
+                                  () => selectedPaymentMethod = val ?? 'cash');
                             },
                           ),
                         ],
@@ -457,48 +575,74 @@ class _ServicesScreenState extends State<ServicesScreen> {
               ),
             ),
             actions: [
-              TextButton(onPressed: () => Navigator.pop(context), child: Text(LanguageService.tr('auto_trans_1281'), style: const TextStyle(color: AppColors.textMuted))),
+              TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: Text(LanguageService.tr('auto_trans_1281'),
+                      style: const TextStyle(color: AppColors.textMuted))),
               ElevatedButton(
                 onPressed: () {
-                  final finalSvc = _services.firstWhere((s) => s['id']?.toString() == selectedServiceId, orElse: () => service);
+                  final finalSvc = _services.firstWhere(
+                      (s) => s['id']?.toString() == selectedServiceId,
+                      orElse: () => service);
                   final finalTitle = finalSvc['title']?.toString() ?? '';
-                  final finalPrice = int.tryParse(finalSvc['price_points']?.toString() ?? '0') ?? 0;
-                  final finalIsCleanHome = finalTitle.contains("تنظيف") || finalTitle.contains("Clean");
-                  final finalServiceId = int.tryParse(finalSvc['id']?.toString() ?? '');
+                  final finalPrice = int.tryParse(
+                          finalSvc['price_points']?.toString() ?? '0') ??
+                      0;
+                  final finalIsCleanHome = finalTitle.contains("تنظيف") ||
+                      finalTitle.contains("Clean");
+                  final finalServiceId =
+                      int.tryParse(finalSvc['id']?.toString() ?? '');
 
-                  final paymentMethod = finalPrice > 0 ? selectedPaymentMethod : 'free';
+                  final paymentMethod =
+                      finalPrice > 0 ? selectedPaymentMethod : 'free';
 
                   if (finalPrice > 0 && paymentMethod == 'wallet') {
                     if ((_pointsBalance ?? 0) < finalPrice) {
                       ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('رصيد محفظتك غير كافٍ لإتمام هذا الطلب')),
+                        SnackBar(
+                            content: Text(LanguageService.currentLang.value ==
+                                    'ar'
+                                ? 'رصيد محفظتك غير كافٍ لإتمام هذا الطلب'
+                                : 'Your wallet balance is insufficient to complete this request')),
                       );
                       return;
                     }
                   }
 
-                  String reqMsg = 'طلب خدمة ($finalTitle):\n'
-                      'الاسم: ${nameCtrl.text}\n'
-                      'رقم الهاتف: ${phoneCtrl.text}\n'
-                      'العنوان: ${addressCtrl.text.isNotEmpty ? addressCtrl.text : LanguageService.tr('auto_trans_1282')}\n'
-                      'موعد التنفيذ: ${dateCtrl.text}\n'
-                      'إرفاق صورة: ${hasAttachedImage ? LanguageService.tr('auto_trans_1283') : LanguageService.tr('auto_trans_1284')}\n'
-                      'التفاصيل: ${detailsCtrl.text.isNotEmpty ? detailsCtrl.text : LanguageService.tr('auto_trans_1285')}.';
-                  if (finalIsCleanHome) {
-                    reqMsg += '\n[تفاصيل التنظيف: ${roomsCtrl.text} غرف، مساحة ${metersCtrl.text} متر، التكلفة التقديرية $calcPrice لاري].';
-                  }
-                  if (promoCtrl.text.isNotEmpty) {
-                    reqMsg += '\n[كود الخصم: ${promoCtrl.text}].';
-                  }
-                  String paymentMethodText = '';
-                  if (finalPrice == 0) {
-                    paymentMethodText = "مجانية";
-                  } else if (paymentMethod == 'wallet') {
-                    paymentMethodText = "خصم نقاط من المحفظة";
-                  } else {
-                    paymentMethodText = "نقدًا عند تنفيذ الخدمة";
-                  }
-                  reqMsg += '\n[طريقة الدفع: $paymentMethodText]';
+                  final String resolvedAddress = addressCtrl.text.isNotEmpty
+                      ? addressCtrl.text
+                      : LanguageService.tr('auto_trans_1282');
+                  final String resolvedDetails = detailsCtrl.text.isNotEmpty
+                      ? detailsCtrl.text
+                      : LanguageService.tr('auto_trans_1285');
+                  final String paymentMethodText = finalPrice == 0
+                      ? (LanguageService.currentLang.value == 'ar'
+                          ? 'مجانية'
+                          : 'Free')
+                      : (paymentMethod == 'wallet'
+                          ? (LanguageService.currentLang.value == 'ar'
+                              ? 'خصم نقاط من المحفظة'
+                              : 'Deduct points from wallet')
+                          : (LanguageService.currentLang.value == 'ar'
+                              ? 'نقدًا عند تنفيذ الخدمة'
+                              : 'Cash upon execution'));
+
+                  final String reqMsg =
+                      LanguageService.formatServiceRequestMessage(
+                    title: finalTitle,
+                    name: nameCtrl.text,
+                    phone: phoneCtrl.text,
+                    address: resolvedAddress,
+                    executionTime: dateCtrl.text,
+                    hasImage: hasAttachedImage,
+                    details: resolvedDetails,
+                    rooms: finalIsCleanHome ? roomsCtrl.text : null,
+                    meters: finalIsCleanHome ? metersCtrl.text : null,
+                    calcPrice: finalIsCleanHome ? calcPrice.toString() : null,
+                    promoCode:
+                        promoCtrl.text.isNotEmpty ? promoCtrl.text : null,
+                    paymentMethod: paymentMethodText,
+                  );
 
                   showDialog(
                     context: context,
@@ -506,9 +650,13 @@ class _ServicesScreenState extends State<ServicesScreen> {
                     builder: (_) => AlertDialog(
                       content: Row(
                         children: [
-                          const CircularProgressIndicator(color: AppColors.primary),
+                          const CircularProgressIndicator(
+                              color: AppColors.primary),
                           const SizedBox(width: 20),
-                          Expanded(child: Text(LanguageService.tr('sending_service_request'), style: const TextStyle(fontFamily: 'Cairo'))),
+                          Expanded(
+                              child: Text(
+                                  LanguageService.tr('sending_service_request'),
+                                  style: const TextStyle(fontFamily: 'Cairo'))),
                         ],
                       ),
                     ),
@@ -519,16 +667,22 @@ class _ServicesScreenState extends State<ServicesScreen> {
                   Future<void> submitData() async {
                     String finalDetails = reqMsg;
                     if (attachedImageFile != null) {
-                      final uploadedUrl = await ApiService.uploadImage(attachedImageFile, 'requests');
+                      final uploadedUrl = await ApiService.uploadImage(
+                          attachedImageFile, 'requests');
                       if (uploadedUrl != null) {
-                        finalDetails += '\n\n[رابط الصورة المرفقة: $uploadedUrl]';
+                        finalDetails +=
+                            '\n\n[رابط الصورة المرفقة: $uploadedUrl]';
                       }
                     }
 
                     final requestResult = await ApiService.submitServiceRequest(
                       serviceId: finalServiceId,
-                      studentName: nameCtrl.text.isNotEmpty ? nameCtrl.text : (widget.user?.fullName ?? ''),
-                      studentPhone: phoneCtrl.text.isNotEmpty ? phoneCtrl.text : (widget.user?.phone ?? ''),
+                      studentName: nameCtrl.text.isNotEmpty
+                          ? nameCtrl.text
+                          : (widget.user?.fullName ?? ''),
+                      studentPhone: phoneCtrl.text.isNotEmpty
+                          ? phoneCtrl.text
+                          : (widget.user?.phone ?? ''),
                       studentUni: '', // Let backend resolve it
                       universityId: widget.user?.universityId,
                       serviceTitle: finalTitle,
@@ -540,14 +694,17 @@ class _ServicesScreenState extends State<ServicesScreen> {
 
                     if (requestResult['status'] == 'success') {
                       final dataPayload = requestResult['data'];
-                      if (dataPayload != null && dataPayload['balance_after'] != null) {
-                        final newBalance = (dataPayload['balance_after'] as num).toInt();
+                      if (dataPayload != null &&
+                          dataPayload['balance_after'] != null) {
+                        final newBalance =
+                            (dataPayload['balance_after'] as num).toInt();
                         setState(() {
                           _pointsBalance = newBalance;
                         });
                       }
                     } else {
-                      throw Exception(requestResult['message'] ?? LanguageService.tr('auto_trans_1288'));
+                      throw Exception(requestResult['message'] ??
+                          LanguageService.tr('auto_trans_1288'));
                     }
                   }
 
@@ -565,12 +722,17 @@ class _ServicesScreenState extends State<ServicesScreen> {
                     if (!context.mounted) return;
                     Navigator.pop(context); // Dismiss loading spinner
                     ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text('${LanguageService.tr('error_sending_service')} $e')),
+                      SnackBar(
+                          content: Text(
+                              '${LanguageService.tr('error_sending_service')} $e')),
                     );
                   });
                 },
-                style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary),
-                child: Text(LanguageService.tr('submit_form_confirm'), style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primary),
+                child: Text(LanguageService.tr('submit_form_confirm'),
+                    style: const TextStyle(
+                        color: Colors.white, fontWeight: FontWeight.bold)),
               ),
             ],
           );
@@ -588,145 +750,254 @@ class _ServicesScreenState extends State<ServicesScreen> {
         appBar: AppBar(
           backgroundColor: AppColors.primary,
           elevation: 0,
-          title: Text(LanguageService.tr('all_student_services'), style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+          title: Text(LanguageService.tr('all_student_services'),
+              style: const TextStyle(
+                  color: Colors.white, fontWeight: FontWeight.bold)),
         ),
-        body: GridView.builder(
-          padding: const EdgeInsets.all(16),
-          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: 2,
-            crossAxisSpacing: 14,
-            mainAxisSpacing: 14,
-            childAspectRatio: 0.63,
-          ),
-          itemCount: _services.length,
-          itemBuilder: (context, index) {
-            final s = _services[index];
-            final hasForm = s['has_form'] == true || s['has_form'] == 1;
+        body: _buildBody(),
+      ),
+    );
+  }
 
-            return Card(
-              clipBehavior: Clip.antiAlias,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-              elevation: 4,
-              shadowColor: Colors.black.withValues(alpha: 0.15),
-              child: InkWell(
-                onTap: () => _handleServiceTap(s),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    // Larger Image Header (Takes 55% of card height)
-                    Expanded(
-                      flex: 15,
-                      child: Stack(
-                        fit: StackFit.expand,
-                        children: [
-                          _buildImageWidget(s['img']?.toString() ?? ''),
-                          if (hasForm)
-                            Positioned(
-                              top: 8,
-                              right: 8,
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                decoration: BoxDecoration(
-                                  color: Colors.green.shade600,
-                                  borderRadius: BorderRadius.circular(8),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: Colors.black.withValues(alpha: 0.2),
-                                      blurRadius: 4,
-                                      offset: const Offset(0, 2),
-                                    )
-                                  ]
-                                ),
-                                child: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    const Icon(Icons.edit_note, color: Colors.white, size: 12),
-                                    const SizedBox(width: 2),
-                                    Text(LanguageService.tr('instant_tag'), style: const TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.bold)),
-                                  ],
-                                ),
-                              ),
-                            ),
-                        ],
-                      ),
-                    ),
-                    
-                    // Card Body (Text and Button below)
-                    Expanded(
-                      flex: 12,
-                      child: Padding(
-                        padding: const EdgeInsets.all(10.0),
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Column(
-                              children: [
-                                Text(
-                                  s['title'] as String,
-                                  textAlign: TextAlign.center,
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: AppColors.textDark),
-                                ),
-                                const SizedBox(height: 4),
-                                Text(
-                                  s['desc'] as String,
-                                  textAlign: TextAlign.center,
-                                  maxLines: 2,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: const TextStyle(fontSize: 10, color: AppColors.textMuted, height: 1.3),
-                                ),
-                                const SizedBox(height: 6),
-                                Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                                  decoration: BoxDecoration(
-                                    color: (s['price_points'] as int? ?? 0) > 0 ? AppColors.accentLight : Colors.green.shade50,
-                                    borderRadius: BorderRadius.circular(8),
-                                  ),
-                                  child: Text(
-                                    (s['price_points'] as int? ?? 0) > 0 
-                                        ? "${s['price_points']} نقطة" 
-                                        : "مجانية",
-                                    style: TextStyle(
-                                      fontSize: 11,
-                                      fontWeight: FontWeight.bold,
-                                      color: (s['price_points'] as int? ?? 0) > 0 ? AppColors.primary : Colors.green.shade700,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                            Container(
-                              width: double.infinity,
-                              padding: const EdgeInsets.symmetric(vertical: 8),
-                              decoration: BoxDecoration(
-                                color: AppColors.primary,
-                                borderRadius: BorderRadius.circular(10),
+  Widget _buildBody() {
+    if (_isLoading) {
+      return const Center(
+        child: CircularProgressIndicator(
+          valueColor: AlwaysStoppedAnimation<Color>(AppColors.accent),
+        ),
+      );
+    }
+
+    if (_loadErrorKey != null) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24.0),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(
+                Icons.error_outline,
+                color: AppColors.error,
+                size: 60,
+              ),
+              const SizedBox(height: 16),
+              Text(
+                LanguageService.tr(_loadErrorKey!),
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  fontSize: 16,
+                  color: AppColors.textDark,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(height: 24),
+              ElevatedButton.icon(
+                onPressed: _loadServices,
+                icon: const Icon(Icons.refresh, color: Colors.white),
+                label: Text(
+                  LanguageService.tr('retry'),
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primary,
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    if (_services.isEmpty) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24.0),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                Icons.hourglass_empty,
+                color: AppColors.textMuted.withValues(alpha: 0.5),
+                size: 80,
+              ),
+              const SizedBox(height: 16),
+              Text(
+                LanguageService.tr('no_services_available'),
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  fontSize: 16,
+                  color: AppColors.textMuted,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    return GridView.builder(
+      padding: const EdgeInsets.all(16),
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 2,
+        crossAxisSpacing: 14,
+        mainAxisSpacing: 14,
+        childAspectRatio: 0.63,
+      ),
+      itemCount: _services.length,
+      itemBuilder: (context, index) {
+        final s = _services[index];
+        final hasForm = s['has_form'] == true || s['has_form'] == 1;
+
+        return Card(
+          clipBehavior: Clip.antiAlias,
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          elevation: 4,
+          shadowColor: Colors.black.withValues(alpha: 0.15),
+          child: InkWell(
+            onTap: () => _handleServiceTap(s),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                // Larger Image Header (Takes 55% of card height)
+                Expanded(
+                  flex: 15,
+                  child: Stack(
+                    fit: StackFit.expand,
+                    children: [
+                      _buildImageWidget(s['img']?.toString() ?? ''),
+                      if (hasForm)
+                        PositionedDirectional(
+                          top: 8,
+                          end: 8,
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 8, vertical: 4),
+                            decoration: BoxDecoration(
+                                color: Colors.green.shade600,
+                                borderRadius: BorderRadius.circular(8),
                                 boxShadow: [
                                   BoxShadow(
-                                    color: AppColors.primary.withValues(alpha: 0.2),
+                                    color: Colors.black.withValues(alpha: 0.2),
                                     blurRadius: 4,
                                     offset: const Offset(0, 2),
                                   )
-                                ]
+                                ]),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const Icon(Icons.edit_note,
+                                    color: Colors.white, size: 12),
+                                const SizedBox(width: 2),
+                                Text(LanguageService.tr('instant_tag'),
+                                    style: const TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 9,
+                                        fontWeight: FontWeight.bold)),
+                              ],
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+
+                // Card Body (Text and Button below)
+                Expanded(
+                  flex: 12,
+                  child: Padding(
+                    padding: const EdgeInsets.all(10.0),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Column(
+                          children: [
+                            Text(
+                              s['title'] as String,
+                              textAlign: TextAlign.center,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 13,
+                                  color: AppColors.textDark),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              s['desc'] as String,
+                              textAlign: TextAlign.center,
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                  fontSize: 10,
+                                  color: AppColors.textMuted,
+                                  height: 1.3),
+                            ),
+                            const SizedBox(height: 6),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 10, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: (s['price_points'] as int? ?? 0) > 0
+                                    ? AppColors.accentLight
+                                    : Colors.green.shade50,
+                                borderRadius: BorderRadius.circular(8),
                               ),
-                              alignment: Alignment.center,
                               child: Text(
-                                LanguageService.tr('request_service_button'), 
-                                style: const TextStyle(color: Colors.white, fontSize: 11.5, fontWeight: FontWeight.bold),
+                                LanguageService.formatServiceCost(
+                                    s['price_points'] as int? ?? 0),
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.bold,
+                                  color: (s['price_points'] as int? ?? 0) > 0
+                                      ? AppColors.primary
+                                      : Colors.green.shade700,
+                                ),
                               ),
                             ),
                           ],
                         ),
-                      ),
+                        Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.symmetric(vertical: 8),
+                          decoration: BoxDecoration(
+                              color: AppColors.primary,
+                              borderRadius: BorderRadius.circular(10),
+                              boxShadow: [
+                                BoxShadow(
+                                  color:
+                                      AppColors.primary.withValues(alpha: 0.2),
+                                  blurRadius: 4,
+                                  offset: const Offset(0, 2),
+                                )
+                              ]),
+                          alignment: Alignment.center,
+                          child: Text(
+                            LanguageService.tr('request_service_button'),
+                            style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 11.5,
+                                fontWeight: FontWeight.bold),
+                          ),
+                        ),
+                      ],
                     ),
-                  ],
+                  ),
                 ),
-              ),
-            );
-          },
-        ),
-      ),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 }

@@ -23,8 +23,9 @@ if (empty($email) || !filter_var($email, FILTER_VALIDATE_EMAIL) || strlen($email
     jsonResponse(false, "A valid email address is required (max 150 characters).", 400);
 }
 
-if (empty($phone) || strlen($phone) < 5 || strlen($phone) > 50) {
-    jsonResponse(false, "A valid phone number is required (5-50 characters).", 400);
+$phone = preg_replace('/[^\+0-9]/', '', $phone);
+if (empty($phone) || !preg_match('/^\+9955[0-9]{8}$/', $phone)) {
+    jsonResponse(false, "رقم الهاتف الجورجي غير صالح. يجب أن يبدأ بـ +995 متبوعاً بـ 9 أرقام تبدأ بـ 5 (مثال: +995555123456) / Invalid Georgian phone number. Must start with +995 followed by 9 digits starting with 5.", 400);
 }
 
 if (strlen($university) > 150) {

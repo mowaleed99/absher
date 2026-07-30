@@ -16,8 +16,10 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   final _formKey = GlobalKey<FormState>();
   late TextEditingController _nameController;
   late TextEditingController _emailController;
-  late TextEditingController _phoneController;
+  /// Stores only the 9-digit local part (e.g. "555123456"), NOT the country code.
+  late TextEditingController _localPhoneController;
   late TextEditingController _customUniController;
+  static const String _countryCode = '+995';
 
   String _selectedUni = '';
   List<String> _universities = [];
@@ -30,9 +32,18 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     super.initState();
     _nameController = TextEditingController(text: widget.student.fullName);
     _emailController = TextEditingController(text: widget.student.email ?? '');
-    _phoneController = TextEditingController(text: widget.student.phone ?? '');
-    _customUniController = TextEditingController();
 
+    // Pre-fill local part: strip +995 prefix if present, otherwise keep raw value
+    final rawPhone = widget.student.phone ?? '';
+    String localPart = rawPhone;
+    if (rawPhone.startsWith('+995')) {
+      localPart = rawPhone.substring(4); // remove +995
+    } else if (rawPhone.startsWith('995')) {
+      localPart = rawPhone.substring(3); // remove 995
+    }
+    _localPhoneController = TextEditingController(text: localPart);
+
+    _customUniController = TextEditingController();
     _loadUniversities();
   }
 
@@ -40,22 +51,14 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   void dispose() {
     _nameController.dispose();
     _emailController.dispose();
-    _phoneController.dispose();
+    _localPhoneController.dispose();
     _customUniController.dispose();
     super.dispose();
   }
 
-  String _localTr(String key, String fallbackAr, String fallbackEn) {
-    final translation = LanguageService.tr(key);
-    if (translation == key) {
-      return LanguageService.currentLang.value == 'ar' ? fallbackAr : fallbackEn;
-    }
-    return translation;
-  }
-
   Future<void> _loadUniversities() async {
-    final otherUniText = _localTr('other_uni_manual', 'أخرى (إدخال يدوي)', 'Other (Manual Entry)');
-    
+    final otherUniText = LanguageService.tr('other_uni_manual');
+
     try {
       final unis = await ApiService.getUniversities();
       if (mounted) {
@@ -67,14 +70,14 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                 .toList();
           } else {
             _universities = [
-              _localTr('auto_trans_1205', 'جامعة تبليسي الطبية (TSMU)', 'Tbilisi State Medical University (TSMU)'),
+              LanguageService.tr('auto_trans_1205'),
               'University of Georgia (UG)',
               'Ilia State University',
               'Tbilisi State University (TSU)'
             ];
           }
           _universities.add(otherUniText);
-          
+
           final currentUni = widget.student.university ?? '';
           if (_universities.contains(currentUni)) {
             _selectedUni = currentUni;
@@ -90,10 +93,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     } catch (e) {
       if (mounted) {
         setState(() {
-          _universities = [
-            _localTr('auto_trans_1205', 'جامعة تبليسي الطبية (TSMU)', 'Tbilisi State Medical University (TSMU)'),
-            otherUniText
-          ];
+          _universities = [LanguageService.tr('auto_trans_1205'), otherUniText];
           _selectedUni = _universities.first;
           _isLoadingUnis = false;
         });
@@ -104,9 +104,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   Future<void> _handleSave() async {
     if (!_formKey.currentState!.validate()) return;
 
-    final otherUniText = _localTr('other_uni_manual', 'أخرى (إدخال يدوي)', 'Other (Manual Entry)');
-    final uniVal = _selectedUni == otherUniText 
-        ? _customUniController.text.trim() 
+    final otherUniText = LanguageService.tr('other_uni_manual');
+    final uniVal = _selectedUni == otherUniText
+        ? _customUniController.text.trim()
         : _selectedUni;
 
     setState(() {
@@ -118,7 +118,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       final result = await ApiService.updateProfile(
         fullName: _nameController.text.trim(),
         email: _emailController.text.trim(),
-        phone: _phoneController.text.trim(),
+        phone: _countryCode + _localPhoneController.text.trim(),
         university: uniVal,
       );
 
@@ -128,7 +128,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           Navigator.pop(context, result['student'] as Student);
         } else {
           setState(() {
-            _errorMessage = result['message'] ?? _localTr('error_occurred', 'حدث خطأ ما', 'An error occurred');
+            _errorMessage =
+                result['message'] ?? LanguageService.tr('error_occurred');
           });
         }
       }
@@ -144,9 +145,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final title = _localTr('edit_profile_title', 'تعديل الملف الشخصي', 'Edit Profile');
-    final otherUniText = _localTr('other_uni_manual', 'أخرى (إدخال يدوي)', 'Other (Manual Entry)');
-    
+    final title = LanguageService.tr('edit_profile_title');
+    final otherUniText = LanguageService.tr('other_uni_manual');
+
     return Directionality(
       textDirection: LanguageService.textDirection,
       child: Scaffold(
@@ -154,14 +155,16 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         appBar: AppBar(
           backgroundColor: AppColors.primary,
           elevation: 0,
-          leading: IconButton(
-            icon: const Icon(Icons.arrow_back, color: Colors.white),
-            onPressed: () => Navigator.pop(context),
-          ),
-          title: Text(title, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18)),
+          leading: const BackButton(color: Colors.white),
+          title: Text(title,
+              style: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 18)),
         ),
         body: _isLoadingUnis
-            ? const Center(child: CircularProgressIndicator(color: AppColors.primary))
+            ? const Center(
+                child: CircularProgressIndicator(color: AppColors.primary))
             : SingleChildScrollView(
                 padding: const EdgeInsets.all(24),
                 child: Form(
@@ -180,9 +183,14 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                           ),
                           child: Row(
                             children: [
-                              const Icon(Icons.error_outline, color: AppColors.error),
+                              const Icon(Icons.error_outline,
+                                  color: AppColors.error),
                               const SizedBox(width: 10),
-                              Expanded(child: Text(_errorMessage, style: const TextStyle(color: AppColors.error, fontSize: 13))),
+                              Expanded(
+                                  child: Text(_errorMessage,
+                                      style: const TextStyle(
+                                          color: AppColors.error,
+                                          fontSize: 13))),
                             ],
                           ),
                         ),
@@ -191,19 +199,21 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                       TextFormField(
                         controller: _nameController,
                         decoration: InputDecoration(
-                          labelText: _localTr('full_name', 'الاسم الكامل', 'Full Name'),
-                          prefixIcon: const Icon(Icons.person_outline, color: AppColors.primary),
-                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                          labelText: LanguageService.tr('full_name'),
+                          prefixIcon: const Icon(Icons.person_outline,
+                              color: AppColors.primary),
+                          border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12)),
                         ),
                         validator: (val) {
                           if (val == null || val.trim().isEmpty) {
-                            return _localTr('required_field', 'حقل مطلوب', 'Required field');
+                            return LanguageService.tr('required_field');
                           }
                           if (val.trim().length < 3) {
-                            return _localTr('name_too_short', 'الاسم قصير جداً (3 أحرف على الأقل)', 'Name is too short (min 3 characters)');
+                            return LanguageService.tr('name_too_short');
                           }
                           if (val.trim().length > 150) {
-                            return _localTr('name_too_long', 'الاسم طويل جداً (الحد الأقصى 150 حرفاً)', 'Name is too long (max 150 characters)');
+                            return LanguageService.tr('name_too_long');
                           }
                           return null;
                         },
@@ -215,42 +225,118 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                         controller: _emailController,
                         keyboardType: TextInputType.emailAddress,
                         decoration: InputDecoration(
-                          labelText: _localTr('email', 'البريد الإلكتروني', 'Email'),
-                          prefixIcon: const Icon(Icons.email_outlined, color: AppColors.primary),
-                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                          labelText: LanguageService.tr('email'),
+                          prefixIcon: const Icon(Icons.email_outlined,
+                              color: AppColors.primary),
+                          border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12)),
                         ),
                         validator: (val) {
                           if (val == null || val.trim().isEmpty) {
-                            return _localTr('required_field', 'حقل مطلوب', 'Required field');
+                            return LanguageService.tr('required_field');
                           }
                           if (!val.contains('@') || !val.contains('.')) {
-                            return _localTr('invalid_email', 'البريد الإلكتروني غير صالح', 'Invalid email address');
+                            return LanguageService.tr('invalid_email');
                           }
                           if (val.trim().length > 150) {
-                            return _localTr('email_too_long', 'البريد الإلكتروني طويل جداً', 'Email is too long');
+                            return LanguageService.tr('email_too_long');
                           }
                           return null;
                         },
                       ),
                       const SizedBox(height: 18),
 
-                      // Phone Field
-                      TextFormField(
-                        controller: _phoneController,
-                        keyboardType: TextInputType.phone,
-                        decoration: InputDecoration(
-                          labelText: _localTr('phone_example', 'رقم الهاتف (مثال: 995555123456+)', 'Phone number'),
-                          prefixIcon: const Icon(Icons.phone_outlined, color: AppColors.primary),
-                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                        ),
-                        validator: (val) {
-                          if (val == null || val.trim().isEmpty) {
-                            return _localTr('required_field', 'حقل مطلوب', 'Required field');
+                      // Phone Field — fixed +995 prefix + local 9-digit input
+                      FormField<String>(
+                        initialValue: _localPhoneController.text,
+                        validator: (_) {
+                          final local = _localPhoneController.text.trim();
+                          if (local.isEmpty) {
+                            return LanguageService.tr('required_field');
                           }
-                          if (val.trim().length < 5 || val.trim().length > 50) {
-                            return _localTr('phone_len_error', 'رقم الهاتف يجب أن يكون بين 5 و 50 رقم', 'Phone number must be between 5 and 50 characters');
+                          // Must be exactly 9 digits starting with 5
+                          if (!RegExp(r'^5[0-9]{8}$').hasMatch(local)) {
+                            return LanguageService.currentLang.value == 'ar'
+                                ? 'رقم الهاتف غير صالح. أدخل 9 أرقام تبدأ بـ 5 (مثال: 555123456)'
+                                : 'Invalid number. Enter 9 digits starting with 5 (e.g. 555123456)';
                           }
                           return null;
+                        },
+                        builder: (fieldState) {
+                          return Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              InputDecorator(
+                                decoration: InputDecoration(
+                                  labelText: LanguageService.tr('phone_example'),
+                                  prefixIcon: const Icon(
+                                      Icons.phone_outlined,
+                                      color: AppColors.primary),
+                                  border: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(12)),
+                                  errorBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                    borderSide:
+                                        const BorderSide(color: AppColors.error),
+                                  ),
+                                  contentPadding: const EdgeInsets.symmetric(
+                                      horizontal: 12, vertical: 14),
+                                ),
+                                child: Row(
+                                  children: [
+                                    // ── Fixed non-editable prefix ──
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(
+                                          horizontal: 10, vertical: 6),
+                                      decoration: BoxDecoration(
+                                        color: AppColors.primary
+                                            .withValues(alpha: 0.12),
+                                        borderRadius: BorderRadius.circular(8),
+                                      ),
+                                      child: const Text(
+                                        '+995',
+                                        style: TextStyle(
+                                          color: AppColors.primary,
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 15,
+                                          letterSpacing: 0.5,
+                                        ),
+                                      ),
+                                    ),
+                                    const SizedBox(width: 8),
+                                    // ── Editable local number (9 digits only) ──
+                                    Expanded(
+                                      child: TextField(
+                                        controller: _localPhoneController,
+                                        keyboardType: TextInputType.number,
+                                        maxLength: 9,
+                                        enabled: !_isSaving,
+                                        decoration: const InputDecoration(
+                                          hintText: '5XXXXXXXX',
+                                          border: InputBorder.none,
+                                          counterText: '',
+                                          isDense: true,
+                                        ),
+                                        style: const TextStyle(fontSize: 15),
+                                        onChanged: (_) => fieldState
+                                            .didChange(_localPhoneController.text),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              if (fieldState.hasError)
+                                Padding(
+                                  padding:
+                                      const EdgeInsets.only(top: 6, left: 12),
+                                  child: Text(
+                                    fieldState.errorText!,
+                                    style: const TextStyle(
+                                        color: AppColors.error, fontSize: 12),
+                                  ),
+                                ),
+                            ],
+                          );
                         },
                       ),
                       const SizedBox(height: 18),
@@ -259,14 +345,21 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                       DropdownButtonFormField<String>(
                         value: _selectedUni,
                         decoration: InputDecoration(
-                          labelText: _localTr('georgia_uni', 'الجامعة في جورجيا', 'University in Georgia'),
-                          prefixIcon: const Icon(Icons.school_outlined, color: AppColors.primary),
-                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                          labelText: LanguageService.tr('georgia_uni'),
+                          prefixIcon: const Icon(Icons.school_outlined,
+                              color: AppColors.primary),
+                          border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12)),
                         ),
                         items: _universities.map((uni) {
-                          return DropdownMenuItem(value: uni, child: Text(uni, style: const TextStyle(fontSize: 13)));
+                          return DropdownMenuItem(
+                              value: uni,
+                              child: Text(uni,
+                                  style: const TextStyle(fontSize: 13)));
                         }).toList(),
-                        onChanged: _isSaving ? null : (val) => setState(() => _selectedUni = val!),
+                        onChanged: _isSaving
+                            ? null
+                            : (val) => setState(() => _selectedUni = val!),
                       ),
                       const SizedBox(height: 18),
 
@@ -275,16 +368,20 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                         TextFormField(
                           controller: _customUniController,
                           decoration: InputDecoration(
-                            labelText: _localTr('uni_and_district', 'اسم الجامعة واسم الحي المنطقه', 'University & District'),
-                            prefixIcon: const Icon(Icons.edit_location_alt_outlined, color: AppColors.primary),
-                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                            labelText: LanguageService.tr('uni_and_district'),
+                            prefixIcon: const Icon(
+                                Icons.edit_location_alt_outlined,
+                                color: AppColors.primary),
+                            border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12)),
                           ),
                           validator: (val) {
                             if (val == null || val.trim().isEmpty) {
-                              return _localTr('please_enter_uni_dist', 'يرجى إدخال اسم الجامعة والحي', 'Please enter university and district');
+                              return LanguageService.tr(
+                                  'please_enter_uni_dist');
                             }
                             if (val.trim().length > 150) {
-                              return _localTr('uni_too_long', 'الاسم طويل جداً (الحد الأقصى 150 حرفاً)', 'University name is too long (max 150 characters)');
+                              return LanguageService.tr('uni_too_long');
                             }
                             return null;
                           },
@@ -302,17 +399,22 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                           onPressed: _isSaving ? null : _handleSave,
                           style: ElevatedButton.styleFrom(
                             backgroundColor: AppColors.primary,
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                            shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(14)),
                           ),
                           child: _isSaving
                               ? const SizedBox(
                                   width: 24,
                                   height: 24,
-                                  child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2.5),
+                                  child: CircularProgressIndicator(
+                                      color: Colors.white, strokeWidth: 2.5),
                                 )
                               : Text(
-                                  _localTr('save', 'حفظ التعديلات', 'Save Changes'),
-                                  style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+                                  LanguageService.tr('save'),
+                                  style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.bold),
                                 ),
                         ),
                       ),

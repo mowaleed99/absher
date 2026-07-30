@@ -43,26 +43,36 @@ class HousingOffer {
 
   factory HousingOffer.fromJson(Map<String, dynamic> json) {
     return HousingOffer(
-      id: json['id'] is int ? json['id'] : (int.tryParse(json['id']?.toString() ?? '') ?? 0),
-      apartmentId: json['apartment_id'] is int ? json['apartment_id'] : (int.tryParse(json['apartment_id']?.toString() ?? '') ?? 0),
+      id: json['id'] is int
+          ? json['id']
+          : (int.tryParse(json['id']?.toString() ?? '') ?? 0),
+      apartmentId: json['apartment_id'] is int
+          ? json['apartment_id']
+          : (int.tryParse(json['apartment_id']?.toString() ?? '') ?? 0),
       title: json['title']?.toString() ?? '',
       description: json['description']?.toString() ?? '',
-      originalPrice: json['original_price'] is num 
-          ? (json['original_price'] as num).toDouble() 
+      originalPrice: json['original_price'] is num
+          ? (json['original_price'] as num).toDouble()
           : (double.tryParse(json['original_price']?.toString() ?? '') ?? 0.0),
-      offerPrice: json['offer_price'] is num 
-          ? (json['offer_price'] as num).toDouble() 
+      offerPrice: json['offer_price'] is num
+          ? (json['offer_price'] as num).toDouble()
           : (double.tryParse(json['offer_price']?.toString() ?? '') ?? 0.0),
-      discountPercent: json['discount_percent'] is int 
-          ? json['discount_percent'] 
+      discountPercent: json['discount_percent'] is int
+          ? json['discount_percent']
           : (int.tryParse(json['discount_percent']?.toString() ?? '') ?? 0),
       badgeText: json['badge_text']?.toString(),
       imageUrl: json['image_url']?.toString(),
       startsAt: json['starts_at']?.toString(),
       expiresAt: json['expires_at']?.toString(),
-      isActive: json['is_active'] == 1 || json['is_active'] == true || json['is_active'] == '1',
-      displayOrder: json['display_order'] is int ? json['display_order'] : (int.tryParse(json['display_order']?.toString() ?? '') ?? 0),
-      apartment: json['apartment'] != null ? Apartment.fromJson(json['apartment'] as Map<String, dynamic>) : null,
+      isActive: json['is_active'] == 1 ||
+          json['is_active'] == true ||
+          json['is_active'] == '1',
+      displayOrder: json['display_order'] is int
+          ? json['display_order']
+          : (int.tryParse(json['display_order']?.toString() ?? '') ?? 0),
+      apartment: json['apartment'] != null
+          ? Apartment.fromJson(json['apartment'] as Map<String, dynamic>)
+          : null,
     );
   }
 

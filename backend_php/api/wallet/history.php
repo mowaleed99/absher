@@ -7,7 +7,7 @@ AuthMiddleware::requireAuth();
 $student_id = AuthMiddleware::$currentUserId;
 
 try {
-    $stmt = $conn->prepare("SELECT id, amount, transaction_type, reason, service_request_id, created_at 
+    $stmt = $conn->prepare("SELECT id, amount, type, description, service_request_id, created_at 
                             FROM wallet_transactions 
                             WHERE student_id = ? 
                             ORDER BY created_at DESC");

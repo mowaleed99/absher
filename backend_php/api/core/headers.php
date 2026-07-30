@@ -1,4 +1,5 @@
 <?php
+date_default_timezone_set('Asia/Tbilisi');
 $envOrigins = getenv('ALLOWED_ORIGINS');
 if ($envOrigins !== false && $envOrigins !== '') {
     $allowed_origins = array_map('trim', explode(',', $envOrigins));

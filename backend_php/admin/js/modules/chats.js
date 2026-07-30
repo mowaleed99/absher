@@ -216,36 +216,55 @@ export function cancelWaQuote() {
     if (quoteBar) quoteBar.style.display = 'none';
 }
 
-export function editWaMessage(idx) {
+export async function editWaMessage(idx) {
     const chatId = parseInt(document.getElementById('waActiveChatId').value);
     const chat = appData.chats.find(c => c.id === chatId);
     if (!chat || !chat.messages[idx]) return;
     const currentText = chat.messages[idx].text.replace('(معدلة)', '');
-    const newText = prompt('️ تعديل نص الرسالة:', currentText);
+    const newText = await window.showPromptDialog({
+        title: 'تعديل الرسالة',
+        message: 'تعديل نص الرسالة:',
+        defaultValue: currentText,
+        placeholder: 'اكتب الرسالة المعدلة هنا...'
+    });
     if (newText !== null && newText.trim() !== '') {
         chat.messages[idx].text = newText.trim() + ' (معدلة)';
         renderWaThread(chat);
-        showToast('تم تعديل الرسالة بنجاح ️');
+        showToast('تم تعديل الرسالة بنجاح ✏️');
     }
 }
 
-export function deleteWaMessage(idx) {
+export async function deleteWaMessage(idx) {
     const chatId = parseInt(document.getElementById('waActiveChatId').value);
     const chat = appData.chats.find(c => c.id === chatId);
     if (!chat || !chat.messages[idx]) return;
-    if (confirm('هل أنت متأكد من رغبتك في مسح هذه الرسالة؟')) {
+    const confirmed = await window.showConfirmDialog({
+        title: 'مسح الرسالة',
+        message: 'هل أنت متأكد من رغبتك في مسح هذه الرسالة؟',
+        confirmText: 'مسح',
+        cancelText: 'إلغاء',
+        variant: 'danger'
+    });
+    if (confirmed) {
         chat.messages[idx].text = 'تم حذف هذه الرسالة من قبل خدمة العملاء';
         chat.messages[idx].deleted = true;
         renderWaThread(chat);
-        showToast('تم حذف الرسالة بنجاح ️');
+        showToast('تم حذف الرسالة بنجاح 🗑️');
     }
 }
 
-export function blockWaStudent() {
+export async function blockWaStudent() {
     const chatId = parseInt(document.getElementById('waActiveChatId').value);
     const chat = appData.chats.find(c => c.id === chatId);
     if (!chat) return;
-    if (confirm(`هل أنت متأكد من حظر الطالب (${chat.student_name}) وإغلاق الشات؟`)) {
+    const confirmed = await window.showConfirmDialog({
+        title: 'حظر الطالب وإغلاق الشات',
+        message: `هل أنت متأكد من حظر الطالب (${chat.student_name}) وإغلاق الشات؟`,
+        confirmText: 'حظر',
+        cancelText: 'إلغاء',
+        variant: 'danger'
+    });
+    if (confirmed) {
         chat.status = 'محظور';
         if (!chat.messages) chat.messages = [];
         chat.messages.push({
@@ -359,11 +378,16 @@ export async function sendCustomWaMessage(msgData) {
     }
 }
 
-export function triggerWaAttachmentUrl() {
+export async function triggerWaAttachmentUrl() {
     const chatId = parseInt(document.getElementById('waActiveChatId')?.value || document.getElementById('activeChatId')?.value);
     const chat = appData.chats.find(c => c.id === chatId);
     if (!chat) { showToast('يرجى تحديد محادثة أولاً'); return; }
-    const linkUrl = prompt('أدخل الرابط الذي تريد إرساله للطالب:', 'https://');
+    const linkUrl = await window.showPromptDialog({
+        title: 'إرسال رابط',
+        message: 'أدخل الرابط الذي تريد إرساله للطالب:',
+        defaultValue: 'https://',
+        placeholder: 'https://example.com'
+    });
     if (linkUrl && linkUrl.trim() !== '' && linkUrl.trim() !== 'https://') {
         sendCustomWaMessage({ type: 'link', text: `رابط مرفق: ${linkUrl.trim()}`, imageUrl: linkUrl.trim() });
     }

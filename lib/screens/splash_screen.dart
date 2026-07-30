@@ -5,7 +5,6 @@ import 'home_screen.dart';
 import '../services/language_service.dart';
 import '../services/api_service.dart';
 import '../models/student.dart';
-import 'admin/admin_shell.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -14,7 +13,8 @@ class SplashScreen extends StatefulWidget {
   State<SplashScreen> createState() => _SplashScreenState();
 }
 
-class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderStateMixin {
+class _SplashScreenState extends State<SplashScreen>
+    with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<double> _fadeAnimation;
   late Animation<Offset> _slideAnimation;
@@ -31,7 +31,8 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
       CurvedAnimation(parent: _controller, curve: Curves.easeIn),
     );
 
-    _slideAnimation = Tween<Offset>(begin: const Offset(0, 0.3), end: Offset.zero).animate(
+    _slideAnimation =
+        Tween<Offset>(begin: const Offset(0, 0.3), end: Offset.zero).animate(
       CurvedAnimation(parent: _controller, curve: Curves.easeOutBack),
     );
 
@@ -43,13 +44,6 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
   Future<void> _navigateToHome() async {
     await ApiService.initTokens();
     if (!mounted) return;
-
-    if (ApiService.adminToken != null) {
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute(builder: (_) => const AdminShell()),
-      );
-      return;
-    }
 
     if (ApiService.authToken != null) {
       Student? user = await ApiService.getCurrentUser();
@@ -131,7 +125,10 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
                       errorBuilder: (context, error, stackTrace) => Center(
                         child: Text(
                           LanguageService.tr('app_title').split(' ')[0],
-                          style: const TextStyle(fontSize: 38, fontWeight: FontWeight.w900, color: AppColors.accent),
+                          style: const TextStyle(
+                              fontSize: 38,
+                              fontWeight: FontWeight.w900,
+                              color: AppColors.accent),
                         ),
                       ),
                     ),
@@ -153,25 +150,36 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
                   child: Text(
                     LanguageService.tr('splash_subtitle'),
                     textAlign: TextAlign.center,
-                    style: const TextStyle(fontSize: 18, color: Colors.white, fontWeight: FontWeight.w500),
+                    style: const TextStyle(
+                        fontSize: 18,
+                        color: Colors.white,
+                        fontWeight: FontWeight.w500),
                   ),
                 ),
                 const SizedBox(height: 12),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
                   decoration: BoxDecoration(
                     color: Colors.white.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(20),
-                    border: Border.all(color: AppColors.accent.withValues(alpha: 0.5)),
+                    border: Border.all(
+                        color: AppColors.accent.withValues(alpha: 0.5)),
                   ),
-                  child: const Text('@absher_georgia', style: TextStyle(color: AppColors.accentLight, fontSize: 14)),
+                  child: const Text('@absher_georgia',
+                      style: TextStyle(
+                          color: AppColors.accentLight, fontSize: 14)),
                 ),
                 const Spacer(),
-                const CircularProgressIndicator(valueColor: AlwaysStoppedAnimation<Color>(AppColors.accent)),
+                const CircularProgressIndicator(
+                    valueColor:
+                        AlwaysStoppedAnimation<Color>(AppColors.accent)),
                 const SizedBox(height: 20),
                 TextButton(
                   onPressed: _navigateToHome,
-                  child: Text(LanguageService.tr('skip_to_start'), style: const TextStyle(color: Colors.white70, fontSize: 16)),
+                  child: Text(LanguageService.tr('skip_to_start'),
+                      style:
+                          const TextStyle(color: Colors.white70, fontSize: 16)),
                 ),
                 const SizedBox(height: 40),
               ],

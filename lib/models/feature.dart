@@ -6,7 +6,9 @@ class Feature {
 
   factory Feature.fromJson(Map<String, dynamic> json) {
     return Feature(
-      id: json['id'] is int ? json['id'] : int.tryParse(json['id'].toString()) ?? 0,
+      id: json['id'] is int
+          ? json['id']
+          : int.tryParse(json['id'].toString()) ?? 0,
       name: json['name'] ?? '',
     );
   }

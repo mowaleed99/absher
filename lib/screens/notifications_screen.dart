@@ -4,6 +4,8 @@ import '../theme/app_colors.dart';
 import '../services/api_service.dart';
 import '../services/language_service.dart';
 import '../models/student.dart';
+import '../core/loading_state_widget.dart';
+import '../core/empty_state_widget.dart';
 
 class NotificationsScreen extends StatefulWidget {
   final Student? user;
@@ -55,14 +57,18 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     }
   }
 
-  void _showNotificationDetail(BuildContext context, Map<String, dynamic> notif) {
+  void _showNotificationDetail(
+      BuildContext context, Map<String, dynamic> notif) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
         title: Text(
           notif['title']?.toString() ?? '',
-          style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.primaryDark, fontSize: 16),
+          style: const TextStyle(
+              fontWeight: FontWeight.bold,
+              color: AppColors.primaryDark,
+              fontSize: 16),
           textAlign: TextAlign.center,
         ),
         content: Column(
@@ -71,15 +77,23 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
           children: [
             Text(
               notif['content']?.toString() ?? '',
-              style: const TextStyle(fontSize: 14, color: AppColors.textDark, height: 1.6),
+              style: const TextStyle(
+                  fontSize: 14, color: AppColors.textDark, height: 1.6),
             ),
             const SizedBox(height: 14),
             Row(
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
-                Text(
-                  notif['date']?.toString() ?? LanguageService.tr('auto_trans_1185'),
-                  style: const TextStyle(fontSize: 10, color: Colors.grey, fontWeight: FontWeight.bold),
+                Directionality(
+                  textDirection: TextDirection.ltr,
+                  child: Text(
+                    notif['date']?.toString() ??
+                        LanguageService.tr('auto_trans_1185'),
+                    style: const TextStyle(
+                        fontSize: 10,
+                        color: Colors.grey,
+                        fontWeight: FontWeight.bold),
+                  ),
                 ),
               ],
             ),
@@ -88,7 +102,11 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: Text(LanguageService.tr('auto_trans_1186'), style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold, fontSize: 14)),
+            child: Text(LanguageService.tr('auto_trans_1186'),
+                style: const TextStyle(
+                    color: AppColors.primary,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 14)),
           ),
         ],
       ),
@@ -106,7 +124,11 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
             backgroundColor: AppColors.background,
             appBar: AppBar(
               backgroundColor: AppColors.primary,
-              title: Text(LanguageService.tr('auto_trans_1187'), style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18)),
+              title: Text(LanguageService.tr('auto_trans_1187'),
+                  style: const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 18)),
               iconTheme: const IconThemeData(color: Colors.white),
               centerTitle: true,
               actions: [
@@ -118,25 +140,12 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
               ],
             ),
             body: _isLoading
-                ? const Center(child: CircularProgressIndicator(color: AppColors.primary))
+                ? const LoadingStateWidget(messageKey: 'loading_notifications')
                 : _notifications.isEmpty
-                    ? Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(Icons.notifications_off_outlined, size: 85, color: Colors.grey.shade400),
-                            const SizedBox(height: 16),
-                            Text(
-                              LanguageService.tr('auto_trans_1189'),
-                              style: const TextStyle(fontSize: 16, color: Colors.grey, fontWeight: FontWeight.bold),
-                            ),
-                            const SizedBox(height: 6),
-                            Text(
-                              LanguageService.tr('auto_trans_1190'),
-                              style: const TextStyle(fontSize: 12, color: Colors.grey),
-                            ),
-                          ],
-                        ),
+                    ? const EmptyStateWidget(
+                        titleKey: 'no_notifications_title',
+                        descriptionKey: 'no_notifications_desc',
+                        icon: Icons.notifications_off_outlined,
                       )
                     : RefreshIndicator(
                         onRefresh: _fetchNotifications,
@@ -151,7 +160,8 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
 
                             return Card(
                               margin: const EdgeInsets.only(bottom: 16),
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                              shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(20)),
                               elevation: isRead ? 0.5 : 3.0,
                               clipBehavior: Clip.antiAlias,
                               child: InkWell(
@@ -163,63 +173,96 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                                   duration: const Duration(milliseconds: 300),
                                   padding: const EdgeInsets.all(16),
                                   decoration: BoxDecoration(
-                                    color: isRead ? Colors.grey.shade100 : Colors.white,
+                                    color: isRead
+                                        ? Colors.grey.shade100
+                                        : Colors.white,
                                     border: Border.all(
-                                      color: isRead ? Colors.grey.shade300 : AppColors.accent.withValues(alpha: 0.4),
+                                      color: isRead
+                                          ? Colors.grey.shade300
+                                          : AppColors.accent
+                                              .withValues(alpha: 0.4),
                                       width: 1.5,
                                     ),
                                     borderRadius: BorderRadius.circular(20),
                                   ),
                                   child: Row(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     children: [
                                       Container(
                                         padding: const EdgeInsets.all(12),
                                         decoration: BoxDecoration(
-                                          color: isRead ? Colors.grey.shade300 : AppColors.accent.withValues(alpha: 0.12),
+                                          color: isRead
+                                              ? Colors.grey.shade300
+                                              : AppColors.accent
+                                                  .withValues(alpha: 0.12),
                                           shape: BoxShape.circle,
                                         ),
                                         child: Icon(
                                           Icons.campaign_rounded,
-                                          color: isRead ? Colors.grey.shade600 : AppColors.accent,
+                                          color: isRead
+                                              ? Colors.grey.shade600
+                                              : AppColors.accent,
                                           size: 26,
                                         ),
                                       ),
                                       const SizedBox(width: 14),
                                       Expanded(
                                         child: Column(
-                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
                                           children: [
                                             Row(
-                                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                              mainAxisAlignment:
+                                                  MainAxisAlignment
+                                                      .spaceBetween,
                                               children: [
                                                 Expanded(
                                                   child: Text(
-                                                    notif['title']?.toString() ?? '',
+                                                    notif['title']
+                                                            ?.toString() ??
+                                                        '',
                                                     style: TextStyle(
                                                       fontSize: 15,
-                                                      fontWeight: FontWeight.bold,
-                                                      color: isRead ? Colors.grey.shade700 : AppColors.primaryDark,
+                                                      fontWeight:
+                                                          FontWeight.bold,
+                                                      color: isRead
+                                                          ? Colors.grey.shade700
+                                                          : AppColors
+                                                              .primaryDark,
                                                     ),
                                                   ),
                                                 ),
                                                 const SizedBox(width: 6),
-                                                Text(
-                                                  notif['date']?.toString() ?? LanguageService.tr('auto_trans_1191'),
-                                                  style: TextStyle(
-                                                    fontSize: 10,
-                                                    color: isRead ? Colors.grey.shade500 : Colors.grey.shade600,
-                                                    fontWeight: FontWeight.bold,
+                                                Directionality(
+                                                  textDirection:
+                                                      TextDirection.ltr,
+                                                  child: Text(
+                                                    notif['date']?.toString() ??
+                                                        LanguageService.tr(
+                                                            'auto_trans_1191'),
+                                                    style: TextStyle(
+                                                      fontSize: 10,
+                                                      color: isRead
+                                                          ? Colors.grey.shade500
+                                                          : Colors
+                                                              .grey.shade600,
+                                                      fontWeight:
+                                                          FontWeight.bold,
+                                                    ),
                                                   ),
                                                 ),
                                               ],
                                             ),
                                             const SizedBox(height: 8),
                                             Text(
-                                              notif['content']?.toString() ?? '',
+                                              notif['content']?.toString() ??
+                                                  '',
                                               style: TextStyle(
                                                 fontSize: 13,
-                                                color: isRead ? Colors.grey.shade600 : AppColors.textDark,
+                                                color: isRead
+                                                    ? Colors.grey.shade600
+                                                    : AppColors.textDark,
                                                 height: 1.5,
                                               ),
                                             ),

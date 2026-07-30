@@ -6,7 +6,9 @@ class University {
 
   factory University.fromJson(Map<String, dynamic> json) {
     return University(
-      id: json['id'] is int ? json['id'] : int.tryParse(json['id'].toString()) ?? 0,
+      id: json['id'] is int
+          ? json['id']
+          : int.tryParse(json['id'].toString()) ?? 0,
       name: json['name'] ?? '',
     );
   }

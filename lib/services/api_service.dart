@@ -4,24 +4,21 @@ import 'package:http/http.dart' as http;
 import 'package:flutter/foundation.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../models/student.dart';
-import '../models/apartment.dart';
-import '../models/admin_dashboard.dart';
 import '../models/chat_message.dart';
 import 'language_service.dart';
 import '../models/housing_offer.dart';
+import '../models/student_request.dart';
+import '../models/wallet_transaction.dart';
 
 class ApiService {
   static const _storage = FlutterSecureStorage();
   static const _keyAuthToken = 'auth_token';
-  static const _keyAdminToken = 'admin_token';
 
   // Token state (populated by initTokens)
-  static String? adminToken;
   static String? authToken;
 
   /// Must be called at startup to restore persisted tokens.
   static Future<void> initTokens() async {
-    adminToken = await _storage.read(key: _keyAdminToken);
     authToken = await _storage.read(key: _keyAuthToken);
   }
 
@@ -31,18 +28,10 @@ class ApiService {
     await _storage.write(key: _keyAuthToken, value: token);
   }
 
-  /// Persist admin auth token after admin login.
-  static Future<void> saveAdminToken(String token) async {
-    adminToken = token;
-    await _storage.write(key: _keyAdminToken, value: token);
-  }
-
   /// Clear all tokens on logout.
   static Future<void> clearTokens() async {
     authToken = null;
-    adminToken = null;
     await _storage.delete(key: _keyAuthToken);
-    await _storage.delete(key: _keyAdminToken);
   }
 
   /// Fetch the currently logged-in student using the stored auth token.
@@ -56,7 +45,8 @@ class ApiService {
       ).timeout(const Duration(seconds: 10));
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-        final isSuccess = data['success'] == true || data['status'] == 'success';
+        final isSuccess =
+            data['success'] == true || data['status'] == 'success';
         final student = data['data']?['student'] ?? data['student'];
         if (isSuccess && student != null) {
           return Student.fromJson(student as Map<String, dynamic>);
@@ -76,35 +66,21 @@ class ApiService {
 
   // ─── URL Configuration ──────────────────────────────────────────────────────
   // عنوان سيرفر الباك اند PHP المستضاف على Hostinger (الإنتاج)
-  static const String prodUrl = 'https://lime-vulture-117634.hostingersite.com/api';
+  static const String prodUrl =
+      'http://80.241.218.23/api';
 
   // تحديد العنوان ديناميكياً لتسهيل التطوير والافتبار المحلي
   static String get baseUrl {
-    if (kReleaseMode) {
-      return prodUrl;
-    }
-    // في وضع التطوير المحلي (Debug Mode)
-    if (kIsWeb) {
-      return 'http://localhost:8000/api';
-    }
-    switch (defaultTargetPlatform) {
-      case TargetPlatform.android:
-        return 'http://10.0.2.2:8000/api'; // Android Emulator
-      case TargetPlatform.iOS:
-      case TargetPlatform.macOS:
-      case TargetPlatform.windows:
-      case TargetPlatform.linux:
-        return 'http://localhost:8000/api';
-      default:
-        return prodUrl;
-    }
+    return prodUrl;
   }
 
   static String get serverRoot => baseUrl.replaceAll('/api', '');
 
   static String resolveImageUrl(String path) {
     if (path.isEmpty) return 'assets/images/apt1.png';
-    if (path.startsWith('http://') || path.startsWith('https://') || path.startsWith('data:image/')) {
+    if (path.startsWith('http://') ||
+        path.startsWith('https://') ||
+        path.startsWith('data:image/')) {
       return path;
     }
     if (path.startsWith('assets/')) {
@@ -123,7 +99,8 @@ class ApiService {
 
   // تسجيل الدخول — يستخدم /auth/login.php الذي يصدر JWT
   // Response: {"success":true,"data":{"token":"...","student":{...}}}
-  static Future<Map<String, dynamic>> login(String identifier, String password) async {
+  static Future<Map<String, dynamic>> login(
+      String identifier, String password) async {
     try {
       final response = await http.post(
         Uri.parse('$baseUrl/auth/login.php'),
@@ -136,7 +113,8 @@ class ApiService {
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body) as Map<String, dynamic>;
-        final isSuccess = data['success'] == true || data['status'] == 'success';
+        final isSuccess =
+            data['success'] == true || data['status'] == 'success';
         // Save token if login succeeded
         final token = data['data']?['token'] ?? data['token'];
         if (isSuccess && token != null) {
@@ -144,7 +122,10 @@ class ApiService {
         }
         return data;
       } else {
-        return {'success': false, 'message': 'خطأ في الاتصال بالخادم (${response.statusCode})'};
+        return {
+          'success': false,
+          'message': 'خطأ في الاتصال بالخادم (${response.statusCode})'
+        };
       }
     } catch (e) {
       debugPrint('login error: $e');
@@ -161,21 +142,24 @@ class ApiService {
     required String password,
   }) async {
     try {
-      final response = await http.post(
-        Uri.parse('$baseUrl/auth/register.php'),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({
-          'full_name': fullName,
-          'email': email,
-          'phone': phone,
-          'university': university,
-          'password': password,
-        }),
-      ).timeout(const Duration(seconds: 15));
+      final response = await http
+          .post(
+            Uri.parse('$baseUrl/auth/register.php'),
+            headers: {'Content-Type': 'application/json'},
+            body: jsonEncode({
+              'full_name': fullName,
+              'email': email,
+              'phone': phone,
+              'university': university,
+              'password': password,
+            }),
+          )
+          .timeout(const Duration(seconds: 15));
 
       final data = jsonDecode(response.body) as Map<String, dynamic>;
-      final isSuccess = response.statusCode == 200 || response.statusCode == 201;
-      
+      final isSuccess =
+          response.statusCode == 200 || response.statusCode == 201;
+
       if (isSuccess && data['success'] == true) {
         final token = data['data']?['token'];
         if (token != null) {
@@ -197,15 +181,13 @@ class ApiService {
       } else {
         return {
           'status': 'error',
-          'message': data['message'] ?? 'خطأ في إنشاء الحساب (${response.statusCode})'
+          'message':
+              data['message'] ?? 'خطأ في إنشاء الحساب (${response.statusCode})'
         };
       }
     } catch (e) {
       debugPrint('register error: $e');
-      return {
-        'status': 'error',
-        'message': 'فشل الاتصال بالخادم: $e'
-      };
+      return {'status': 'error', 'message': 'فشل الاتصال بالخادم: $e'};
     }
   }
 
@@ -213,24 +195,30 @@ class ApiService {
   // Calls /apartments/list.php — public endpoint, returns is_available=1 only
   // Response: {"success":true,"data":{"apartments":[...]}}
   static Future<List<Map<String, dynamic>>> getApartments({
-    String? rentalType,   // 'apartment' | 'room_shared' | 'studio' | null = all
-    int?    roomsCount,   // exact bedroom count | null = all
-    int?    districtId,   // district FK | null = all
+    String? rentalType, // 'apartment' | 'room_shared' | 'studio' | null = all
+    int? roomsCount, // exact bedroom count | null = all
+    int? districtId, // district FK | null = all
   }) async {
     try {
       final params = <String, String>{
         't': DateTime.now().millisecondsSinceEpoch.toString(),
       };
-      if (rentalType != null && rentalType.isNotEmpty) params['rental_type'] = rentalType;
-      if (roomsCount != null && roomsCount > 0) params['rooms_count'] = roomsCount.toString();
-      if (districtId != null && districtId > 0) params['district_id'] = districtId.toString();
+      if (rentalType != null && rentalType.isNotEmpty)
+        params['rental_type'] = rentalType;
+      if (roomsCount != null && roomsCount > 0)
+        params['rooms_count'] = roomsCount.toString();
+      if (districtId != null && districtId > 0)
+        params['district_id'] = districtId.toString();
 
-      final uri = Uri.parse('$baseUrl/apartments/list.php').replace(queryParameters: params);
+      final uri = Uri.parse('$baseUrl/apartments/list.php')
+          .replace(queryParameters: params);
       final response = await http.get(uri);
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body) as Map<String, dynamic>;
-        final isSuccess = data['success'] == true || data['status'] == 'success';
-        final payload = data['data'] is Map ? data['data'] as Map<String, dynamic> : data;
+        final isSuccess =
+            data['success'] == true || data['status'] == 'success';
+        final payload =
+            data['data'] is Map ? data['data'] as Map<String, dynamic> : data;
         final list = payload['apartments'];
         if (isSuccess && list is List) {
           return list.map((apt) {
@@ -252,15 +240,20 @@ class ApiService {
               'title': a['title']?.toString() ?? '',
               'price': a['price']?.toString() ?? '',
               'location': a['location']?.toString() ?? '',
-              'district_id': a['district_id'] is int ? a['district_id'] as int : (int.tryParse(a['district_id']?.toString() ?? '')),
+              'district_id': a['district_id'] is int
+                  ? a['district_id'] as int
+                  : (int.tryParse(a['district_id']?.toString() ?? '')),
               'proximity': a['proximity']?.toString() ?? '',
               'capacity': a['capacity']?.toString() ?? '',
               'rental_type': a['rental_type']?.toString() ?? '',
-              'rooms_count': a['rooms_count'] is int ? a['rooms_count'] as int : (int.tryParse(a['rooms_count']?.toString() ?? '')),
+              'rooms_count': a['rooms_count'] is int
+                  ? a['rooms_count'] as int
+                  : (int.tryParse(a['rooms_count']?.toString() ?? '')),
               'move_in_type': a['move_in_type']?.toString() ?? '',
               'move_in_date': a['move_in_date']?.toString() ?? '',
               'description': a['description']?.toString() ?? '',
-              'is_available': a['is_available'] == true || a['is_available'] == 1,
+              'is_available':
+                  a['is_available'] == true || a['is_available'] == 1,
               'images': imagesList,
               'features': featuresList,
               'universities': universitiesList,
@@ -276,13 +269,16 @@ class ApiService {
   }
 
   static Future<List<HousingOffer>?> getHousingOffers() async {
-    final String url = '$baseUrl/offers/list.php?t=${DateTime.now().millisecondsSinceEpoch}';
+    final String url =
+        '$baseUrl/offers/list.php?t=${DateTime.now().millisecondsSinceEpoch}';
     try {
-      final response = await http.get(Uri.parse(url)).timeout(const Duration(seconds: 10));
+      final response =
+          await http.get(Uri.parse(url)).timeout(const Duration(seconds: 10));
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-        final isSuccess = data['status'] == 'success' || data['success'] == true;
-        
+        final isSuccess =
+            data['status'] == 'success' || data['success'] == true;
+
         List? rawList;
         if (data['data'] is Map && data['data']['offers'] is List) {
           rawList = data['data']['offers'] as List;
@@ -293,7 +289,10 @@ class ApiService {
         }
 
         if (isSuccess && rawList != null) {
-          return rawList.map((item) => HousingOffer.fromJson(item as Map<String, dynamic>)).toList();
+          return rawList
+              .map(
+                  (item) => HousingOffer.fromJson(item as Map<String, dynamic>))
+              .toList();
         }
       }
       return null;
@@ -307,15 +306,18 @@ class ApiService {
   static Future<List<Map<String, dynamic>>> getUniversities() async {
     try {
       final response = await http.get(
-        Uri.parse('$baseUrl/wallet_api.php?action=get_universities&t=${DateTime.now().millisecondsSinceEpoch}'),
+        Uri.parse(
+            '$baseUrl/wallet_api.php?action=get_universities&t=${DateTime.now().millisecondsSinceEpoch}'),
       );
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         if (data['universities'] != null) {
-          return (data['universities'] as List).map((u) => <String, dynamic>{
-            'id': u['id']?.toString() ?? '',
-            'name': u['name']?.toString() ?? '',
-          }).toList();
+          return (data['universities'] as List)
+              .map((u) => <String, dynamic>{
+                    'id': u['id']?.toString() ?? '',
+                    'name': u['name']?.toString() ?? '',
+                  })
+              .toList();
         }
       }
     } catch (e) {
@@ -334,15 +336,18 @@ class ApiService {
   static Future<List<Map<String, dynamic>>> getDistricts() async {
     try {
       final response = await http.get(
-        Uri.parse('$baseUrl/wallet_api.php?action=get_districts&t=${DateTime.now().millisecondsSinceEpoch}'),
+        Uri.parse(
+            '$baseUrl/wallet_api.php?action=get_districts&t=${DateTime.now().millisecondsSinceEpoch}'),
       );
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         if (data['districts'] != null) {
-          return (data['districts'] as List).map((d) => <String, dynamic>{
-            'id': d['id']?.toString() ?? '',
-            'name': d['name']?.toString() ?? '',
-          }).toList();
+          return (data['districts'] as List)
+              .map((d) => <String, dynamic>{
+                    'id': d['id']?.toString() ?? '',
+                    'name': d['name']?.toString() ?? '',
+                  })
+              .toList();
         }
       }
     } catch (e) {
@@ -363,18 +368,24 @@ class ApiService {
   static Future<List<Map<String, dynamic>>> getNews() async {
     try {
       final response = await http.get(
-        Uri.parse('$baseUrl/student_requests.php?action=get_news&t=${DateTime.now().millisecondsSinceEpoch}'),
+        Uri.parse(
+            '$baseUrl/student_requests.php?action=get_news&t=${DateTime.now().millisecondsSinceEpoch}'),
       );
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         if (data['status'] == 'success' && data['news'] != null) {
-          return (data['news'] as List).map((n) => <String, dynamic>{
-            'id': n['id']?.toString() ?? '',
-            'title': n['title']?.toString() ?? '',
-            'content': n['content']?.toString() ?? '',
-            'image_url': resolveImageUrl(n['image_url']?.toString() ?? ''),
-            'date': n['date']?.toString() ?? n['created_at']?.toString() ?? LanguageService.tr('auto_trans_1356'),
-          }).toList();
+          return (data['news'] as List)
+              .map((n) => <String, dynamic>{
+                    'id': n['id']?.toString() ?? '',
+                    'title': n['title']?.toString() ?? '',
+                    'content': n['content']?.toString() ?? '',
+                    'image_url':
+                        resolveImageUrl(n['image_url']?.toString() ?? ''),
+                    'date': n['date']?.toString() ??
+                        n['created_at']?.toString() ??
+                        LanguageService.tr('auto_trans_1356'),
+                  })
+              .toList();
         }
       }
     } catch (e) {
@@ -388,17 +399,22 @@ class ApiService {
   static Future<List<Map<String, dynamic>>> getNotifications() async {
     try {
       final response = await http.get(
-        Uri.parse('$baseUrl/student_requests.php?action=get_notifications&t=${DateTime.now().millisecondsSinceEpoch}'),
+        Uri.parse(
+            '$baseUrl/student_requests.php?action=get_notifications&t=${DateTime.now().millisecondsSinceEpoch}'),
       );
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         if (data['status'] == 'success' && data['notifications'] != null) {
-          return (data['notifications'] as List).map((n) => <String, dynamic>{
-            'id': n['id']?.toString() ?? '',
-            'title': n['title']?.toString() ?? '',
-            'content': n['content']?.toString() ?? '',
-            'date': n['date']?.toString() ?? n['created_at']?.toString() ?? LanguageService.tr('auto_trans_1366'),
-          }).toList();
+          return (data['notifications'] as List)
+              .map((n) => <String, dynamic>{
+                    'id': n['id']?.toString() ?? '',
+                    'title': n['title']?.toString() ?? '',
+                    'content': n['content']?.toString() ?? '',
+                    'date': n['date']?.toString() ??
+                        n['created_at']?.toString() ??
+                        LanguageService.tr('auto_trans_1366'),
+                  })
+              .toList();
         }
       }
     } catch (e) {
@@ -440,12 +456,15 @@ class ApiService {
   static Future<List<Map<String, dynamic>>> getServices() async {
     try {
       final response = await http.get(
-        Uri.parse('$baseUrl/services/list.php?t=${DateTime.now().millisecondsSinceEpoch}'),
+        Uri.parse(
+            '$baseUrl/services/list.php?t=${DateTime.now().millisecondsSinceEpoch}'),
       );
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body) as Map<String, dynamic>;
-        final isSuccess = data['success'] == true || data['status'] == 'success';
-        final payload = data['data'] is Map ? data['data'] as Map<String, dynamic> : data;
+        final isSuccess =
+            data['success'] == true || data['status'] == 'success';
+        final payload =
+            data['data'] is Map ? data['data'] as Map<String, dynamic> : data;
         final list = payload['services'];
         if (isSuccess && list is List) {
           return list.map((s) {
@@ -455,23 +474,28 @@ class ApiService {
               'title': svc['title']?.toString() ?? '',
               'desc': svc['description']?.toString() ?? '',
               'img': resolveImageUrl(svc['image_url']?.toString() ?? ''),
-              'has_form': svc['has_form'] == true || svc['has_form'] == 1 || svc['has_form'] == '1',
+              'has_form': svc['has_form'] == true ||
+                  svc['has_form'] == 1 ||
+                  svc['has_form'] == '1',
               'price_points': (() {
                 final raw = svc['price_points'];
                 final svcId = svc['id']?.toString() ?? 'unknown';
                 if (raw == null) {
-                  throw FormatException('Missing price_points field for service ID: $svcId');
+                  throw FormatException(
+                      'Missing price_points field for service ID: $svcId');
                 }
                 if (raw is int) return raw;
                 if (raw is num) return raw.toInt();
                 if (raw is String) {
                   final parsed = int.tryParse(raw);
                   if (parsed == null) {
-                    throw FormatException('Malformed price_points value: "$raw" for service ID: $svcId');
+                    throw FormatException(
+                        'Malformed price_points value: "$raw" for service ID: $svcId');
                   }
                   return parsed;
                 }
-                throw FormatException('Unexpected price_points type: ${raw.runtimeType} for service ID: $svcId');
+                throw FormatException(
+                    'Unexpected price_points type: ${raw.runtimeType} for service ID: $svcId');
               })(),
             };
           }).toList();
@@ -525,11 +549,13 @@ class ApiService {
       if (response.statusCode == 200) {
         final Map<String, dynamic> data = jsonDecode(response.body);
         if (data['status'] == 'error') {
-          throw Exception(data['message'] ?? 'حدث خطأ أثناء معالجة الطلب في الخادم');
+          throw Exception(
+              data['message'] ?? 'حدث خطأ أثناء معالجة الطلب في الخادم');
         }
         return data;
       } else {
-        throw Exception('فشل الاتصال بالخادم: رمز الاستجابة ${response.statusCode}');
+        throw Exception(
+            'فشل الاتصال بالخادم: رمز الاستجابة ${response.statusCode}');
       }
     } catch (e) {
       debugPrint('Error submitting request: $e');
@@ -541,20 +567,30 @@ class ApiService {
   static Future<List<Map<String, dynamic>>> getStudentChat(String phone) async {
     try {
       final response = await http.get(
-        Uri.parse('$baseUrl/chat.php?action=get&phone=${Uri.encodeComponent(phone)}&t=${DateTime.now().millisecondsSinceEpoch}'),
+        Uri.parse(
+            '$baseUrl/chat.php?action=get&phone=${Uri.encodeComponent(phone)}&t=${DateTime.now().millisecondsSinceEpoch}'),
       );
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         if (data['status'] == 'success' && data['messages'] != null) {
-          return (data['messages'] as List).map((m) => <String, dynamic>{
-            'sender': m['sender']?.toString() ?? 'student',
-            'text': m['text']?.toString() ?? '',
-            'type': m['type']?.toString() ?? 'text',
-            'imageUrl': m['imageUrl']?.toString() ?? m['image_url']?.toString() ?? '',
-            'quoteText': m['quoteText']?.toString() ?? m['quote_text']?.toString() ?? '',
-            'quoteSender': m['quoteSender']?.toString() ?? m['quote_sender']?.toString() ?? '',
-            'time': m['time']?.toString() ?? LanguageService.tr('auto_trans_1385'),
-          }).toList();
+          return (data['messages'] as List)
+              .map((m) => <String, dynamic>{
+                    'sender': m['sender']?.toString() ?? 'student',
+                    'text': m['text']?.toString() ?? '',
+                    'type': m['type']?.toString() ?? 'text',
+                    'imageUrl': m['imageUrl']?.toString() ??
+                        m['image_url']?.toString() ??
+                        '',
+                    'quoteText': m['quoteText']?.toString() ??
+                        m['quote_text']?.toString() ??
+                        '',
+                    'quoteSender': m['quoteSender']?.toString() ??
+                        m['quote_sender']?.toString() ??
+                        '',
+                    'time': m['time']?.toString() ??
+                        LanguageService.tr('auto_trans_1385'),
+                  })
+              .toList();
         }
       }
     } catch (e) {
@@ -574,7 +610,7 @@ class ApiService {
   }) async {
     try {
       final headers = {'Content-Type': 'application/json'};
-      final token = authToken ?? adminToken;
+      final token = authToken;
       if (token != null && token.isNotEmpty) {
         headers['Authorization'] = 'Bearer $token';
       }
@@ -642,9 +678,36 @@ class ApiService {
           return list.cast<Map<String, dynamic>>();
         }
       }
-      throw Exception(jsonDecode(response.body)['message'] ?? 'Failed to load requests');
+      throw Exception(
+          jsonDecode(response.body)['message'] ?? 'Failed to load requests');
     } catch (e) {
       debugPrint('getMyServiceRequests error: $e');
+      rethrow;
+    }
+  }
+
+  static Future<List<StudentRequest>> getMyStudentRequests() async {
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/student_requests.php?action=list'),
+        headers: {
+          'Authorization': 'Bearer $authToken',
+        },
+      );
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        final list = data['data']?['requests'] ?? data['requests'];
+        if (list is List) {
+          return list
+              .map((item) =>
+                  StudentRequest.fromJson(Map<String, dynamic>.from(item)))
+              .toList();
+        }
+      }
+      throw Exception(
+          jsonDecode(response.body)?['message'] ?? 'Failed to load requests');
+    } catch (e) {
+      debugPrint('getMyStudentRequests error: $e');
       rethrow;
     }
   }
@@ -677,7 +740,10 @@ class ApiService {
       };
     } catch (e) {
       debugPrint('createServiceReview error: $e');
-      return {'success': false, 'message': LanguageService.tr('auto_trans_1386')};
+      return {
+        'success': false,
+        'message': LanguageService.tr('auto_trans_1386')
+      };
     }
   }
 
@@ -696,7 +762,8 @@ class ApiService {
           return list.cast<Map<String, dynamic>>();
         }
       }
-      throw Exception(jsonDecode(response.body)['message'] ?? 'Failed to load reviews');
+      throw Exception(
+          jsonDecode(response.body)['message'] ?? 'Failed to load reviews');
     } catch (e) {
       debugPrint('getMyServiceReviews error: $e');
       rethrow;
@@ -728,7 +795,10 @@ class ApiService {
       };
     } catch (e) {
       debugPrint('updateServiceReview error: $e');
-      return {'success': false, 'message': LanguageService.tr('auto_trans_1386')};
+      return {
+        'success': false,
+        'message': LanguageService.tr('auto_trans_1386')
+      };
     }
   }
 
@@ -753,7 +823,10 @@ class ApiService {
       };
     } catch (e) {
       debugPrint('deleteServiceReview error: $e');
-      return {'success': false, 'message': LanguageService.tr('auto_trans_1386')};
+      return {
+        'success': false,
+        'message': LanguageService.tr('auto_trans_1386')
+      };
     }
   }
 
@@ -782,7 +855,10 @@ class ApiService {
       };
     } catch (e) {
       debugPrint('submitFeedback error: $e');
-      return {'success': false, 'message': LanguageService.tr('auto_trans_1386')};
+      return {
+        'success': false,
+        'message': LanguageService.tr('auto_trans_1386')
+      };
     }
   }
 
@@ -801,7 +877,8 @@ class ApiService {
           return list.cast<Map<String, dynamic>>();
         }
       }
-      throw Exception(jsonDecode(response.body)['message'] ?? 'Failed to load feedback');
+      throw Exception(
+          jsonDecode(response.body)['message'] ?? 'Failed to load feedback');
     } catch (e) {
       debugPrint('getMyFeedback error: $e');
       rethrow;
@@ -825,11 +902,37 @@ class ApiService {
     return {'status': 'error', 'points': 0, 'notifications': []};
   }
 
+  /// Fetch the student's transaction history from the `wallet_transactions` table.
+  static Future<List<WalletTransaction>> getWalletTransactions() async {
+    if (authToken == null) throw Exception('Not authenticated');
+    final response = await http.get(
+      Uri.parse('$baseUrl/wallet/history.php'),
+      headers: {'Authorization': 'Bearer $authToken'},
+    ).timeout(const Duration(seconds: 10));
+
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      final isSuccess = data['success'] == true || data['status'] == 'success';
+      final txList = data['data'];
+      if (isSuccess && txList is List) {
+        return txList
+            .map((json) =>
+                WalletTransaction.fromJson(json as Map<String, dynamic>))
+            .toList();
+      } else {
+        throw Exception(data['message'] ?? 'Failed to load transactions');
+      }
+    } else {
+      throw Exception('Server returned status code ${response.statusCode}');
+    }
+  }
+
   // المحفظة - الدفع بالنقاط
   // studentIdOrResult can be:
   //   - an int (direct student ID)
   //   - a Map from submitServiceRequest (student_id is resolved server-side via JWT)
-  static Future<Map<String, dynamic>> payWithPoints(dynamic studentIdOrResult, [int amount = 0, String serviceTitle = '']) async {
+  static Future<Map<String, dynamic>> payWithPoints(dynamic studentIdOrResult,
+      [int amount = 0, String serviceTitle = '']) async {
     // Extract student_id: prefer Map['student_id'], then int cast, then JWT-resolved (send 0 and let server resolve)
     int studentId = 0;
     if (studentIdOrResult is int) {
@@ -859,298 +962,56 @@ class ApiService {
     } catch (e) {
       debugPrint('Error paying with points: $e');
     }
-    return {'status': 'error', 'message': LanguageService.tr('auto_trans_1386')};
+    return {
+      'status': 'error',
+      'message': LanguageService.tr('auto_trans_1386')
+    };
   }
 
-  // ─── Admin Auth ─────────────────────────────────────────────────────────────
+  // ─── Upload ───────────────────────────────────────────────────────────────
 
-  static Future<void> adminLogin(String identifier, String password) async {
-    final response = await http.post(
-      Uri.parse('$baseUrl/admin/login.php'),
-      headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({'identifier': identifier, 'password': password}),
-    );
-    if (response.statusCode == 200) {
-      final data = jsonDecode(response.body);
-      final isSuccess = data['status'] == 'success' || data['success'] == true;
-      final token = data['token'] ?? data['data']?['token'];
-      if (isSuccess && token != null) {
-        await saveAdminToken(token.toString());
-        return;
-      }
-      throw Exception(data['message'] ?? 'Admin login failed');
-    }
-    throw Exception('Server error ${response.statusCode}');
-  }
-
-  static Future<void> adminLogout() async {
-    await clearTokens();
-  }
-
-  static Map<String, String> get _adminHeaders => {
-    'Content-Type': 'application/json',
-    if (adminToken != null) 'Authorization': 'Bearer $adminToken',
-  };
-
-  // ─── Admin Dashboard ────────────────────────────────────────────────────────
-
-  static Future<AdminDashboard?> getAdminDashboard() async {
-    try {
-      final response = await http.get(
-        Uri.parse('$baseUrl/admin_api.php?action=get_dashboard_stats'),
-        headers: _adminHeaders,
-      );
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        final payload = data['data'] is Map ? (data['data'] as Map<String, dynamic>) : data;
-        return AdminDashboard.fromJson(payload);
-      }
-    } catch (e) {
-      debugPrint('getAdminDashboard error: $e');
-    }
-    return null;
-  }
-
-  // ─── Admin Apartments ───────────────────────────────────────────────────────
-
-  static Future<List<Apartment>> getAdminApartments() async {
-    try {
-      final response = await http.get(
-        Uri.parse('$baseUrl/admin_api.php?action=get_apartments'),
-        headers: _adminHeaders,
-      );
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        final payload = data['data'] is Map ? data['data'] : data;
-        final list = payload['apartments'] ?? (payload is List ? payload : null);
-        if (list != null) {
-          return (list as List)
-              .map((a) => Apartment.fromJson(a as Map<String, dynamic>))
-              .toList();
-        }
-      }
-    } catch (e) {
-      debugPrint('getAdminApartments error: $e');
-    }
-    return [];
-  }
-
-  static Future<bool> createApartment(Map<String, dynamic> payload) async {
-    try {
-      final response = await http.post(
-        Uri.parse('$baseUrl/admin_api.php?action=add_apartment'),
-        headers: _adminHeaders,
-        body: jsonEncode(payload),
-      );
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        return data['status'] == 'success' || data['success'] == true;
-      }
-    } catch (e) {
-      debugPrint('createApartment error: $e');
-    }
-    return false;
-  }
-
-  static Future<bool> updateApartment(Map<String, dynamic> payload) async {
-    try {
-      final response = await http.post(
-        Uri.parse('$baseUrl/admin_api.php?action=update_apartment'),
-        headers: _adminHeaders,
-        body: jsonEncode(payload),
-      );
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        return data['status'] == 'success' || data['success'] == true;
-      }
-    } catch (e) {
-      debugPrint('updateApartment error: $e');
-    }
-    return false;
-  }
-
-  // ─── Admin Services ─────────────────────────────────────────────────────────
-
-  static Future<List<Map<String, dynamic>>> getAdminServices() async {
-    try {
-      final response = await http.get(
-        Uri.parse('$baseUrl/admin_api.php?action=get_services'),
-        headers: _adminHeaders,
-      );
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        final payload = data['data'] is Map ? data['data'] : data;
-        final list = payload['services'] ?? (payload is List ? payload : null);
-        if (list != null) {
-          return (list as List).cast<Map<String, dynamic>>();
-        }
-      }
-    } catch (e) {
-      debugPrint('getAdminServices error: $e');
-    }
-    return [];
-  }
-
-  static Future<bool> createService(Map<String, dynamic> payload) async {
-    try {
-      final response = await http.post(
-        Uri.parse('$baseUrl/admin_api.php?action=add_service'),
-        headers: _adminHeaders,
-        body: jsonEncode(payload),
-      );
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        return data['status'] == 'success' || data['success'] == true;
-      }
-    } catch (e) {
-      debugPrint('createService error: $e');
-    }
-    return false;
-  }
-
-  static Future<bool> updateService(Map<String, dynamic> payload) async {
-    try {
-      final response = await http.post(
-        Uri.parse('$baseUrl/admin_api.php?action=update_service'),
-        headers: _adminHeaders,
-        body: jsonEncode(payload),
-      );
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        return data['status'] == 'success' || data['success'] == true;
-      }
-    } catch (e) {
-      debugPrint('updateService error: $e');
-    }
-    return false;
-  }
-
-  // ─── Admin Students ─────────────────────────────────────────────────────────
-
-  static Future<List<Student>> getAdminStudents({
-    int page = 1,
-    int limit = 20,
-    String search = '',
-  }) async {
-    try {
-      final uri = Uri.parse(
-        '$baseUrl/admin_api.php?action=get_students&page=$page&limit=$limit&search=${Uri.encodeComponent(search)}',
-      );
-      final response = await http.get(uri, headers: _adminHeaders);
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        final payload = data['data'] is Map ? data['data'] : data;
-        final list = payload['students'] ?? (payload is List ? payload : null);
-        if (list != null) {
-          return (list as List)
-              .map((s) => Student.fromJson(s as Map<String, dynamic>))
-              .toList();
-        }
-      }
-    } catch (e) {
-      debugPrint('getAdminStudents error: $e');
-    }
-    return [];
-  }
-
-  // ─── Admin Upload ───────────────────────────────────────────────────────────
-
-  /// Upload an image file for admin use (apartments, services, etc.).
-  /// Returns the raw server-relative path (e.g. "/uploads/apartments/file.jpg").
-  /// Callers must NOT store the resolved full URL in the database —
-  /// store the raw path and resolve it only at display time via [resolveImageUrl].
+  /// Upload an image file for student use (requests, chat, etc.).
+  /// Returns the raw server-relative path (e.g. "/uploads/chat/file.jpg").
   static Future<String?> uploadImage(dynamic imageFile, String folder) async {
     try {
       final request = http.MultipartRequest(
         'POST',
         Uri.parse('$baseUrl/upload/image.php?folder=$folder'),
       );
-      final authHeader = adminToken ?? authToken;
-      if (authHeader != null && authHeader.isNotEmpty) {
-        request.headers['Authorization'] = 'Bearer $authHeader';
+      if (authToken != null && authToken!.isNotEmpty) {
+        request.headers['Authorization'] = 'Bearer $authToken';
       }
       request.fields['folder'] = folder;
       if (imageFile is String) {
         request.files.add(await http.MultipartFile.fromPath('file', imageFile));
       } else {
         final bytes = await imageFile.readAsBytes();
-        final name = imageFile.name ?? (imageFile.path as String).split('/').last;
-        request.files.add(http.MultipartFile.fromBytes('file', bytes, filename: name));
+        final name =
+            imageFile.name ?? (imageFile.path as String).split('/').last;
+        request.files
+            .add(http.MultipartFile.fromBytes('file', bytes, filename: name));
       }
       final streamed = await request.send();
       final response = await http.Response.fromStream(streamed);
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body) as Map<String, dynamic>;
-        final isSuccess = data['success'] == true || data['status'] == 'success';
-        final rawUrl = data['url']?.toString() ?? data['data']?['url']?.toString();
+        final isSuccess =
+            data['success'] == true || data['status'] == 'success';
+        final rawUrl =
+            data['url']?.toString() ?? data['data']?['url']?.toString();
         if (isSuccess && rawUrl != null && rawUrl.isNotEmpty) {
-          // Return raw path — do NOT resolve to full URL here; DB must store raw paths.
           return rawUrl;
         } else {
           debugPrint('uploadImage error response: ${response.body}');
         }
       } else {
-        debugPrint('uploadImage failed statusCode ${response.statusCode}: ${response.body}');
+        debugPrint(
+            'uploadImage failed statusCode ${response.statusCode}: ${response.body}');
       }
     } catch (e) {
       debugPrint('uploadImage error: $e');
     }
     return null;
-  }
-
-  // ─── Admin Chat ─────────────────────────────────────────────────────────────
-
-  /// Fetches all chats with embedded messages for admin management.
-  static Future<List<Map<String, dynamic>>> getAdminChats() async {
-    try {
-      final response = await http.get(
-        Uri.parse('$baseUrl/chat/admin_list.php?t=${DateTime.now().millisecondsSinceEpoch}'),
-        headers: _adminHeaders,
-      );
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body) as Map<String, dynamic>;
-        final chats = data['chats'] ?? data['data']?['chats'];
-        if (chats is List) {
-          return chats.cast<Map<String, dynamic>>();
-        }
-      }
-    } catch (e) {
-      debugPrint('getAdminChats error: $e');
-    }
-    return [];
-  }
-
-  /// Sends an admin reply to a student chat.
-  /// Uses the dedicated admin-only endpoint so sender is verified by JWT.
-  static Future<bool> adminSendMessage({
-    required int chatId,
-    required String text,
-    String type = 'text',
-    String imageUrl = '',
-    String quoteText = '',
-    String quoteSender = '',
-  }) async {
-    try {
-      final response = await http.post(
-        Uri.parse('$baseUrl/chat/admin_reply.php'),
-        headers: {
-          'Content-Type': 'application/json',
-          if (adminToken != null) 'Authorization': 'Bearer $adminToken',
-        },
-        body: jsonEncode({
-          'chat_id': chatId,
-          'content': text,
-          'message_type': type,
-          'image_url': imageUrl,
-          'quote_text': quoteText,
-          'quote_sender': quoteSender,
-        }),
-      );
-      return response.statusCode == 200 || response.statusCode == 201;
-    } catch (e) {
-      debugPrint('adminSendMessage error: $e');
-      return false;
-    }
   }
 
   // ─── Chat (new typed endpoints) ─────────────────────────────────────────────
@@ -1170,7 +1031,9 @@ class ApiService {
       );
       if (response.statusCode == 200 || response.statusCode == 201) {
         final data = jsonDecode(response.body);
-        if ((data['status'] == 'success' || data['success'] == true) && (data['chat_id'] != null || (data['data'] != null && data['data']['chat_id'] != null))) {
+        if ((data['status'] == 'success' || data['success'] == true) &&
+            (data['chat_id'] != null ||
+                (data['data'] != null && data['data']['chat_id'] != null))) {
           final cid = data['chat_id'] ?? data['data']['chat_id'];
           return (cid as num).toInt();
         }
@@ -1182,21 +1045,22 @@ class ApiService {
   }
 
   /// Fetches all messages for [chatId].
-  /// Requires auth JWT (student or admin) in Authorization header.
+  /// Requires auth JWT in Authorization header.
   static Future<List<ChatMessage>> getMessages(int chatId) async {
     try {
-      final token = authToken ?? adminToken;
       final headers = <String, String>{};
-      if (token != null && token.isNotEmpty) {
-        headers['Authorization'] = 'Bearer $token';
+      if (authToken != null && authToken!.isNotEmpty) {
+        headers['Authorization'] = 'Bearer $authToken';
       }
       final response = await http.get(
-        Uri.parse('$baseUrl/chat/messages.php?chat_id=$chatId&t=${DateTime.now().millisecondsSinceEpoch}'),
+        Uri.parse(
+            '$baseUrl/chat/messages.php?chat_id=$chatId&t=${DateTime.now().millisecondsSinceEpoch}'),
         headers: headers,
       );
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-        final list = data['messages'] ?? (data['data'] is List ? data['data'] : null);
+        final list =
+            data['messages'] ?? (data['data'] is List ? data['data'] : null);
         if (list != null && list is List) {
           return list
               .map((m) => ChatMessage.fromJson(m as Map<String, dynamic>))
@@ -1218,31 +1082,35 @@ class ApiService {
     required String university,
   }) async {
     try {
-      final response = await http.post(
-        Uri.parse('$baseUrl/profile/update.php'),
-        headers: {
-          'Content-Type': 'application/json',
-          if (authToken != null) 'Authorization': 'Bearer $authToken',
-        },
-        body: jsonEncode({
-          'full_name': fullName,
-          'email': email,
-          'phone': phone,
-          'university': university,
-        }),
-      ).timeout(const Duration(seconds: 15));
+      final response = await http
+          .post(
+            Uri.parse('$baseUrl/profile/update.php'),
+            headers: {
+              'Content-Type': 'application/json',
+              if (authToken != null) 'Authorization': 'Bearer $authToken',
+            },
+            body: jsonEncode({
+              'full_name': fullName,
+              'email': email,
+              'phone': phone,
+              'university': university,
+            }),
+          )
+          .timeout(const Duration(seconds: 15));
 
       final data = jsonDecode(response.body) as Map<String, dynamic>;
       if (response.statusCode == 200 && data['success'] == true) {
         return {
           'success': true,
           'message': data['message'] ?? 'تم تحديث الحساب بنجاح',
-          'student': Student.fromJson(data['data']?['student'] ?? data['student'] ?? {}),
+          'student': Student.fromJson(
+              data['data']?['student'] ?? data['student'] ?? {}),
         };
       } else {
         return {
           'success': false,
-          'message': data['message'] ?? 'خطأ في تحديث الحساب (${response.statusCode})',
+          'message':
+              data['message'] ?? 'خطأ في تحديث الحساب (${response.statusCode})',
         };
       }
     } catch (e) {
@@ -1259,17 +1127,19 @@ class ApiService {
     required String newPassword,
   }) async {
     try {
-      final response = await http.post(
-        Uri.parse('$baseUrl/profile/change_password.php'),
-        headers: {
-          'Content-Type': 'application/json',
-          if (authToken != null) 'Authorization': 'Bearer $authToken',
-        },
-        body: jsonEncode({
-          'current_password': currentPassword,
-          'new_password': newPassword,
-        }),
-      ).timeout(const Duration(seconds: 15));
+      final response = await http
+          .post(
+            Uri.parse('$baseUrl/profile/change_password.php'),
+            headers: {
+              'Content-Type': 'application/json',
+              if (authToken != null) 'Authorization': 'Bearer $authToken',
+            },
+            body: jsonEncode({
+              'current_password': currentPassword,
+              'new_password': newPassword,
+            }),
+          )
+          .timeout(const Duration(seconds: 15));
 
       final data = jsonDecode(response.body) as Map<String, dynamic>;
       if (response.statusCode == 200 && data['success'] == true) {
@@ -1280,7 +1150,8 @@ class ApiService {
       } else {
         return {
           'success': false,
-          'message': data['message'] ?? 'خطأ في تغيير كلمة المرور (${response.statusCode})',
+          'message': data['message'] ??
+              'خطأ في تغيير كلمة المرور (${response.statusCode})',
         };
       }
     } catch (e) {
@@ -1301,16 +1172,20 @@ class ApiService {
       if (authToken != null && authToken!.isNotEmpty) {
         request.headers['Authorization'] = 'Bearer $authToken';
       }
-      
+
       if (imageFile is String) {
-        request.files.add(await http.MultipartFile.fromPath('image', imageFile));
+        request.files
+            .add(await http.MultipartFile.fromPath('image', imageFile));
       } else {
         final bytes = await imageFile.readAsBytes();
-        final name = imageFile.name ?? (imageFile.path as String).split('/').last;
-        request.files.add(http.MultipartFile.fromBytes('image', bytes, filename: name));
+        final name =
+            imageFile.name ?? (imageFile.path as String).split('/').last;
+        request.files
+            .add(http.MultipartFile.fromBytes('image', bytes, filename: name));
       }
 
-      final streamed = await request.send().timeout(const Duration(seconds: 25));
+      final streamed =
+          await request.send().timeout(const Duration(seconds: 25));
       final response = await http.Response.fromStream(streamed);
       final data = jsonDecode(response.body) as Map<String, dynamic>;
 
@@ -1324,7 +1199,8 @@ class ApiService {
       } else {
         return {
           'success': false,
-          'message': data['message'] ?? 'فشل رفع الصورة (${response.statusCode})',
+          'message':
+              data['message'] ?? 'فشل رفع الصورة (${response.statusCode})',
         };
       }
     } catch (e) {
@@ -1336,4 +1212,3 @@ class ApiService {
     }
   }
 }
-
