@@ -14,7 +14,7 @@ export function renderDistricts() {
             </div>
             <button class="btn" style="background:#ff4d4d; color:white; border:none;"
                     onclick="window.deleteDistrictGlobal && window.deleteDistrictGlobal(${dist.id})">
-                <i class="fa-solid fa-trash"></i> مسح
+                <i class="fa-solid fa-trash"></i> ${tr('مسح')}
             </button>
         </div>
     `).join('');

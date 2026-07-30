@@ -16,13 +16,13 @@ export function renderStudents() {
             <td>${std.email}</td>
             <td dir="ltr" style="color:var(--accent-green); font-weight:bold;">${std.phone}</td>
             <td style="font-weight:600;">${std.university}</td>
-            <td><span style="background:rgba(236,72,153,0.15); color:var(--secondary); padding:4px 10px; border-radius:12px; font-weight:bold;">${std.nationality || 'غير محدد'}</span></td>
-            <td dir="ltr">${std.created_at || 'الآن'}</td>
+            <td><span style="background:rgba(236,72,153,0.15); color:var(--secondary); padding:4px 10px; border-radius:12px; font-weight:bold;">${std.nationality || tr('غير محدد')}</span></td>
+            <td dir="ltr">${std.created_at || tr('الآن')}</td>
             <td dir="ltr" style="font-weight:bold; color:var(--accent);">${std.points || 0}</td>
             <td>
                 <button class="btn btn-primary" style="padding:4px 8px; font-size:0.8rem;"
                         onclick="window.openPointsModalGlobal && window.openPointsModalGlobal(${std.id},'${std.full_name}', ${std.points || 0})">
-                    <i class="fa-solid fa-coins"></i> إدارة
+                    <i class="fa-solid fa-coins"></i> ${tr('إدارة')}
                 </button>
             </td>
             <td>

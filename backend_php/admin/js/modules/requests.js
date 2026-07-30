@@ -73,10 +73,10 @@ export function renderRequests(filterText = '') {
             <td>
                 <select onchange="window.updateRequestStatusGlobal && window.updateRequestStatusGlobal(${req.id}, this.value)"
                         style="padding: 6px 12px; border-radius: 8px; background: #1e293b; color: ${statusColor}; border: 1px solid rgba(255,255,255,0.1); font-weight: bold; font-size: 0.95rem; cursor: pointer; outline: none;">
-                    <option value="under_review" style="color:#fbbf24;" ${(req.status === 'under_review' || req.status === 'قيد المراجعة') ? 'selected' : ''}>⏳ قيد المراجعة</option>
-                    <option value="pending_cash" style="color:#a78bfa;" ${(req.status === 'pending_cash' || req.status === 'انتظار الدفع النقدي') ? 'selected' : ''}>💵 انتظار الدفع النقدي</option>
-                    <option value="in_progress" style="color:#38bdf8;" ${(req.status === 'in_progress' || req.status === 'جاري التنفيذ') ? 'selected' : ''}>⚙️ جاري التنفيذ</option>
-                    <option value="completed" style="color:#25D366;" ${(req.status === 'completed' || req.status === 'مكتمل') ? 'selected' : ''}>✅ مكتمل</option>
+                    <option value="under_review" style="color:#fbbf24;" ${(req.status === 'under_review' || req.status === 'قيد المراجعة') ? 'selected' : ''}>⏳ ${tr('قيد المراجعة')}</option>
+                    <option value="pending_cash" style="color:#a78bfa;" ${(req.status === 'pending_cash' || req.status === 'انتظار الدفع النقدي') ? 'selected' : ''}>💵 ${tr('انتظار الدفع النقدي')}</option>
+                    <option value="in_progress" style="color:#38bdf8;" ${(req.status === 'in_progress' || req.status === 'جاري التنفيذ') ? 'selected' : ''}>⚙️ ${tr('جاري التنفيذ')}</option>
+                    <option value="completed" style="color:#25D366;" ${(req.status === 'completed' || req.status === 'مكتمل') ? 'selected' : ''}>✅ ${tr('مكتمل')}</option>
                 </select>
             </td>
             <td>
@@ -84,7 +84,7 @@ export function renderRequests(filterText = '') {
                         class="btn btn-primary"
                         style="background: rgba(37,211,102,0.15); border: 1px solid #25D366; color: #25D366; padding: 8px 16px; border-radius: 10px; font-size: 0.9rem;"
                         title="فتح المحادثة مع الطالب">
-                    <i class="fa-solid fa-comments"></i> شات
+                    <i class="fa-solid fa-comments"></i> ${tr('شات')}
                 </button>
             </td>
             <td>

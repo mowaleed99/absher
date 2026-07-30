@@ -104,25 +104,25 @@ export function renderOffers() {
                     <i class="fa-solid fa-building" style="color: var(--accent-amber);"></i> الشقة: <strong>#${ho.apartment_id} - ${aptTitle}</strong>
                 </p>
                 <div style="margin: 6px 0; font-size: 0.85rem; color: var(--text-main);">
-                    السعر الأصلي: <span style="text-decoration: lineThrough; color: var(--text-muted);">${ho.original_price} $</span> 
+                    ${tr('السعر الأصلي')}: <span style="text-decoration: lineThrough; color: var(--text-muted);">${ho.original_price} $</span> 
                 </div>
-                ${ho.starts_at ? `<p style="margin: 4px 0; font-size: 0.78rem; color: var(--text-muted);"><i class="fa-solid fa-calendar-check"></i> يبدأ: ${ho.starts_at}</p>` : ''}
-                ${ho.expires_at ? `<p style="margin: 4px 0; font-size: 0.78rem; color: var(--text-muted);"><i class="fa-solid fa-calendar-xmark"></i> ينتهي: ${ho.expires_at}</p>` : ''}
+                ${ho.starts_at ? `<p style="margin: 4px 0; font-size: 0.78rem; color: var(--text-muted);"><i class="fa-solid fa-calendar-check"></i> ${tr('يبدأ')}: ${ho.starts_at}</p>` : ''}
+                ${ho.expires_at ? `<p style="margin: 4px 0; font-size: 0.78rem; color: var(--text-muted);"><i class="fa-solid fa-calendar-xmark"></i> ${tr('ينتهي')}: ${ho.expires_at}</p>` : ''}
                 <p class="card-desc" style="margin-top: 8px; min-height: 40px;">${ho.description}</p>
                 <div style="display: flex; gap: 8px; align-items: center; margin-bottom: 12px; background: rgba(255,255,255,0.03); padding: 8px; border-radius: 8px;">
-                    <span style="font-size: 0.85rem; color: var(--text-muted);">الترتيب: <strong>${ho.display_order}</strong></span>
+                    <span style="font-size: 0.85rem; color: var(--text-muted);">${tr('الترتيب')}: <strong>${ho.display_order}</strong></span>
                     <button class="btn btn-secondary" style="padding: 2px 8px; font-size: 0.8rem;" onclick="window.moveOfferGlobal(${ho.id}, 'up')" title="نقل لأعلى"><i class="fa-solid fa-chevron-up"></i></button>
                     <button class="btn btn-secondary" style="padding: 2px 8px; font-size: 0.8rem;" onclick="window.moveOfferGlobal(${ho.id}, 'down')" title="نقل لأسفل"><i class="fa-solid fa-chevron-down"></i></button>
                 </div>
                 <div class="card-actions">
                     <button class="btn btn-primary" style="background: rgba(99,102,241,0.2); border: 1px solid #6366f1; color: #a5b4fc;"
                             onclick="window.openEditOfferModalGlobal(${ho.id})">
-                        <i class="fa-solid fa-pen-to-square"></i> تعديل
+                        <i class="fa-solid fa-pen-to-square"></i> ${tr('تعديل')}
                     </button>
-                    <button class="btn btn-danger" onclick="window.deleteOfferGlobal(${ho.id})"><i class="fa-solid fa-trash"></i> حذف</button>
+                    <button class="btn btn-danger" onclick="window.deleteOfferGlobal(${ho.id})"><i class="fa-solid fa-trash"></i> ${tr('حذف')}</button>
                     <button class="btn" style="background: ${parseInt(ho.is_active) === 1 ? 'rgba(239, 68, 68, 0.2)' : 'rgba(37, 211, 102, 0.2)'}; border: 1px solid ${parseInt(ho.is_active) === 1 ? '#ef4444' : '#25D366'}; color: ${parseInt(ho.is_active) === 1 ? '#fca5a5' : '#a7f3d0'};"
                             onclick="window.toggleOfferStatusGlobal(${ho.id}, ${parseInt(ho.is_active) === 1 ? 0 : 1})">
-                        <i class="fa-solid ${parseInt(ho.is_active) === 1 ? 'fa-toggle-on' : 'fa-toggle-off'}"></i> ${parseInt(ho.is_active) === 1 ? 'تعطيل' : 'تفعيل'}
+                        <i class="fa-solid ${parseInt(ho.is_active) === 1 ? 'fa-toggle-on' : 'fa-toggle-off'}"></i> ${parseInt(ho.is_active) === 1 ? tr('تعطيل') : tr('تفعيل')}
                     </button>
                 </div>
             </div>

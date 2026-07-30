@@ -17,15 +17,15 @@ export function renderServices() {
             <div class="card-body">
                 <h3 class="card-title">${svc.title}</h3>
                 <p class="card-desc" style="margin-bottom:0.5rem;">${svc.description}</p>
-                <div style="margin-bottom:0.6rem;"><strong style="color:var(--accent-amber); font-size:0.9rem;">السعر: ${svc.price_points !== undefined ? svc.price_points : 0} نقطة</strong></div>
-                ${(svc.has_form == 1 || svc.has_form === undefined || svc.has_form === true) ? `<div style="margin-bottom:0.8rem;"><span style="background: rgba(37,211,102,0.15); color: #25D366; border: 1px solid #25D366; padding: 4px 10px; border-radius: 12px; font-size: 0.78rem; font-weight: bold;"> يتضمن نموذج طلب للعميل (Form)</span></div>` : ''}
+                <div style="margin-bottom:0.6rem;"><strong style="color:var(--accent-amber); font-size:0.9rem;">${tr('السعر')}: ${svc.price_points !== undefined ? svc.price_points : 0} ${tr('نقطة')}</strong></div>
+                ${(svc.has_form == 1 || svc.has_form === undefined || svc.has_form === true) ? `<div style="margin-bottom:0.8rem;"><span style="background: rgba(37,211,102,0.15); color: #25D366; border: 1px solid #25D366; padding: 4px 10px; border-radius: 12px; font-size: 0.78rem; font-weight: bold;"> ${tr('يتضمن نموذج طلب للعميل (Form)')}</span></div>` : ''}
                 <div class="card-actions">
                     <button class="btn btn-primary" style="background: rgba(99,102,241,0.2); border: 1px solid #6366f1; color: #a5b4fc;"
                             onclick="window.openEditServiceModalGlobal && window.openEditServiceModalGlobal(${svc.id})">
-                        <i class="fa-solid fa-pen-to-square"></i> تعديل
+                        <i class="fa-solid fa-pen-to-square"></i> ${tr('تعديل')}
                     </button>
-                    <button class="btn btn-danger" onclick="window.deleteServiceGlobal && window.deleteServiceGlobal(${svc.id})"><i class="fa-solid fa-trash"></i> حذف الخدمة</button>
-                    <span style="font-size:0.8rem; color:var(--accent-blue); align-self:center;">متاحة للطلب </span>
+                    <button class="btn btn-danger" onclick="window.deleteServiceGlobal && window.deleteServiceGlobal(${svc.id})"><i class="fa-solid fa-trash"></i> ${tr('حذف الخدمة')}</button>
+                    <span style="font-size:0.8rem; color:var(--accent-blue); align-self:center;">${tr('متاحة للطلب')} </span>
                 </div>
             </div>
         </div>
@@ -166,10 +166,10 @@ export async function handleUpdateService(e) {
 
 export async function deleteService(id) {
     const confirmed = await window.showConfirmDialog({
-        title: 'تأكيد حذف الخدمة',
-        message: 'هل أنت متأكد من رغبتك في حذف هذه الخدمة؟',
-        confirmText: 'حذف',
-        cancelText: 'إلغاء',
+        title: 'تأكيد ' + tr('حذف الخدمة'),
+        message: tr('هل أنت متأكد من رغبتك في حذف هذه الخدمة؟'),
+        confirmText: tr('حذف'),
+        cancelText: tr('إلغاء'),
         variant: 'danger'
     });
     if (!confirmed) return;
@@ -182,7 +182,7 @@ export async function deleteService(id) {
         const data = await res.json();
         if (data.status === 'success') {
             await loadDashboardData();
-            showToast('تم حذف الخدمة بنجاح ️');
+            showToast('تم ' + tr('حذف الخدمة') + ' بنجاح ️');
         } else {
             showToast('حدث خطأ أثناء الحذف: ' + (data.message || ''));
         }

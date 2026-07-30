@@ -44,16 +44,16 @@ export function renderApartments() {
                     ${apt.rooms_count ? `<span style="background: rgba(37,211,102,0.15); color: #25D366; border: 1px solid #25D366; padding: 4px 10px; border-radius: 12px; font-size: 0.82rem; font-weight:bold;">${apt.rooms_count} غرف نوم</span>` : ''}
                 </div>
                 <h3 class="card-title">${apt.title}</h3>
-                <p class="card-loc"><i class="fa-solid fa-location-dot"></i> الحي السكني: ${apt.location}</p>
+                <p class="card-loc"><i class="fa-solid fa-location-dot"></i> ${tr('الحي السكني')}: ${apt.location}</p>
                 <div style="margin: 8px 0; display: flex; gap: 8px; flex-wrap: wrap;">
                     <span style="background:var(--primary); color:#fff; padding:4px 10px; border-radius:12px; font-size:0.85rem; font-weight:bold; display:inline-block;">
-                         عدد الغرف: ${apt.capacity || '3 غرف'}
+                         ${tr('عدد الغرف')}: ${apt.capacity || tr('3 غرف')}
                     </span>
                 </div>
                 ${apt.roommate_reqs || apt.roommate_facilities ? `
                 <div style="background: rgba(251, 191, 36, 0.08); border: 1px dashed #fbbf24; padding: 10px; border-radius: 10px; margin: 8px 0; font-size: 0.85rem;">
-                    ${apt.roommate_reqs ? `<div style="margin-bottom: 4px;"><strong style="color: #fbbf24;"> شروط الشريك:</strong> ${apt.roommate_reqs}</div>` : ''}
-                    ${apt.roommate_facilities ? `<div><strong style="color: #fbbf24;"> المتاح للشريك:</strong> ${apt.roommate_facilities}</div>` : ''}
+                    ${apt.roommate_reqs ? `<div style="margin-bottom: 4px;"><strong style="color: #fbbf24;"> ${tr('شروط الشريك')}:</strong> ${apt.roommate_reqs}</div>` : ''}
+                    ${apt.roommate_facilities ? `<div><strong style="color: #fbbf24;"> ${tr('المتاح للشريك')}:</strong> ${apt.roommate_facilities}</div>` : ''}
                 </div>` : ''}
                 <div class="features-list">
                     ${(Array.isArray(apt.features) ? apt.features : [apt.features]).map(f => `<span class="feature-pill">${f}</span>`).join('')}
@@ -62,10 +62,10 @@ export function renderApartments() {
                 <div class="card-actions">
                     <button class="btn btn-primary" style="background: rgba(99,102,241,0.2); border: 1px solid #6366f1; color: #a5b4fc;"
                             onclick="window.openEditApartmentModalGlobal && window.openEditApartmentModalGlobal(${apt.id})">
-                        <i class="fa-solid fa-pen-to-square"></i> تعديل
+                        <i class="fa-solid fa-pen-to-square"></i> ${tr('تعديل')}
                     </button>
-                    <button class="btn btn-danger" onclick="window.deleteApartmentGlobal && window.deleteApartmentGlobal(${apt.id})"><i class="fa-solid fa-trash"></i> حذف الشقة</button>
-                    <span style="font-size:0.8rem; color:var(--accent-green); align-self:center;">نشطة في التطبيق </span>
+                    <button class="btn btn-danger" onclick="window.deleteApartmentGlobal && window.deleteApartmentGlobal(${apt.id})"><i class="fa-solid fa-trash"></i> ${tr('حذف الشقة')}</button>
+                    <span style="font-size:0.8rem; color:var(--accent-green); align-self:center;">${tr('نشطة في التطبيق')} </span>
                 </div>
             </div>
         </div>
@@ -298,10 +298,10 @@ export async function handleUpdateApartment(e) {
 export async function deleteApartment(id, confirmDeleteOffers = false) {
     if (!confirmDeleteOffers) {
         const confirmed = await window.showConfirmDialog({
-            title: 'تأكيد حذف الشقة',
-            message: 'هل أنت متأكد من رغبتك في حذف هذه الشقة؟',
-            confirmText: 'حذف',
-            cancelText: 'إلغاء',
+            title: 'تأكيد ' + tr('حذف الشقة'),
+            message: tr('هل أنت متأكد من رغبتك في حذف هذه الشقة؟'),
+            confirmText: tr('حذف'),
+            cancelText: tr('إلغاء'),
             variant: 'danger'
         });
         if (!confirmed) return;
@@ -325,7 +325,7 @@ export async function deleteApartment(id, confirmDeleteOffers = false) {
                 title: 'تأكيد حذف الشقة والعروض',
                 message: data.message,
                 confirmText: 'تأكيد الحذف',
-                cancelText: 'إلغاء',
+                cancelText: tr('إلغاء'),
                 variant: 'danger'
             });
             if (confirmed) {
