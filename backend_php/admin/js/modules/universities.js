@@ -10,7 +10,7 @@ export function renderUniversities() {
         <div class="item-card" style="padding: 15px; display: flex; justify-content: space-between; align-items: center; border: 1px solid var(--border-color); border-radius: 12px; background: var(--bg-main);">
             <div style="font-weight: bold; color: var(--text-main); font-size: 1.1rem;"><i class="fa-solid fa-graduation-cap"></i> ${uni.name}</div>
             <button class="btn btn-danger" onclick="window.deleteUniversityGlobal && window.deleteUniversityGlobal(${uni.id})">
-                <i class="fa-solid fa-trash"></i> حذف
+                <i class="fa-solid fa-trash"></i> ${tr('حذف')}
             </button>
         </div>
     `).join('');

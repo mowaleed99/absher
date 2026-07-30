@@ -223,6 +223,35 @@ translations.en["️ خدمة طلابية جديدة متوفرة الآن"] = 
 translations.ar["انقطاع الكهرباء غداً في ديدوبي"] = "انقطاع الكهرباء غداً في ديدوبي";
 translations.en["انقطاع الكهرباء غداً في ديدوبي"] = "Power outage tomorrow in Didube";
 
+
+// University page and sidebar keys
+translations.ar["إضافة جامعة جديدة"] = "إضافة جامعة جديدة";
+translations.en["إضافة جامعة جديدة"] = "Add New University";
+
+translations.ar["الجامعة والجنسية"] = "الجامعة والجنسية";
+translations.en["الجامعة والجنسية"] = "University & Nationality";
+
+translations.ar["الجامعة والتخصص"] = "الجامعة والتخصص";
+translations.en["الجامعة والتخصص"] = "University & Major";
+
+translations.ar["اسم الجامعة:"] = "اسم الجامعة:";
+translations.en["اسم الجامعة:"] = "University Name:";
+
+translations.ar["مثال: جامعة تبليسي الطبية (TSMU)"] = "مثال: جامعة تبليسي الطبية (TSMU)";
+translations.en["مثال: جامعة تبليسي الطبية (TSMU)"] = "e.g. Tbilisi State Medical University (TSMU)";
+
+translations.ar["إضافة الجامعة"] = "إضافة الجامعة";
+translations.en["إضافة الجامعة"] = "Add University";
+
+translations.ar["مثال: جامعة جورجيا (UG)"] = "مثال: جامعة جورجيا (UG)";
+translations.en["مثال: جامعة جورجيا (UG)"] = "e.g. University of Georgia (UG)";
+
+translations.ar["تقييمات وآراء الطلاب"] = "تقييمات وآراء الطلاب";
+translations.en["تقييمات وآراء الطلاب"] = "Student Reviews";
+
+translations.ar["تقييمات الطلاب"] = "تقييمات الطلاب";
+translations.en["تقييمات الطلاب"] = "Student Reviews";
+
 // Ensure language applies on load
 document.addEventListener("DOMContentLoaded", () => {
     if (currentLang ==='en') {
