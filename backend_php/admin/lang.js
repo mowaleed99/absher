@@ -1559,10 +1559,18 @@ function translateStaticDOM() {
     });
 }
 
+function applyLanguage() {
+    if (currentLang === 'en') {
+        document.body.classList.add('lang-en');
+        document.body.style.direction = 'ltr';
+    } else {
+        document.body.classList.remove('lang-en');
+        document.body.style.direction = 'rtl';
+    }
+}
+
 // Ensure language applies on load
 document.addEventListener("DOMContentLoaded", () => {
     translateStaticDOM();
-    if (currentLang === 'en') {
-        applyLanguage();
-    }
+    applyLanguage();
 });

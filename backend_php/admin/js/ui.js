@@ -3,6 +3,31 @@ import { populateAptLocationSelect } from './modules/districts.js';
 
 let toastTimer = null;
 
+/**
+ * withLoading(triggerEl, asyncFn)
+ * Disables a button/submit-element while an async operation runs.
+ * Prevents double-clicks/submissions on slow networks.
+ */
+export async function withLoading(triggerEl, asyncFn) {
+    if (!triggerEl || triggerEl.dataset.loading === 'true') return;
+    const origText    = triggerEl.innerHTML;
+    const origDisabled = triggerEl.disabled;
+    triggerEl.dataset.loading = 'true';
+    triggerEl.disabled = true;
+    triggerEl.style.opacity = '0.65';
+    triggerEl.style.cursor  = 'wait';
+    try {
+        await asyncFn();
+    } finally {
+        triggerEl.dataset.loading = '';
+        triggerEl.disabled = origDisabled;
+        triggerEl.innerHTML = origText;
+        triggerEl.style.opacity = '';
+        triggerEl.style.cursor  = '';
+    }
+}
+
+
 export function showToast(msg, durationMs = 3500) {
     let t = document.getElementById('toast');
     if (!t) {

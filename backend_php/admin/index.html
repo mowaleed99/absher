@@ -15,6 +15,14 @@
 
 <body class="dark-mode">
 
+    <!-- Auth Loading Overlay — shown immediately, removed by JS after auth check -->
+    <div id="authLoadingOverlay" style="position:fixed;top:0;left:0;width:100%;height:100%;background:#111827;z-index:99999;display:flex;align-items:center;justify-content:center;">
+        <div style="text-align:center;color:#fbbf24;">
+            <i class="fa-solid fa-graduation-cap" style="font-size:3rem;margin-bottom:10px;"></i>
+            <p style="font-size:1.1rem;color:#9ca3af;">جارِ التحقق من الدخول...</p>
+        </div>
+    </div>
+
     <!-- Header / Navbar -->
     <header class="admin-header">
         <div class="logo-area">
@@ -29,6 +37,7 @@
                     class="fa-solid fa-language"></i></button>
             <button id="themeToggleBtn"class="action-btn" data-i18n-title="dashboard.switch_theme" title="تبديل المظهر"><i
                     class="fa-solid fa-moon"></i></button>
+            <button id="logoutBtn" class="action-btn" title="تسجيل الخروج" style="color:#f87171;" data-action="doAdminLogout"><i class="fa-solid fa-right-from-bracket"></i></button>
             <div class="admin-profile">
                 <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80"alt="Admin">
                 <span data-i18n="dashboard.general_manager">المدير العام</span>
@@ -1062,6 +1071,17 @@
                         <input type="number" id="editAptRoomsCount" min="1" max="10" data-i18n-placeholder="apartments.placeholder.rooms_count" placeholder="مثال: 3" style="width:100%; padding:10px; border-radius:8px; border:1px solid var(--border-color); background:var(--bg-card); color:var(--text-main);">
                     </div>
                 </div>
+                <div id="editRoommateSection" style="display: none; background: rgba(251, 191, 36, 0.08); border: 1px dashed #fbbf24; padding: 14px; border-radius: 12px; margin: 10px 0;">
+                    <h4 style="color: #fbbf24; margin-bottom: 10px; font-size: 0.95rem;"><i class="fa-solid fa-user-group"></i> <span data-i18n="apartments.heading.roommate">بيانات وشروط شريك السكن:</span></h4>
+                    <div class="form-group">
+                        <label style="font-size: 0.85rem;" data-i18n="apartments.label.roommate_reqs">المواصفات والشروط المطلوبة في الشريك:</label>
+                        <input type="text" id="editAptRoommateReqs" data-i18n-placeholder="apartments.placeholder.roommate_reqs" placeholder="مثال: غير مدخن ، طالب هادئ ومحترم ، يحافظ على النظافة العامة">
+                    </div>
+                    <div class="form-group" style="margin-top: 8px;">
+                        <label style="font-size: 0.85rem;" data-i18n="apartments.label.roommate_facilities">المرافق والمساحة المتاحة للشريك:</label>
+                        <input type="text" id="editAptRoommateFacilities" data-i18n-placeholder="apartments.placeholder.roommate_facilities" placeholder="مثال: غرفة نوم منفصلة ومفروشة ، حمام ومطبخ مشترك ، شرفة (بلكونة)">
+                    </div>
+                </div>
                 <div class="form-group">
                     <label data-i18n="apartments.label.location">العنوان التفصيلي (الشارع):</label>
                     <input type="text" id="editAptLocation" required data-i18n-placeholder="apartments.placeholder.location" placeholder="مثال: شارع بيكيني رقم 15">
@@ -1322,10 +1342,10 @@
         </div>
     </div>
 
-    <script src="lang.js"></script>
+    <script src="lang.js?v=1.0.2"></script>
     <!-- Core Modules -->
                             <!-- Feature Modules -->
-                                                    <script type="module" src="js/app.js"></script>
+                                                    <script type="module" src="js/app.js?v=1.0.2"></script>
 </body>
 
 </html>

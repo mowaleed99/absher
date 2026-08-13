@@ -231,10 +231,12 @@ try {
         $district_id = isset($data['district_id']) && $data['district_id'] !== '' ? intval($data['district_id']) : null;
         $rental_type = !empty($data['rental_type']) ? trim($data['rental_type']) : 'apartment';
         $rooms_count = isset($data['rooms_count']) && $data['rooms_count'] !== '' ? intval($data['rooms_count']) : null;
+        $roommate_reqs = !empty($data['roommate_reqs']) ? trim($data['roommate_reqs']) : null;
+        $roommate_facilities = !empty($data['roommate_facilities']) ? trim($data['roommate_facilities']) : null;
 
         if ($id > 0 && !empty($title) && !empty($price)) {
-            $stmt = $conn->prepare("UPDATE apartments SET title=?, price=?, location=?, proximity=?, universities=?, capacity=?, move_in_type=?, move_in_date=?, images=?, features=?, description=?, is_available=?, district_id=?, rental_type=?, rooms_count=? WHERE id=?");
-            $stmt->execute([$title, $price, $location, $proximity, $universities, $capacity, $move_in_type, $move_in_date, $images, $features, $description, $is_available, $district_id, $rental_type, $rooms_count, $id]);
+            $stmt = $conn->prepare("UPDATE apartments SET title=?, price=?, location=?, proximity=?, universities=?, capacity=?, move_in_type=?, move_in_date=?, images=?, features=?, description=?, is_available=?, district_id=?, rental_type=?, rooms_count=?, roommate_reqs=?, roommate_facilities=? WHERE id=?");
+            $stmt->execute([$title, $price, $location, $proximity, $universities, $capacity, $move_in_type, $move_in_date, $images, $features, $description, $is_available, $district_id, $rental_type, $rooms_count, $roommate_reqs, $roommate_facilities, $id]);
             echo json_encode(["status"=>"success","message"=>"تم تعديل الشقة بنجاح"], JSON_UNESCAPED_UNICODE);
         } else {
             echo json_encode(["status"=>"error","message"=>"معرف الشقة، العنوان، والسعر مطلوبان"], JSON_UNESCAPED_UNICODE);
@@ -530,6 +532,51 @@ try {
         exit();
     }
 
+    if ($action === 'add_student') {
+        $fullName = trim($data['full_name'] ?? '');
+        $email    = trim($data['email']     ?? '');
+        $phone    = trim($data['phone']     ?? '');
+        $uni      = trim($data['university'] ?? '');
+        $password = $data['password'] ?? '';
+
+        if (empty($fullName) || strlen($fullName) < 3) {
+            echo json_encode(["status"=>"error","message"=>"الاسم الكامل مطلوب (3 أحرف على الأقل)"], JSON_UNESCAPED_UNICODE);
+            exit();
+        }
+        if (empty($email) || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            echo json_encode(["status"=>"error","message"=>"البريد الإلكتروني غير صالح"], JSON_UNESCAPED_UNICODE);
+            exit();
+        }
+        if (empty($phone)) {
+            echo json_encode(["status"=>"error","message"=>"رقم الهاتف مطلوب"], JSON_UNESCAPED_UNICODE);
+            exit();
+        }
+        if (strlen($password) < 6) {
+            echo json_encode(["status"=>"error","message"=>"كلمة المرور يجب أن تكون 6 أحرف على الأقل"], JSON_UNESCAPED_UNICODE);
+            exit();
+        }
+
+        // Check uniqueness
+        $chk = $conn->prepare("SELECT id, email, phone FROM students WHERE email = ? OR phone = ? LIMIT 1");
+        $chk->execute([$email, $phone]);
+        $dup = $chk->fetch(PDO::FETCH_ASSOC);
+        if ($dup) {
+            $msg = strcasecmp($dup['email'], $email) === 0 ? "البريد الإلكتروني مسجل مسبقاً" : "رقم الهاتف مسجل مسبقاً";
+            echo json_encode(["status"=>"error","message"=>$msg], JSON_UNESCAPED_UNICODE);
+            exit();
+        }
+
+        $passwordHash = password_hash($password, PASSWORD_DEFAULT);
+        $stmt = $conn->prepare("INSERT INTO students (full_name, email, phone, password, university, points) VALUES (?, ?, ?, ?, ?, 0)");
+        $stmt->execute([$fullName, $email, $phone, $passwordHash, $uni]);
+        if ($stmt->rowCount() > 0) {
+            echo json_encode(["status"=>"success","message"=>"تم إضافة الطالب بنجاح"], JSON_UNESCAPED_UNICODE);
+        } else {
+            echo json_encode(["status"=>"error","message"=>"فشل في إضافة الطالب"], JSON_UNESCAPED_UNICODE);
+        }
+        exit();
+    }
+
     if ($action ==='delete_student') {
         $id = intval($data['id'] ?? 0);
         if ($id > 0) {
@@ -543,6 +590,7 @@ try {
         } else {
             echo json_encode(["status"=>"error","message"=>"معرف الطالب غير صالح"], JSON_UNESCAPED_UNICODE);
         }
+
         exit();
     }
 

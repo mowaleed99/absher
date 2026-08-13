@@ -1,8 +1,14 @@
 import { appData } from '../state.js';
-import { showToast } from '../ui.js';
+import { showToast, withLoading } from '../ui.js';
+
+function isValidMediaUrl(url) {
+    if (!url || typeof url !== 'string') return false;
+    const trimmed = url.trim();
+    return trimmed.startsWith('http://') || trimmed.startsWith('https://') || trimmed.startsWith('uploads/');
+}
 
 function formatChatMediaUrl(url) {
-    if (!url) return '';
+    if (!isValidMediaUrl(url)) return '';
     if (url.startsWith('uploads/')) return '../' + url;
     return url;
 }
@@ -175,7 +181,7 @@ export function renderWaThread(chat) {
                         ${m.quoteText}
                     </div>
                 ` : ''}
-                ${(m.type === 'image' || m.imageUrl || m.image_url) && (m.type !== 'video' && m.type !== 'link') ? `
+                ${(m.type === 'image' || ((m.imageUrl || m.image_url) && isValidMediaUrl(m.imageUrl || m.image_url))) && (m.type !== 'video' && m.type !== 'link') ? `
                     <img src="${formatChatMediaUrl(m.imageUrl || m.image_url)}"
                          onclick="window.openImageLightboxGlobal && window.openImageLightboxGlobal('${formatChatMediaUrl(m.imageUrl || m.image_url)}')"
                          style="max-width: 100%; max-height: 220px; border-radius: 8px; display: block; margin: 6px 0; object-fit: cover; cursor: pointer;">
@@ -377,46 +383,48 @@ export function sendWaQuickReply(replyText) {
 
 export async function handleSendWaReply(e) {
     e.preventDefault();
-    const chatId = parseInt(document.getElementById('waActiveChatId').value);
-    const input = document.getElementById('waReplyInput');
-    const replyText = input.value.trim();
-    if (!replyText) return;
+    const sendBtn = e.target.querySelector('[type="submit"]') || e.submitter;
+    await withLoading(sendBtn, async () => {
+        const chatId = parseInt(document.getElementById('waActiveChatId').value);
+        const input = document.getElementById('waReplyInput');
+        const replyText = input.value.trim();
+        if (!replyText) return;
 
-    const chat = appData.chats.find(c => c.id === chatId);
-    if (chat) {
-        let qText = '';
-        let qSender = '';
-        if (currentQuoteIndex !== null && chat.messages && chat.messages[currentQuoteIndex]) {
-            qText = chat.messages[currentQuoteIndex].text;
-            qSender = chat.messages[currentQuoteIndex].sender;
-            cancelWaQuote();
-        }
-        try {
-            const res = await window.authFetch(`../api/chat/admin_reply.php`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    chat_id: chatId,
-                    content: replyText,
-                    quote_text: qText,
-                    quote_sender: qSender
-                })
-            });
-            const data = await res.json();
-            if (data.status === 'success' || data.success === true) {
-                input.value = '';
-                // Reload all data from backend to show new message
-                const { loadDashboardData } = await import('../api.js');
-                await loadDashboardData();
-                showToast(t('messages.chat_reply_sent'));
-            } else {
-                showToast(t('messages.chat_reply_failed'));
+        const chat = appData.chats.find(c => c.id === chatId);
+        if (chat) {
+            let qText = '';
+            let qSender = '';
+            if (currentQuoteIndex !== null && chat.messages && chat.messages[currentQuoteIndex]) {
+                qText = chat.messages[currentQuoteIndex].text;
+                qSender = chat.messages[currentQuoteIndex].sender;
+                cancelWaQuote();
             }
-        } catch (err) {
-            console.error(err);
-            showToast(t('messages.conn_error'));
+            try {
+                const res = await window.authFetch(`../api/chat/admin_reply.php`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        chat_id: chatId,
+                        content: replyText,
+                        quote_text: qText,
+                        quote_sender: qSender
+                    })
+                });
+                const data = await res.json();
+                if (data.status === 'success' || data.success === true) {
+                    input.value = '';
+                    const { loadDashboardData } = await import('../api.js');
+                    await loadDashboardData();
+                    showToast(t('messages.chat_reply_sent'));
+                } else {
+                    showToast(t('messages.chat_reply_failed'));
+                }
+            } catch (err) {
+                console.error(err);
+                showToast(t('messages.conn_error'));
+            }
         }
-    }
+    });
 }
 
 export async function sendCustomWaMessage(msgData) {

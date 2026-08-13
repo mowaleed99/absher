@@ -27,6 +27,7 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen>
     with WidgetsBindingObserver, RouteAware {
   int _currentIndex = 0;
+  Student? _currentUser;
   List<News> _newsList = [];
   List<Map<String, dynamic>> _notificationsList = [];
   List<University> _universitiesList = [];
@@ -217,6 +218,10 @@ class _HomeScreenState extends State<HomeScreen>
   @override
   void initState() {
     super.initState();
+    _currentUser = widget.user;
+    if (!widget.isGuest) {
+      _loadCurrentUser();
+    }
     WidgetsBinding.instance.addObserver(this);
     _loadApartments();
     _loadNews();
@@ -600,6 +605,19 @@ class _HomeScreenState extends State<HomeScreen>
     }
   }
 
+  Future<void> _loadCurrentUser() async {
+    try {
+      final freshUser = await ApiService.getCurrentUser();
+      if (freshUser != null && mounted) {
+        setState(() {
+          _currentUser = freshUser;
+        });
+      }
+    } catch (e) {
+      debugPrint('HomeScreen load user error: $e');
+    }
+  }
+
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
@@ -817,13 +835,9 @@ class _HomeScreenState extends State<HomeScreen>
 
   void _showUniversitiesDialog() {
     final allUnis = _universitiesList.map((u) => u.name).toList();
+    // If universities haven't loaded yet, trigger a reload and show empty state
     if (allUnis.isEmpty) {
-      allUnis.addAll([
-        LanguageService.tr('auto_trans_1140'),
-        LanguageService.tr('auto_trans_1141'),
-        LanguageService.tr('auto_trans_1142'),
-        LanguageService.tr('auto_trans_1143'),
-      ]);
+      _loadUniversities();
     }
     List<String> tempSelected = List.from(_selectedUniversities);
 
@@ -1019,12 +1033,17 @@ class _HomeScreenState extends State<HomeScreen>
                         child: CircleAvatar(
                           radius: 24,
                           backgroundColor: Colors.white,
-                          child: Icon(
-                              widget.isGuest
-                                  ? Icons.person_outline
-                                  : Icons.person,
-                              color: AppColors.primary,
-                              size: 30),
+                          backgroundImage: (usr?.avatarUrl != null && usr!.avatarUrl!.isNotEmpty)
+                              ? NetworkImage(ApiService.resolveImageUrl(usr.avatarUrl!))
+                              : null,
+                          child: (usr?.avatarUrl == null || usr!.avatarUrl!.isEmpty)
+                              ? Icon(
+                                  widget.isGuest
+                                      ? Icons.person_outline
+                                      : Icons.person,
+                                  color: AppColors.primary,
+                                  size: 30)
+                              : null,
                         ),
                       ),
                       const SizedBox(width: 14),
@@ -1041,9 +1060,8 @@ class _HomeScreenState extends State<HomeScreen>
                             ),
                             const SizedBox(height: 4),
                             Text(
-                              (usr?.universityId != null &&
-                                      usr!.universityId! > 0)
-                                  ? 'University #${usr.universityId}'
+                              (usr?.university != null && usr!.university!.isNotEmpty)
+                                  ? usr.university!
                                   : LanguageService.tr('auto_trans_1161'),
                               style: const TextStyle(
                                   color: AppColors.accentLight, fontSize: 13),
@@ -1816,7 +1834,8 @@ class _HomeScreenState extends State<HomeScreen>
           child: Scaffold(
             backgroundColor: AppColors.background,
             body: SafeArea(
-              child: _buildPages(widget.user ??
+              child: _buildPages(_currentUser ??
+                      widget.user ??
                       Student(
                           id: 0,
                           fullName: LanguageService.tr('auto_trans_1182')))[
@@ -1833,7 +1852,12 @@ class _HomeScreenState extends State<HomeScreen>
               ),
               child: BottomNavigationBar(
                 currentIndex: _currentIndex,
-                onTap: (idx) => setState(() => _currentIndex = idx),
+                onTap: (idx) {
+                  setState(() => _currentIndex = idx);
+                  if (idx == 0 && !widget.isGuest) {
+                    _loadCurrentUser();
+                  }
+                },
                 type: BottomNavigationBarType.fixed,
                 backgroundColor: Colors.white,
                 selectedItemColor: AppColors.primary,

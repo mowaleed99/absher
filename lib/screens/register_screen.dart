@@ -24,11 +24,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   final _customUniController = TextEditingController();
 
-  String _selectedUni = LanguageService.tr('auto_trans_1205');
-  List<String> _universities = [
-    LanguageService.tr('auto_trans_1206'),
-    LanguageService.tr('other_uni_manual')
-  ];
+  String _selectedUni = '';
+  List<String> _universities = [];
+  bool _isLoadingUnis = true;
 
   @override
   void initState() {
@@ -40,16 +38,17 @@ class _RegisterScreenState extends State<RegisterScreen> {
     final unis = await ApiService.getUniversities();
     if (mounted) {
       setState(() {
+        _isLoadingUnis = false;
         if (unis.isNotEmpty) {
           _universities = unis
               .map((u) => (u['name'] ?? '').toString())
               .where((n) => n.isNotEmpty)
               .toList();
           _universities.add(LanguageService.tr('other_uni_manual'));
-          if (!_universities.contains(_selectedUni)) {
-            _selectedUni = _universities.first;
-          }
+        } else {
+          _universities = [LanguageService.tr('other_uni_manual')];
         }
+        _selectedUni = _universities.first;
       });
     }
   }
@@ -326,24 +325,41 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           const SizedBox(height: 16),
 
                           // اختيار الجامعة
-                          DropdownButtonFormField<String>(
-                            initialValue: _selectedUni,
-                            decoration: InputDecoration(
-                              labelText: LanguageService.tr('georgia_uni'),
-                              prefixIcon: const Icon(Icons.school_outlined,
-                                  color: AppColors.primary),
-                              border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(12)),
-                            ),
-                            items: _universities.map((uni) {
-                              return DropdownMenuItem(
-                                  value: uni,
-                                  child: Text(uni,
-                                      style: const TextStyle(fontSize: 13)));
-                            }).toList(),
-                            onChanged: (val) =>
-                                setState(() => _selectedUni = val!),
-                          ),
+                          _isLoadingUnis
+                              ? DropdownButtonFormField<String>(
+                                  decoration: InputDecoration(
+                                    labelText: LanguageService.tr('georgia_uni'),
+                                    prefixIcon: const Icon(Icons.school_outlined,
+                                        color: AppColors.primary),
+                                    border: OutlineInputBorder(
+                                        borderRadius: BorderRadius.circular(12)),
+                                  ),
+                                  items: const [
+                                    DropdownMenuItem(
+                                        value: '__loading__',
+                                        child: Text('جاري التحميل...'))
+                                  ],
+                                  onChanged: null,
+                                  value: '__loading__',
+                                )
+                              : DropdownButtonFormField<String>(
+                                  value: _selectedUni.isEmpty ? null : _selectedUni,
+                                  decoration: InputDecoration(
+                                    labelText: LanguageService.tr('georgia_uni'),
+                                    prefixIcon: const Icon(Icons.school_outlined,
+                                        color: AppColors.primary),
+                                    border: OutlineInputBorder(
+                                        borderRadius: BorderRadius.circular(12)),
+                                  ),
+                                  items: _universities.map((uni) {
+                                    return DropdownMenuItem(
+                                        value: uni,
+                                        child: Text(uni,
+                                            style: const TextStyle(fontSize: 13)));
+                                  }).toList(),
+                                  onChanged: (val) =>
+                                      setState(() => _selectedUni = val!),
+                                ),
                           const SizedBox(height: 16),
 
                           if (_selectedUni ==

@@ -1,5 +1,5 @@
 import { appData } from '../state.js';
-import { showToast } from '../ui.js';
+import { showToast, withLoading } from '../ui.js';
 import { loadDashboardData } from '../api.js';
 
 // NOTE: deleteStudent and handlePointsSubmit still use local mutation (Phase 2 will fix them).
@@ -107,10 +107,53 @@ export async function handlePointsSubmit(e) {
     }
 }
 
+export async function handleAddStudentSubmit(e) {
+    e.preventDefault();
+    const submitBtn = e.target.querySelector('[type="submit"]');
+    await withLoading(submitBtn, async () => {
+        const fullName = document.getElementById('addStdName').value.trim();
+        const email    = document.getElementById('addStdEmail').value.trim();
+        const phone    = document.getElementById('addStdPhone').value.trim();
+        const uni      = document.getElementById('addStdUni').value.trim();
+        const password = document.getElementById('addStdPass').value;
+
+        if (!fullName || !email || !phone || !password) {
+            showToast(t('messages.fill_all_fields'));
+            return;
+        }
+
+        try {
+            const res = await window.authFetch('../api/admin_api.php?action=add_student', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ full_name: fullName, email, phone, university: uni, password })
+            });
+            if (!res) return;
+            const data = await res.json();
+            if (data.status === 'success') {
+                window.closeModalGlobal && window.closeModalGlobal('addStudentModal');
+                e.target.reset();
+                showToast(t('messages.student_added') || 'تم إضافة الطالب بنجاح ✅');
+                await loadDashboardData();
+            } else {
+                showToast(data.message || t('status.error'));
+            }
+        } catch (ex) {
+            console.error(ex);
+            showToast(t('messages.conn_error'));
+        }
+    });
+}
+
 export function initStudentsModule() {
     const pointsForm = document.getElementById('pointsForm');
     if (pointsForm) {
         pointsForm.addEventListener('submit', handlePointsSubmit);
+    }
+
+    const addForm = document.getElementById('addStudentForm');
+    if (addForm) {
+        addForm.addEventListener('submit', handleAddStudentSubmit);
     }
 
     window.deleteStudentGlobal = deleteStudent;

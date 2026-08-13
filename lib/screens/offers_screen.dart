@@ -19,14 +19,8 @@ class OffersScreen extends StatefulWidget {
 }
 
 class _OffersScreenState extends State<OffersScreen> {
-  String _selectedFilter = LanguageService.tr('auto_trans_1192');
-  final List<String> _filters = [
-    LanguageService.tr('auto_trans_1193'),
-    LanguageService.tr('auto_trans_1194'),
-    LanguageService.tr('auto_trans_1195'),
-    LanguageService.tr('auto_trans_1196'),
-    LanguageService.tr('auto_trans_1197')
-  ];
+  String _selectedFilter = 'الكل';
+  final List<String> _filters = ['الكل'];
 
   List<HousingOffer> _offers = [];
   bool _isLoading = true;
@@ -54,8 +48,39 @@ class _OffersScreenState extends State<OffersScreen> {
         _offers = res;
         _isLoading = false;
         _isError = false;
+        _buildDynamicFilters();
       });
     }
+  }
+
+  void _buildDynamicFilters() {
+    final Set<String> dynamicFilters = {};
+    // Add "All" localized and raw fallback
+    final allText = LanguageService.tr('auto_trans_1193');
+    dynamicFilters.add(allText.isNotEmpty ? allText : 'الكل');
+
+    for (var offer in _offers) {
+      // 1. Add university names from the offer's apartment
+      if (offer.apartment?.universities != null) {
+        for (var uni in offer.apartment!.universities) {
+          if (uni.name.isNotEmpty) {
+            dynamicFilters.add(uni.name);
+          }
+        }
+      }
+      // 2. Add badge text if present
+      if (offer.badgeText != null && offer.badgeText!.isNotEmpty) {
+        dynamicFilters.add(offer.badgeText!);
+      }
+    }
+
+    setState(() {
+      _filters.clear();
+      _filters.addAll(dynamicFilters);
+      if (!_filters.contains(_selectedFilter)) {
+        _selectedFilter = _filters.isNotEmpty ? _filters.first : 'الكل';
+      }
+    });
   }
 
   @override
@@ -65,37 +90,29 @@ class _OffersScreenState extends State<OffersScreen> {
         _selectedFilter == 'الكل' ||
         _selectedFilter == 'All';
 
-    final isSpecial =
-        _selectedFilter == LanguageService.tr('auto_trans_1194') ||
-            _selectedFilter == 'عروض خاصة' ||
-            _selectedFilter == 'Special Offers';
-
     final filtered = _offers.where((offer) {
-      if (isAll || isSpecial) {
+      if (isAll) {
         return true;
       }
 
+      // 1. Match by badge text
+      if (offer.badgeText == _selectedFilter) {
+        return true;
+      }
+
+      // 2. Match by university names
+      if (offer.apartment?.universities != null) {
+        final matchesUni = offer.apartment!.universities.any((u) => u.name == _selectedFilter);
+        if (matchesUni) {
+          return true;
+        }
+      }
+
+      // 3. Fallback to title/desc search for best match
       final String filterLower = _selectedFilter.toLowerCase();
       final String proximity = (offer.apartment?.proximity ?? '').toLowerCase();
       final String offerTitle = offer.title.toLowerCase();
       final String aptTitle = (offer.apartment?.title ?? '').toLowerCase();
-      if (filterLower.contains('طبية') || filterLower.contains('tsmu')) {
-        return proximity.contains('tsmu') ||
-            proximity.contains('الطبية') ||
-            aptTitle.contains('الطبية');
-      }
-      if (filterLower.contains('ستوديو') || filterLower.contains('studio')) {
-        return offerTitle.contains('ستوديو') ||
-            offerTitle.contains('studio') ||
-            aptTitle.contains('ستوديو') ||
-            aptTitle.contains('studio');
-      }
-      if (filterLower.contains('مشترك') || filterLower.contains('shared')) {
-        return offerTitle.contains('مشترك') ||
-            offerTitle.contains('shared') ||
-            aptTitle.contains('مشترك') ||
-            aptTitle.contains('shared');
-      }
 
       return offerTitle.contains(filterLower) ||
           aptTitle.contains(filterLower) ||

@@ -1,6 +1,9 @@
 import { LOGIN_URL, setAdminToken } from './state.js';
 import { loadDashboardData } from './api.js';
 
+// Tracks in-flight requests to prevent duplicates on slow networks
+const pendingRequests = new Set();
+
 function getToken() {
     return localStorage.getItem('adminToken') || null;
 }
@@ -56,20 +59,43 @@ export async function authFetch(url, options = {}) {
     }
     if (!options.headers) options.headers = {};
     options.headers['Authorization'] = 'Bearer ' + token;
-    const res = await fetch(url, options);
-    if (res.status === 401) {
-        setAdminToken(null);
-        showLoginOverlay();
+
+    // Deduplicate non-GET requests: block if same URL is already in-flight
+    const method = (options.method || 'GET').toUpperCase();
+    const reqKey = method + ':' + url;
+    if (method !== 'GET' && pendingRequests.has(reqKey)) {
+        console.warn('[authFetch] Blocked duplicate request:', reqKey);
         return null;
     }
-    return res;
+    if (method !== 'GET') pendingRequests.add(reqKey);
+
+    try {
+        const res = await fetch(url, options);
+        if (res.status === 401) {
+            setAdminToken(null);
+            showLoginOverlay();
+            return null;
+        }
+        return res;
+    } finally {
+        pendingRequests.delete(reqKey);
+    }
+}
+
+export function doAdminLogout() {
+    localStorage.removeItem('adminToken');
+    location.reload();
 }
 
 export function initAuthModule() {
     document.addEventListener('click', (e) => {
         const btn = e.target.closest('[data-action]');
-        if (btn && btn.getAttribute('data-action') === 'doAdminLogin') {
+        if (!btn) return;
+        if (btn.getAttribute('data-action') === 'doAdminLogin') {
             doAdminLogin();
+        }
+        if (btn.getAttribute('data-action') === 'doAdminLogout') {
+            doAdminLogout();
         }
     });
 }

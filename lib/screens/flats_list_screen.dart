@@ -25,24 +25,42 @@ class FlatsListScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // تصفية الشقق في حالة اختيار شقة بمفردك (لشخص واحد / ستوديو / 1 غرفة)
-    final filteredList = filterSingleOnly
-        ? apartments.where((apt) {
-            final titleStr = (apt['title'] ?? '').toString();
-            final descStr = (apt['description'] ?? '').toString();
-            final featuresList = (apt['features'] as List?)
-                    ?.map((e) => e.toString())
-                    .join(' ') ??
-                '';
-            final combined = '$titleStr $descStr $featuresList';
-            // التحقق مما إذا كانت الشقة تناسب شخص واحد (ستوديو، 1 غرفة، منفرد، بمفردك) أو إظهارها إذا لم تكن مشتركة بوضوح
-            return combined.contains(LanguageService.tr('auto_trans_1038')) ||
-                combined.contains(LanguageService.tr('auto_trans_1039')) ||
-                combined.contains(LanguageService.tr('auto_trans_1040')) ||
-                combined.contains(LanguageService.tr('auto_trans_1041')) ||
-                !combined.contains(LanguageService.tr('auto_trans_1042'));
-          }).toList()
-        : apartments;
+    // تصفية الشقق بناءً على تصنيف نوع السكن (شقة كاملة vs غرفة/ستوديو)
+    final filteredList = apartments.where((apt) {
+      final rType = apt['rental_type']?.toString();
+      if (filterSingleOnly) {
+        // الخيار الثاني: غرف مشتركة واستوديوهات
+        if (rType == 'room_shared' || rType == 'studio') {
+          return true;
+        }
+        // دعم رجعي للبيانات القديمة التي لا تحتوي على نوع سكن
+        if (rType == null || rType.isEmpty) {
+          final titleStr = (apt['title'] ?? '').toString();
+          final descStr = (apt['description'] ?? '').toString();
+          final featuresList = (apt['features'] as List?)
+                  ?.map((e) => e.toString())
+                  .join(' ') ??
+              '';
+          final combined = '$titleStr $descStr $featuresList';
+          return combined.contains(LanguageService.tr('auto_trans_1038')) ||
+              combined.contains(LanguageService.tr('auto_trans_1039')) ||
+              combined.contains(LanguageService.tr('auto_trans_1040')) ||
+              combined.contains(LanguageService.tr('auto_trans_1041')) ||
+              !combined.contains(LanguageService.tr('auto_trans_1042'));
+        }
+        return false;
+      } else {
+        // الخيار الأول: شقق كاملة فقط
+        if (rType == 'apartment') {
+          return true;
+        }
+        // دعم رجعي للبيانات القديمة
+        if (rType == null || rType.isEmpty) {
+          return true;
+        }
+        return false;
+      }
+    }).toList();
 
     return Directionality(
       textDirection: LanguageService.textDirection,

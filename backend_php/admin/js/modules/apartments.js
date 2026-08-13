@@ -193,6 +193,18 @@ export function openEditApartmentModal(aptId) {
     const rtSel = document.getElementById('editAptRentalType');
     if (rtSel) rtSel.value = apt.rental_type || 'apartment';
 
+    // Roommate fields loading
+    if (document.getElementById('editAptRoommateReqs')) {
+        document.getElementById('editAptRoommateReqs').value = apt.roommate_reqs || '';
+    }
+    if (document.getElementById('editAptRoommateFacilities')) {
+        document.getElementById('editAptRoommateFacilities').value = apt.roommate_facilities || '';
+    }
+    const editRoommateSec = document.getElementById('editRoommateSection');
+    if (editRoommateSec) {
+        editRoommateSec.style.display = (apt.rental_type === 'room_shared') ? 'block' : 'none';
+    }
+
     // District dropdown — populated from appData
     const distSel = document.getElementById('editAptDistrictId');
     if (distSel) {
@@ -271,6 +283,8 @@ export async function handleUpdateApartment(e) {
         rooms_count: roomsCountVal,
         district_id: districtIdVal !== '' ? parseInt(districtIdVal, 10) : null,
         owner_phone: document.getElementById('editAptOwnerPhone').value,
+        roommate_reqs: document.getElementById('editAptRentalType').value === 'room_shared' ? document.getElementById('editAptRoommateReqs').value : null,
+        roommate_facilities: document.getElementById('editAptRentalType').value === 'room_shared' ? document.getElementById('editAptRoommateFacilities').value : null,
         features: featArr,
         description: document.getElementById('editAptDesc').value,
         images: imagesArr,
@@ -345,8 +359,9 @@ export async function deleteApartment(id, confirmDeleteOffers = false) {
     }
 }
 
-export function toggleRoommateFields(val) {
-    const sec = document.getElementById('roommateSection');
+export function toggleRoommateFields(val, isEdit = false) {
+    const secId = isEdit ? 'editRoommateSection' : 'roommateSection';
+    const sec = document.getElementById(secId);
     if (sec) {
         const isRoom = val && (val.includes('غرفة') || val.includes('shared') || val.includes('room_shared'));
         sec.style.display = isRoom ? 'block' : 'none';
@@ -375,6 +390,20 @@ export function initApartmentsModule() {
     const aptSearch = document.getElementById('aptSearchInput');
     if (aptSearch) {
         aptSearch.addEventListener('input', renderApartments);
+    }
+
+    const rentalTypeSelect = document.getElementById('aptRentalType');
+    if (rentalTypeSelect) {
+        rentalTypeSelect.addEventListener('change', (e) => {
+            toggleRoommateFields(e.target.value, false);
+        });
+    }
+
+    const editRentalTypeSelect = document.getElementById('editAptRentalType');
+    if (editRentalTypeSelect) {
+        editRentalTypeSelect.addEventListener('change', (e) => {
+            toggleRoommateFields(e.target.value, true);
+        });
     }
 
     // Expose globals so inline onclick in rendered HTML can call them

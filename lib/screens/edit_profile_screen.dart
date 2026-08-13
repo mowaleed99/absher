@@ -69,12 +69,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                 .where((n) => n.isNotEmpty)
                 .toList();
           } else {
-            _universities = [
-              LanguageService.tr('auto_trans_1205'),
-              'University of Georgia (UG)',
-              'Ilia State University',
-              'Tbilisi State University (TSU)'
-            ];
+            _universities = [];
           }
           _universities.add(otherUniText);
 
@@ -82,8 +77,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           if (_universities.contains(currentUni)) {
             _selectedUni = currentUni;
           } else if (currentUni.isNotEmpty) {
-            _selectedUni = otherUniText;
-            _customUniController.text = currentUni;
+            // Add the student's current university to the list so it shows correctly
+            _universities.insert(_universities.length - 1, currentUni);
+            _selectedUni = currentUni;
           } else {
             _selectedUni = _universities.first;
           }
@@ -93,7 +89,10 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     } catch (e) {
       if (mounted) {
         setState(() {
-          _universities = [LanguageService.tr('auto_trans_1205'), otherUniText];
+          final currentUni = widget.student.university ?? '';
+          _universities = currentUni.isNotEmpty
+              ? [currentUni, otherUniText]
+              : [otherUniText];
           _selectedUni = _universities.first;
           _isLoadingUnis = false;
         });
