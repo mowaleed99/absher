@@ -8,18 +8,6 @@ function toggleLanguage() {
     applyLanguage();
 }
 
-// Pre-normalize Arabic translations to a Map for O(1) lookups
-const normalizedArToEnMap = new Map();
-if (translations && translations.ar && translations.en) {
-    const norm = (str) => str.replace(/\s+/g, '').trim();
-    const arEntries = Object.entries(translations.ar);
-    for (let [key, val] of arEntries) {
-        if (typeof val === 'string') {
-            normalizedArToEnMap.set(norm(val), translations.en[key] || val);
-        }
-    }
-}
-
 function tr(arText) {
     if (typeof arText === 'string' && (arText.startsWith('sidebar.') || arText.startsWith('buttons.'))) {
         const lang = localStorage.getItem('admin_lang') || localStorage.getItem('lang') || 'ar';
@@ -27,25 +15,29 @@ function tr(arText) {
             return i18n[lang][arText];
         }
     }
-    if (currentLang === 'ar') return arText;
-    if (typeof arText !== 'string') return arText;
+
+    if (currentLang ==='ar') return arText;
     
     // Normalize string to ignore multi-line whitespace
     const norm = (str) => str.replace(/\s+/g,'').trim();
     const search = norm(arText);
     
-    if (normalizedArToEnMap.has(search)) {
-        return normalizedArToEnMap.get(search);
+    // Find key by searching the'ar'dictionary for the exact text
+    const entries = Object.entries(translations['ar']);
+    for (let [key, val] of entries) {
+        if (norm(val) === search) {
+            return translations['en'][key] || arText;
+        }
     }
     return arText; // Fallback
 }
 
 function applyLanguage() {
     document.documentElement.lang = currentLang;
-    document.documentElement.dir = currentLang === 'ar' ? 'rtl' : 'ltr';
+    document.documentElement.dir = currentLang ==='ar'?'rtl':'ltr';
     
     // Also re-render dynamic tables so they get translated
-    if (typeof renderApartments === 'function') {
+    if (typeof renderApartments ==='function') {
         renderStats();
         renderApartments();
         renderServices();
@@ -68,25 +60,18 @@ function walkAndTranslate(node) {
     if (node.nodeType === 3) { // Text node
         const text = node.nodeValue.trim();
         if (text) {
-            if (node.parentElement) {
-                if (!node.parentElement.hasAttribute('data-orig-text')) {
-                    // Store the exact original value
-                    node.parentElement.setAttribute('data-orig-text', node.nodeValue);
-                }
-                const orig = node.parentElement.getAttribute('data-orig-text');
-                const translated = tr(orig);
-                
-                // Just replace the text content of the node entirely to avoid whitespace matching issues
-                if (translated !== orig && currentLang === 'en') {
-                    node.nodeValue = translated;
-                } else if (currentLang === 'ar') {
-                    node.nodeValue = orig;
-                }
-            } else {
-                const translated = tr(node.nodeValue);
-                if (translated !== node.nodeValue && currentLang === 'en') {
-                    node.nodeValue = translated;
-                }
+            if (!node.parentElement.hasAttribute('data-orig-text')) {
+                // Store the exact original value
+                node.parentElement.setAttribute('data-orig-text', node.nodeValue);
+            }
+            const orig = node.parentElement.getAttribute('data-orig-text');
+            const translated = tr(orig);
+            
+            // Just replace the text content of the node entirely to avoid whitespace matching issues
+            if (translated !== orig && currentLang ==='en') {
+                node.nodeValue = translated;
+            } else if (currentLang ==='ar') {
+                node.nodeValue = orig;
             }
         }
     } else if (node.nodeType === 1) { // Element node
@@ -99,15 +84,15 @@ function walkAndTranslate(node) {
                 }
                 const orig = node.getAttribute('data-orig-placeholder');
                 const translated = tr(orig);
-                if (translated !== orig && currentLang === 'en') {
+                if (translated !== orig && currentLang ==='en') {
                     node.setAttribute('placeholder', translated);
-                } else if (currentLang === 'ar') {
+                } else if (currentLang ==='ar') {
                     node.setAttribute('placeholder', orig);
                 }
             }
         }
         
-        if (node.nodeName !== "SCRIPT" && node.nodeName !== "STYLE") {
+        if (node.nodeName !=="SCRIPT"&& node.nodeName !=="STYLE") {
             for (let i = 0; i < node.childNodes.length; i++) {
                 walkAndTranslate(node.childNodes[i]);
             }
@@ -899,38 +884,11 @@ const i18n = {
     "login.placeholder.password": "Password",
     "login.button": "Login",
     "login.error.invalid_credentials": "Invalid login credentials!",
-    "sidebar.generalStatistics": "General Statistics",
-    "sidebar.customerServiceChat": "Customer Service Chat",
-    "sidebar.bookingsRequests": "Bookings & Requests",
-    "sidebar.manageApartments": "Manage Apartments",
-    "sidebar.exclusiveOffers": "Exclusive Offers",
-    "sidebar.studentServices": "Student Services",
-    "sidebar.universities": "Universities",
-    "sidebar.districts": "Districts",
-    "sidebar.studentReviews": "Student Reviews",
-    "sidebar.applicationFeedback": "Application Feedback",
-    "sidebar.studentAccounts": "Student Accounts",
-    "sidebar.georgiaNews": "Georgia News",
-    "sidebar.alertsNotifications": "Alerts & Notifications",
-
-    "buttons.add": "Add",
-    "buttons.edit": "Edit",
-    "buttons.delete": "Delete",
-    "buttons.save": "Save",
-    "buttons.cancel": "Cancel",
-    "buttons.enable": "Enable",
-    "buttons.disable": "Disable",
-    "buttons.view": "View",
-    "buttons.close": "Close",
-    "buttons.search": "Search",
     "buttons.saving": "Saving...",
     "buttons.chat": "Chat",
     "buttons.accept": "Accept",
     "buttons.reject": "Reject",
     "buttons.manage": "Manage",
-    
-    "services.label.enable_form": "Enable request form for student",
-    "universities.label.name": "University Name",
 
     "dialog.delete_request_title": "Confirm Delete Request",
     "dialog.delete_request_msg": "Are you sure you want to permanently delete this request?",

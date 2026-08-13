@@ -29,7 +29,6 @@ set_exception_handler(function($e) {
 // ملف استقبال طلبات الطلاب والحجوزات (Service & Booking Requests API)
 require_once __DIR__ . '/../config/db.php';
 require_once __DIR__ . '/middleware/auth.php';
-require_once __DIR__ . '/core/notification.php';
 
 $rawInput = file_get_contents("php://input");
 if (empty($rawInput) && php_sapi_name() === 'cli') {
@@ -375,7 +374,8 @@ if ($action === 'submit') {
             // 7. Notification insert
             $notifTitle = "سحب نقاط";
             $notifBody = "تم خصم $pricePoints نقطة من محفظتك لطلب الخدمة: $serviceTitle";
-            sendStudentNotification($studentId, $notifTitle, $notifBody);
+            $notifStmt = $conn->prepare("INSERT INTO notifications (student_id, title, body, created_at) VALUES (?, ?, ?, NOW())");
+            $notifStmt->execute([$studentId, $notifTitle, $notifBody]);
         }
 
         // 8. Chat support sync

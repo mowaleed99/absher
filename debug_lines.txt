@@ -1,0 +1,32 @@
+--- AR ---
+506:     "chats.image_attached": "صورة مرفقة من خدمة العملاء",
+507:     "chats.block_tooltip": "حظر الطالب والشات",
+508:     "chats.edited": "معدلة",
+509:     "chats.message_deleted_notice": "تم حذف هذه الرسالة من قبل خدمة العملاء",
+510:     "chats.admin_sender": "️ خدمة العملاء (أبشر)",
+511:     "chats.reply_action": "الرد على هذه الرسالة",
+512:     "chats.edit_action": "تعديل الرسالة",
+513:     "chats.delete_action": "حذف الرسالة",
+514:     
+515:     // Requests
+516:     "requests.title": "إدارة الحجوزات وطلبات السكن وتجميع الشباب",
+517:     "requests.desc": "متابعة وتحديث حالات طلبات الطلاب الجامعيين مع تفاصيل الحجز الكاملة وإمكانية الرد عبر الواتساب",
+518:     "requests.search_placeholder": "ابحث برقم الطلب، اسم الطالب، أو رقم الواتساب...",
+519:     "requests.table.id": "# الطلب",
+520:     "requests.table.student": "اسم الطالب",
+--- EN ---
+1096:     "chats.recorded_msg": "Voice Recording",
+1097:     "chats.image_attached": "Image attached by Customer Service",
+1098:     "chats.block_tooltip": "Block Student & Chat",
+1099:     "chats.edited": "Edited",
+1100:     "chats.message_deleted_notice": "This message was deleted by customer service",
+1101:     "chats.admin_sender": "Customer Service (Absher)",
+1102:     "chats.reply_action": "Reply to this message",
+1103:     "chats.edit_action": "Edit Message",
+1104:     "chats.delete_action": "Delete Message",
+1105: 
+1106:     // Requests
+1107:     "requests.title": "Manage Bookings, Housing & Roommates",
+1108:     "requests.desc": "Track and update university student request statuses with full booking details and WhatsApp reply option",
+1109:     "requests.search_placeholder": "Search by request #, student name, or WhatsApp...",
+1110:     "requests.table.id": "Request #",

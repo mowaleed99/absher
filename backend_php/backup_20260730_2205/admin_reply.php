@@ -6,7 +6,6 @@ require_once __DIR__ . '/../../config/db.php';
 require_once __DIR__ . '/../middleware/auth.php';
 require_once __DIR__ . '/../core/response.php';
 require_once __DIR__ . '/../core/headers.php';
-require_once __DIR__ . '/../core/notification.php';
 
 // Only admins can use this endpoint.
 AuthMiddleware::requireAdmin();
@@ -33,11 +32,10 @@ if (empty($content) && empty($image_url)) {
 }
 
 try {
-    // Verify chat exists and get student_id
-    $chatStmt = $conn->prepare("SELECT id, student_id FROM chats WHERE id = ?");
+    // Verify chat exists
+    $chatStmt = $conn->prepare("SELECT id FROM chats WHERE id = ?");
     $chatStmt->execute([$chat_id]);
-    $chatRow = $chatStmt->fetch();
-    if (!$chatRow) {
+    if (!$chatStmt->fetch()) {
         jsonResponse(false, "Chat not found", 404);
     }
 
@@ -64,14 +62,6 @@ try {
         "UPDATE chats SET last_msg = ?, status = 'رد إداري', updated_at = NOW()
          WHERE id = ?"
     )->execute([!empty($content) ? $content : 'صورة مرفقة', $chat_id]);
-
-    // Send targeted notification to the student who owns the chat
-    if (!empty($chatRow['student_id'])) {
-        $studentId = intval($chatRow['student_id']);
-        $notifTitle = "رد جديد من الدعم الفني";
-        $notifBody = "لديك رد جديد على استفسارك في الشات المباشر";
-        sendStudentNotification($studentId, $notifTitle, $notifBody);
-    }
 
     jsonResponse(true, "Message sent", 201, ['message_id' => (int)$messageId]);
 

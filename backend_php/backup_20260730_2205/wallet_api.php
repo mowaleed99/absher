@@ -1,7 +1,6 @@
 <?php
 require_once __DIR__ . '/../config/db.php';
 require_once __DIR__ . '/middleware/auth.php';
-require_once __DIR__ . '/core/notification.php';
 
 $input = json_decode(file_get_contents("php://input"), true) ?? $_POST;
 $action = $_GET['action'] ?? ($input['action'] ?? '');
@@ -97,7 +96,8 @@ if ($action === 'pay_with_points') {
             $notifTitle = 'سحب نقاط';
             $notifText = "تم خصم {$amount} نقطة من محفظتك. السبب: سداد رسوم {$serviceTitle}";
             
-            sendStudentNotification($student_id, $notifTitle, $notifText);
+            $insertNotif = $conn->prepare("INSERT INTO notifications (student_id, title, body, created_at) VALUES (?, ?, ?, NOW())");
+            $insertNotif->execute([$student_id, $notifTitle, $notifText]);
 
             $insertTx = $conn->prepare("INSERT INTO wallet_transactions (student_id, amount, type, description, created_at) VALUES (?, ?, 'خصم', ?, NOW())");
             $insertTx->execute([$student_id, $amount, $notifText]);

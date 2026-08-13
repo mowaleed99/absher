@@ -148,7 +148,7 @@ export function renderWaThread(chat) {
 
     if (!chat.messages || chat.messages.length === 0) {
         chat.messages = [
-            { sender: 'student', text: chat.last_msg || t('messages.default_last_msg'), time: chat.time || t('status.now') }
+            { sender: 'student', text: chat.last_msg || t('messages.default_last_msg'), time: chat.time || 'الآن' }
         ];
     }
 
@@ -205,11 +205,10 @@ export function renderWaThread(chat) {
                 ` : ''}
                 <div style="text-align: left; font-size: 0.7rem; color: rgba(255,255,255,0.6); margin-top: 4px;">
                     ${m.time} ${m.sender === 'admin' ? '<i class="fa-solid fa-check-double" style="color: #53bdeb;"></i>' : ''}
-        </div>
+                </div>
             </div>
         </div>
-        `;
-    }).join('');
+    `).join('');
 
     setTimeout(() => { thread.scrollTop = thread.scrollHeight; }, 50);
 }
@@ -295,56 +294,6 @@ export async function blockWaStudent() {
         renderWaThread(chat);
         renderChatsList();
         showToast(t('messages.student_blocked'));
-    }
-}
-
-export async function deleteWaChat() {
-    const chatId = parseInt(document.getElementById('waActiveChatId').value);
-    const chat = appData.chats.find(c => c.id === chatId);
-    if (!chat) return;
-
-    const confirmed = await window.showConfirmDialog({
-        title: t('chats.deleteChat'),
-        message: t('chats.deleteConfirmation'),
-        confirmText: t('buttons.delete'),
-        cancelText: t('buttons.cancel'),
-        variant: 'danger'
-    });
-
-    if (confirmed) {
-        try {
-            const res = await window.authFetch(`../api/admin_api.php?action=delete_chat`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ chat_id: chatId })
-            });
-            const data = await res.json();
-            if (data.status === 'success' || data.success === true) {
-                showToast(data.message || t('messages.chat_deleted'));
-                // Remove the chat from the state sidebar/list
-                appData.chats = appData.chats.filter(c => c.id !== chatId);
-                
-                // Close the conversation view
-                document.getElementById('waActiveChatId').value = '';
-                document.getElementById('waNoSelection').style.display = 'flex';
-                document.getElementById('waHeader').style.display = 'none';
-                document.getElementById('waMessagesThread').style.display = 'none';
-                if (document.getElementById('waQuickBar')) document.getElementById('waQuickBar').style.display = 'none';
-                document.getElementById('waInputForm').style.display = 'none';
-
-                // Refresh chat counters and lists
-                renderChatsList();
-
-                // Refresh stats
-                const { loadDashboardData } = await import('../api.js');
-                await loadDashboardData();
-            } else {
-                showToast(data.message || t('messages.chat_delete_failed'));
-            }
-        } catch (err) {
-            console.error(err);
-            showToast(t('messages.conn_error'));
-        }
     }
 }
 
@@ -581,7 +530,6 @@ export function initChatsModule() {
     window.deleteWaMessageGlobal = deleteWaMessage;
     window.cancelWaQuoteGlobal = cancelWaQuote;
     window.blockWaStudentGlobal = blockWaStudent;
-    window.deleteWaChatGlobal = deleteWaChat;
     window.showWaStudentProfileGlobal = showWaStudentProfile;
     window.sendWaQuickReplyGlobal = sendWaQuickReply;
     window.sendCustomWaMessageGlobal = sendCustomWaMessage;

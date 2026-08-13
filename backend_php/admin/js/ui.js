@@ -213,19 +213,24 @@ export function showConfirmDialog({ title, message, confirmText, cancelText, var
             confirmBtnStyle = 'background: var(--accent-amber); color: var(--bg-sidebar); border: none; font-weight: bold;';
         }
 
+        const isEn = localStorage.getItem('admin_lang') === 'en';
+        const dir = isEn ? 'ltr' : 'rtl';
+        const textAlign = isEn ? 'left' : 'right';
+        const flexAlign = isEn ? 'row-reverse' : 'row'; // buttons order: cancel, confirm
+
         overlay.innerHTML = `
             <div class="modal-box" style="max-width: 460px; transform: scale(0.95); transition: transform 0.2s ease; border-radius: 20px;">
-                <div class="modal-header" style="direction: rtl; border-bottom: 1px solid var(--border-color); padding: 1.2rem 1.5rem; display: flex; justify-content: space-between; align-items: center;">
+                <div class="modal-header" style="direction: ${dir}; border-bottom: 1px solid var(--border-color); padding: 1.2rem 1.5rem; display: flex; justify-content: space-between; align-items: center;">
                     <h3 style="margin: 0; display: flex; align-items: center; gap: 10px; font-size: 1.2rem; color: var(--text-main); font-weight: 700;">
                         <i class="${iconClass}" style="color: ${iconColor}; font-size: 1.3rem;"></i>
                         <span>${title}</span>
                     </h3>
                     <button class="close-btn" style="background: none; border: none; color: var(--text-muted); font-size: 1.3rem; cursor: pointer;" title="${t('buttons.close')}"><i class="fa-solid fa-xmark"></i></button>
                 </div>
-                <div style="padding: 1.5rem; direction: rtl; text-align: right; color: var(--text-main); font-size: 0.95rem; line-height: 1.6;">
+                <div style="padding: 1.5rem; direction: ${dir}; text-align: ${textAlign}; color: var(--text-main); font-size: 0.95rem; line-height: 1.6;">
                     <p style="margin: 0;">${message}</p>
                 </div>
-                <div style="padding: 1rem 1.5rem; border-top: 1px solid var(--border-color); display: flex; justify-content: flex-end; gap: 12px; direction: rtl; background: rgba(0,0,0,0.15); border-bottom-left-radius: 20px; border-bottom-right-radius: 20px;">
+                <div style="padding: 1rem 1.5rem; border-top: 1px solid var(--border-color); display: flex; justify-content: flex-end; gap: 12px; direction: ${dir}; flex-direction: ${flexAlign}; background: rgba(0,0,0,0.15); border-bottom-left-radius: 20px; border-bottom-right-radius: 20px;">
                     <button class="btn btn-secondary confirm-cancel" style="padding: 0.6rem 1.2rem; border-radius: 10px; font-size: 0.85rem; font-weight: 700;">${cancelText}</button>
                     <button class="btn confirm-ok" style="${confirmBtnStyle} padding: 0.6rem 1.2rem; border-radius: 10px; font-size: 0.85rem; font-weight: 700;">${confirmText}</button>
                 </div>

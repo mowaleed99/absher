@@ -115,9 +115,9 @@
                         <p data-i18n="dashboard.quick_add_desc">أي إضافة تقوم بها هنا تنعكس مباشرة في متصفح الموقع وتطبيق الهاتف المحمول فلاتر.</p>
                     </div>
                     <div class="banner-buttons">
-                        <button class="btn btn-primary" data-action="openModal" data-modal="aptModal" type="button"><i
+                        <button class="btn btn-primary"><i
                                 class="fa-solid fa-plus"></i> <span data-i18n="dashboard.add_apartment">إضافة شقة جديدة</span></button>
-                        <button class="btn btn-secondary" data-action="openModal" data-modal="svcModal" type="button"><i
+                        <button class="btn btn-secondary"><i
                                 class="fa-solid fa-plus"></i> <span data-i18n="dashboard.add_service">إضافة خدمة جديدة</span></button>
                     </div>
                 </div>
@@ -204,16 +204,16 @@
             <section id="tab-offers" class="tab-pane">
                 <div class="section-header">
                     <div class="section-title">
-                        <h2><i class="fa-solid fa-tags"></i> <span data-i18n="offers.title">عروض السكن الحصرية</span></h2>
-                        <p data-i18n="offers.desc">إنشاء وتعديل وإدارة عروض السكن والخصومات للطلاب</p>
+                        <h2><i class="fa-solid fa-tags"></i> عروض السكن الحصرية</h2>
+                        <p>إنشاء وتعديل وإدارة عروض السكن والخصومات للطلاب</p>
                     </div>
                     <button class="btn btn-glow" data-action="openModal" data-modal="offerModal">
-                        <i class="fa-solid fa-plus-circle"></i> <span data-i18n="offers.add_button">إضافة عرض جديد</span>
+                        <i class="fa-solid fa-plus-circle"></i> إضافة عرض جديد
                     </button>
                 </div>
 
                 <div style="margin: 0 0 20px 0; display: flex; gap: 10px; align-items: center;">
-                    <input type="text" id="offerSearchInput" data-i18n-placeholder="offers.search_placeholder" placeholder="ابحث بعنوان العرض أو الشقة المرتبطة..." style="flex: 1; padding: 12px 18px; border-radius: 12px; border: 1px solid var(--border-color); background: var(--bg-card); color: var(--text-main); font-size: 1rem;">
+                    <input type="text" id="offerSearchInput" placeholder="ابحث بعنوان العرض أو الشقة المرتبطة..." style="flex: 1; padding: 12px 18px; border-radius: 12px; border: 1px solid var(--border-color); background: var(--bg-card); color: var(--text-main); font-size: 1rem;">
                 </div>
 
                 <div class="grid-container" id="offersList">
@@ -225,11 +225,11 @@
             <section id="tab-services"class="tab-pane">
                 <div class="section-header">
                     <div class="section-title">
-                        <h2><i class="fa-solid fa-screwdriver-wrench"></i> <span data-i18n="services.title">إدارة خدمات الطلاب</span></h2>
-                        <p data-i18n="services.desc">التحكم في خدمات الصيانة والإقامة والاستقبال</p>
+                        <h2><i class="fa-solid fa-screwdriver-wrench"></i> إدارة خدمات الطلاب</h2>
+                        <p>التحكم في خدمات الصيانة والإقامة والاستقبال</p>
                     </div>
                     <button class="btn btn-glow"data-action="openModal" data-modal="svcModal"><i class="fa-solid fa-plus-circle"></i>
-                        <span data-i18n="services.add_button">إضافة خدمة جديدة</span></button>
+                        إضافة خدمة جديدة</button>
                 </div>
 
                 <div class="grid-container services-grid"id="servicesList">
@@ -241,11 +241,11 @@
             <section id="tab-universities"class="tab-pane">
                 <div class="section-header">
                     <div class="section-title">
-                        <h2><i class="fa-solid fa-university"></i> <span data-i18n="universities.title">إدارة الجامعات</span></h2>
-                        <p data-i18n="universities.desc">إضافة أو حذف الجامعات التي سيتم استخدامها في فلاتر التطبيق</p>
+                        <h2><i class="fa-solid fa-university"></i> إدارة الجامعات</h2>
+                        <p>إضافة أو حذف الجامعات التي سيتم استخدامها في فلاتر التطبيق</p>
                     </div>
                     <button class="btn btn-glow"data-action="openModal" data-modal="uniModal"><i class="fa-solid fa-plus-circle"></i>
-                        <span data-i18n="universities.add_button">إضافة جامعة جديدة</span></button>
+                        إضافة جامعة جديدة</button>
                 </div>
 
                 <div class="grid-container services-grid"id="universitiesList">
@@ -257,11 +257,11 @@
             <section id="tab-districts"class="tab-pane">
                 <div class="section-header">
                     <div class="section-title">
-                        <h2><i class="fa-solid fa-map-location-dot"></i> <span data-i18n="districts.title">إدارة المناطق</span></h2>
-                        <p data-i18n="districts.desc">إضافة أو حذف المناطق المتاحة في تبليسي والتي سيتم استخدامها في فلتر السكن</p>
+                        <h2><i class="fa-solid fa-map-location-dot"></i> إدارة المناطق</h2>
+                        <p>إضافة أو حذف المناطق المتاحة في تبليسي والتي سيتم استخدامها في فلتر السكن</p>
                     </div>
                     <button class="btn btn-glow"data-action="openModal" data-modal="districtModal"><i class="fa-solid fa-plus-circle"></i>
-                        <span data-i18n="districts.add_button">إضافة حي جديد</span></button>
+                        إضافة حي جديد</button>
                 </div>
 
                 <div class="grid-container services-grid"id="districtsList">
@@ -318,9 +318,6 @@
                                 </a>
                                 <button type="button"class="btn btn-secondary"style="background: rgba(239,68,68,0.15); color: #ef4444; border: 1px solid #ef4444; padding: 6px 12px; font-size: 0.85rem; font-weight: bold;" data-i18n-title="chats.block_tooltip" title="حظر الطالب والشات">
                                     <i class="fa-solid fa-ban"></i> <span data-i18n="buttons.disable">حظر</span>
-                                </button>
-                                <button type="button" id="waDeleteChatBtn" onclick="window.deleteWaChatGlobal && window.deleteWaChatGlobal()" class="btn btn-danger" style="background: rgba(239,68,68,0.15); color: #ef4444; border: 1px solid #ef4444; padding: 6px 12px; font-size: 0.85rem; font-weight: bold; display: inline-flex; align-items: center; gap: 6px;" data-i18n-title="chats.deleteChat" title="حذف المحادثة">
-                                    <i class="fa-solid fa-trash"></i> <span data-i18n="buttons.delete">حذف</span>
                                 </button>
                             </div>
                         </div>
@@ -987,67 +984,10 @@
     </div>
 
     <!-- Modal: Points Management -->
-    <!-- Modal: Points Management -->
-    <div id="pointsModal" class="modal-overlay">
-        <div class="modal-box" style="max-width: 450px;">
+    <div id="pointsModal"class="modal-overlay">
+        <div class="modal-box"style="max-width: 450px;">
             <div class="modal-header">
-                <h3><i class="fa-solid fa-coins"></i> <span data-i18n="students.points_modal.title">إدارة نقاط الطالب</span></h3>
-                <button class="close-btn" data-action="closeModal" data-modal="pointsModal"><i class="fa-solid fa-xmark"></i></button>
-            </div>
-            <form id="pointsForm">
-                <input type="hidden" id="pointsStudentId">
-                <div style="text-align:center; margin-bottom: 16px;">
-                    <p style="color:var(--text-muted); font-size:0.9rem;" data-i18n="students.points_modal.student_label">الطالب:</p>
-                    <p id="pointsModalStudentName" style="font-size:1.1rem; font-weight:bold; color:var(--text-main);"></p>
-                    <p style="color:var(--text-muted); font-size:0.85rem;" data-i18n="students.points_modal.current_label">الرصيد الحالي:</p>
-                    <p id="pointsModalCurrentPoints" style="font-size:1.4rem; font-weight:bold; color:var(--accent);"></p>
-                </div>
-                <div class="form-group">
-                    <label data-i18n="students.points_modal.operation_label">العملية:</label>
-                    <div style="display:flex; gap:16px; margin-top:8px;">
-                        <label style="display:flex; align-items:center; gap:6px; cursor:pointer;">
-                            <input type="radio" name="pointsOperation" value="add" checked>
-                            <span data-i18n="students.points_modal.add">إضافة</span>
-                        </label>
-                        <label style="display:flex; align-items:center; gap:6px; cursor:pointer;">
-                            <input type="radio" name="pointsOperation" value="deduct">
-                            <span data-i18n="students.points_modal.deduct">خصم</span>
-                        </label>
-                    </div>
-                </div>
-                <div class="form-group">
-                    <label data-i18n="students.points_modal.amount_label">عدد النقاط:</label>
-                    <input type="number" id="pointsAmount" min="1" required data-i18n-placeholder="students.points_modal.amount_placeholder" placeholder="مثال: 50">
-                </div>
-                <div class="form-group">
-                    <label data-i18n="students.points_modal.reason_label">السبب (اختياري):</label>
-                    <input type="text" id="pointsReason" data-i18n-placeholder="students.points_modal.reason_placeholder" placeholder="مثال: مكافأة على الالتزام">
-                </div>
-                <div class="modal-actions">
-                    <button type="button" class="btn btn-secondary" data-action="closeModal" data-modal="pointsModal"><span data-i18n="buttons.cancel">إلغاء</span></button>
-                    <button type="submit" class="btn btn-primary"><i class="fa-solid fa-coins"></i> <span data-i18n="students.points_modal.submit">تطبيق</span></button>
-                </div>
-            </form>
-        </div>
-    </div>
-
-    <!-- Modal: Edit Apartment -->
-    <div id="editAptModal" class="modal-overlay">
-        <div class="modal-box" style="max-width: 680px; max-height: 90vh; overflow-y: auto;">
-            <div class="modal-header">
-                <h3><i class="fa-solid fa-pen-to-square"></i> <span data-i18n="apartments.edit_title">تعديل بيانات الشقة</span></h3>
-                <button class="close-btn" data-action="closeModal" data-modal="editAptModal"><i class="fa-solid fa-xmark"></i></button>
-            </div>
-            <form id="editAptForm">
-                <input type="hidden" id="editAptId">
-                <div class="form-group">
-                    <label data-i18n="apartments.label.title">عنوان الشقة:</label>
-                    <input type="text" id="editAptTitle" required data-i18n-placeholder="apartments.placeholder.title" placeholder="مثال: شقة مفروشة قريبة من TSMU">
-                </div>
-                <div class="form-group">
-                    <label data-i18n="apartments.label.price">السعر الشهري:</label>
-                    <input type="text" id="editAptPrice" required data-i18n-placeholder="apartments.placeholder.price" placeholder="مثال: 450 دولار / شهر">
-                </div>
+                <h3><i class="fa-solid fa-coins"></i> <span data-i18n="students.points_modal.title">إدارة ن�                </div>
                 <div class="form-row">
                     <div class="form-group">
                         <label data-i18n="apartments.label.rental_type">نوع الإيجار:</label>
@@ -1081,12 +1021,6 @@
                     </div>
                 </div>
                 <div class="form-group">
-                    <label data-i18n="apartments.label.district">المنطقة / الحي:</label>
-                    <select id="editAptDistrictId" style="width:100%; padding:10px; border-radius:8px; border:1px solid var(--border-color); background:var(--bg-card); color:var(--text-main);">
-                        <option value="" data-i18n="apartments.select_district">اختر المنطقة</option>
-                    </select>
-                </div>
-                <div class="form-group">
                     <label data-i18n="apartments.label.features">المميزات (افصل بفاصلة ،):</label>
                     <input type="text" id="editAptFeatures" data-i18n-placeholder="apartments.placeholder.features" placeholder="مثال: 3 غرف ، تدفئة ، إنترنت">
                 </div>
@@ -1098,12 +1032,14 @@
                 <div class="form-group">
                     <label data-i18n="apartments.label.replace_images">️ استبدال صور الشقة (اختياري – اتركه فارغاً للإبقاء على الصور الحالية):</label>
                     <div style="display: flex; flex-direction: column; gap: 8px;">
+                        <!-- Current image previews -->
                         <div id="editAptCurrentImgPreviews" style="display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 4px;"></div>
                         <input type="file" id="editAptFileInput" accept="image/*" multiple
                                data-action="handleAptEditFileSelect"
                                style="padding: 8px; border: 1px solid var(--border-color); border-radius: 10px; background: var(--bg-main); color: var(--text-main);">
                         <div id="editAptImgPreviewsContainer" style="display: flex; gap: 8px; flex-wrap: wrap;"></div>
                     </div>
+                    <!-- Hidden field stores JSON array of final image URLs after upload -->
                     <input type="hidden" id="editAptImages" value="[]">
                 </div>
                 <!-- Universities checkboxes -->

@@ -1,8 +1,7 @@
 <?php
 // واجهة برمجة تطبيقات لوحة التحكم (Admin API Endpoint) لـ تطبيق وموقع أبشر جورجيا
-require_once '../config/db.php';
+require_once'../config/db.php';
 require_once __DIR__ . '/middleware/auth.php';
-require_once __DIR__ . '/core/notification.php';
 
 AuthMiddleware::requireAdmin();
 function saveBase64IfPresent($url) {
@@ -445,20 +444,12 @@ try {
         $id = intval($data['id'] ?? 0);
         $status = trim($data['status'] ??'مكتمل');
         if ($id > 0) {
-            // 1. Get the current details of this request to find the student phone and student_id
-            $stmtReq = $conn->prepare("SELECT student_id, student_name, student_phone, service_title FROM service_requests WHERE id = ?");
+            // 1. Get the current details of this request to find the student phone
+            $stmtReq = $conn->prepare("SELECT student_name, student_phone, service_title FROM service_requests WHERE id = ?");
             $stmtReq->execute([$id]);
             $reqData = $stmtReq->fetch();
 
             $conn->prepare("UPDATE service_requests SET status = ? WHERE id = ?")->execute([$status, $id]);
-
-            // Send targeted notification to the specific student
-            if ($reqData && !empty($reqData['student_id'])) {
-                $studentId = intval($reqData['student_id']);
-                $notifTitle = "تحديث حالة الطلب";
-                $notifBody = "تم تغيير حالة طلبك الخاص بـ (" . $reqData['service_title'] . ") إلى: " . $status;
-                sendStudentNotification($studentId, $notifTitle, $notifBody);
-            }
 
             // 2. Insert status update notification message in the chat
             if ($reqData && !empty($reqData['student_phone'])) {
@@ -488,44 +479,6 @@ try {
             echo json_encode(["status"=>"success","message"=>"تم تحديث حالة الطلب"], JSON_UNESCAPED_UNICODE);
         } else {
             echo json_encode(["status"=>"error","message"=>"معرف الطلب غير صالح"], JSON_UNESCAPED_UNICODE);
-        }
-        exit();
-    }
-
-    if ($action === 'delete_chat') {
-        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-            echo json_encode(["status" => "error", "message" => "Method not allowed"], JSON_UNESCAPED_UNICODE);
-            exit();
-        }
-        $chatId = intval($data['chat_id'] ?? 0);
-        if ($chatId <= 0) {
-            echo json_encode(["status" => "error", "message" => "معرف المحادثة غير صالح"], JSON_UNESCAPED_UNICODE);
-            exit();
-        }
-
-        try {
-            $conn->beginTransaction();
-
-            // Delete dependent messages first (relying on lack of CASCADE in DB)
-            $stmtMsgs = $conn->prepare("DELETE FROM chat_messages WHERE chat_id = ?");
-            $stmtMsgs->execute([$chatId]);
-
-            // Delete parent chat
-            $stmtChat = $conn->prepare("DELETE FROM chats WHERE id = ?");
-            $stmtChat->execute([$chatId]);
-
-            if ($stmtChat->rowCount() > 0) {
-                $conn->commit();
-                echo json_encode(["status" => "success", "message" => "تم حذف المحادثة بنجاح"], JSON_UNESCAPED_UNICODE);
-            } else {
-                $conn->rollBack();
-                echo json_encode(["status" => "error", "message" => "لم يتم العثور على المحادثة أو فشل الحذف"], JSON_UNESCAPED_UNICODE);
-            }
-        } catch (PDOException $e) {
-            if ($conn->inTransaction()) {
-                $conn->rollBack();
-            }
-            echo json_encode(["status" => "error", "message" => "حدث خطأ في قاعدة البيانات: " . $e->getMessage()], JSON_UNESCAPED_UNICODE);
         }
         exit();
     }
@@ -583,21 +536,9 @@ try {
         $status = trim($data['status'] ?? '');
         $adminId = AuthMiddleware::$currentUserId;
         if ($id > 0 && in_array($status, ['approved', 'rejected'])) {
-            // Get student_id before update
-            $stmtRev = $conn->prepare("SELECT student_id FROM service_reviews WHERE id = ?");
-            $stmtRev->execute([$id]);
-            $revData = $stmtRev->fetch();
-
             $stmt = $conn->prepare("UPDATE service_reviews SET status = ?, reviewed_by_admin_id = ?, reviewed_at = NOW() WHERE id = ?");
             $stmt->execute([$status, $adminId, $id]);
             if ($stmt->rowCount() > 0) {
-                if ($revData && !empty($revData['student_id'])) {
-                    $studentId = intval($revData['student_id']);
-                    $statusText = ($status === 'approved') ? 'مقبول ومفعّل' : 'مرفوض';
-                    $notifTitle = "مراجعة التقييم";
-                    $notifBody = "تم مراجعة تقييمك وحالته الآن: " . $statusText;
-                    sendStudentNotification($studentId, $notifTitle, $notifBody);
-                }
                 echo json_encode(["status" => "success", "message" => "تم تحديث حالة التقييم بنجاح"], JSON_UNESCAPED_UNICODE);
             } else {
                 echo json_encode(["status" => "error", "message" => "لم يتم العثور على التقييم أو لم يحدث تغيير"], JSON_UNESCAPED_UNICODE);
@@ -626,22 +567,9 @@ try {
         $status = trim($data['status'] ?? '');
         $adminId = AuthMiddleware::$currentUserId;
         if ($id > 0 && in_array($status, ['pending', 'reviewed', 'resolved'])) {
-            // Get student_id and feedback_type before updating
-            $stmtFeed = $conn->prepare("SELECT student_id, feedback_type FROM application_feedback WHERE id = ?");
-            $stmtFeed->execute([$id]);
-            $feedData = $stmtFeed->fetch();
-
             $stmt = $conn->prepare("UPDATE application_feedback SET status = ?, reviewed_by_admin_id = ?, reviewed_at = NOW() WHERE id = ?");
             $stmt->execute([$status, $adminId, $id]);
             if ($stmt->rowCount() > 0) {
-                if ($feedData && !empty($feedData['student_id'])) {
-                    $studentId = intval($feedData['student_id']);
-                    $statusMap = ['pending' => 'قيد الانتظار', 'reviewed' => 'قيد المراجعة', 'resolved' => 'تم الحل'];
-                    $statusText = $statusMap[$status] ?? $status;
-                    $notifTitle = "تحديث حالة الملاحظة";
-                    $notifBody = "تم تحديث حالة بلاغك/مقترحك الخاص بـ (" . $feedData['feedback_type'] . ") إلى: " . $statusText;
-                    sendStudentNotification($studentId, $notifTitle, $notifBody);
-                }
                 echo json_encode(["status" => "success", "message" => "تم تحديث حالة البلاغ/المقترح بنجاح"], JSON_UNESCAPED_UNICODE);
             } else {
                 echo json_encode(["status" => "error", "message" => "لم يتم العثور على البلاغ أو لم يحدث تغيير"], JSON_UNESCAPED_UNICODE);
@@ -680,24 +608,10 @@ try {
             if (empty($text)) {
                 $text = ($type ==='image') ?'صورة مرفقة من الإدارة': (($type ==='video') ?'فيديو مرفق من الإدارة':'رسالة مرفقة');
             }
-
-            // Get student_id from chats
-            $chatStmt = $conn->prepare("SELECT student_id FROM chats WHERE id = ?");
-            $chatStmt->execute([$chatId]);
-            $chatRow = $chatStmt->fetch();
-
             $stmt = $conn->prepare("INSERT INTO chat_messages (chat_id, sender, text, type, image_url, quote_text, quote_sender) VALUES (?,'admin', ?, ?, ?, ?, ?)");
             $stmt->execute([$chatId, $text, $type, !empty($imageUrl) ? $imageUrl : null, !empty($quoteText) ? $quoteText : null, !empty($quoteSender) ? $quoteSender : null]);
             
             $conn->prepare("UPDATE chats SET last_msg = ?, status ='تم الرد ️'WHERE id = ?")->execute(['الرد:'. $text, $chatId]);
-
-            if ($chatRow && !empty($chatRow['student_id'])) {
-                $studentId = intval($chatRow['student_id']);
-                $notifTitle = "رد جديد من الدعم الفني";
-                $notifBody = "لديك رد جديد على استفسارك في الشات المباشر";
-                sendStudentNotification($studentId, $notifTitle, $notifBody);
-            }
-
             echo json_encode(["status"=>"success","message"=>"تم إرسال الرد المرفق بنجاح"], JSON_UNESCAPED_UNICODE);
         } else {
             echo json_encode(["status"=>"error","message"=>"البيانات المطلوبة غير مكتملة"], JSON_UNESCAPED_UNICODE);
@@ -770,10 +684,6 @@ try {
                  VALUES (?, ?, ?, ?, NOW())"
             );
             $txStmt->execute([$studentId, $amount, $typeLabel, $descText]);
-
-            // ── Step 4.5: Send targeted notification to the student ─────────
-            $notifTitle = ($operation === 'add') ? "شحن نقاط المحفظة" : "خصم نقاط من المحفظة";
-            sendStudentNotification($studentId, $notifTitle, $descText);
 
             $conn->commit();
 
