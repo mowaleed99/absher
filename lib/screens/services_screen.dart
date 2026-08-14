@@ -850,7 +850,7 @@ class _ServicesScreenState extends State<ServicesScreen> {
         crossAxisCount: 2,
         crossAxisSpacing: 14,
         mainAxisSpacing: 14,
-        childAspectRatio: 0.63,
+        childAspectRatio: 0.58,
       ),
       itemCount: _services.length,
       itemBuilder: (context, index) {
@@ -868,9 +868,8 @@ class _ServicesScreenState extends State<ServicesScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                // Larger Image Header (Takes 55% of card height)
+                // Larger Image Header (Takes remaining space)
                 Expanded(
-                  flex: 15,
                   child: Stack(
                     fit: StackFit.expand,
                     children: [
@@ -912,85 +911,78 @@ class _ServicesScreenState extends State<ServicesScreen> {
                 ),
 
                 // Card Body (Text and Button below)
-                Expanded(
-                  flex: 12,
-                  child: Padding(
-                    padding: const EdgeInsets.all(10.0),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Column(
-                          children: [
-                            Text(
-                              s['title'] as String,
-                              textAlign: TextAlign.center,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: const TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 13,
-                                  color: AppColors.textDark),
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              s['desc'] as String,
-                              textAlign: TextAlign.center,
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
-                              style: const TextStyle(
-                                  fontSize: 10,
-                                  color: AppColors.textMuted,
-                                  height: 1.3),
-                            ),
-                            const SizedBox(height: 6),
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 10, vertical: 4),
-                              decoration: BoxDecoration(
-                                color: (s['price_points'] as int? ?? 0) > 0
-                                    ? AppColors.accentLight
-                                    : Colors.green.shade50,
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: Text(
-                                LanguageService.formatServiceCost(
-                                    s['price_points'] as int? ?? 0),
-                                style: TextStyle(
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.bold,
-                                  color: (s['price_points'] as int? ?? 0) > 0
-                                      ? AppColors.primary
-                                      : Colors.green.shade700,
-                                ),
-                              ),
-                            ),
-                          ],
+                Padding(
+                  padding: const EdgeInsets.all(10.0),
+                  child: Column(
+                    children: [
+                      Text(
+                        s['title'] as String,
+                        textAlign: TextAlign.center,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 13,
+                            color: AppColors.textDark),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        s['desc'] as String,
+                        textAlign: TextAlign.center,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                            fontSize: 10,
+                            color: AppColors.textMuted,
+                            height: 1.3),
+                      ),
+                      const SizedBox(height: 6),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 10, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: (s['price_points'] as int? ?? 0) > 0
+                              ? AppColors.accentLight
+                              : Colors.green.shade50,
+                          borderRadius: BorderRadius.circular(8),
                         ),
-                        Container(
-                          width: double.infinity,
-                          padding: const EdgeInsets.symmetric(vertical: 8),
-                          decoration: BoxDecoration(
-                              color: AppColors.primary,
-                              borderRadius: BorderRadius.circular(10),
-                              boxShadow: [
-                                BoxShadow(
-                                  color:
-                                      AppColors.primary.withValues(alpha: 0.2),
-                                  blurRadius: 4,
-                                  offset: const Offset(0, 2),
-                                )
-                              ]),
-                          alignment: Alignment.center,
-                          child: Text(
-                            LanguageService.tr('request_service_button'),
-                            style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 11.5,
-                                fontWeight: FontWeight.bold),
+                        child: Text(
+                          LanguageService.formatServiceCost(
+                              s['price_points'] as int? ?? 0),
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.bold,
+                            color: (s['price_points'] as int? ?? 0) > 0
+                                ? AppColors.primary
+                                : Colors.green.shade700,
                           ),
                         ),
-                      ],
-                    ),
+                      ),
+                      const SizedBox(height: 8),
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.symmetric(vertical: 8),
+                        decoration: BoxDecoration(
+                            color: AppColors.primary,
+                            borderRadius: BorderRadius.circular(10),
+                            boxShadow: [
+                              BoxShadow(
+                                color:
+                                    AppColors.primary.withValues(alpha: 0.2),
+                                blurRadius: 4,
+                                offset: const Offset(0, 2),
+                              )
+                            ]),
+                        alignment: Alignment.center,
+                        child: Text(
+                          LanguageService.tr('request_service_button'),
+                          style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 11.5,
+                              fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ],
