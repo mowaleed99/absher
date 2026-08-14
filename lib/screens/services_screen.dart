@@ -27,6 +27,18 @@ class _ServicesScreenState extends State<ServicesScreen> {
     super.initState();
     _pointsBalance = widget.user?.pointsBalance;
     _loadServices();
+    LanguageService.currentLang.addListener(_onLangChanged);
+  }
+
+  void _onLangChanged() {
+    if (!mounted) return;
+    _loadServices();
+  }
+
+  @override
+  void dispose() {
+    LanguageService.currentLang.removeListener(_onLangChanged);
+    super.dispose();
   }
 
   Future<void> _loadServices() async {

@@ -17,15 +17,15 @@ export function renderServices() {
             <div class="card-body">
                 <h3 class="card-title">${svc.title}</h3>
                 <p class="card-desc" style="margin-bottom:0.5rem;">${svc.description}</p>
-                <div style="margin-bottom:0.6rem;"><strong style="color:var(--accent-amber); font-size:0.9rem;">${t('services.price_label')}: ${svc.price_points !== undefined ? svc.price_points : 0} ${t('services.points_unit')}</strong></div>
-                ${(svc.has_form == 1 || svc.has_form === undefined || svc.has_form === true) ? `<div style="margin-bottom:0.8rem;"><span style="background: rgba(37,211,102,0.15); color: #25D366; border: 1px solid #25D366; padding: 4px 10px; border-radius: 12px; font-size: 0.78rem; font-weight: bold;"> ${t('services.has_form_badge')}</span></div>` : ''}
+                <div style="margin-bottom:0.6rem;"><strong style="color:var(--accent-amber); font-size:0.9rem;">${window.t('services.price_label')}: ${svc.price_points !== undefined ? svc.price_points : 0} ${window.t('services.points_unit')}</strong></div>
+                ${(svc.has_form == 1 || svc.has_form === undefined || svc.has_form === true) ? `<div style="margin-bottom:0.8rem;"><span style="background: rgba(37,211,102,0.15); color: #25D366; border: 1px solid #25D366; padding: 4px 10px; border-radius: 12px; font-size: 0.78rem; font-weight: bold;"> ${window.t('services.has_form_badge')}</span></div>` : ''}
                 <div class="card-actions">
                     <button class="btn btn-primary" style="background: rgba(99,102,241,0.2); border: 1px solid #6366f1; color: #a5b4fc;"
                             onclick="window.openEditServiceModalGlobal && window.openEditServiceModalGlobal(${svc.id})">
-                        <i class="fa-solid fa-pen-to-square"></i> ${t('buttons.edit')}
+                        <i class="fa-solid fa-pen-to-square"></i> ${window.t('buttons.edit')}
                     </button>
-                    <button class="btn btn-danger" onclick="window.deleteServiceGlobal && window.deleteServiceGlobal(${svc.id})"><i class="fa-solid fa-trash"></i> ${t('buttons.delete')}</button>
-                    <span style="font-size:0.8rem; color:var(--accent-blue); align-self:center;">${t('services.available_badge')} </span>
+                    <button class="btn btn-danger" onclick="window.deleteServiceGlobal && window.deleteServiceGlobal(${svc.id})"><i class="fa-solid fa-trash"></i> ${window.t('buttons.delete')}</button>
+                    <span style="font-size:0.8rem; color:var(--accent-blue); align-self:center;">${window.t('services.available_badge')} </span>
                 </div>
             </div>
         </div>
@@ -39,20 +39,24 @@ export async function handleAddService(e) {
     const pricePointsVal = document.getElementById('svcPricePoints').value;
 
     if (!/^\d+$/.test(pricePointsVal)) {
-        showToast(t('validation.service_price_positive'));
+        showToast(window.t('validation.service_price_positive'));
         return;
     }
 
     const newSvc = {
-        title: document.getElementById('svcTitle').value.trim(),
-        description: document.getElementById('svcDesc').value.trim(),
+        title: document.getElementById('svcTitleAr').value.trim(),
+        title_ar: document.getElementById('svcTitleAr').value.trim(),
+        title_en: document.getElementById('svcTitleEn').value.trim(),
+        description: document.getElementById('svcDescAr').value.trim(),
+        description_ar: document.getElementById('svcDescAr').value.trim(),
+        description_en: document.getElementById('svcDescEn').value.trim(),
         image_url: rawImg && rawImg.trim() !== '' ? rawImg : '',
         has_form: hasForm,
         price_points: parseInt(pricePointsVal, 10)
     };
 
     if (!newSvc.title) {
-        showToast(t('validation.service_name_required'));
+        showToast(window.t('validation.service_name_required'));
         return;
     }
 
@@ -70,12 +74,12 @@ export async function handleAddService(e) {
             document.getElementById('svcImg').value = '';
             const prev = document.getElementById('svcImgPreview');
             if (prev) prev.style.display = 'none';
-            showToast(t('messages.service_added'));
+            showToast(window.t('messages.service_added'));
         } else {
-            showToast(t('messages.failed_add_service') + ': ' + (data.message || t('messages.error_occurred')));
+            showToast(window.t('messages.failed_add_service') + ': ' + (data.message || window.t('messages.error_occurred')));
         }
     } catch (err) {
-        showToast(t('messages.service_conn_error'));
+        showToast(window.t('messages.service_conn_error'));
         console.error('Error adding service:', err);
     }
 }
@@ -83,13 +87,15 @@ export async function handleAddService(e) {
 export function openEditServiceModal(svcId) {
     const svc = appData.services.find(s => s.id === svcId || s.id === String(svcId));
     if (!svc) {
-        showToast(t('validation.service_not_found'));
+        showToast(window.t('validation.service_not_found'));
         return;
     }
 
     document.getElementById('editSvcId').value = svc.id;
-    document.getElementById('editSvcTitle').value = svc.title || '';
-    document.getElementById('editSvcDesc').value = svc.description || '';
+    document.getElementById('editSvcTitleAr').value = svc.title_ar || svc.title || '';
+    document.getElementById('editSvcTitleEn').value = svc.title_en || '';
+    document.getElementById('editSvcDescAr').value = svc.description_ar || svc.description || '';
+    document.getElementById('editSvcDescEn').value = svc.description_en || '';
     document.getElementById('editSvcPricePoints').value = svc.price_points !== undefined ? svc.price_points : 0;
 
     // Set hidden field to existing URL (will be overwritten if user uploads a new image)
@@ -122,11 +128,11 @@ export function openEditServiceModal(svcId) {
 export async function handleUpdateService(e) {
     e.preventDefault();
     const id = parseInt(document.getElementById('editSvcId').value, 10);
-    if (!id) { showToast(t('validation.service_id_missing')); return; }
+    if (!id) { showToast(window.t('validation.service_id_missing')); return; }
 
     const pricePointsVal = document.getElementById('editSvcPricePoints').value;
     if (!/^\d+$/.test(pricePointsVal)) {
-        showToast(t('validation.service_price_positive'));
+        showToast(window.t('validation.service_price_positive'));
         return;
     }
 
@@ -135,14 +141,18 @@ export async function handleUpdateService(e) {
 
     const payload = {
         id,
-        title: document.getElementById('editSvcTitle').value.trim(),
-        description: document.getElementById('editSvcDesc').value.trim(),
+        title: document.getElementById('editSvcTitleAr').value.trim(),
+        title_ar: document.getElementById('editSvcTitleAr').value.trim(),
+        title_en: document.getElementById('editSvcTitleEn').value.trim(),
+        description: document.getElementById('editSvcDescAr').value.trim(),
+        description_ar: document.getElementById('editSvcDescAr').value.trim(),
+        description_en: document.getElementById('editSvcDescEn').value.trim(),
         image_url: imageUrl,
         has_form: document.getElementById('editSvcHasForm')?.checked ? 1 : 0,
         price_points: parseInt(pricePointsVal, 10)
     };
 
-    if (!payload.title) { showToast(t('validation.service_name_required')); return; }
+    if (!payload.title) { showToast(window.t('validation.service_name_required')); return; }
 
     try {
         const res = await window.authFetch(`../api/admin_api.php?action=update_service`, {
@@ -154,22 +164,22 @@ export async function handleUpdateService(e) {
         if (data.status === 'success') {
             await loadDashboardData();
             window.closeModalGlobal && window.closeModalGlobal('editSvcModal');
-            showToast(t('messages.service_updated'));
+            showToast(window.t('messages.service_updated'));
         } else {
-            showToast(t('messages.service_update_failed') + ': ' + (data.message || ''));
+            showToast(window.t('messages.service_update_failed') + ': ' + (data.message || ''));
         }
     } catch (ex) {
         console.error(ex);
-        showToast(t('messages.conn_error'));
+        showToast(window.t('messages.conn_error'));
     }
 }
 
 export async function deleteService(id) {
     const confirmed = await window.showConfirmDialog({
-        title: t('dialog.delete_service_title'),
-        message: t('dialog.delete_service_msg'),
-        confirmText: t('buttons.delete'),
-        cancelText: t('buttons.cancel'),
+        title: window.t('dialog.delete_service_title'),
+        message: window.t('dialog.delete_service_msg'),
+        confirmText: window.t('buttons.delete'),
+        cancelText: window.t('buttons.cancel'),
         variant: 'danger'
     });
     if (!confirmed) return;
@@ -182,13 +192,13 @@ export async function deleteService(id) {
         const data = await res.json();
         if (data.status === 'success') {
             await loadDashboardData();
-            showToast(t('messages.service_deleted'));
+            showToast(window.t('messages.service_deleted'));
         } else {
-            showToast(t('messages.service_delete_failed') + ': ' + (data.message || ''));
+            showToast(window.t('messages.service_delete_failed') + ': ' + (data.message || ''));
         }
     } catch (ex) {
         console.error(ex);
-        showToast(t('messages.conn_error'));
+        showToast(window.t('messages.conn_error'));
     }
 }
 

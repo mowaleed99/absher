@@ -23,10 +23,10 @@ export function showLoginOverlay() {
     overlay.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:#111827;z-index:9999;display:flex;align-items:center;justify-content:center;';
     overlay.innerHTML = `
         <div style="background:#1f2937;padding:30px;border-radius:12px;width:300px;text-align:center;">
-            <h2 style="color:white;margin-bottom:15px;">${t('login.title')}</h2>
-            <input type="text" id="adminIdent" placeholder="${t('login.placeholder.username')}" style="width:100%;padding:10px;margin-bottom:15px;background:#374151;color:white;border:1px solid #4b5563;border-radius:6px;">
-            <input type="password" id="adminPass" placeholder="${t('login.placeholder.password')}" style="width:100%;padding:10px;margin-bottom:15px;background:#374151;color:white;border:1px solid #4b5563;border-radius:6px;">
-            <button data-action="doAdminLogin" class="btn btn-primary" style="width:100%;padding:10px;background:#fbbf24;color:black;font-weight:bold;border-radius:6px;cursor:pointer;">${t('login.button')}</button>
+            <h2 style="color:white;margin-bottom:15px;">${window.t('login.title')}</h2>
+            <input type="text" id="adminIdent" placeholder="${window.t('login.placeholder.username')}" style="width:100%;padding:10px;margin-bottom:15px;background:#374151;color:white;border:1px solid #4b5563;border-radius:6px;">
+            <input type="password" id="adminPass" placeholder="${window.t('login.placeholder.password')}" style="width:100%;padding:10px;margin-bottom:15px;background:#374151;color:white;border:1px solid #4b5563;border-radius:6px;">
+            <button data-action="doAdminLogin" class="btn btn-primary" style="width:100%;padding:10px;background:#fbbf24;color:black;font-weight:bold;border-radius:6px;cursor:pointer;">${window.t('login.button')}</button>
         </div>
     `;
     document.body.appendChild(overlay);
@@ -47,7 +47,7 @@ export async function doAdminLogin() {
         document.getElementById('loginOverlay').remove();
         loadDashboardData();
     } else {
-        window.showToastGlobal(t('login.error.invalid_credentials'));
+        window.showToastGlobal(window.t('login.error.invalid_credentials'));
     }
 }
 

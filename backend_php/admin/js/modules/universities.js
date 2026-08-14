@@ -9,8 +9,11 @@ export function renderUniversities() {
     container.innerHTML = (appData.universities || []).map(uni => `
         <div class="item-card" style="padding: 15px; display: flex; justify-content: space-between; align-items: center; border: 1px solid var(--border-color); border-radius: 12px; background: var(--bg-main);">
             <div style="font-weight: bold; color: var(--text-main); font-size: 1.1rem;"><i class="fa-solid fa-graduation-cap"></i> ${uni.name}</div>
+            <button class="btn btn-secondary" onclick="window.openEditUniModalGlobal && window.openEditUniModalGlobal(${uni.id})" style="margin-left: 5px;">
+                <i class="fa-solid fa-pen"></i> ${window.t('buttons.edit', 'تعديل')}
+            </button>
             <button class="btn btn-danger" onclick="window.deleteUniversityGlobal && window.deleteUniversityGlobal(${uni.id})">
-                <i class="fa-solid fa-trash"></i> ${t('buttons.delete')}
+                <i class="fa-solid fa-trash"></i> ${window.t('buttons.delete')}
             </button>
         </div>
     `).join('');
@@ -18,36 +21,37 @@ export function renderUniversities() {
 
 export async function handleAddUniversity(e) {
     e.preventDefault();
-    const name = document.getElementById('uniName').value.trim();
-    if (!name) return;
+    const nameAr = document.getElementById('uniNameAr').value.trim();
+    const nameEn = document.getElementById('uniNameEn').value.trim();
+    if (!nameAr) return;
 
     try {
         const res = await window.authFetch(`../api/admin_api.php?action=add_university`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ name })
+            body: JSON.stringify({ name: nameAr, name_ar: nameAr, name_en: nameEn })
         });
         const data = await res.json();
         if (data.status === 'success') {
             await loadDashboardData();
             window.closeModalGlobal && window.closeModalGlobal('uniModal');
             document.getElementById('uniForm').reset();
-            showToast(t('messages.university_added'));
+            showToast(window.t('messages.university_added'));
         } else {
-            showToast(t('messages.university_add_failed') + ': ' + (data.message || ''));
+            showToast(window.t('messages.university_add_failed') + ': ' + (data.message || ''));
         }
     } catch (err) {
         console.error(err);
-        showToast(t('messages.conn_error'));
+        showToast(window.t('messages.conn_error'));
     }
 }
 
 export async function deleteUniversity(id) {
     const confirmed = await window.showConfirmDialog({
-        title: t('dialog.delete_university_title'),
-        message: t('dialog.delete_university_msg'),
-        confirmText: t('buttons.delete'),
-        cancelText: t('buttons.cancel'),
+        title: window.t('dialog.delete_university_title'),
+        message: window.t('dialog.delete_university_msg'),
+        confirmText: window.t('buttons.delete'),
+        cancelText: window.t('buttons.cancel'),
         variant: 'danger'
     });
     if (!confirmed) return;
@@ -60,13 +64,13 @@ export async function deleteUniversity(id) {
         const data = await res.json();
         if (data.status === 'success') {
             await loadDashboardData();
-            showToast(t('messages.university_deleted'));
+            showToast(window.t('messages.university_deleted'));
         } else {
-            showToast(t('messages.university_delete_failed') + ': ' + (data.message || ''));
+            showToast(window.t('messages.university_delete_failed') + ': ' + (data.message || ''));
         }
     } catch (ex) {
         console.error(ex);
-        showToast(t('messages.conn_error'));
+        showToast(window.t('messages.conn_error'));
     }
 }
 
@@ -106,7 +110,7 @@ export function populateAptUniversitiesCheckboxes() {
                            onchange="window.toggleUniTimeGlobal && window.toggleUniTimeGlobal(this, ${uni.id})"
                            style="width: 16px; height: 16px;"> ${uni.name}
                 </label>
-                <input type="number" id="uni_time_${uni.id}" placeholder="${t('universities.time_placeholder')}" value="${timeValue}"
+                <input type="number" id="uni_time_${uni.id}" placeholder="${window.t('universities.time_placeholder')}" value="${timeValue}"
                        style="width: 70px; display: ${isChecked ? 'block' : 'none'}; padding: 4px; border-radius: 4px; border: 1px solid var(--border-color); background: var(--bg-main); color: var(--text-main);">
             </div>
         `;
@@ -118,6 +122,60 @@ export function initUniversitiesModule() {
     if (uniForm) {
         uniForm.addEventListener('submit', handleAddUniversity);
     }
+    const editUniForm = document.getElementById('editUniForm');
+    if (editUniForm) {
+        editUniForm.addEventListener('submit', handleUpdateUniversity);
+    }
     window.deleteUniversityGlobal = deleteUniversity;
     window.toggleUniTimeGlobal = toggleUniTime;
+    window.openEditUniModalGlobal = openEditUniModal;
+}
+
+export function openEditUniModal(id) {
+    const uni = appData.universities.find(u => String(u.id) === String(id));
+    if (!uni) return;
+    
+    document.getElementById('editUniId').value = uni.id;
+    document.getElementById('editUniNameAr').value = uni.name_ar || uni.name || '';
+    document.getElementById('editUniNameEn').value = uni.name_en || '';
+    
+    if (window.openModalGlobal) window.openModalGlobal('editUniModal');
+}
+
+export async function handleUpdateUniversity(e) {
+    e.preventDefault();
+    const id = document.getElementById('editUniId').value;
+    const nameAr = document.getElementById('editUniNameAr').value.trim();
+    const nameEn = document.getElementById('editUniNameEn').value.trim();
+
+    if (!nameAr) {
+        showToast(window.t('messages.fill_required'));
+        return;
+    }
+
+    const payload = {
+        id: parseInt(id, 10),
+        name: nameAr,
+        name_ar: nameAr,
+        name_en: nameEn
+    };
+
+    try {
+        const res = await window.authFetch(`../api/admin_api.php?action=update_university`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        if (data.status === 'success') {
+            await loadDashboardData();
+            window.closeModalGlobal && window.closeModalGlobal('editUniModal');
+            showToast(window.t('messages.university_added', 'تم تحديث الجامعة بنجاح'));
+        } else {
+            showToast(data.message || 'خطأ في التحديث');
+        }
+    } catch (ex) {
+        console.error(ex);
+        showToast(window.t('messages.conn_error'));
+    }
 }

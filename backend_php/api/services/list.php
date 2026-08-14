@@ -8,8 +8,15 @@ require_once __DIR__ . '/../core/response.php';
 require_once __DIR__ . '/../core/headers.php';
 
 try {
+    $lang = $_GET['lang'] ?? 'ar';
+    if (!in_array($lang, ['ar', 'en'], true)) {
+        $lang = 'ar';
+    }
+    $titleCol = ($lang === 'en') ? "COALESCE(NULLIF(title_en, ''), NULLIF(title_ar, ''), title)" : "COALESCE(NULLIF(title_ar, ''), title)";
+    $descCol  = ($lang === 'en') ? "COALESCE(NULLIF(description_en, ''), NULLIF(description_ar, ''), description)" : "COALESCE(NULLIF(description_ar, ''), description)";
+
     $stmt = $conn->query(
-        "SELECT id, title, description, image_url, has_form, price_points
+        "SELECT id, $titleCol AS title, $descCol AS description, image_url, has_form, price_points
          FROM services
          ORDER BY id ASC"
     );

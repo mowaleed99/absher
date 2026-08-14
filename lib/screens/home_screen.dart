@@ -248,6 +248,19 @@ class _HomeScreenState extends State<HomeScreen>
         );
       }
     });
+
+    // إعادة جلب البيانات المترجمة عند تغيير اللغة
+    LanguageService.currentLang.addListener(_onLangChanged);
+  }
+
+  /// Called whenever the user switches language — triggers a full refetch so
+  /// the server-side localised fields (title_ar/en, etc.) are up to date.
+  void _onLangChanged() {
+    if (!mounted) return;
+    _loadApartments();
+    _loadNews();
+    _loadUniversities();
+    _loadDistricts();
   }
 
   @override
@@ -620,6 +633,7 @@ class _HomeScreenState extends State<HomeScreen>
 
   @override
   void dispose() {
+    LanguageService.currentLang.removeListener(_onLangChanged);
     WidgetsBinding.instance.removeObserver(this);
     _adTimer?.cancel();
     _adController.dispose();

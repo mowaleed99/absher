@@ -1,13 +1,13 @@
 import { initDashboardModule } from './modules/dashboard.js';
 import { initApartmentsModule } from './modules/apartments.js';
 import { initServicesModule } from './modules/services.js';
-import { initStudentsModule } from './modules/students.js';
+import { initStudentsModule } from './modules/students.js?v=1.0.3';
 import { initRequestsModule } from './modules/requests.js';
 import { initReviewsModule } from './modules/reviews.js';
 import { initFeedbackModule } from './modules/feedback.js';
 import { initDistrictsModule } from './modules/districts.js';
 import { initUniversitiesModule } from './modules/universities.js';
-import { initChatsModule } from './modules/chats.js';
+import { initChatsModule } from './modules/chats.js?v=1.0.5';
 import { initNewsModule } from './modules/news.js';
 import { initNotificationsModule } from './modules/notifications.js';
 import { initOffersModule } from './modules/offers.js';
@@ -92,7 +92,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             btn.style.opacity   = '';
             btn.style.cursor    = '';
         };
-        const safetyTimer = setTimeout(unlock, 15000);
+        const safetyTimer = setTimeout(unlock, 2000);
 
         // Unlock when the modal containing this form closes, or on form reset
         const observer = new MutationObserver(() => {

@@ -40,7 +40,14 @@ $action = $_GET['action'] ?? ($input['action'] ?? 'submit');
 
 if ($action === 'get_news') {
     try {
-        $stmt = $conn->query("SELECT id, title, content, image_url, DATE_FORMAT(created_at,'%Y-%m-%d %h:%i %p') AS date FROM news ORDER BY created_at DESC LIMIT 30");
+        $lang = $_GET['lang'] ?? 'ar';
+        if (!in_array($lang, ['ar', 'en'], true)) {
+            $lang = 'ar';
+        }
+        $titleCol = ($lang === 'en') ? "COALESCE(NULLIF(title_en, ''), NULLIF(title_ar, ''), title)" : "COALESCE(NULLIF(title_ar, ''), title)";
+        $contentCol = ($lang === 'en') ? "COALESCE(NULLIF(content_en, ''), NULLIF(content_ar, ''), content)" : "COALESCE(NULLIF(content_ar, ''), content)";
+        
+        $stmt = $conn->query("SELECT id, $titleCol AS title, $contentCol AS content, image_url, DATE_FORMAT(created_at,'%Y-%m-%d %h:%i %p') AS date FROM news ORDER BY created_at DESC LIMIT 30");
         $news = $stmt->fetchAll(PDO::FETCH_ASSOC);
         echo json_encode(["status" => "success", "news" => $news], JSON_UNESCAPED_UNICODE);
     } catch (PDOException $e) {

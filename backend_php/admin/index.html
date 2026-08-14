@@ -11,7 +11,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap"rel="stylesheet">
     <link rel="stylesheet"href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet"href="style.css">
-</head>
+<script>window.addEventListener('error', e => alert('JS Error: ' + e.message + ' at ' + e.filename + ':' + e.lineno)); window.addEventListener('unhandledrejection', e => alert('Unhandled Promise: ' + (e.reason && e.reason.message ? e.reason.message : e.reason)));</script></head>
 
 <body class="dark-mode">
 
@@ -627,8 +627,17 @@
             </div>
             <form id="aptForm">
                 <div class="form-group">
-                    <label data-i18n="apartments.label.title">عنوان الشقة الأساسي:</label>
-                    <input type="text"id="aptTitle"required data-i18n-placeholder="apartments.placeholder.title" placeholder="مثال: شقة طلابية فاخرة - شارع بيكيني">
+                    <label data-i18n="apartments.label.title">عنوان الشقة:</label>
+                    <div style="display:flex;gap:8px;">
+                        <div style="flex:1;">
+                            <span style="font-size:0.75rem;color:var(--accent-amber);font-weight:bold;">🇸🇦 AR</span>
+                            <input type="text" id="aptTitleAr" required dir="rtl" placeholder="مثال: شقة طلابية فاخرة - شارع بيكيني">
+                        </div>
+                        <div style="flex:1;">
+                            <span style="font-size:0.75rem;color:#60a5fa;font-weight:bold;">🇬🇧 EN</span>
+                            <input type="text" id="aptTitleEn" required dir="ltr" placeholder="e.g. Luxury Student Apt - Bikini St">
+                        </div>
+                    </div>
                 </div>
                 <div class="form-row">
                     <div class="form-group">
@@ -645,8 +654,17 @@
                     </div>
                 </div>
                 <div class="form-group">
-                    <label data-i18n="apartments.label.location">العنوان التفصيلي (الشارع / أقرب معلم):</label>
-                    <input type="text" id="aptLocation" required data-i18n-placeholder="apartments.placeholder.location" placeholder="مثال: شارع بيكيني رقم 15، بالقرب من كارفور">
+                    <label data-i18n="apartments.label.location">العنوان التفصيلي:</label>
+                    <div style="display:flex;gap:8px;">
+                        <div style="flex:1;">
+                            <span style="font-size:0.75rem;color:var(--accent-amber);font-weight:bold;">🇸🇦 AR</span>
+                            <input type="text" id="aptLocationAr" required dir="rtl" placeholder="مثال: شارع بيكيني رقم 15، بالقرب من كارفور">
+                        </div>
+                        <div style="flex:1;">
+                            <span style="font-size:0.75rem;color:#60a5fa;font-weight:bold;">🇬🇧 EN</span>
+                            <input type="text" id="aptLocationEn" required dir="ltr" placeholder="e.g. 15 Bikini St, near Carrefour">
+                        </div>
+                    </div>
                 </div>
                 <div class="form-row">
                     <div class="form-group">
@@ -680,16 +698,56 @@
                     </div>
                 </div>
 
+                <div class="form-row">
+                    <div class="form-group">
+                        <label data-i18n="apartments.label.move_in_type">نوع التوفر (التوفر الفوري أو المجدول):</label>
+                        <select id="aptMoveInType" style="width:100%; padding:10px; border-radius:8px; border:1px solid var(--border-color); background:var(--bg-card); color:var(--text-main);">
+                            <option value="immediate" data-i18n="apartments.feature.immediate">فوري</option>
+                            <option value="scheduled" data-i18n="apartments.feature.scheduled">مجدول بوقت محدد</option>
+                        </select>
+                    </div>
+                    <div class="form-group" id="aptMoveInDateContainer" style="display: none;">
+                        <label data-i18n="apartments.label.move_in_date">تاريخ التوفر:</label>
+                        <div style="display:flex;gap:6px;">
+                            <div style="flex:1;">
+                                <span style="font-size:0.7rem;color:var(--accent-amber);font-weight:bold;">🇸🇦 AR</span>
+                                <input type="text" id="aptMoveInDateAr" dir="rtl" placeholder="مثال: 1 سبتمبر" style="width:100%;padding:8px;border-radius:8px;border:1px solid var(--border-color);background:var(--bg-card);color:var(--text-main);">
+                            </div>
+                            <div style="flex:1;">
+                                <span style="font-size:0.7rem;color:#60a5fa;font-weight:bold;">🇬🇧 EN</span>
+                                <input type="text" id="aptMoveInDateEn" dir="ltr" placeholder="e.g. September 1" style="width:100%;padding:8px;border-radius:8px;border:1px solid var(--border-color);background:var(--bg-card);color:var(--text-main);">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 <div class="form-group">
-                    <label data-i18n="apartments.label.proximity">وصف عام للموقع والقرب:</label>
-                    <input type="text"id="aptProximity"required
-                        data-i18n-placeholder="apartments.placeholder.proximity" placeholder="مثال: قريبة جداً من التبليسي الطبية TSMU (مشياً)">
+                    <label data-i18n="apartments.label.proximity">وصف القرب من الجامعات:</label>
+                    <div style="display:flex;gap:8px;">
+                        <div style="flex:1;">
+                            <span style="font-size:0.75rem;color:var(--accent-amber);font-weight:bold;">🇸🇦 AR</span>
+                            <input type="text" id="aptProximityAr" required dir="rtl" placeholder="مثال: قريبة جداً من TSMU (مشياً)">
+                        </div>
+                        <div style="flex:1;">
+                            <span style="font-size:0.75rem;color:#60a5fa;font-weight:bold;">🇬🇧 EN</span>
+                            <input type="text" id="aptProximityEn" required dir="ltr" placeholder="e.g. Very close to TSMU (walkable)">
+                        </div>
+                    </div>
                 </div>
 
                 <div class="form-row">
                     <div class="form-group">
-                        <label data-i18n="apartments.label.capacity">عدد غرف الشقة (مثال: 3 غرف):</label>
-                        <input type="text"id="aptCapacity"required data-i18n-placeholder="apartments.placeholder.capacity" placeholder="مثال: 3 غرف">
+                        <label data-i18n="apartments.label.capacity">وصف غرف الشقة:</label>
+                        <div style="display:flex;gap:6px;">
+                            <div style="flex:1;">
+                                <span style="font-size:0.7rem;color:var(--accent-amber);font-weight:bold;">🇸🇦 AR</span>
+                                <input type="text" id="aptCapacityAr" required dir="rtl" placeholder="مثال: 3 غرف" style="width:100%;padding:8px;border-radius:8px;border:1px solid var(--border-color);background:var(--bg-card);color:var(--text-main);">
+                            </div>
+                            <div style="flex:1;">
+                                <span style="font-size:0.7rem;color:#60a5fa;font-weight:bold;">🇬🇧 EN</span>
+                                <input type="text" id="aptCapacityEn" required dir="ltr" placeholder="e.g. 3 Rooms" style="width:100%;padding:8px;border-radius:8px;border:1px solid var(--border-color);background:var(--bg-card);color:var(--text-main);">
+                            </div>
+                        </div>
                     </div>
                     <div class="form-group">
                         <label data-i18n="apartments.label.bathrooms">عدد الحمامات:</label>
@@ -707,9 +765,17 @@
                     </div>
                 </div>
                 <div class="form-group">
-                    <label data-i18n="apartments.label.features">المميزات الرئيسية (افصل بينها بفاصلة ،):</label>
-                    <input type="text"id="aptFeatures"required
-                        data-i18n-placeholder="apartments.placeholder.features" placeholder="3 غرف واسعة ، تدفئة مركزية ، إنترنت سريع ، بلكونة">
+                    <label data-i18n="apartments.label.features">المميزات (افصل بفاصلة ،):</label>
+                    <div style="display:flex;gap:8px;">
+                        <div style="flex:1;">
+                            <span style="font-size:0.75rem;color:var(--accent-amber);font-weight:bold;">🇸🇦 AR</span>
+                            <input type="text" id="aptFeaturesAr" required dir="rtl" placeholder="مثال: 3 غرف ، تدفئة ، إنترنت">
+                        </div>
+                        <div style="flex:1;">
+                            <span style="font-size:0.75rem;color:#60a5fa;font-weight:bold;">🇬🇧 EN</span>
+                            <input type="text" id="aptFeaturesEn" required dir="ltr" placeholder="e.g. 3 Rooms, Heating, Internet">
+                        </div>
+                    </div>
                 </div>
                 <div class="form-group">
                     <label data-i18n="apartments.label.images">️ صور الشقة (يمكنك تحديد عدة صور من جهازك):</label>
@@ -723,8 +789,16 @@
                 </div>
                 <div class="form-group">
                     <label data-i18n="apartments.label.description">وصف تفصيلي للشقة:</label>
-                    <textarea id="aptDesc"rows="3"required
-                        data-i18n-placeholder="apartments.placeholder.description" placeholder="اكتب تفاصيل الشقة والفرش وشروط الدفع..."></textarea>
+                    <div style="display:flex;gap:8px;">
+                        <div style="flex:1;">
+                            <span style="font-size:0.75rem;color:var(--accent-amber);font-weight:bold;">🇸🇦 AR</span>
+                            <textarea id="aptDescAr" rows="3" required dir="rtl" placeholder="اكتب تفاصيل الشقة والفرش وشروط الدفع..."></textarea>
+                        </div>
+                        <div style="flex:1;">
+                            <span style="font-size:0.75rem;color:#60a5fa;font-weight:bold;">🇬🇧 EN</span>
+                            <textarea id="aptDescEn" rows="3" required dir="ltr" placeholder="Describe the apartment, furnishings and payment terms..."></textarea>
+                        </div>
+                    </div>
                 </div>
                 <div class="modal-actions">
                     <button type="button"class="btn btn-secondary"data-action="closeModal" data-modal="aptModal"><span data-i18n="buttons.cancel">إلغاء</span></button>
@@ -744,11 +818,29 @@
             <form id="svcForm">
                 <div class="form-group">
                     <label data-i18n="services.label.name">اسم الخدمة:</label>
-                    <input type="text"id="svcTitle"required data-i18n-placeholder="services.placeholder.name" placeholder="مثال: فني تكييف وتبريد">
+                    <div style="display:flex;gap:8px;">
+                        <div style="flex:1;">
+                            <span style="font-size:0.75rem;color:var(--accent-amber);font-weight:bold;">🇸🇦 AR</span>
+                            <input type="text" id="svcTitleAr" required dir="rtl" placeholder="مثال: فني تكييف وتبريد">
+                        </div>
+                        <div style="flex:1;">
+                            <span style="font-size:0.75rem;color:#60a5fa;font-weight:bold;">🇬🇧 EN</span>
+                            <input type="text" id="svcTitleEn" required dir="ltr" placeholder="e.g. AC Technician">
+                        </div>
+                    </div>
                 </div>
                 <div class="form-group">
                     <label data-i18n="services.label.desc">وصف مختصر للخدمة:</label>
-                    <input type="text"id="svcDesc"required data-i18n-placeholder="services.placeholder.desc" placeholder="مثال: صيانة وغسيل أجهزة التكييف والشتاء">
+                    <div style="display:flex;gap:8px;">
+                        <div style="flex:1;">
+                            <span style="font-size:0.75rem;color:var(--accent-amber);font-weight:bold;">🇸🇦 AR</span>
+                            <input type="text" id="svcDescAr" required dir="rtl" placeholder="مثال: صيانة وغسيل أجهزة التكييف">
+                        </div>
+                        <div style="flex:1;">
+                            <span style="font-size:0.75rem;color:#60a5fa;font-weight:bold;">🇬🇧 EN</span>
+                            <input type="text" id="svcDescEn" required dir="ltr" placeholder="e.g. AC maintenance and cleaning">
+                        </div>
+                    </div>
                 </div>
                 <div class="form-group">
                     <label data-i18n="services.label.image">️ صورة الخدمة (اختياري - من جهازك):</label>
@@ -788,11 +880,49 @@
             <form id="uniForm">
                 <div class="form-group">
                     <label data-i18n="universities.label.name">اسم الجامعة:</label>
-                    <input type="text"id="uniName"required data-i18n-placeholder="universities.placeholder.name" placeholder="مثال: جامعة تبليسي الطبية (TSMU)">
+                    <div style="display:flex;gap:8px;">
+                        <div style="flex:1;">
+                            <span style="font-size:0.75rem;color:var(--accent-amber);font-weight:bold;">🇸🇦 AR</span>
+                            <input type="text" id="uniNameAr" required dir="rtl" placeholder="مثال: جامعة تبليسي الطبية">
+                        </div>
+                        <div style="flex:1;">
+                            <span style="font-size:0.75rem;color:#60a5fa;font-weight:bold;">🇬🇧 EN</span>
+                            <input type="text" id="uniNameEn" required dir="ltr" placeholder="e.g. Tbilisi State Medical University (TSMU)">
+                        </div>
+                    </div>
                 </div>
                 <div class="modal-actions"style="margin-top: 15px;">
                     <button type="button"class="btn btn-secondary"data-action="closeModal" data-modal="uniModal"><span data-i18n="buttons.cancel">إلغاء</span></button>
                     <button type="submit"class="btn btn-primary"><span data-i18n="buttons.add">إضافة الجامعة</span></button>
+                </div>
+            </form>
+    </div>
+
+    <!-- Modal: Edit University -->
+    <div id="editUniModal"class="modal-overlay">
+        <div class="modal-box">
+            <div class="modal-header">
+                <h3><i class="fa-solid fa-university"></i> <span data-i18n="universities.edit_title">تعديل الجامعة</span></h3>
+                <button class="close-btn"data-action="closeModal" data-modal="editUniModal"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <form id="editUniForm">
+                <input type="hidden" id="editUniId">
+                <div class="form-group">
+                    <label data-i18n="universities.label.name">اسم الجامعة:</label>
+                    <div style="display:flex;gap:8px;">
+                        <div style="flex:1;">
+                            <span style="font-size:0.75rem;color:var(--accent-amber);font-weight:bold;">🇸🇦 AR</span>
+                            <input type="text" id="editUniNameAr" required dir="rtl" placeholder="مثال: جامعة تبليسي الطبية">
+                        </div>
+                        <div style="flex:1;">
+                            <span style="font-size:0.75rem;color:#60a5fa;font-weight:bold;">🇬🇧 EN</span>
+                            <input type="text" id="editUniNameEn" required dir="ltr" placeholder="e.g. Tbilisi State Medical University (TSMU)">
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-actions"style="margin-top: 15px;">
+                    <button type="button"class="btn btn-secondary"data-action="closeModal" data-modal="editUniModal"><span data-i18n="buttons.cancel">إلغاء</span></button>
+                    <button type="submit"class="btn btn-primary"><span data-i18n="buttons.save">حفظ التعديلات</span></button>
                 </div>
             </form>
         </div>
@@ -807,12 +937,50 @@
             </div>
             <form id="districtForm">
                 <div class="form-group">
-                    <label data-i18n="districts.label.name">اسم الحي السكني (مثال: سابورتالو):</label>
-                    <input type="text"id="districtName"required>
+                    <label data-i18n="districts.label.name">اسم الحي السكني:</label>
+                    <div style="display:flex;gap:8px;">
+                        <div style="flex:1;">
+                            <span style="font-size:0.75rem;color:var(--accent-amber);font-weight:bold;">🇸🇦 AR</span>
+                            <input type="text" id="districtNameAr" required dir="rtl" placeholder="مثال: سابورتالو">
+                        </div>
+                        <div style="flex:1;">
+                            <span style="font-size:0.75rem;color:#60a5fa;font-weight:bold;">🇬🇧 EN</span>
+                            <input type="text" id="districtNameEn" required dir="ltr" placeholder="e.g. Saburtalo">
+                        </div>
+                    </div>
                 </div>
                 <div class="modal-actions"style="margin-top: 15px;">
                     <button type="button"class="btn btn-secondary"data-action="closeModal" data-modal="districtModal"><span data-i18n="buttons.cancel">إلغاء</span></button>
                     <button type="submit"class="btn btn-primary"><span data-i18n="buttons.save">حفظ إضافة الحي</span></button>
+                </div>
+            </form>
+    </div>
+
+    <!-- Modal: Edit District -->
+    <div id="editDistrictModal"class="modal-overlay">
+        <div class="modal-box"style="max-width: 400px;">
+            <div class="modal-header">
+                <h3><i class="fa-solid fa-map-location-dot"></i> <span data-i18n="districts.edit_title">تعديل حي سكني</span></h3>
+                <button class="close-btn"data-action="closeModal" data-modal="editDistrictModal"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <form id="editDistrictForm">
+                <input type="hidden" id="editDistrictId">
+                <div class="form-group">
+                    <label data-i18n="districts.label.name">اسم الحي السكني:</label>
+                    <div style="display:flex;gap:8px;">
+                        <div style="flex:1;">
+                            <span style="font-size:0.75rem;color:var(--accent-amber);font-weight:bold;">🇸🇦 AR</span>
+                            <input type="text" id="editDistrictNameAr" required dir="rtl" placeholder="مثال: سابورتالو">
+                        </div>
+                        <div style="flex:1;">
+                            <span style="font-size:0.75rem;color:#60a5fa;font-weight:bold;">🇬🇧 EN</span>
+                            <input type="text" id="editDistrictNameEn" required dir="ltr" placeholder="e.g. Saburtalo">
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-actions"style="margin-top: 15px;">
+                    <button type="button"class="btn btn-secondary"data-action="closeModal" data-modal="editDistrictModal"><span data-i18n="buttons.cancel">إلغاء</span></button>
+                    <button type="submit"class="btn btn-primary"><span data-i18n="buttons.save">حفظ التعديلات</span></button>
                 </div>
             </form>
         </div>
@@ -909,11 +1077,29 @@
             <form id="newsForm">
                 <div class="form-group">
                     <label data-i18n="news.label.title">عنوان الخبر:</label>
-                    <input type="text"id="newsTitle"required data-i18n-placeholder="news.placeholder.title" placeholder="مثال: افتتاح مركز خدمات الطلاب الجديد بتبليسي">
+                    <div style="display:flex;gap:8px;">
+                        <div style="flex:1;">
+                            <span style="font-size:0.75rem;color:var(--accent-amber);font-weight:bold;">🇸🇦 AR</span>
+                            <input type="text" id="newsTitleAr" required dir="rtl" placeholder="مثال: افتتاح مركز خدمات الطلاب الجديد">
+                        </div>
+                        <div style="flex:1;">
+                            <span style="font-size:0.75rem;color:#60a5fa;font-weight:bold;">🇬🇧 EN</span>
+                            <input type="text" id="newsTitleEn" required dir="ltr" placeholder="e.g. Opening of the New Student Services Center">
+                        </div>
+                    </div>
                 </div>
                 <div class="form-group">
                     <label data-i18n="news.label.content">تفاصيل ومحتوى الخبر:</label>
-                    <textarea id="newsContent"rows="5"required data-i18n-placeholder="news.placeholder.content" placeholder="اكتب هنا تفاصيل الخبر والمقالة كاملة للطلاب..."></textarea>
+                    <div style="display:flex;gap:8px;">
+                        <div style="flex:1;">
+                            <span style="font-size:0.75rem;color:var(--accent-amber);font-weight:bold;">🇸🇦 AR</span>
+                            <textarea id="newsContentAr" rows="5" required dir="rtl" placeholder="اكتب هنا تفاصيل الخبر كاملة للطلاب..."></textarea>
+                        </div>
+                        <div style="flex:1;">
+                            <span style="font-size:0.75rem;color:#60a5fa;font-weight:bold;">🇬🇧 EN</span>
+                            <textarea id="newsContentEn" rows="5" required dir="ltr" placeholder="Write the full news article here..."></textarea>
+                        </div>
+                    </div>
                 </div>
                 <div class="form-group">
                     <label data-i18n="news.label.image">️ صورة الخبر (من جهازك - اختياري):</label>
@@ -928,6 +1114,58 @@
                 <div class="modal-actions">
                     <button type="button"class="btn btn-secondary"data-action="closeModal" data-modal="newsModal"><span data-i18n="buttons.cancel">إلغاء</span></button>
                     <button type="submit"class="btn btn-primary"><span data-i18n="buttons.save">حفظ ونشر الخبر</span> </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal: Edit News Article -->
+    <div id="editNewsModal"class="modal-overlay">
+        <div class="modal-box"style="max-width: 550px;">
+            <div class="modal-header">
+                <h3><i class="fa-solid fa-newspaper"></i> <span data-i18n="news.edit_title">تعديل الخبر</span></h3>
+                <button class="close-btn"data-action="closeModal" data-modal="editNewsModal"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <form id="editNewsForm">
+                <input type="hidden" id="editNewsId">
+                <div class="form-group">
+                    <label data-i18n="news.label.title">عنوان الخبر:</label>
+                    <div style="display:flex;gap:8px;">
+                        <div style="flex:1;">
+                            <span style="font-size:0.75rem;color:var(--accent-amber);font-weight:bold;">🇸🇦 AR</span>
+                            <input type="text" id="editNewsTitleAr" required dir="rtl" placeholder="مثال: افتتاح مركز خدمات الطلاب الجديد">
+                        </div>
+                        <div style="flex:1;">
+                            <span style="font-size:0.75rem;color:#60a5fa;font-weight:bold;">🇬🇧 EN</span>
+                            <input type="text" id="editNewsTitleEn" required dir="ltr" placeholder="e.g. Opening of the New Student Services Center">
+                        </div>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label data-i18n="news.label.content">تفاصيل ومحتوى الخبر:</label>
+                    <div style="display:flex;gap:8px;">
+                        <div style="flex:1;">
+                            <span style="font-size:0.75rem;color:var(--accent-amber);font-weight:bold;">🇸🇦 AR</span>
+                            <textarea id="editNewsContentAr" rows="5" required dir="rtl" placeholder="اكتب هنا تفاصيل الخبر كاملة للطلاب..."></textarea>
+                        </div>
+                        <div style="flex:1;">
+                            <span style="font-size:0.75rem;color:#60a5fa;font-weight:bold;">🇬🇧 EN</span>
+                            <textarea id="editNewsContentEn" rows="5" required dir="ltr" placeholder="Write the full news article here..."></textarea>
+                        </div>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label data-i18n="news.label.image">️ صورة الخبر (من جهازك - اختياري):</label>
+                    <div style="display: flex; gap: 10px; align-items: center; margin-bottom: 6px;">
+                        <input type="file"id="editNewsFileInput"accept="image/*"
+                            style="padding: 6px; border: 1px solid var(--border-color); border-radius: 8px; background: var(--bg-main); color: var(--text-main); flex: 1;">
+                        <img id="editNewsImgPreview"src=""style="width: 50px; height: 50px; border-radius: 8px; object-fit: cover; display: none; border: 1px solid var(--accent-amber);">
+                    </div>
+                    <input type="hidden"id="editNewsImage">
+                </div>
+                <div class="modal-actions">
+                    <button type="button"class="btn btn-secondary"data-action="closeModal" data-modal="editNewsModal"><span data-i18n="buttons.cancel">إلغاء</span></button>
+                    <button type="submit"class="btn btn-primary"><span data-i18n="buttons.save">حفظ التعديلات</span></button>
                 </div>
             </form>
         </div>
@@ -1051,7 +1289,16 @@
                 <input type="hidden" id="editAptId">
                 <div class="form-group">
                     <label data-i18n="apartments.label.title">عنوان الشقة:</label>
-                    <input type="text" id="editAptTitle" required data-i18n-placeholder="apartments.placeholder.title" placeholder="مثال: شقة مفروشة قريبة من TSMU">
+                    <div style="display:flex;gap:8px;">
+                        <div style="flex:1;">
+                            <span style="font-size:0.75rem;color:var(--accent-amber);font-weight:bold;">🇸🇦 AR</span>
+                            <input type="text" id="editAptTitleAr" required dir="rtl" placeholder="مثال: شقة مفروشة قريبة من TSMU">
+                        </div>
+                        <div style="flex:1;">
+                            <span style="font-size:0.75rem;color:#60a5fa;font-weight:bold;">🇬🇧 EN</span>
+                            <input type="text" id="editAptTitleEn" required dir="ltr" placeholder="e.g. Furnished apt near TSMU">
+                        </div>
+                    </div>
                 </div>
                 <div class="form-group">
                     <label data-i18n="apartments.label.price">السعر الشهري:</label>
@@ -1083,18 +1330,69 @@
                     </div>
                 </div>
                 <div class="form-group">
-                    <label data-i18n="apartments.label.location">العنوان التفصيلي (الشارع):</label>
-                    <input type="text" id="editAptLocation" required data-i18n-placeholder="apartments.placeholder.location" placeholder="مثال: شارع بيكيني رقم 15">
+                    <label data-i18n="apartments.label.location">العنوان التفصيلي:</label>
+                    <div style="display:flex;gap:8px;">
+                        <div style="flex:1;">
+                            <span style="font-size:0.75rem;color:var(--accent-amber);font-weight:bold;">🇸🇦 AR</span>
+                            <input type="text" id="editAptLocationAr" required dir="rtl" placeholder="مثال: شارع بيكيني رقم 15">
+                        </div>
+                        <div style="flex:1;">
+                            <span style="font-size:0.75rem;color:#60a5fa;font-weight:bold;">🇬🇧 EN</span>
+                            <input type="text" id="editAptLocationEn" required dir="ltr" placeholder="e.g. 15 Bikini St">
+                        </div>
+                    </div>
                 </div>
                 <div class="form-group">
                     <label data-i18n="apartments.label.proximity">وصف القرب من الجامعات:</label>
-                    <input type="text" id="editAptProximity" data-i18n-placeholder="apartments.placeholder.proximity" placeholder="مثال: قريبة جداً من TSMU">
+                    <div style="display:flex;gap:8px;">
+                        <div style="flex:1;">
+                            <span style="font-size:0.75rem;color:var(--accent-amber);font-weight:bold;">🇸🇦 AR</span>
+                            <input type="text" id="editAptProximityAr" dir="rtl" placeholder="مثال: قريبة جداً من TSMU">
+                        </div>
+                        <div style="flex:1;">
+                            <span style="font-size:0.75rem;color:#60a5fa;font-weight:bold;">🇬🇧 EN</span>
+                            <input type="text" id="editAptProximityEn" dir="ltr" placeholder="e.g. Very close to TSMU">
+                        </div>
+                    </div>
                 </div>
                 <div class="form-row">
                     <div class="form-group">
-                        <label data-i18n="apartments.label.capacity">عدد غرف الشقة (الوصف):</label>
-                        <input type="text" id="editAptCapacity" data-i18n-placeholder="apartments.placeholder.capacity" placeholder="مثال: 3 غرف">
+                        <label data-i18n="apartments.label.capacity">وصف غرف الشقة:</label>
+                        <div style="display:flex;gap:6px;">
+                            <div style="flex:1;">
+                                <span style="font-size:0.7rem;color:var(--accent-amber);font-weight:bold;">🇸🇦 AR</span>
+                                <input type="text" id="editAptCapacityAr" dir="rtl" placeholder="مثال: 3 غرف" style="width:100%;padding:8px;border-radius:8px;border:1px solid var(--border-color);background:var(--bg-card);color:var(--text-main);">
+                            </div>
+                            <div style="flex:1;">
+                                <span style="font-size:0.7rem;color:#60a5fa;font-weight:bold;">🇬🇧 EN</span>
+                                <input type="text" id="editAptCapacityEn" dir="ltr" placeholder="e.g. 3 Rooms" style="width:100%;padding:8px;border-radius:8px;border:1px solid var(--border-color);background:var(--bg-card);color:var(--text-main);">
+                            </div>
+                        </div>
                     </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label data-i18n="apartments.label.move_in_type">نوع التوفر (التوفر الفوري أو المجدول):</label>
+                        <select id="editAptMoveInType" style="width:100%; padding:10px; border-radius:8px; border:1px solid var(--border-color); background:var(--bg-card); color:var(--text-main);">
+                            <option value="immediate" data-i18n="apartments.feature.immediate">فوري</option>
+                            <option value="scheduled" data-i18n="apartments.feature.scheduled">مجدول بوقت محدد</option>
+                        </select>
+                    </div>
+                    <div class="form-group" id="editAptMoveInDateContainer" style="display: none;">
+                        <label data-i18n="apartments.label.move_in_date">تاريخ التوفر:</label>
+                        <div style="display:flex;gap:6px;">
+                            <div style="flex:1;">
+                                <span style="font-size:0.7rem;color:var(--accent-amber);font-weight:bold;">🇸🇦 AR</span>
+                                <input type="text" id="editAptMoveInDateAr" dir="rtl" placeholder="مثال: 1 سبتمبر" style="width:100%;padding:8px;border-radius:8px;border:1px solid var(--border-color);background:var(--bg-card);color:var(--text-main);">
+                            </div>
+                            <div style="flex:1;">
+                                <span style="font-size:0.7rem;color:#60a5fa;font-weight:bold;">🇬🇧 EN</span>
+                                <input type="text" id="editAptMoveInDateEn" dir="ltr" placeholder="e.g. September 1" style="width:100%;padding:8px;border-radius:8px;border:1px solid var(--border-color);background:var(--bg-card);color:var(--text-main);">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="form-row">
                     <div class="form-group">
                         <label data-i18n="apartments.label.owner_phone">رقم هاتف المالك (سري):</label>
                         <input type="text" id="editAptOwnerPhone" data-i18n-placeholder="apartments.placeholder.owner_phone" placeholder="مثال: +995555123456">
@@ -1108,11 +1406,29 @@
                 </div>
                 <div class="form-group">
                     <label data-i18n="apartments.label.features">المميزات (افصل بفاصلة ،):</label>
-                    <input type="text" id="editAptFeatures" data-i18n-placeholder="apartments.placeholder.features" placeholder="مثال: 3 غرف ، تدفئة ، إنترنت">
+                    <div style="display:flex;gap:8px;">
+                        <div style="flex:1;">
+                            <span style="font-size:0.75rem;color:var(--accent-amber);font-weight:bold;">🇸🇦 AR</span>
+                            <input type="text" id="editAptFeaturesAr" dir="rtl" placeholder="مثال: 3 غرف ، تدفئة ، إنترنت">
+                        </div>
+                        <div style="flex:1;">
+                            <span style="font-size:0.75rem;color:#60a5fa;font-weight:bold;">🇬🇧 EN</span>
+                            <input type="text" id="editAptFeaturesEn" dir="ltr" placeholder="e.g. 3 Rooms, Heating, Internet">
+                        </div>
+                    </div>
                 </div>
                 <div class="form-group">
                     <label data-i18n="apartments.label.description">وصف تفصيلي:</label>
-                    <textarea id="editAptDesc" rows="3" data-i18n-placeholder="apartments.placeholder.description" placeholder="وصف الشقة..."></textarea>
+                    <div style="display:flex;gap:8px;">
+                        <div style="flex:1;">
+                            <span style="font-size:0.75rem;color:var(--accent-amber);font-weight:bold;">🇸🇦 AR</span>
+                            <textarea id="editAptDescAr" rows="3" dir="rtl" placeholder="وصف الشقة..."></textarea>
+                        </div>
+                        <div style="flex:1;">
+                            <span style="font-size:0.75rem;color:#60a5fa;font-weight:bold;">🇬🇧 EN</span>
+                            <textarea id="editAptDescEn" rows="3" dir="ltr" placeholder="Apartment description..."></textarea>
+                        </div>
+                    </div>
                 </div>
                 <!-- Image replacement section -->
                 <div class="form-group">
@@ -1153,11 +1469,29 @@
                 <input type="hidden" id="editSvcId">
                 <div class="form-group">
                     <label data-i18n="services.label.name">اسم الخدمة:</label>
-                    <input type="text" id="editSvcTitle" required data-i18n-placeholder="services.placeholder.name" placeholder="اسم الخدمة">
+                    <div style="display:flex;gap:8px;">
+                        <div style="flex:1;">
+                            <span style="font-size:0.75rem;color:var(--accent-amber);font-weight:bold;">🇸🇦 AR</span>
+                            <input type="text" id="editSvcTitleAr" required dir="rtl" placeholder="اسم الخدمة بالعربي">
+                        </div>
+                        <div style="flex:1;">
+                            <span style="font-size:0.75rem;color:#60a5fa;font-weight:bold;">🇬🇧 EN</span>
+                            <input type="text" id="editSvcTitleEn" required dir="ltr" placeholder="Service name in English">
+                        </div>
+                    </div>
                 </div>
                 <div class="form-group">
                     <label data-i18n="services.label.desc">وصف الخدمة:</label>
-                    <input type="text" id="editSvcDesc" required data-i18n-placeholder="services.placeholder.desc" placeholder="وصف مختصر">
+                    <div style="display:flex;gap:8px;">
+                        <div style="flex:1;">
+                            <span style="font-size:0.75rem;color:var(--accent-amber);font-weight:bold;">🇸🇦 AR</span>
+                            <input type="text" id="editSvcDescAr" required dir="rtl" placeholder="وصف مختصر بالعربي">
+                        </div>
+                        <div style="flex:1;">
+                            <span style="font-size:0.75rem;color:#60a5fa;font-weight:bold;">🇬🇧 EN</span>
+                            <input type="text" id="editSvcDescEn" required dir="ltr" placeholder="Short description in English">
+                        </div>
+                    </div>
                 </div>
                 <div class="form-group">
                     <label data-i18n="services.label.replace_image">️ صورة الخدمة (اختر ملفاً جديداً لاستبدال الصورة الحالية):</label>
@@ -1203,8 +1537,17 @@
                     </select>
                 </div>
                 <div class="form-group">
-                    <label data-i18n="offers.label.title">عنوان العرض (مثال: عرض الصيف الحصري - خصم 20%):</label>
-                    <input type="text" id="offerTitle" required data-i18n-placeholder="offers.placeholder.title" placeholder="أدخل عنواناً مميزاً للعرض">
+                    <label data-i18n="offers.label.title">عنوان العرض:</label>
+                    <div style="display:flex;gap:8px;">
+                        <div style="flex:1;">
+                            <span style="font-size:0.75rem;color:var(--accent-amber);font-weight:bold;">🇸🇦 AR</span>
+                            <input type="text" id="offerTitleAr" required dir="rtl" placeholder="مثال: عرض الصيف الحصري - خصم 20%">
+                        </div>
+                        <div style="flex:1;">
+                            <span style="font-size:0.75rem;color:#60a5fa;font-weight:bold;">🇬🇧 EN</span>
+                            <input type="text" id="offerTitleEn" required dir="ltr" placeholder="e.g. Exclusive Summer Deal - 20% Off">
+                        </div>
+                    </div>
                 </div>
                 <div class="form-row">
                     <div class="form-group">
@@ -1219,7 +1562,16 @@
                 <div class="form-row">
                     <div class="form-group">
                         <label data-i18n="offers.label.badge">نص الشارة الترويجية (اختياري):</label>
-                        <input type="text" id="offerBadgeText" data-i18n-placeholder="offers.placeholder.badge" placeholder="مثال: لقطة ، عرض محدود">
+                        <div style="display:flex;gap:8px;">
+                            <div style="flex:1;">
+                                <span style="font-size:0.75rem;color:var(--accent-amber);font-weight:bold;">🇸🇦 AR</span>
+                                <input type="text" id="offerBadgeTextAr" dir="rtl" placeholder="مثال: لقطة ، عرض محدود">
+                            </div>
+                            <div style="flex:1;">
+                                <span style="font-size:0.75rem;color:#60a5fa;font-weight:bold;">🇬🇧 EN</span>
+                                <input type="text" id="offerBadgeTextEn" dir="ltr" placeholder="e.g. Hot Deal, Limited Offer">
+                            </div>
+                        </div>
                     </div>
                     <div class="form-group">
                         <label data-i18n="offers.label.order">ترتيب العرض:</label>
@@ -1247,8 +1599,17 @@
                     <input type="hidden" id="offerImage" value="">
                 </div>
                 <div class="form-group">
-                    <label data-i18n="offers.label.desc">تفاصيل ووصف العرض:</label>
-                    <textarea id="offerDesc" rows="3" required data-i18n-placeholder="offers.placeholder.desc" placeholder="اكتب تفاصيل العرض وما الذي يجعله مميزاً للطلاب..."></textarea>
+                    <label data-i18n="offers.label.desc">تفاصيل العرض:</label>
+                    <div style="display:flex;gap:8px;">
+                        <div style="flex:1;">
+                            <span style="font-size:0.75rem;color:var(--accent-amber);font-weight:bold;">🇸🇦 AR</span>
+                            <textarea id="offerDescAr" rows="3" required dir="rtl" placeholder="اكتب تفاصيل العرض وما الذي يجعله مميزاً..."></textarea>
+                        </div>
+                        <div style="flex:1;">
+                            <span style="font-size:0.75rem;color:#60a5fa;font-weight:bold;">🇬🇧 EN</span>
+                            <textarea id="offerDescEn" rows="3" required dir="ltr" placeholder="Describe the offer and what makes it special..."></textarea>
+                        </div>
+                    </div>
                 </div>
                 <div class="form-group" style="margin-top: 10px; background: rgba(37,211,102,0.08); padding: 12px; border-radius: 10px; border: 1px dashed #25D366;">
                     <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; color: #25D366; font-weight: bold; margin: 0;">
@@ -1281,7 +1642,16 @@
                 </div>
                 <div class="form-group">
                     <label data-i18n="offers.label.title">عنوان العرض:</label>
-                    <input type="text" id="editOfferTitle" required data-i18n-placeholder="offers.placeholder.title" placeholder="عنوان العرض">
+                    <div style="display:flex;gap:8px;">
+                        <div style="flex:1;">
+                            <span style="font-size:0.75rem;color:var(--accent-amber);font-weight:bold;">🇸🇦 AR</span>
+                            <input type="text" id="editOfferTitleAr" required dir="rtl" placeholder="عنوان العرض بالعربي">
+                        </div>
+                        <div style="flex:1;">
+                            <span style="font-size:0.75rem;color:#60a5fa;font-weight:bold;">🇬🇧 EN</span>
+                            <input type="text" id="editOfferTitleEn" required dir="ltr" placeholder="Offer title in English">
+                        </div>
+                    </div>
                 </div>
                 <div class="form-row">
                     <div class="form-group">
@@ -1296,7 +1666,16 @@
                 <div class="form-row">
                     <div class="form-group">
                         <label data-i18n="offers.label.badge">نص الشارة الترويجية (اختياري):</label>
-                        <input type="text" id="editOfferBadgeText">
+                        <div style="display:flex;gap:8px;">
+                            <div style="flex:1;">
+                                <span style="font-size:0.75rem;color:var(--accent-amber);font-weight:bold;">🇸🇦 AR</span>
+                                <input type="text" id="editOfferBadgeTextAr" dir="rtl">
+                            </div>
+                            <div style="flex:1;">
+                                <span style="font-size:0.75rem;color:#60a5fa;font-weight:bold;">🇬🇧 EN</span>
+                                <input type="text" id="editOfferBadgeTextEn" dir="ltr">
+                            </div>
+                        </div>
                     </div>
                     <div class="form-group">
                         <label data-i18n="offers.label.order">ترتيب العرض:</label>
@@ -1325,8 +1704,17 @@
                     <p style="font-size: 0.78rem; color: var(--text-muted); margin: 4px 0 0 0;"><span data-i18n="services.image_help">اترك بدون اختيار للإبقاء على الصورة الحالية.</span></p>
                 </div>
                 <div class="form-group">
-                    <label data-i18n="offers.label.desc">تفاصيل ووصف العرض:</label>
-                    <textarea id="editOfferDesc" rows="3" required data-i18n-placeholder="offers.placeholder.desc" placeholder="وصف العرض..."></textarea>
+                    <label data-i18n="offers.label.desc">تفاصيل العرض:</label>
+                    <div style="display:flex;gap:8px;">
+                        <div style="flex:1;">
+                            <span style="font-size:0.75rem;color:var(--accent-amber);font-weight:bold;">🇸🇦 AR</span>
+                            <textarea id="editOfferDescAr" rows="3" required dir="rtl" placeholder="وصف العرض بالعربي..."></textarea>
+                        </div>
+                        <div style="flex:1;">
+                            <span style="font-size:0.75rem;color:#60a5fa;font-weight:bold;">🇬🇧 EN</span>
+                            <textarea id="editOfferDescEn" rows="3" required dir="ltr" placeholder="Offer description in English..."></textarea>
+                        </div>
+                    </div>
                 </div>
                 <div class="form-group" style="margin-top: 10px; background: rgba(37,211,102,0.08); padding: 12px; border-radius: 10px; border: 1px dashed #25D366;">
                     <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; color: #25D366; font-weight: bold; margin: 0;">

@@ -21,16 +21,42 @@ function saveBase64IfPresent($url) {
 }
 
 $data = json_decode(file_get_contents("php://input"), true);
-$action = $_GET['action'] ?? ($data['action'] ??'');
-
+$action = $_GET['action'] ?? ($data['action'] ?? '');
 try {
     if ($action ==='get_all') {
         // جلب الإحصائيات والكافة
-        $apartments = $conn->query("SELECT * FROM apartments ORDER BY id DESC")->fetchAll();
-        $services = $conn->query("SELECT * FROM services ORDER BY id DESC")->fetchAll();
+        $apartments = $conn->query("
+            SELECT *, 
+                   COALESCE(NULLIF(title_ar, ''), title) AS display_title,
+                   COALESCE(NULLIF(description_ar, ''), description) AS display_desc,
+                   COALESCE(NULLIF(location_ar, ''), location) AS display_location,
+                   COALESCE(NULLIF(proximity_ar, ''), proximity) AS display_proximity,
+                   COALESCE(NULLIF(capacity_ar, ''), capacity) AS display_capacity,
+                   COALESCE(NULLIF(move_in_type_ar, ''), move_in_type) AS display_move_in_type,
+                   COALESCE(NULLIF(move_in_date_ar, ''), move_in_date) AS display_move_in_date
+            FROM apartments 
+            ORDER BY id DESC
+        ")->fetchAll();
+        $services = $conn->query("
+            SELECT *, 
+                   COALESCE(NULLIF(title_ar, ''), title) AS display_title,
+                   COALESCE(NULLIF(description_ar, ''), description) AS display_desc
+            FROM services 
+            ORDER BY id DESC
+        ")->fetchAll();
         $students = $conn->query("SELECT id, full_name, email, phone, university, points, created_at FROM students ORDER BY id DESC")->fetchAll();
-        $universities = $conn->query("SELECT * FROM universities ORDER BY id DESC")->fetchAll();
-        $districts = $conn->query("SELECT * FROM districts ORDER BY id DESC")->fetchAll();
+        $universities = $conn->query("
+            SELECT *, 
+                   COALESCE(NULLIF(name_ar, ''), name) AS display_name
+            FROM universities 
+            ORDER BY id DESC
+        ")->fetchAll();
+        $districts = $conn->query("
+            SELECT *, 
+                   COALESCE(NULLIF(name_ar, ''), name) AS display_name
+            FROM districts 
+            ORDER BY id DESC
+        ")->fetchAll();
         $requests = $conn->query("SELECT * FROM service_requests ORDER BY id DESC")->fetchAll();
         // Service Reviews (all reviews for moderation list)
         $reviews = $conn->query("
@@ -82,14 +108,28 @@ try {
             "service_analytics" => $serviceAnalytics
         ];
 
-        $news = $conn->query("SELECT *, DATE_FORMAT(created_at,'%Y-%m-%d %h:%i %p') AS date FROM news ORDER BY created_at DESC")->fetchAll();
+        $news = $conn->query("
+            SELECT *, 
+                   COALESCE(NULLIF(title_ar, ''), title) AS display_title,
+                   COALESCE(NULLIF(content_ar, ''), content) AS display_content,
+                   DATE_FORMAT(created_at,'%Y-%m-%d %h:%i %p') AS date 
+            FROM news 
+            ORDER BY created_at DESC
+        ")->fetchAll();
         $notifications = $conn->query("SELECT *, DATE_FORMAT(created_at,'%Y-%m-%d %h:%i %p') AS date FROM notifications WHERE student_id = 0 ORDER BY created_at DESC")->fetchAll();
-        $housing_offers = $conn->query("SELECT * FROM housing_offers ORDER BY display_order ASC, created_at DESC")->fetchAll();
+        $housing_offers = $conn->query("
+            SELECT *, 
+                   COALESCE(NULLIF(title_ar, ''), title) AS display_title,
+                   COALESCE(NULLIF(description_ar, ''), description) AS display_desc,
+                   COALESCE(NULLIF(badge_text_ar, ''), badge_text) AS display_badge_text
+            FROM housing_offers 
+            ORDER BY display_order ASC, created_at DESC
+        ")->fetchAll();
 
         // جلب المحادثات ورسائل كل محادثة
         $chats = $conn->query("SELECT * FROM chats ORDER BY updated_at DESC")->fetchAll();
         foreach ($chats as &$c) {
-            $stmtMsg = $conn->prepare("SELECT sender, text, type, image_url AS imageUrl, quote_text AS quoteText, quote_sender AS quoteSender, is_deleted AS deleted, DATE_FORMAT(created_at,'%h:%i %p') AS time FROM chat_messages WHERE chat_id = ? ORDER BY id ASC");
+            $stmtMsg = $conn->prepare("SELECT id, sender, text, type, image_url AS imageUrl, quote_text AS quoteText, quote_sender AS quoteSender, is_deleted AS deleted, DATE_FORMAT(created_at,'%h:%i %p') AS time FROM chat_messages WHERE chat_id = ? ORDER BY id ASC");
             $stmtMsg->execute([$c['id']]);
             $msgs = $stmtMsg->fetchAll();
             foreach ($msgs as &$m) {
@@ -103,6 +143,8 @@ try {
         foreach ($apartments as &$apt) {
             $apt['images'] = json_decode($apt['images'], true) ?? [$apt['images']];
             $apt['features'] = json_decode($apt['features'], true) ?? [$apt['features']];
+            $apt['features_ar'] = json_decode($apt['features_ar'] ?? '[]', true) ?? [];
+            $apt['features_en'] = json_decode($apt['features_en'] ?? '[]', true) ?? [];
             $apt['universities'] = json_decode($apt['universities'] ??'[]', true) ?? [];
         }
 
@@ -113,10 +155,23 @@ try {
     }
 
     if ($action === 'get_apartments') {
-        $apartments = $conn->query("SELECT * FROM apartments ORDER BY id DESC")->fetchAll();
+        $apartments = $conn->query("
+            SELECT *, 
+                   COALESCE(NULLIF(title_ar, ''), title) AS display_title,
+                   COALESCE(NULLIF(description_ar, ''), description) AS display_desc,
+                   COALESCE(NULLIF(location_ar, ''), location) AS display_location,
+                   COALESCE(NULLIF(proximity_ar, ''), proximity) AS display_proximity,
+                   COALESCE(NULLIF(capacity_ar, ''), capacity) AS display_capacity,
+                   COALESCE(NULLIF(move_in_type_ar, ''), move_in_type) AS display_move_in_type,
+                   COALESCE(NULLIF(move_in_date_ar, ''), move_in_date) AS display_move_in_date
+            FROM apartments 
+            ORDER BY id DESC
+        ")->fetchAll();
         foreach ($apartments as &$apt) {
             $apt['images'] = json_decode($apt['images'], true) ?? [$apt['images']];
             $apt['features'] = json_decode($apt['features'], true) ?? [$apt['features']];
+            $apt['features_ar'] = json_decode($apt['features_ar'] ?? '[]', true) ?? [];
+            $apt['features_en'] = json_decode($apt['features_en'] ?? '[]', true) ?? [];
             $apt['universities'] = json_decode($apt['universities'] ?? '[]', true) ?? [];
         }
         echo json_encode(["status" => "success", "data" => ["apartments" => $apartments]], JSON_UNESCAPED_UNICODE);
@@ -124,7 +179,13 @@ try {
     }
 
     if ($action === 'get_services') {
-        $services = $conn->query("SELECT * FROM services ORDER BY id DESC")->fetchAll();
+        $services = $conn->query("
+            SELECT *, 
+                   COALESCE(NULLIF(title_ar, ''), title) AS display_title,
+                   COALESCE(NULLIF(description_ar, ''), description) AS display_desc
+            FROM services 
+            ORDER BY id DESC
+        ")->fetchAll();
         echo json_encode(["status" => "success", "data" => ["services" => $services]], JSON_UNESCAPED_UNICODE);
         exit();
     }
@@ -163,27 +224,53 @@ try {
     }
 
     if ($action ==='add_apartment') {
-        $title = trim($data['title'] ??'');
-        $price = trim($data['price'] ??'');
-        $location = trim($data['location'] ??'');
-        $proximity = trim($data['proximity'] ??'');
-        $capacity = trim($data['capacity'] ??'3 أفراد');
-        $move_in_type = trim($data['move_in_type'] ??'فوري');
-        $move_in_date = trim($data['move_in_date'] ??'انتقال فوري');
-        $description = trim($data['description'] ??'');
+        $title_ar = trim($data['title_ar'] ?? '');
+        $title_en = trim($data['title_en'] ?? '');
+        $description_ar = trim($data['description_ar'] ?? '');
+        $description_en = trim($data['description_en'] ?? '');
+        $price = trim($data['price'] ?? '');
+        $location_ar = trim($data['location_ar'] ?? '');
+        $location_en = trim($data['location_en'] ?? '');
+        $proximity_ar = trim($data['proximity_ar'] ?? '');
+        $proximity_en = trim($data['proximity_en'] ?? '');
+        $capacity_ar = trim($data['capacity_ar'] ?? '3 أفراد');
+        $capacity_en = trim($data['capacity_en'] ?? '');
+        $move_in_type_ar = trim($data['move_in_type_ar'] ?? 'فوري');
+        $move_in_type_en = trim($data['move_in_type_en'] ?? '');
+        $move_in_date_ar = trim($data['move_in_date_ar'] ?? 'انتقال فوري');
+        $move_in_date_en = trim($data['move_in_date_en'] ?? '');
+        
+        $features_ar_raw = $data['features_ar'] ?? [];
+        $features_en_raw = $data['features_en'] ?? [];
+        $features_ar = json_encode($features_ar_raw, JSON_UNESCAPED_UNICODE);
+        $features_en = json_encode($features_en_raw, JSON_UNESCAPED_UNICODE);
+
+        // Legacy values for backwards compatibility
+        $title = $title_ar;
+        $description = $description_ar;
+        $location = $location_ar;
+        $proximity = $proximity_ar;
+        $capacity = $capacity_ar;
+        $move_in_type = $move_in_type_ar;
+        $move_in_date = $move_in_date_ar;
+        $features = $features_ar;
+
         $universities = json_encode($data['universities'] ?? [], JSON_UNESCAPED_UNICODE);
-        $features = json_encode($data['features'] ?? [], JSON_UNESCAPED_UNICODE);
         $imagesArray = $data['images'] ?? [];
         $images = empty($imagesArray) ? '[]' : json_encode($imagesArray, JSON_UNESCAPED_UNICODE);
+        
         // is_available: controls whether apartment shows in student public list
         $is_available = isset($data['is_available']) ? (intval($data['is_available']) ? 1 : 0) : 1;
         $district_id = isset($data['district_id']) && $data['district_id'] !== '' ? intval($data['district_id']) : null;
         $rental_type = !empty($data['rental_type']) ? trim($data['rental_type']) : 'apartment';
         $rooms_count = isset($data['rooms_count']) && $data['rooms_count'] !== '' ? intval($data['rooms_count']) : null;
+        $roommate_reqs = !empty($data['roommate_reqs']) ? trim($data['roommate_reqs']) : null;
+        $roommate_facilities = !empty($data['roommate_facilities']) ? trim($data['roommate_facilities']) : null;
+        $owner_phone = !empty($data['owner_phone']) ? trim($data['owner_phone']) : null;
 
         if (!empty($title) && !empty($price)) {
-            $stmt = $conn->prepare("INSERT INTO apartments (title, price, location, proximity, universities, capacity, move_in_type, move_in_date, images, features, description, is_available, district_id, rental_type, rooms_count) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
-            $stmt->execute([$title, $price, $location, $proximity, $universities, $capacity, $move_in_type, $move_in_date, $images, $features, $description, $is_available, $district_id, $rental_type, $rooms_count]);
+            $stmt = $conn->prepare("INSERT INTO apartments (title, price, location, proximity, universities, capacity, move_in_type, move_in_date, images, features, description, is_available, district_id, rental_type, rooms_count, roommate_reqs, roommate_facilities, owner_phone, title_ar, title_en, description_ar, description_en, location_ar, location_en, proximity_ar, proximity_en, capacity_ar, capacity_en, move_in_type_ar, move_in_type_en, move_in_date_ar, move_in_date_en, features_ar, features_en) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+            $stmt->execute([$title, $price, $location, $proximity, $universities, $capacity, $move_in_type, $move_in_date, $images, $features, $description, $is_available, $district_id, $rental_type, $rooms_count, $roommate_reqs, $roommate_facilities, $owner_phone, $title_ar, $title_en, $description_ar, $description_en, $location_ar, $location_en, $proximity_ar, $proximity_en, $capacity_ar, $capacity_en, $move_in_type_ar, $move_in_type_en, $move_in_date_ar, $move_in_date_en, $features_ar, $features_en]);
             
             // إضافة تنبيه تلقائي في الإشعارات
             $stmtNotif = $conn->prepare("INSERT INTO notifications (student_id, title, body, created_at) VALUES (0, ?, ?, NOW())");
@@ -214,18 +301,41 @@ try {
 
     if ($action ==='update_apartment') {
         $id = intval($data['id'] ?? 0);
-        $title = trim($data['title'] ?? '');
+        $title_ar = trim($data['title_ar'] ?? '');
+        $title_en = trim($data['title_en'] ?? '');
+        $description_ar = trim($data['description_ar'] ?? '');
+        $description_en = trim($data['description_en'] ?? '');
         $price = trim($data['price'] ?? '');
-        $location = trim($data['location'] ?? '');
-        $proximity = trim($data['proximity'] ?? '');
-        $capacity = trim($data['capacity'] ?? '3 أفراد');
-        $move_in_type = trim($data['move_in_type'] ?? 'فوري');
-        $move_in_date = trim($data['move_in_date'] ?? 'انتقال فوري');
-        $description = trim($data['description'] ?? '');
+        $location_ar = trim($data['location_ar'] ?? '');
+        $location_en = trim($data['location_en'] ?? '');
+        $proximity_ar = trim($data['proximity_ar'] ?? '');
+        $proximity_en = trim($data['proximity_en'] ?? '');
+        $capacity_ar = trim($data['capacity_ar'] ?? '3 أفراد');
+        $capacity_en = trim($data['capacity_en'] ?? '');
+        $move_in_type_ar = trim($data['move_in_type_ar'] ?? 'فوري');
+        $move_in_type_en = trim($data['move_in_type_en'] ?? '');
+        $move_in_date_ar = trim($data['move_in_date_ar'] ?? 'انتقال فوري');
+        $move_in_date_en = trim($data['move_in_date_en'] ?? '');
+        
+        $features_ar_raw = $data['features_ar'] ?? [];
+        $features_en_raw = $data['features_en'] ?? [];
+        $features_ar = json_encode($features_ar_raw, JSON_UNESCAPED_UNICODE);
+        $features_en = json_encode($features_en_raw, JSON_UNESCAPED_UNICODE);
+
+        // Legacy values for backwards compatibility
+        $title = $title_ar;
+        $description = $description_ar;
+        $location = $location_ar;
+        $proximity = $proximity_ar;
+        $capacity = $capacity_ar;
+        $move_in_type = $move_in_type_ar;
+        $move_in_date = $move_in_date_ar;
+        $features = $features_ar;
+
         $universities = json_encode($data['universities'] ?? [], JSON_UNESCAPED_UNICODE);
-        $features = json_encode($data['features'] ?? [], JSON_UNESCAPED_UNICODE);
         $imagesArray = $data['images'] ?? [];
         $images = empty($imagesArray) ? '[]' : json_encode($imagesArray, JSON_UNESCAPED_UNICODE);
+        
         // is_available: controls whether apartment shows in student public list
         $is_available = isset($data['is_available']) ? (intval($data['is_available']) ? 1 : 0) : 1;
         $district_id = isset($data['district_id']) && $data['district_id'] !== '' ? intval($data['district_id']) : null;
@@ -233,10 +343,11 @@ try {
         $rooms_count = isset($data['rooms_count']) && $data['rooms_count'] !== '' ? intval($data['rooms_count']) : null;
         $roommate_reqs = !empty($data['roommate_reqs']) ? trim($data['roommate_reqs']) : null;
         $roommate_facilities = !empty($data['roommate_facilities']) ? trim($data['roommate_facilities']) : null;
+        $owner_phone = !empty($data['owner_phone']) ? trim($data['owner_phone']) : null;
 
         if ($id > 0 && !empty($title) && !empty($price)) {
-            $stmt = $conn->prepare("UPDATE apartments SET title=?, price=?, location=?, proximity=?, universities=?, capacity=?, move_in_type=?, move_in_date=?, images=?, features=?, description=?, is_available=?, district_id=?, rental_type=?, rooms_count=?, roommate_reqs=?, roommate_facilities=? WHERE id=?");
-            $stmt->execute([$title, $price, $location, $proximity, $universities, $capacity, $move_in_type, $move_in_date, $images, $features, $description, $is_available, $district_id, $rental_type, $rooms_count, $roommate_reqs, $roommate_facilities, $id]);
+            $stmt = $conn->prepare("UPDATE apartments SET title=?, price=?, location=?, proximity=?, universities=?, capacity=?, move_in_type=?, move_in_date=?, images=?, features=?, description=?, is_available=?, district_id=?, rental_type=?, rooms_count=?, roommate_reqs=?, roommate_facilities=?, owner_phone=?, title_ar=?, title_en=?, description_ar=?, description_en=?, location_ar=?, location_en=?, proximity_ar=?, proximity_en=?, capacity_ar=?, capacity_en=?, move_in_type_ar=?, move_in_type_en=?, move_in_date_ar=?, move_in_date_en=?, features_ar=?, features_en=? WHERE id=?");
+            $stmt->execute([$title, $price, $location, $proximity, $universities, $capacity, $move_in_type, $move_in_date, $images, $features, $description, $is_available, $district_id, $rental_type, $rooms_count, $roommate_reqs, $roommate_facilities, $owner_phone, $title_ar, $title_en, $description_ar, $description_en, $location_ar, $location_en, $proximity_ar, $proximity_en, $capacity_ar, $capacity_en, $move_in_type_ar, $move_in_type_en, $move_in_date_ar, $move_in_date_en, $features_ar, $features_en, $id]);
             echo json_encode(["status"=>"success","message"=>"تم تعديل الشقة بنجاح"], JSON_UNESCAPED_UNICODE);
         } else {
             echo json_encode(["status"=>"error","message"=>"معرف الشقة، العنوان، والسعر مطلوبان"], JSON_UNESCAPED_UNICODE);
@@ -245,11 +356,21 @@ try {
     }
 
     if ($action ==='add_university') {
-        $name = trim($data['name'] ??'');
+        $name_ar = trim($data['name_ar'] ?? '');
+        $name_en = trim($data['name_en'] ?? '');
+        $name = $name_ar; // Legacy column fallback
         if (!empty($name)) {
-            $stmt = $conn->prepare("INSERT INTO universities (name) VALUES (?)");
-            $stmt->execute([$name]);
-            echo json_encode(["status"=>"success","message"=>"تم إضافة الجامعة بنجاح"], JSON_UNESCAPED_UNICODE);
+            try {
+                $stmt = $conn->prepare("INSERT INTO universities (name, name_ar, name_en) VALUES (?, ?, ?)");
+                $stmt->execute([$name, $name_ar, $name_en]);
+                echo json_encode(["status"=>"success","message"=>"تم إضافة الجامعة بنجاح"], JSON_UNESCAPED_UNICODE);
+            } catch (PDOException $e) {
+                if ($e->getCode() == 23000 || strpos($e->getMessage(), '1062') !== false) {
+                    echo json_encode(["status"=>"error","message"=>"هذه الجامعة مضافة مسبقاً."], JSON_UNESCAPED_UNICODE);
+                } else {
+                    throw $e;
+                }
+            }
         } else {
             echo json_encode(["status"=>"error","message"=>"اسم الجامعة مطلوب"], JSON_UNESCAPED_UNICODE);
         }
@@ -274,10 +395,20 @@ try {
 
     if ($action ==='update_university') {
         $id = intval($data['id'] ?? 0);
-        $name = trim($data['name'] ?? '');
+        $name_ar = trim($data['name_ar'] ?? '');
+        $name_en = trim($data['name_en'] ?? '');
+        $name = $name_ar; // Legacy column fallback
         if ($id > 0 && !empty($name)) {
-            $conn->prepare("UPDATE universities SET name=? WHERE id=?")->execute([$name, $id]);
-            echo json_encode(["status"=>"success","message"=>"تم تعديل الجامعة بنجاح"], JSON_UNESCAPED_UNICODE);
+            try {
+                $conn->prepare("UPDATE universities SET name=?, name_ar=?, name_en=? WHERE id=?")->execute([$name, $name_ar, $name_en, $id]);
+                echo json_encode(["status"=>"success","message"=>"تم تعديل الجامعة بنجاح"], JSON_UNESCAPED_UNICODE);
+            } catch (PDOException $e) {
+                if ($e->getCode() == 23000 || strpos($e->getMessage(), '1062') !== false) {
+                    echo json_encode(["status"=>"error","message"=>"هذا الاسم مستخدم لجامعة أخرى مسبقاً."], JSON_UNESCAPED_UNICODE);
+                } else {
+                    throw $e;
+                }
+            }
         } else {
             echo json_encode(["status"=>"error","message"=>"البيانات غير مكتملة"], JSON_UNESCAPED_UNICODE);
         }
@@ -285,11 +416,21 @@ try {
     }
 
     if ($action ==='add_district') {
-        $name = trim($data['name'] ??'');
+        $name_ar = trim($data['name_ar'] ?? '');
+        $name_en = trim($data['name_en'] ?? '');
+        $name = $name_ar; // Legacy column fallback
         if (!empty($name)) {
-            $stmt = $conn->prepare("INSERT INTO districts (name) VALUES (?)");
-            $stmt->execute([$name]);
-            echo json_encode(["status"=>"success","message"=>"تم إضافة الحي بنجاح"], JSON_UNESCAPED_UNICODE);
+            try {
+                $stmt = $conn->prepare("INSERT INTO districts (name, name_ar, name_en) VALUES (?, ?, ?)");
+                $stmt->execute([$name, $name_ar, $name_en]);
+                echo json_encode(["status"=>"success","message"=>"تم إضافة الحي بنجاح"], JSON_UNESCAPED_UNICODE);
+            } catch (PDOException $e) {
+                if ($e->getCode() == 23000 || strpos($e->getMessage(), '1062') !== false) {
+                    echo json_encode(["status"=>"error","message"=>"هذا الحي مضاف مسبقاً."], JSON_UNESCAPED_UNICODE);
+                } else {
+                    throw $e;
+                }
+            }
         } else {
             echo json_encode(["status"=>"error","message"=>"اسم الحي مطلوب"], JSON_UNESCAPED_UNICODE);
         }
@@ -314,10 +455,20 @@ try {
 
     if ($action ==='update_district') {
         $id = intval($data['id'] ?? 0);
-        $name = trim($data['name'] ?? '');
+        $name_ar = trim($data['name_ar'] ?? '');
+        $name_en = trim($data['name_en'] ?? '');
+        $name = $name_ar; // Legacy column fallback
         if ($id > 0 && !empty($name)) {
-            $conn->prepare("UPDATE districts SET name=? WHERE id=?")->execute([$name, $id]);
-            echo json_encode(["status"=>"success","message"=>"تم تعديل الحي بنجاح"], JSON_UNESCAPED_UNICODE);
+            try {
+                $conn->prepare("UPDATE districts SET name=?, name_ar=?, name_en=? WHERE id=?")->execute([$name, $name_ar, $name_en, $id]);
+                echo json_encode(["status"=>"success","message"=>"تم تعديل الحي بنجاح"], JSON_UNESCAPED_UNICODE);
+            } catch (PDOException $e) {
+                if ($e->getCode() == 23000 || strpos($e->getMessage(), '1062') !== false) {
+                    echo json_encode(["status"=>"error","message"=>"هذا الاسم مستخدم لحي آخر مسبقاً."], JSON_UNESCAPED_UNICODE);
+                } else {
+                    throw $e;
+                }
+            }
         } else {
             echo json_encode(["status"=>"error","message"=>"البيانات غير مكتملة"], JSON_UNESCAPED_UNICODE);
         }
@@ -325,16 +476,22 @@ try {
     }
 
     if ($action ==='add_service') {
-        $title = trim($data['title'] ??'');
-        $description = trim($data['description'] ??'');
+        $title_ar = trim($data['title_ar'] ?? '');
+        $title_en = trim($data['title_en'] ?? '');
+        $description_ar = trim($data['description_ar'] ?? '');
+        $description_en = trim($data['description_en'] ?? '');
+        
+        $title = $title_ar;
+        $description = $description_ar;
+
         $image_url = trim($data['image_url'] ??'');
         $image_url = saveBase64IfPresent($image_url);
         $has_form = isset($data['has_form']) ? (int)$data['has_form'] : 1;
         $price_points = isset($data['price_points']) ? (int)$data['price_points'] : 0;
 
         if (!empty($title)) {
-            $stmt = $conn->prepare("INSERT INTO services (title, description, image_url, has_form, price_points) VALUES (?, ?, ?, ?, ?)");
-            $stmt->execute([$title, $description, $image_url, $has_form, $price_points]);
+            $stmt = $conn->prepare("INSERT INTO services (title, description, image_url, has_form, price_points, title_ar, title_en, description_ar, description_en) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
+            $stmt->execute([$title, $description, $image_url, $has_form, $price_points, $title_ar, $title_en, $description_ar, $description_en]);
             
             // إضافة تنبيه تلقائي في الإشعارات
             $stmtNotif = $conn->prepare("INSERT INTO notifications (student_id, title, body, created_at) VALUES (0, ?, ?, NOW())");
@@ -365,16 +522,22 @@ try {
 
     if ($action ==='update_service') {
         $id = intval($data['id'] ?? 0);
-        $title = trim($data['title'] ?? '');
-        $description = trim($data['description'] ?? '');
+        $title_ar = trim($data['title_ar'] ?? '');
+        $title_en = trim($data['title_en'] ?? '');
+        $description_ar = trim($data['description_ar'] ?? '');
+        $description_en = trim($data['description_en'] ?? '');
+        
+        $title = $title_ar;
+        $description = $description_ar;
+
         $image_url = trim($data['image_url'] ?? '');
         $image_url = saveBase64IfPresent($image_url);
         $has_form = isset($data['has_form']) ? (int)$data['has_form'] : 1;
         $price_points = isset($data['price_points']) ? (int)$data['price_points'] : 0;
 
         if ($id > 0 && !empty($title)) {
-            $stmt = $conn->prepare("UPDATE services SET title=?, description=?, image_url=?, has_form=?, price_points=? WHERE id=?");
-            $stmt->execute([$title, $description, $image_url, $has_form, $price_points, $id]);
+            $stmt = $conn->prepare("UPDATE services SET title=?, description=?, image_url=?, has_form=?, price_points=?, title_ar=?, title_en=?, description_ar=?, description_en=? WHERE id=?");
+            $stmt->execute([$title, $description, $image_url, $has_form, $price_points, $title_ar, $title_en, $description_ar, $description_en, $id]);
             echo json_encode(["status"=>"success","message"=>"تم تعديل الخدمة بنجاح"], JSON_UNESCAPED_UNICODE);
         } else {
             echo json_encode(["status"=>"error","message"=>"معرف الخدمة والعنوان مطلوبان"], JSON_UNESCAPED_UNICODE);
@@ -383,16 +546,42 @@ try {
     }
 
     if ($action ==='add_news') {
-        $title = trim($data['title'] ??'');
-        $content = trim($data['content'] ??'');
+        $title_ar = trim($data['title_ar'] ?? '');
+        $title_en = trim($data['title_en'] ?? '');
+        $content_ar = trim($data['content_ar'] ?? '');
+        $content_en = trim($data['content_en'] ?? '');
+
+        $title = $title_ar;
+        $content = $content_ar;
         $image_url = trim($data['image_url'] ??'');
 
         if (!empty($title) && !empty($content)) {
-            $stmt = $conn->prepare("INSERT INTO news (title, content, image_url) VALUES (?, ?, ?)");
-            $stmt->execute([$title, $content, $image_url]);
+            $stmt = $conn->prepare("INSERT INTO news (title, content, image_url, title_ar, title_en, content_ar, content_en) VALUES (?, ?, ?, ?, ?, ?, ?)");
+            $stmt->execute([$title, $content, $image_url, $title_ar, $title_en, $content_ar, $content_en]);
             echo json_encode(["status"=>"success","message"=>"تم نشر الخبر والتنبيه بنجاح"], JSON_UNESCAPED_UNICODE);
         } else {
             echo json_encode(["status"=>"error","message"=>"عنوان الخبر والتفاصيل مطلوبان"], JSON_UNESCAPED_UNICODE);
+        }
+        exit();
+    }
+
+    if ($action ==='update_news') {
+        $id = intval($data['id'] ?? 0);
+        $title_ar = trim($data['title_ar'] ?? '');
+        $title_en = trim($data['title_en'] ?? '');
+        $content_ar = trim($data['content_ar'] ?? '');
+        $content_en = trim($data['content_en'] ?? '');
+
+        $title = $title_ar;
+        $content = $content_ar;
+        $image_url = trim($data['image'] ??'');
+
+        if ($id > 0 && !empty($title) && !empty($content)) {
+            $stmt = $conn->prepare("UPDATE news SET title=?, content=?, image_url=?, title_ar=?, title_en=?, content_ar=?, content_en=? WHERE id=?");
+            $stmt->execute([$title, $content, $image_url, $title_ar, $title_en, $content_ar, $content_en, $id]);
+            echo json_encode(["status"=>"success","message"=>"تم تعديل الخبر بنجاح"], JSON_UNESCAPED_UNICODE);
+        } else {
+            echo json_encode(["status"=>"error","message"=>"بيانات الخبر غير مكتملة"], JSON_UNESCAPED_UNICODE);
         }
         exit();
     }
@@ -591,6 +780,52 @@ try {
             echo json_encode(["status"=>"error","message"=>"معرف الطالب غير صالح"], JSON_UNESCAPED_UNICODE);
         }
 
+        exit();
+    }
+
+    if ($action === 'change_student_password') {
+        $id = intval($data['id'] ?? 0);
+        $newPassword = trim($data['password'] ?? '');
+
+        if ($id <= 0) {
+            echo json_encode(["status" => "error", "message" => "معرف الطالب غير صالح"], JSON_UNESCAPED_UNICODE);
+            exit();
+        }
+        if (strlen($newPassword) < 6) {
+            echo json_encode(["status" => "error", "message" => "كلمة المرور يجب أن تكون 6 أحرف على الأقل"], JSON_UNESCAPED_UNICODE);
+            exit();
+        }
+
+        $passwordHash = password_hash($newPassword, PASSWORD_DEFAULT);
+        $stmt = $conn->prepare("UPDATE students SET password = ? WHERE id = ?");
+        $stmt->execute([$passwordHash, $id]);
+
+        echo json_encode(["status" => "success", "message" => "تم تغيير كلمة المرور بنجاح"], JSON_UNESCAPED_UNICODE);
+        exit();
+    }
+
+    if ($action === 'delete_chat_message') {
+        $messageId = intval($data['message_id'] ?? 0);
+        if ($messageId > 0) {
+            $stmt = $conn->prepare("UPDATE chat_messages SET is_deleted = 1, text = 'تم حذف هذه الرسالة بواسطة المشرف' WHERE id = ?");
+            $stmt->execute([$messageId]);
+            echo json_encode(["status" => "success", "message" => "تم حذف الرسالة بنجاح"], JSON_UNESCAPED_UNICODE);
+        } else {
+            echo json_encode(["status" => "error", "message" => "معرف الرسالة غير صالح"], JSON_UNESCAPED_UNICODE);
+        }
+        exit();
+    }
+
+    if ($action === 'edit_chat_message') {
+        $messageId = intval($data['message_id'] ?? 0);
+        $newText = trim($data['text'] ?? '');
+        if ($messageId > 0 && !empty($newText)) {
+            $stmt = $conn->prepare("UPDATE chat_messages SET text = ? WHERE id = ?");
+            $stmt->execute([$newText, $messageId]);
+            echo json_encode(["status" => "success", "message" => "تم تعديل الرسالة بنجاح"], JSON_UNESCAPED_UNICODE);
+        } else {
+            echo json_encode(["status" => "error", "message" => "معرف الرسالة أو النص غير صالح"], JSON_UNESCAPED_UNICODE);
+        }
         exit();
     }
 
@@ -866,14 +1101,21 @@ try {
 
     if ($action === 'add_housing_offer') {
         $apartment_id   = isset($data['apartment_id']) ? intval($data['apartment_id']) : 0;
-        $title          = isset($data['title']) ? trim($data['title']) : '';
-        $description    = isset($data['description']) ? trim($data['description']) : '';
+        $title_ar       = isset($data['title_ar']) ? trim($data['title_ar']) : '';
+        $title_en       = isset($data['title_en']) ? trim($data['title_en']) : '';
+        $description_ar = isset($data['description_ar']) ? trim($data['description_ar']) : '';
+        $description_en = isset($data['description_en']) ? trim($data['description_en']) : '';
         $original_price = isset($data['original_price']) ? floatval($data['original_price']) : 0.0;
         $offer_price    = isset($data['offer_price']) ? floatval($data['offer_price']) : 0.0;
-        $badge_text     = isset($data['badge_text']) && trim($data['badge_text']) !== '' ? trim($data['badge_text']) : null;
+        $badge_text_ar  = isset($data['badge_text_ar']) && trim($data['badge_text_ar']) !== '' ? trim($data['badge_text_ar']) : null;
+        $badge_text_en  = isset($data['badge_text_en']) && trim($data['badge_text_en']) !== '' ? trim($data['badge_text_en']) : null;
         $image_url      = isset($data['image_url']) && trim($data['image_url']) !== '' ? trim($data['image_url']) : null;
         $is_active      = isset($data['is_active']) ? (intval($data['is_active']) ? 1 : 0) : 1;
         $display_order  = isset($data['display_order']) ? intval($data['display_order']) : 0;
+
+        $title = $title_ar;
+        $description = $description_ar;
+        $badge_text = $badge_text_ar;
 
         $starts_at  = parseAndValidateDatetime($data['starts_at'] ?? null, 'تاريخ البدء');
         $expires_at = parseAndValidateDatetime($data['expires_at'] ?? null, 'تاريخ الانتهاء');
@@ -915,12 +1157,13 @@ try {
         // Insert row
         $stmt = $conn->prepare("
             INSERT INTO housing_offers 
-            (apartment_id, title, description, original_price, offer_price, badge_text, image_url, starts_at, expires_at, is_active, display_order, created_at, updated_at) 
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())
+            (apartment_id, title, description, original_price, offer_price, badge_text, image_url, starts_at, expires_at, is_active, display_order, title_ar, title_en, description_ar, description_en, badge_text_ar, badge_text_en, created_at, updated_at) 
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())
         ");
         $stmt->execute([
             $apartment_id, $title, $description, $original_price, $offer_price,
-            $badge_text, $image_url, $starts_at, $expires_at, $is_active, $display_order
+            $badge_text, $image_url, $starts_at, $expires_at, $is_active, $display_order,
+            $title_ar, $title_en, $description_ar, $description_en, $badge_text_ar, $badge_text_en
         ]);
 
         echo json_encode(["status" => "success", "message" => "تم إضافة العرض بنجاح"], JSON_UNESCAPED_UNICODE);
@@ -945,12 +1188,17 @@ try {
 
         // Handle partial update merging
         $apartment_id   = isset($data['apartment_id']) ? intval($data['apartment_id']) : intval($existing['apartment_id']);
-        $title          = isset($data['title']) ? trim($data['title']) : $existing['title'];
-        $description    = isset($data['description']) ? trim($data['description']) : $existing['description'];
+        
+        $title_ar       = isset($data['title_ar']) ? trim($data['title_ar']) : $existing['title_ar'];
+        $title_en       = isset($data['title_en']) ? trim($data['title_en']) : $existing['title_en'];
+        $description_ar = isset($data['description_ar']) ? trim($data['description_ar']) : $existing['description_ar'];
+        $description_en = isset($data['description_en']) ? trim($data['description_en']) : $existing['description_en'];
+        $badge_text_ar  = array_key_exists('badge_text_ar', $data) ? (trim($data['badge_text_ar'] ?? '') !== '' ? trim($data['badge_text_ar']) : null) : $existing['badge_text_ar'];
+        $badge_text_en  = array_key_exists('badge_text_en', $data) ? (trim($data['badge_text_en'] ?? '') !== '' ? trim($data['badge_text_en']) : null) : $existing['badge_text_en'];
+
         $original_price = isset($data['original_price']) ? floatval($data['original_price']) : floatval($existing['original_price']);
         $offer_price    = isset($data['offer_price']) ? floatval($data['offer_price']) : floatval($existing['offer_price']);
         
-        $badge_text     = array_key_exists('badge_text', $data) ? (trim($data['badge_text'] ?? '') !== '' ? trim($data['badge_text']) : null) : $existing['badge_text'];
         $image_url      = array_key_exists('image_url', $data) ? (trim($data['image_url'] ?? '') !== '' ? trim($data['image_url']) : null) : $existing['image_url'];
         
         $is_active      = isset($data['is_active']) ? (intval($data['is_active']) ? 1 : 0) : intval($existing['is_active']);
@@ -958,6 +1206,10 @@ try {
 
         $starts_at  = array_key_exists('starts_at', $data) ? parseAndValidateDatetime($data['starts_at'] ?? null, 'تاريخ البدء') : $existing['starts_at'];
         $expires_at = array_key_exists('expires_at', $data) ? parseAndValidateDatetime($data['expires_at'] ?? null, 'تاريخ الانتهاء') : $existing['expires_at'];
+
+        $title = $title_ar;
+        $description = $description_ar;
+        $badge_text = $badge_text_ar;
 
         // Validation checks
         if ($apartment_id <= 0) {
@@ -998,12 +1250,13 @@ try {
         // Update row
         $stmt = $conn->prepare("
             UPDATE housing_offers 
-            SET apartment_id = ?, title = ?, description = ?, original_price = ?, offer_price = ?, badge_text = ?, image_url = ?, starts_at = ?, expires_at = ?, is_active = ?, display_order = ?, updated_at = NOW() 
+            SET apartment_id = ?, title = ?, description = ?, original_price = ?, offer_price = ?, badge_text = ?, image_url = ?, starts_at = ?, expires_at = ?, is_active = ?, display_order = ?, title_ar = ?, title_en = ?, description_ar = ?, description_en = ?, badge_text_ar = ?, badge_text_en = ?, updated_at = NOW() 
             WHERE id = ?
         ");
         $stmt->execute([
             $apartment_id, $title, $description, $original_price, $offer_price,
-            $badge_text, $image_url, $starts_at, $expires_at, $is_active, $display_order, $id
+            $badge_text, $image_url, $starts_at, $expires_at, $is_active, $display_order,
+            $title_ar, $title_en, $description_ar, $description_en, $badge_text_ar, $badge_text_en, $id
         ]);
 
         echo json_encode(["status" => "success", "message" => "تم تعديل العرض بنجاح"], JSON_UNESCAPED_UNICODE);
@@ -1078,3 +1331,5 @@ try {
     echo json_encode(["status"=>"error","message"=>"خطأ في الخادم:". $e->getMessage()], JSON_UNESCAPED_UNICODE);
 }
 ?>
+
+} catch (Throwable $e) { echo json_encode(['status' => 'error', 'message' => $e->getMessage()]); exit; }

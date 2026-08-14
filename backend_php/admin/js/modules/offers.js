@@ -29,10 +29,10 @@ export function renderOffers() {
     });
 
     const statusLabels = {
-        active: t('offers.status.active'),
-        scheduled: t('offers.status.scheduled'),
-        expired: t('offers.status.expired'),
-        disabled: t('offers.status.disabled')
+        active: window.t('offers.status.active'),
+        scheduled: window.t('offers.status.scheduled'),
+        expired: window.t('offers.status.expired'),
+        disabled: window.t('offers.status.disabled')
     };
 
     const statusColors = {
@@ -53,7 +53,7 @@ export function renderOffers() {
         container.innerHTML = `
             <div style="grid-column: 1 / -1; text-align: center; padding: 40px; color: var(--text-muted); background: var(--bg-card); border-radius: 12px; border: 1px dashed var(--border-color);">
                 <i class="fa-solid fa-tags" style="font-size: 3rem; margin-bottom: 12px; color: var(--accent-amber);"></i>
-                <p>${t('offers.no_offers')}</p>
+                <p>${window.t('offers.no_offers')}</p>
             </div>
         `;
         return;
@@ -67,7 +67,7 @@ export function renderOffers() {
 
         // Find linked apartment details
         const apt = appData.apartments.find(a => a.id === parseInt(ho.apartment_id) || a.id === String(ho.apartment_id));
-        const aptTitle = apt ? apt.title : t('offers.unknown_apartment');
+        const aptTitle = apt ? apt.title : window.t('offers.unknown_apartment');
         const aptFirstImg = apt && Array.isArray(apt.images) ? apt.images[0] : (apt ? apt.images : '');
 
         // Resolve display image (fallback to apartment first image if offer image is empty)
@@ -96,33 +96,33 @@ export function renderOffers() {
                         ${label}
                     </span>
                     <span style="background: rgba(99,102,241,0.15); color: #a5b4fc; border: 1px solid #6366f1; padding: 4px 10px; border-radius: 12px; font-weight: bold; font-size: 0.8rem;">
-                         ${t('offers.discount', {percent: discount})}
+                         ${window.t('offers.discount', {percent: discount})}
                     </span>
                 </div>
                 <h3 class="card-title">${ho.title}</h3>
                 <p class="card-loc" style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 6px;">
-                    <i class="fa-solid fa-building" style="color: var(--accent-amber);"></i> ${t('offers.apartment_label')}: <strong>#${ho.apartment_id} - ${aptTitle}</strong>
+                    <i class="fa-solid fa-building" style="color: var(--accent-amber);"></i> ${window.t('offers.apartment_label')}: <strong>#${ho.apartment_id} - ${aptTitle}</strong>
                 </p>
                 <div style="margin: 6px 0; font-size: 0.85rem; color: var(--text-main);">
-                    ${t('offers.original_price')}: <span style="text-decoration: lineThrough; color: var(--text-muted);">${ho.original_price} $</span> 
+                    ${window.t('offers.original_price')}: <span style="text-decoration: lineThrough; color: var(--text-muted);">${ho.original_price} $</span> 
                 </div>
-                ${ho.starts_at ? `<p style="margin: 4px 0; font-size: 0.78rem; color: var(--text-muted);"><i class="fa-solid fa-calendar-check"></i> ${t('offers.starts')}: ${ho.starts_at}</p>` : ''}
-                ${ho.expires_at ? `<p style="margin: 4px 0; font-size: 0.78rem; color: var(--text-muted);"><i class="fa-solid fa-calendar-xmark"></i> ${t('offers.expires')}: ${ho.expires_at}</p>` : ''}
+                ${ho.starts_at ? `<p style="margin: 4px 0; font-size: 0.78rem; color: var(--text-muted);"><i class="fa-solid fa-calendar-check"></i> ${window.t('offers.starts')}: ${ho.starts_at}</p>` : ''}
+                ${ho.expires_at ? `<p style="margin: 4px 0; font-size: 0.78rem; color: var(--text-muted);"><i class="fa-solid fa-calendar-xmark"></i> ${window.t('offers.expires')}: ${ho.expires_at}</p>` : ''}
                 <p class="card-desc" style="margin-top: 8px; min-height: 40px;">${ho.description}</p>
                 <div style="display: flex; gap: 8px; align-items: center; margin-bottom: 12px; background: rgba(255,255,255,0.03); padding: 8px; border-radius: 8px;">
-                    <span style="font-size: 0.85rem; color: var(--text-muted);">${t('offers.display_order')}: <strong>${ho.display_order}</strong></span>
-                    <button class="btn btn-secondary" style="padding: 2px 8px; font-size: 0.8rem;" onclick="window.moveOfferGlobal(${ho.id}, 'up')" title="${t('offers.move_up')}"><i class="fa-solid fa-chevron-up"></i></button>
-                    <button class="btn btn-secondary" style="padding: 2px 8px; font-size: 0.8rem;" onclick="window.moveOfferGlobal(${ho.id}, 'down')" title="${t('offers.move_down')}"><i class="fa-solid fa-chevron-down"></i></button>
+                    <span style="font-size: 0.85rem; color: var(--text-muted);">${window.t('offers.display_order')}: <strong>${ho.display_order}</strong></span>
+                    <button class="btn btn-secondary" style="padding: 2px 8px; font-size: 0.8rem;" onclick="window.moveOfferGlobal(${ho.id}, 'up')" title="${window.t('offers.move_up')}"><i class="fa-solid fa-chevron-up"></i></button>
+                    <button class="btn btn-secondary" style="padding: 2px 8px; font-size: 0.8rem;" onclick="window.moveOfferGlobal(${ho.id}, 'down')" title="${window.t('offers.move_down')}"><i class="fa-solid fa-chevron-down"></i></button>
                 </div>
                 <div class="card-actions">
                     <button class="btn btn-primary" style="background: rgba(99,102,241,0.2); border: 1px solid #6366f1; color: #a5b4fc;"
                             onclick="window.openEditOfferModalGlobal(${ho.id})">
-                        <i class="fa-solid fa-pen-to-square"></i> ${t('buttons.edit')}
+                        <i class="fa-solid fa-pen-to-square"></i> ${window.t('buttons.edit')}
                     </button>
-                    <button class="btn btn-danger" onclick="window.deleteOfferGlobal(${ho.id})"><i class="fa-solid fa-trash"></i> ${t('buttons.delete')}</button>
+                    <button class="btn btn-danger" onclick="window.deleteOfferGlobal(${ho.id})"><i class="fa-solid fa-trash"></i> ${window.t('buttons.delete')}</button>
                     <button class="btn" style="background: ${parseInt(ho.is_active) === 1 ? 'rgba(239, 68, 68, 0.2)' : 'rgba(37, 211, 102, 0.2)'}; border: 1px solid ${parseInt(ho.is_active) === 1 ? '#ef4444' : '#25D366'}; color: ${parseInt(ho.is_active) === 1 ? '#fca5a5' : '#a7f3d0'};"
                             onclick="window.toggleOfferStatusGlobal(${ho.id}, ${parseInt(ho.is_active) === 1 ? 0 : 1})">
-                        <i class="fa-solid ${parseInt(ho.is_active) === 1 ? 'fa-toggle-on' : 'fa-toggle-off'}"></i> ${parseInt(ho.is_active) === 1 ? t('buttons.disable') : t('buttons.enable')}
+                        <i class="fa-solid ${parseInt(ho.is_active) === 1 ? 'fa-toggle-on' : 'fa-toggle-off'}"></i> ${parseInt(ho.is_active) === 1 ? window.t('buttons.disable') : window.t('buttons.enable')}
                     </button>
                 </div>
             </div>
@@ -138,7 +138,7 @@ export function populateOfferApartmentsDropdown() {
         const currentVal = select.value;
         // Filter only available apartments
         const availableApts = (appData.apartments || []).filter(a => parseInt(a.is_available) === 1);
-        select.innerHTML = `<option value="">${t('offers.select_apartment')}</option>` + availableApts.map(apt => `
+        select.innerHTML = `<option value="">${window.t('offers.select_apartment')}</option>` + availableApts.map(apt => `
             <option value="${apt.id}">#${apt.id} - ${apt.title} (${apt.price})</option>
         `).join('');
         if (currentVal) select.value = currentVal;
@@ -153,21 +153,27 @@ export async function handleAddOffer(e) {
     const expires = document.getElementById('offerExpiresAt')?.value || null;
 
     // Validate inputs
-    if (orig <= 0) { showToast(t('validation.original_price_gt_zero')); return; }
-    if (off < 0) { showToast(t('validation.offer_price_gte_zero')); return; }
-    if (off >= orig) { showToast(t('validation.offer_price_lt_original')); return; }
+    if (orig <= 0) { showToast(window.t('validation.original_price_gt_zero')); return; }
+    if (off < 0) { showToast(window.t('validation.offer_price_gte_zero')); return; }
+    if (off >= orig) { showToast(window.t('validation.offer_price_lt_original')); return; }
     if (starts && expires && new Date(starts) >= new Date(expires)) {
-        showToast(t('validation.start_before_end'));
+        showToast(window.t('validation.start_before_end'));
         return;
     }
 
     const payload = {
         apartment_id: parseInt(document.getElementById('offerAptId')?.value || '0', 10),
-        title: document.getElementById('offerTitle')?.value.trim(),
-        description: document.getElementById('offerDesc')?.value.trim(),
+        title: document.getElementById('offerTitleAr')?.value.trim(),
+        title_ar: document.getElementById('offerTitleAr')?.value.trim(),
+        title_en: document.getElementById('offerTitleEn')?.value.trim(),
+        description: document.getElementById('offerDescAr')?.value.trim(),
+        description_ar: document.getElementById('offerDescAr')?.value.trim(),
+        description_en: document.getElementById('offerDescEn')?.value.trim(),
+        badge_text: document.getElementById('offerBadgeTextAr')?.value.trim() || null,
+        badge_text_ar: document.getElementById('offerBadgeTextAr')?.value.trim() || null,
+        badge_text_en: document.getElementById('offerBadgeTextEn')?.value.trim() || null,
         original_price: orig,
         offer_price: off,
-        badge_text: document.getElementById('offerBadgeText')?.value.trim() || null,
         image_url: document.getElementById('offerImage')?.value.trim() || null,
         starts_at: starts || null,
         expires_at: expires || null,
@@ -175,8 +181,8 @@ export async function handleAddOffer(e) {
         display_order: parseInt(document.getElementById('offerDisplayOrder')?.value || '0', 10)
     };
 
-    if (!payload.apartment_id) { showToast(t('validation.select_apartment')); return; }
-    if (!payload.title) { showToast(t('validation.enter_offer_title')); return; }
+    if (!payload.apartment_id) { showToast(window.t('validation.select_apartment')); return; }
+    if (!payload.title) { showToast(window.t('validation.enter_offer_title')); return; }
 
     try {
         const res = await window.authFetch('../api/admin_api.php?action=add_housing_offer', {
@@ -192,30 +198,33 @@ export async function handleAddOffer(e) {
             // Clear preview
             const prev = document.getElementById('offerImgPreview');
             if (prev) prev.style.display = 'none';
-            showToast(t('messages.offer_added'));
+            showToast(window.t('messages.offer_added'));
         } else {
-            showToast(t('messages.offer_failed_add') + ': ' + (data.message || t('messages.error_occurred')));
+            showToast(window.t('messages.offer_failed_add') + ': ' + (data.message || window.t('messages.error_occurred')));
         }
     } catch (ex) {
         console.error(ex);
-        showToast(t('messages.conn_error'));
+        showToast(window.t('messages.conn_error'));
     }
 }
 
 export function openEditOfferModal(offerId) {
     const ho = appData.housing_offers.find(o => o.id === offerId || o.id === String(offerId));
     if (!ho) {
-        showToast(t('validation.offer_not_found'));
+        showToast(window.t('validation.offer_not_found'));
         return;
     }
 
     document.getElementById('editOfferId').value = ho.id;
     document.getElementById('editOfferAptId').value = ho.apartment_id;
-    document.getElementById('editOfferTitle').value = ho.title || '';
-    document.getElementById('editOfferDesc').value = ho.description || '';
+    document.getElementById('editOfferTitleAr').value = ho.title_ar || ho.title || '';
+    document.getElementById('editOfferTitleEn').value = ho.title_en || '';
+    document.getElementById('editOfferDescAr').value = ho.description_ar || ho.description || '';
+    document.getElementById('editOfferDescEn').value = ho.description_en || '';
+    document.getElementById('editOfferBadgeTextAr').value = ho.badge_text_ar || ho.badge_text || '';
+    document.getElementById('editOfferBadgeTextEn').value = ho.badge_text_en || '';
     document.getElementById('editOfferOriginalPrice').value = ho.original_price || '';
     document.getElementById('editOfferOfferPrice').value = ho.offer_price || '';
-    document.getElementById('editOfferBadgeText').value = ho.badge_text || '';
     document.getElementById('editOfferStartsAt').value = ho.starts_at ? ho.starts_at.replace(' ', 'T') : '';
     document.getElementById('editOfferExpiresAt').value = ho.expires_at ? ho.expires_at.replace(' ', 'T') : '';
     document.getElementById('editOfferDisplayOrder').value = ho.display_order || 0;
@@ -249,23 +258,29 @@ export async function handleUpdateOffer(e) {
     const starts = document.getElementById('editOfferStartsAt')?.value || null;
     const expires = document.getElementById('editOfferExpiresAt')?.value || null;
 
-    if (!id) { showToast(t('validation.offer_id_missing')); return; }
-    if (orig <= 0) { showToast(t('validation.original_price_gt_zero')); return; }
-    if (off < 0) { showToast(t('validation.offer_price_gte_zero')); return; }
-    if (off >= orig) { showToast(t('validation.offer_price_lt_original')); return; }
+    if (!id) { showToast(window.t('validation.offer_id_missing')); return; }
+    if (orig <= 0) { showToast(window.t('validation.original_price_gt_zero')); return; }
+    if (off < 0) { showToast(window.t('validation.offer_price_gte_zero')); return; }
+    if (off >= orig) { showToast(window.t('validation.offer_price_lt_original')); return; }
     if (starts && expires && new Date(starts) >= new Date(expires)) {
-        showToast(t('validation.start_before_end'));
+        showToast(window.t('validation.start_before_end'));
         return;
     }
 
     const payload = {
         id,
         apartment_id: parseInt(document.getElementById('editOfferAptId')?.value || '0', 10),
-        title: document.getElementById('editOfferTitle')?.value.trim(),
-        description: document.getElementById('editOfferDesc')?.value.trim(),
+        title: document.getElementById('editOfferTitleAr')?.value.trim(),
+        title_ar: document.getElementById('editOfferTitleAr')?.value.trim(),
+        title_en: document.getElementById('editOfferTitleEn')?.value.trim(),
+        description: document.getElementById('editOfferDescAr')?.value.trim(),
+        description_ar: document.getElementById('editOfferDescAr')?.value.trim(),
+        description_en: document.getElementById('editOfferDescEn')?.value.trim(),
+        badge_text: document.getElementById('editOfferBadgeTextAr')?.value.trim() || null,
+        badge_text_ar: document.getElementById('editOfferBadgeTextAr')?.value.trim() || null,
+        badge_text_en: document.getElementById('editOfferBadgeTextEn')?.value.trim() || null,
         original_price: orig,
         offer_price: off,
-        badge_text: document.getElementById('editOfferBadgeText')?.value.trim() || null,
         image_url: document.getElementById('editOfferImage')?.value.trim() || null,
         starts_at: starts || null,
         expires_at: expires || null,
@@ -273,8 +288,8 @@ export async function handleUpdateOffer(e) {
         display_order: parseInt(document.getElementById('editOfferDisplayOrder')?.value || '0', 10)
     };
 
-    if (!payload.apartment_id) { showToast(t('validation.select_apartment')); return; }
-    if (!payload.title) { showToast(t('validation.enter_offer_title')); return; }
+    if (!payload.apartment_id) { showToast(window.t('validation.select_apartment')); return; }
+    if (!payload.title) { showToast(window.t('validation.enter_offer_title')); return; }
 
     try {
         const res = await window.authFetch('../api/admin_api.php?action=update_housing_offer', {
@@ -286,22 +301,22 @@ export async function handleUpdateOffer(e) {
         if (data.status === 'success') {
             await loadDashboardData();
             window.closeModalGlobal && window.closeModalGlobal('editOfferModal');
-            showToast(t('messages.offer_updated'));
+            showToast(window.t('messages.offer_updated'));
         } else {
-            showToast(t('messages.offer_failed_update') + ': ' + (data.message || t('messages.error_occurred')));
+            showToast(window.t('messages.offer_failed_update') + ': ' + (data.message || window.t('messages.error_occurred')));
         }
     } catch (ex) {
         console.error(ex);
-        showToast(t('messages.conn_error'));
+        showToast(window.t('messages.conn_error'));
     }
 }
 
 export async function deleteOffer(id) {
     const confirmed = await window.showConfirmDialog({
-        title: t('dialog.delete_offer_title'),
-        message: t('dialog.delete_offer_msg'),
-        confirmText: t('buttons.delete'),
-        cancelText: t('buttons.cancel'),
+        title: window.t('dialog.delete_offer_title'),
+        message: window.t('dialog.delete_offer_msg'),
+        confirmText: window.t('buttons.delete'),
+        cancelText: window.t('buttons.cancel'),
         variant: 'danger'
     });
     if (!confirmed) return;
@@ -314,13 +329,13 @@ export async function deleteOffer(id) {
         const data = await res.json();
         if (data.status === 'success') {
             await loadDashboardData();
-            showToast(t('messages.offer_deleted'));
+            showToast(window.t('messages.offer_deleted'));
         } else {
-            showToast(t('messages.offer_failed_delete') + ': ' + data.message);
+            showToast(window.t('messages.offer_failed_delete') + ': ' + data.message);
         }
     } catch (ex) {
         console.error(ex);
-        showToast(t('messages.conn_error'));
+        showToast(window.t('messages.conn_error'));
     }
 }
 
@@ -330,10 +345,10 @@ export async function toggleOfferStatus(id, isActive) {
 
     const isActivating = !!isActive;
     const confirmed = await window.showConfirmDialog({
-        title: isActivating ? t('dialog.enable_offer_title') : t('dialog.disable_offer_title'),
-        message: isActivating ? t('dialog.enable_offer_msg') : t('dialog.disable_offer_msg'),
-        confirmText: isActivating ? t('buttons.enable') : t('buttons.disable'),
-        cancelText: t('buttons.cancel'),
+        title: isActivating ? window.t('dialog.enable_offer_title') : window.t('dialog.disable_offer_title'),
+        message: isActivating ? window.t('dialog.enable_offer_msg') : window.t('dialog.disable_offer_msg'),
+        confirmText: isActivating ? window.t('buttons.enable') : window.t('buttons.disable'),
+        cancelText: window.t('buttons.cancel'),
         variant: isActivating ? 'success' : 'warning'
     });
     if (!confirmed) return;
@@ -362,13 +377,13 @@ export async function toggleOfferStatus(id, isActive) {
         const data = await res.json();
         if (data.status === 'success') {
             await loadDashboardData();
-            showToast(isActivating ? t('messages.offer_enabled') : t('messages.offer_disabled'));
+            showToast(isActivating ? window.t('messages.offer_enabled') : window.t('messages.offer_disabled'));
         } else {
-            showToast(t('messages.offer_failed_toggle') + ': ' + data.message);
+            showToast(window.t('messages.offer_failed_toggle') + ': ' + data.message);
         }
     } catch (ex) {
         console.error(ex);
-        showToast(t('messages.conn_error'));
+        showToast(window.t('messages.conn_error'));
     }
 }
 
@@ -408,13 +423,13 @@ export async function moveOffer(offerId, direction) {
         const data = await res.json();
         if (data.status === 'success') {
             await loadDashboardData();
-            showToast(t('messages.offer_reorder_success'));
+            showToast(window.t('messages.offer_reorder_success'));
         } else {
-            showToast(t('messages.offer_reorder_failed') + ': ' + data.message);
+            showToast(window.t('messages.offer_reorder_failed') + ': ' + data.message);
         }
     } catch (ex) {
         console.error(ex);
-        showToast(t('messages.conn_error'));
+        showToast(window.t('messages.conn_error'));
     }
 }
 

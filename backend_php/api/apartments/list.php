@@ -8,19 +8,24 @@ require_once __DIR__ . '/../core/response.php';
 require_once __DIR__ . '/../core/headers.php';
 
 try {
+    $lang = $_GET['lang'] ?? 'ar';
+    if (!in_array($lang, ['ar', 'en'], true)) {
+        $lang = 'ar';
+    }
+
     $where = ["is_available = 1"];
     $params = [];
 
     if (!empty($_GET['location'])) {
-        $where[] = "location LIKE :location";
+        $where[] = "(location_ar LIKE :location OR location_en LIKE :location OR location LIKE :location)";
         $params[':location'] = '%' . trim($_GET['location']) . '%';
     }
     if (!empty($_GET['capacity'])) {
-        $where[] = "capacity LIKE :capacity";
+        $where[] = "(capacity_ar LIKE :capacity OR capacity_en LIKE :capacity OR capacity LIKE :capacity)";
         $params[':capacity'] = '%' . trim($_GET['capacity']) . '%';
     }
     if (!empty($_GET['move_in_type'])) {
-        $where[] = "move_in_type LIKE :move_in_type";
+        $where[] = "(move_in_type_ar LIKE :move_in_type OR move_in_type_en LIKE :move_in_type OR move_in_type LIKE :move_in_type)";
         $params[':move_in_type'] = '%' . trim($_GET['move_in_type']) . '%';
     }
 
@@ -47,9 +52,18 @@ try {
         }
     }
 
-    $sql = "SELECT id, title, description, price, location, proximity,
-                   universities, capacity, move_in_type, move_in_date,
-                   images, features, is_available, district_id,
+    $titleCol = ($lang === 'en') ? "COALESCE(NULLIF(title_en, ''), NULLIF(title_ar, ''), title)" : "COALESCE(NULLIF(title_ar, ''), title)";
+    $descCol  = ($lang === 'en') ? "COALESCE(NULLIF(description_en, ''), NULLIF(description_ar, ''), description)" : "COALESCE(NULLIF(description_ar, ''), description)";
+    $locCol   = ($lang === 'en') ? "COALESCE(NULLIF(location_en, ''), NULLIF(location_ar, ''), location)" : "COALESCE(NULLIF(location_ar, ''), location)";
+    $proxCol  = ($lang === 'en') ? "COALESCE(NULLIF(proximity_en, ''), NULLIF(proximity_ar, ''), proximity)" : "COALESCE(NULLIF(proximity_ar, ''), proximity)";
+    $capCol   = ($lang === 'en') ? "COALESCE(NULLIF(capacity_en, ''), NULLIF(capacity_ar, ''), capacity)" : "COALESCE(NULLIF(capacity_ar, ''), capacity)";
+    $mitCol   = ($lang === 'en') ? "COALESCE(NULLIF(move_in_type_en, ''), NULLIF(move_in_type_ar, ''), move_in_type)" : "COALESCE(NULLIF(move_in_type_ar, ''), move_in_type)";
+    $midCol   = ($lang === 'en') ? "COALESCE(NULLIF(move_in_date_en, ''), NULLIF(move_in_date_ar, ''), move_in_date)" : "COALESCE(NULLIF(move_in_date_ar, ''), move_in_date)";
+    $featsCol = ($lang === 'en') ? "COALESCE(NULLIF(features_en, ''), NULLIF(features_ar, ''), features)" : "COALESCE(NULLIF(features_ar, ''), features)";
+
+    $sql = "SELECT id, $titleCol AS title, $descCol AS description, price, $locCol AS location, $proxCol AS proximity,
+                   universities, $capCol AS capacity, $mitCol AS move_in_type, $midCol AS move_in_date,
+                   images, $featsCol AS features, is_available, district_id,
                    rental_type, rooms_count
             FROM apartments
             WHERE " . implode(" AND ", $where) . "

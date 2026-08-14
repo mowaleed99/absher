@@ -43,7 +43,7 @@ export function compressImageClientSide(file, maxDimension = 1100, quality = 0.8
 export async function handleSvcFileSelect(input) {
     if (!input.files || !input.files[0]) return;
     const file = input.files[0];
-    showToast(t('messages.compressing_service_image'));
+    showToast(window.t('messages.compressing_service_image'));
     
     const compressed = await compressImageClientSide(file, 1100, 0.80);
     const formData = new FormData();
@@ -59,7 +59,7 @@ export async function handleSvcFileSelect(input) {
                 prev.src ='../'+ data.url;
                 prev.style.display ='block';
             }
-            showToast(t('messages.service_image_uploaded'));
+            showToast(window.t('messages.service_image_uploaded'));
             return;
         }
         console.warn('Upload API returned error, falling back to compressed DataURL:', data.message);
@@ -75,7 +75,7 @@ export async function handleSvcFileSelect(input) {
             prev.src = fallbackUrl;
             prev.style.display ='block';
         }
-        showToast(t('messages.image_selected_preview'));
+        showToast(window.t('messages.image_selected_preview'));
     }
 }
 
@@ -91,7 +91,7 @@ export async function handleAptFileSelect(input) {
     }
 
     let uploadedUrls = [];
-    showToast(t('messages.compressing_apt_images', {count: input.files.length}));
+    showToast(window.t('messages.compressing_apt_images', {count: input.files.length}));
 
     for (let i = 0; i < input.files.length; i++) {
         const file = input.files[i];
@@ -122,7 +122,7 @@ export async function handleAptFileSelect(input) {
                      style="width:60px;height:60px;border-radius:8px;object-fit:cover;border:1px solid var(--accent-amber);">
             `).join('');
         }
-        showToast(t('messages.apt_images_uploaded', {count: uploadedUrls.length}));
+        showToast(window.t('messages.apt_images_uploaded', {count: uploadedUrls.length}));
     }
 }
 
@@ -132,7 +132,7 @@ export async function handleNewsFileSelect(input) {
     const formData = new FormData();
     formData.append('file', file);
     try {
-        showToast(t('messages.uploading_news_image'));
+        showToast(window.t('messages.uploading_news_image'));
         const res = await window.authFetch('../api/upload/image.php?folder=news', { method:'POST', body: formData });
         const data = await res.json();
         if (data.status ==='success') {
@@ -142,9 +142,9 @@ export async function handleNewsFileSelect(input) {
                 prev.src ='../'+ data.url;
                 prev.style.display ='block';
             }
-            showToast(t('messages.news_image_uploaded'));
+            showToast(window.t('messages.news_image_uploaded'));
         } else {
-            showToast(t('messages.upload_failed') + ': ' + (data.message || t('unspecified')));
+            showToast(window.t('messages.upload_failed') + ': ' + (data.message || window.t('unspecified')));
         }
     } catch (err) {
         const reader = new FileReader();
@@ -155,7 +155,7 @@ export async function handleNewsFileSelect(input) {
                 prev.src = e.target.result;
                 prev.style.display ='block';
             }
-            showToast(t('messages.local_image_preview'));
+            showToast(window.t('messages.local_image_preview'));
         };
         reader.readAsDataURL(file);
     }
@@ -200,7 +200,7 @@ export async function handleAptEditFileSelect(input) {
     }
 
     let uploadedUrls = [];
-    showToast(t('messages.compressing_apt_images', {count: input.files.length}));
+    showToast(window.t('messages.compressing_apt_images', {count: input.files.length}));
 
     for (let i = 0; i < input.files.length; i++) {
         const file = input.files[i];
@@ -232,7 +232,7 @@ export async function handleAptEditFileSelect(input) {
                      style="width:60px;height:60px;border-radius:8px;object-fit:cover;border:1px solid var(--accent-amber);">
             `).join('');
         }
-        showToast(t('messages.apt_new_images_uploaded', {count: uploadedUrls.length}));
+        showToast(window.t('messages.apt_new_images_uploaded', {count: uploadedUrls.length}));
     }
 }
 
@@ -243,7 +243,7 @@ export async function handleAptEditFileSelect(input) {
 export async function handleSvcEditFileSelect(input) {
     if (!input.files || !input.files[0]) return;
     const file = input.files[0];
-    showToast(t('messages.compressing_service_image'));
+    showToast(window.t('messages.compressing_service_image'));
 
     const compressed = await compressImageClientSide(file, 1100, 0.80);
     const formData = new FormData();
@@ -257,7 +257,7 @@ export async function handleSvcEditFileSelect(input) {
             if (hiddenField) hiddenField.value = data.url;
             const prev = document.getElementById('editSvcImgPreview');
             if (prev) { prev.src = '../' + data.url; prev.style.display = 'block'; }
-            showToast(t('messages.service_image_uploaded'));
+            showToast(window.t('messages.service_image_uploaded'));
             return;
         }
     } catch (err) {
@@ -270,14 +270,14 @@ export async function handleSvcEditFileSelect(input) {
         if (hiddenField) hiddenField.value = compressed.dataUrl;
         const prev = document.getElementById('editSvcImgPreview');
         if (prev) { prev.src = compressed.dataUrl; prev.style.display = 'block'; }
-        showToast(t('messages.image_previewed_unsaved'));
+        showToast(window.t('messages.image_previewed_unsaved'));
     }
 }
 
 export async function handleOfferFileSelect(input) {
     if (!input.files || !input.files[0]) return;
     const file = input.files[0];
-    showToast(t('messages.compressing_offer_image'));
+    showToast(window.t('messages.compressing_offer_image'));
     
     const compressed = await compressImageClientSide(file, 1100, 0.80);
     const formData = new FormData();
@@ -293,7 +293,7 @@ export async function handleOfferFileSelect(input) {
                 prev.src = '../' + data.url;
                 prev.style.display = 'block';
             }
-            showToast(t('messages.offer_image_uploaded'));
+            showToast(window.t('messages.offer_image_uploaded'));
             return;
         }
     } catch (err) {
@@ -308,14 +308,14 @@ export async function handleOfferFileSelect(input) {
             prev.src = fallbackUrl;
             prev.style.display = 'block';
         }
-        showToast(t('messages.image_selected_preview'));
+        showToast(window.t('messages.image_selected_preview'));
     }
 }
 
 export async function handleOfferEditFileSelect(input) {
     if (!input.files || !input.files[0]) return;
     const file = input.files[0];
-    showToast(t('messages.compressing_offer_image'));
+    showToast(window.t('messages.compressing_offer_image'));
     
     const compressed = await compressImageClientSide(file, 1100, 0.80);
     const formData = new FormData();
@@ -331,7 +331,7 @@ export async function handleOfferEditFileSelect(input) {
                 prev.src = '../' + data.url;
                 prev.style.display = 'block';
             }
-            showToast(t('messages.offer_image_uploaded'));
+            showToast(window.t('messages.offer_image_uploaded'));
             return;
         }
     } catch (err) {
@@ -346,7 +346,7 @@ export async function handleOfferEditFileSelect(input) {
             prev.src = fallbackUrl;
             prev.style.display = 'block';
         }
-        showToast(t('messages.image_selected_preview'));
+        showToast(window.t('messages.image_selected_preview'));
     }
 }
 

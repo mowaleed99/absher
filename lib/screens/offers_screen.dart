@@ -30,6 +30,18 @@ class _OffersScreenState extends State<OffersScreen> {
   void initState() {
     super.initState();
     _fetchOffers();
+    LanguageService.currentLang.addListener(_onLangChanged);
+  }
+
+  void _onLangChanged() {
+    if (!mounted) return;
+    _fetchOffers();
+  }
+
+  @override
+  void dispose() {
+    LanguageService.currentLang.removeListener(_onLangChanged);
+    super.dispose();
   }
 
   Future<void> _fetchOffers() async {

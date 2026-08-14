@@ -54,7 +54,12 @@ if ($action === 'get_wallet') {
 
 if ($action === 'get_universities') {
     try {
-        $stmt = $conn->query("SELECT id, name FROM universities ORDER BY id DESC");
+        $lang = $_GET['lang'] ?? 'ar';
+        if (!in_array($lang, ['ar', 'en'], true)) $lang = 'ar';
+        $nameCol = ($lang === 'en')
+            ? "COALESCE(NULLIF(name_en, ''), NULLIF(name_ar, ''), name)"
+            : "COALESCE(NULLIF(name_ar, ''), name)";
+        $stmt = $conn->query("SELECT id, $nameCol AS name FROM universities ORDER BY $nameCol ASC");
         $universities = $stmt->fetchAll(PDO::FETCH_ASSOC);
         echo json_encode(["status" => "success", "universities" => $universities], JSON_UNESCAPED_UNICODE);
     } catch (PDOException $e) {
@@ -65,7 +70,12 @@ if ($action === 'get_universities') {
 
 if ($action === 'get_districts') {
     try {
-        $stmt = $conn->query("SELECT id, name FROM districts ORDER BY id DESC");
+        $lang = $_GET['lang'] ?? 'ar';
+        if (!in_array($lang, ['ar', 'en'], true)) $lang = 'ar';
+        $nameCol = ($lang === 'en')
+            ? "COALESCE(NULLIF(name_en, ''), NULLIF(name_ar, ''), name)"
+            : "COALESCE(NULLIF(name_ar, ''), name)";
+        $stmt = $conn->query("SELECT id, $nameCol AS name FROM districts ORDER BY $nameCol ASC");
         $districts = $stmt->fetchAll(PDO::FETCH_ASSOC);
         echo json_encode(["status" => "success", "districts" => $districts], JSON_UNESCAPED_UNICODE);
     } catch (PDOException $e) {

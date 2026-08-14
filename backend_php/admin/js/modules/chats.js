@@ -75,7 +75,7 @@ export function renderChatsList() {
             'قيد المراجعة': 'status.under_review'
         };
         const key = statusMap[status] || statusMap[status.replace(' ️', '').trim()];
-        return key ? t(key) : t(status);
+        return key ? window.t(key) : window.t(status);
     };
 
     container.innerHTML = appData.chats.map(chat => `
@@ -88,7 +88,7 @@ export function renderChatsList() {
             <div style="flex: 1; overflow: hidden;">
                 <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 4px;">
                     <h4 style="margin: 0; font-size: 1.05rem; font-weight: bold; color: var(--text-main); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${chat.student_name}</h4>
-                    <span style="font-size: 0.75rem; color: #25D366; font-weight: bold;">${chat.time && chat.time !== 'الآن' ? chat.time : t('status.now')}</span>
+                    <span style="font-size: 0.75rem; color: #25D366; font-weight: bold;">${chat.time && chat.time !== 'الآن' ? chat.time : window.t('status.now')}</span>
                 </div>
                 <div style="display: flex; justify-content: space-between; align-items: center;">
                     <p style="margin: 0; font-size: 0.85rem; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 180px;">
@@ -108,7 +108,7 @@ export function renderChatsList() {
     } else if (activeIdEl && activeIdEl.value) {
         const activeId = parseInt(activeIdEl.value);
         const activeChat = appData.chats.find(c => c.id === activeId);
-        if (activeChat) renderWaThread(activeChat);
+        if (activeChat) renderWaThread(activeChat, false);
     }
 }
 
@@ -143,59 +143,63 @@ export function selectWaChat(chatId) {
     document.getElementById('waPhone').textContent = '' + chat.phone;
 
     const cleanPhone = chat.phone.replace(/[^0-9]/g, '');
-    document.getElementById('waDirectBtn').href = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(t('messages.whatsapp_template', {name: chat.student_name}))}`;
+    document.getElementById('waDirectBtn').href = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(window.t('messages.whatsapp_template', {name: chat.student_name}))}`;
 
     renderWaThread(chat);
 }
 
-export function renderWaThread(chat) {
+export function renderWaThread(chat, shouldScroll = true) {
     const thread = document.getElementById('waMessagesThread');
     if (!thread) return;
 
+    // Check if near bottom BEFORE updating HTML
+    const isNearBottom = thread.scrollHeight - thread.scrollTop - thread.clientHeight < 120;
+    const oldScrollTop = thread.scrollTop;
+
     if (!chat.messages || chat.messages.length === 0) {
         chat.messages = [
-            { sender: 'student', text: chat.last_msg || t('messages.default_last_msg'), time: chat.time || t('status.now') }
+            { sender: 'student', text: chat.last_msg || window.t('messages.default_last_msg'), time: chat.time || window.t('status.now') }
         ];
     }
 
     thread.innerHTML = chat.messages.map((m, idx) => {
-        const quoteSenderName = m.quoteSender === 'admin' ? t('customer_service_absher') : chat.student_name;
+        const quoteSenderName = m.quoteSender === 'admin' ? window.t('customer_service_absher') : chat.student_name;
         return `
         <div style="display: flex; flex-direction: column; align-items: ${m.sender === 'admin' ? 'flex-end' : 'flex-start'};">
             <div style="max-width: 75%; padding: 10px 16px; border-radius: 12px; font-size: 0.95rem; line-height: 1.5; box-shadow: 0 1px 2px rgba(0,0,0,0.2); ${m.sender === 'admin' ? 'background: #005c4b; color: #fff; border-top-left-radius: 2px;' : 'background: #202c33; color: #e9edef; border-top-right-radius: 2px;'}">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; gap: 15px;">
                     <strong style="font-size: 0.78rem; color: ${m.sender === 'admin' ? '#53bdeb' : '#25D366'};">
-                        ${m.sender === 'admin' ? t('customer_service_absher') : '' + chat.student_name}
+                        ${m.sender === 'admin' ? window.t('customer_service_absher') : '' + chat.student_name}
                     </strong>
                     <div style="display: flex; gap: 6px; font-size: 0.75rem; opacity: 0.8;">
-                        <button type="button" onclick="window.quoteWaMessageGlobal && window.quoteWaMessageGlobal(${idx})" title="${t('dialog.reply_to_message')}" style="background:none; border:none; color:#fff; cursor:pointer; padding:0 2px;"><i class="fa-solid fa-reply"></i></button>
+                        <button type="button" onclick="window.quoteWaMessageGlobal && window.quoteWaMessageGlobal(${idx})" title="${window.t('dialog.reply_to_message')}" style="background:none; border:none; color:#fff; cursor:pointer; padding:0 2px;"><i class="fa-solid fa-reply"></i></button>
                         ${m.sender === 'admin' && !m.deleted ? `
-                            <button type="button" onclick="window.editWaMessageGlobal && window.editWaMessageGlobal(${idx})" title="${t('dialog.edit_chat_msg_title')}" style="background:none; border:none; color:#fbbf24; cursor:pointer; padding:0 2px;"><i class="fa-solid fa-pen"></i></button>
-                            <button type="button" onclick="window.deleteWaMessageGlobal && window.deleteWaMessageGlobal(${idx})" title="${t('dialog.delete_chat_msg_title')}" style="background:none; border:none; color:#ef4444; cursor:pointer; padding:0 2px;"><i class="fa-solid fa-trash"></i></button>
+                            <button type="button" onclick="window.editWaMessageGlobal && window.editWaMessageGlobal(${idx})" title="${window.t('dialog.edit_chat_msg_title')}" style="background:none; border:none; color:#fbbf24; cursor:pointer; padding:0 2px;"><i class="fa-solid fa-pen"></i></button>
+                            <button type="button" onclick="window.deleteWaMessageGlobal && window.deleteWaMessageGlobal(${idx})" title="${window.t('dialog.delete_chat_msg_title')}" style="background:none; border:none; color:#ef4444; cursor:pointer; padding:0 2px;"><i class="fa-solid fa-trash"></i></button>
                         ` : ''}
                     </div>
                 </div>
                 ${m.quoteText ? `
                     <div style="background: rgba(0,0,0,0.25); border-left: 3px solid #25D366; padding: 6px 10px; border-radius: 6px; margin-bottom: 6px; font-size: 0.8rem; color: rgba(255,255,255,0.8);">
-                        <strong style="color: #25D366; display: block; font-size: 0.75rem;">${t('dialog.reply_to_sender', {sender: quoteSenderName})}</strong>
+                        <strong style="color: #25D366; display: block; font-size: 0.75rem;">${window.t('dialog.reply_to_sender', {sender: quoteSenderName})}</strong>
                         ${m.quoteText}
                     </div>
                 ` : ''}
-                ${(m.type === 'image' || ((m.imageUrl || m.image_url) && isValidMediaUrl(m.imageUrl || m.image_url))) && (m.type !== 'video' && m.type !== 'link') ? `
+                ${!m.deleted && (m.type === 'image' || ((m.imageUrl || m.image_url) && isValidMediaUrl(m.imageUrl || m.image_url))) && (m.type !== 'video' && m.type !== 'link') ? `
                     <img src="${formatChatMediaUrl(m.imageUrl || m.image_url)}"
                          onclick="window.openImageLightboxGlobal && window.openImageLightboxGlobal('${formatChatMediaUrl(m.imageUrl || m.image_url)}')"
                          style="max-width: 100%; max-height: 220px; border-radius: 8px; display: block; margin: 6px 0; object-fit: cover; cursor: pointer;">
                 ` : ''}
-                ${m.type === 'link' ? `
+                ${!m.deleted && m.type === 'link' ? `
                     <div style="background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15); padding: 10px 14px; border-radius: 10px; margin: 6px 0; display: flex; align-items: center; gap: 10px;">
                         <i class="fa-solid fa-link" style="font-size: 1.3rem; color: #60a5fa;"></i>
                         <div style="overflow: hidden;">
-                            <strong style="display: block; font-size: 0.85rem; color: #60a5fa;">${t('messages.attached_link')}</strong>
+                            <strong style="display: block; font-size: 0.85rem; color: #60a5fa;">${window.t('messages.attached_link')}</strong>
                             <a href="${m.imageUrl || m.text}" target="_blank" style="color: #93c5fd; font-size: 0.85rem; text-decoration: underline; word-break: break-all;">${m.imageUrl || m.text}</a>
                         </div>
                     </div>
                 ` : ''}
-                ${(m.type === 'video' || (m.imageUrl && (m.imageUrl.endsWith('.mp4') || m.imageUrl.endsWith('.webm') || m.imageUrl.endsWith('.mov') || isEmbeddableVideo(m.imageUrl)))) ? `
+                ${!m.deleted && (m.type === 'video' || (m.imageUrl && (m.imageUrl.endsWith('.mp4') || m.imageUrl.endsWith('.webm') || m.imageUrl.endsWith('.mov') || isEmbeddableVideo(m.imageUrl)))) ? `
                     <div style="margin: 6px 0;">
                         ${isEmbeddableVideo(m.imageUrl) ? `
                             <iframe src="${getEmbedUrl(m.imageUrl)}" style="width: 100%; height: 220px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.2); display: block;" allowfullscreen></iframe>
@@ -204,7 +208,7 @@ export function renderWaThread(chat) {
                         `}
                     </div>
                 ` : ''}
-                ${(m.type !== 'image' && m.type !== 'video' && m.type !== 'link') ? `
+                ${(m.deleted || (m.type !== 'image' && m.type !== 'video' && m.type !== 'link')) ? `
                 <div style="color: ${m.deleted ? '#ef4444' : 'inherit'}; font-style: ${m.deleted ? 'italic' : 'normal'};">
                     ${m.text}
                 </div>
@@ -217,7 +221,11 @@ export function renderWaThread(chat) {
         `;
     }).join('');
 
-    setTimeout(() => { thread.scrollTop = thread.scrollHeight; }, 50);
+    if (shouldScroll || isNearBottom) {
+        setTimeout(() => { thread.scrollTop = thread.scrollHeight; }, 50);
+    } else {
+        setTimeout(() => { thread.scrollTop = oldScrollTop; }, 50);
+    }
 }
 
 export function quoteWaMessage(idx) {
@@ -245,17 +253,42 @@ export async function editWaMessage(idx) {
     const chatId = parseInt(document.getElementById('waActiveChatId').value);
     const chat = appData.chats.find(c => c.id === chatId);
     if (!chat || !chat.messages[idx]) return;
-    const currentText = chat.messages[idx].text.replace('(معدلة)', '').replace('(Edited)', '');
+    
+    const msg = chat.messages[idx];
+    if (!msg.id) {
+        showToast(window.t('messages.conn_error') || 'خطأ في معرف الرسالة');
+        return;
+    }
+
+    const currentText = msg.text.replace('(معدلة)', '').replace('(Edited)', '').trim();
     const newText = await window.showPromptDialog({
-        title: t('dialog.edit_chat_msg_title'),
-        message: t('dialog.edit_chat_msg_msg'),
+        title: window.t('dialog.edit_chat_msg_title'),
+        message: window.t('dialog.edit_chat_msg_msg'),
         defaultValue: currentText,
-        placeholder: t('dialog.edit_chat_msg_placeholder')
+        placeholder: window.t('dialog.edit_chat_msg_placeholder')
     });
+
     if (newText !== null && newText.trim() !== '') {
-        chat.messages[idx].text = newText.trim() + ' (' + t('status.edited') + ')';
-        renderWaThread(chat);
-        showToast(t('messages.chat_msg_edited'));
+        const editedText = newText.trim() + ' (' + window.t('status.edited') + ')';
+        try {
+            const res = await window.authFetch('../api/admin_api.php?action=edit_chat_message', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ message_id: msg.id, text: editedText })
+            });
+            if (!res) return;
+            const data = await res.json();
+            if (data.status === 'success') {
+                msg.text = editedText;
+                renderWaThread(chat, false);
+                showToast(window.t('messages.chat_msg_edited'));
+            } else {
+                showToast(data.message || window.t('messages.conn_error'));
+            }
+        } catch (ex) {
+            console.error(ex);
+            showToast(window.t('messages.conn_error'));
+        }
     }
 }
 
@@ -263,18 +296,41 @@ export async function deleteWaMessage(idx) {
     const chatId = parseInt(document.getElementById('waActiveChatId').value);
     const chat = appData.chats.find(c => c.id === chatId);
     if (!chat || !chat.messages[idx]) return;
+
+    const msg = chat.messages[idx];
+    if (!msg.id) {
+        showToast(window.t('messages.conn_error') || 'خطأ في معرف الرسالة');
+        return;
+    }
+
     const confirmed = await window.showConfirmDialog({
-        title: t('dialog.delete_chat_msg_title'),
-        message: t('dialog.delete_chat_msg_msg'),
-        confirmText: t('buttons.delete'),
-        cancelText: t('buttons.cancel'),
+        title: window.t('dialog.delete_chat_msg_title'),
+        message: window.t('dialog.delete_chat_msg_msg'),
+        confirmText: window.t('buttons.delete'),
+        cancelText: window.t('buttons.cancel'),
         variant: 'danger'
     });
     if (confirmed) {
-        chat.messages[idx].text = t('messages.chat_msg_deleted_placeholder');
-        chat.messages[idx].deleted = true;
-        renderWaThread(chat);
-        showToast(t('messages.chat_msg_deleted'));
+        try {
+            const res = await window.authFetch('../api/admin_api.php?action=delete_chat_message', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ message_id: msg.id })
+            });
+            if (!res) return;
+            const data = await res.json();
+            if (data.status === 'success') {
+                msg.text = window.t('messages.chat_msg_deleted_placeholder') || 'تم حذف هذه الرسالة بواسطة المشرف';
+                msg.deleted = true;
+                renderWaThread(chat, false);
+                showToast(window.t('messages.chat_msg_deleted'));
+            } else {
+                showToast(data.message || window.t('messages.conn_error'));
+            }
+        } catch (ex) {
+            console.error(ex);
+            showToast(window.t('messages.conn_error'));
+        }
     }
 }
 
@@ -283,10 +339,10 @@ export async function blockWaStudent() {
     const chat = appData.chats.find(c => c.id === chatId);
     if (!chat) return;
     const confirmed = await window.showConfirmDialog({
-        title: t('dialog.block_student_title'),
-        message: t('dialog.block_student_msg', {name: chat.student_name}),
-        confirmText: t('buttons.block'),
-        cancelText: t('buttons.cancel'),
+        title: window.t('dialog.block_student_title'),
+        message: window.t('dialog.block_student_msg', {name: chat.student_name}),
+        confirmText: window.t('buttons.block'),
+        cancelText: window.t('buttons.cancel'),
         variant: 'danger'
     });
     if (confirmed) {
@@ -294,13 +350,13 @@ export async function blockWaStudent() {
         if (!chat.messages) chat.messages = [];
         chat.messages.push({
             sender: 'admin',
-            text: t('messages.student_blocked_system_msg'),
-            time: t('status.now')
+            text: window.t('messages.student_blocked_system_msg'),
+            time: window.t('status.now')
         });
-        chat.last_msg = t('messages.student_blocked');
+        chat.last_msg = window.t('messages.student_blocked');
         renderWaThread(chat);
         renderChatsList();
-        showToast(t('messages.student_blocked'));
+        showToast(window.t('messages.student_blocked'));
     }
 }
 
@@ -310,10 +366,10 @@ export async function deleteWaChat() {
     if (!chat) return;
 
     const confirmed = await window.showConfirmDialog({
-        title: t('chats.deleteChat'),
-        message: t('chats.deleteConfirmation'),
-        confirmText: t('buttons.delete'),
-        cancelText: t('buttons.cancel'),
+        title: window.t('chats.deleteChat'),
+        message: window.t('chats.deleteConfirmation'),
+        confirmText: window.t('buttons.delete'),
+        cancelText: window.t('buttons.cancel'),
         variant: 'danger'
     });
 
@@ -326,7 +382,7 @@ export async function deleteWaChat() {
             });
             const data = await res.json();
             if (data.status === 'success' || data.success === true) {
-                showToast(data.message || t('messages.chat_deleted'));
+                showToast(data.message || window.t('messages.chat_deleted'));
                 // Remove the chat from the state sidebar/list
                 appData.chats = appData.chats.filter(c => c.id !== chatId);
                 
@@ -345,11 +401,11 @@ export async function deleteWaChat() {
                 const { loadDashboardData } = await import('../api.js');
                 await loadDashboardData();
             } else {
-                showToast(data.message || t('messages.chat_delete_failed'));
+                showToast(data.message || window.t('messages.chat_delete_failed'));
             }
         } catch (err) {
             console.error(err);
-            showToast(t('messages.conn_error'));
+            showToast(window.t('messages.conn_error'));
         }
     }
 }
@@ -415,13 +471,13 @@ export async function handleSendWaReply(e) {
                     input.value = '';
                     const { loadDashboardData } = await import('../api.js');
                     await loadDashboardData();
-                    showToast(t('messages.chat_reply_sent'));
+                    showToast(window.t('messages.chat_reply_sent'));
                 } else {
-                    showToast(t('messages.chat_reply_failed'));
+                    showToast(window.t('messages.chat_reply_failed'));
                 }
             } catch (err) {
                 console.error(err);
-                showToast(t('messages.conn_error'));
+                showToast(window.t('messages.conn_error'));
             }
         }
     });
@@ -447,34 +503,34 @@ export async function sendCustomWaMessage(msgData) {
             const { loadDashboardData } = await import('../api.js');
             await loadDashboardData();
         } else {
-            showToast(t('messages.chat_reply_failed'));
+            showToast(window.t('messages.chat_reply_failed'));
         }
     } catch (ex) {
         console.error(ex);
-        showToast(t('messages.conn_error'));
+        showToast(window.t('messages.conn_error'));
     }
 }
 
 export async function triggerWaAttachmentUrl() {
     const chatId = parseInt(document.getElementById('waActiveChatId')?.value || document.getElementById('activeChatId')?.value);
     const chat = appData.chats.find(c => c.id === chatId);
-    if (!chat) { showToast(t('messages.select_chat_first')); return; }
+    if (!chat) { showToast(window.t('messages.select_chat_first')); return; }
     const linkUrl = await window.showPromptDialog({
-        title: t('dialog.send_link_title'),
-        message: t('dialog.send_link_msg'),
+        title: window.t('dialog.send_link_title'),
+        message: window.t('dialog.send_link_msg'),
         defaultValue: 'https://',
         placeholder: 'https://example.com'
     });
     if (linkUrl && linkUrl.trim() !== '' && linkUrl.trim() !== 'https://') {
-        sendCustomWaMessage({ type: 'link', text: t('messages.attached_link') + ': ' + linkUrl.trim(), imageUrl: linkUrl.trim() });
+        sendCustomWaMessage({ type: 'link', text: window.t('messages.attached_link') + ': ' + linkUrl.trim(), imageUrl: linkUrl.trim() });
     }
 }
 
 export function recordWaVoiceNote() {
-    showToast(t('messages.recording_voice'));
+    showToast(window.t('messages.recording_voice'));
     setTimeout(() => {
-        sendCustomWaMessage({ type: 'voice', text: t('messages.recorded_voice') });
-        showToast(t('messages.voice_note_sent'));
+        sendCustomWaMessage({ type: 'voice', text: window.t('messages.recorded_voice') });
+        showToast(window.t('messages.voice_note_sent'));
     }, 1500);
 }
 
@@ -502,7 +558,7 @@ export function initChatsModule() {
             if (!file) return;
             console.log(`[LOG] waImageFileInput change -> File: ${file.name}, Size: ${file.size} bytes`);
 
-            showToast(t('messages.compressing_image'));
+            showToast(window.t('messages.compressing_image'));
             const formData = new FormData();
             formData.append('file', file);
             formData.append('folder', 'chat');
@@ -518,16 +574,16 @@ export function initChatsModule() {
                     const imgUrl = data.url || data.data?.url;
                     await sendCustomWaMessage({
                         type: 'image',
-                        text: t('messages.image_attached_cs'),
+                        text: window.t('messages.image_attached_cs'),
                         imageUrl: imgUrl
                     });
-                    showToast(t('messages.image_sent_success'));
+                    showToast(window.t('messages.image_sent_success'));
                 } else {
-                    showToast(t('messages.upload_image_failed', {message: data.message || t('unspecified')}));
+                    showToast(window.t('messages.upload_image_failed', {message: data.message || window.t('unspecified')}));
                 }
             } catch (err) {
                 console.error('[ERROR] Error uploading chat image:', err);
-                showToast(t('messages.error_uploading_image'));
+                showToast(window.t('messages.error_uploading_image'));
             }
         });
     }
@@ -554,7 +610,7 @@ export function initChatsModule() {
             const file = e.target.files?.[0];
             if (!file) return;
 
-            showToast(t('messages.compressing_image'));
+            showToast(window.t('messages.compressing_image'));
             const formData = new FormData();
             formData.append('file', file);
             formData.append('folder', 'chat');
@@ -569,16 +625,16 @@ export function initChatsModule() {
                     const imgUrl = data.url || data.data?.url;
                     await sendCustomWaMessage({
                         type: 'image',
-                        text: t('messages.image_attached_cs'),
+                        text: window.t('messages.image_attached_cs'),
                         imageUrl: imgUrl
                     });
-                    showToast(t('messages.image_sent_success'));
+                    showToast(window.t('messages.image_sent_success'));
                 } else {
-                    showToast(t('messages.upload_image_failed', {message: data.message || t('unspecified')}));
+                    showToast(window.t('messages.upload_image_failed', {message: data.message || window.t('unspecified')}));
                 }
             } catch (err) {
                 console.error(err);
-                showToast(t('messages.error_uploading_image'));
+                showToast(window.t('messages.error_uploading_image'));
             }
         });
     }

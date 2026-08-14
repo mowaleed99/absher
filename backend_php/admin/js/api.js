@@ -62,13 +62,13 @@ export async function loadDashboardData() {
 
             const statusEl = document.getElementById('serverStatus');
             if (statusEl) {
-                statusEl.textContent = t('dashboard.online');
+                statusEl.textContent = window.t('dashboard.online');
                 statusEl.className = 'status-online';
             }
         } else {
             const statusEl = document.getElementById('serverStatus');
             if (statusEl) {
-                statusEl.textContent = t('dashboard.server_error');
+                statusEl.textContent = window.t('dashboard.server_error');
                 statusEl.className = 'status-offline';
             }
         }
@@ -76,7 +76,7 @@ export async function loadDashboardData() {
         console.error('loadDashboardData error:', err);
         const statusEl = document.getElementById('serverStatus');
         if (statusEl) {
-            statusEl.textContent = t('dashboard.offline');
+            statusEl.textContent = window.t('dashboard.offline');
             statusEl.className = 'status-offline';
         }
     }

@@ -1,4 +1,3 @@
-import { tr } from '../lang.js';
 import { appData } from '../state.js';
 import { showToast, resolveImgUrl } from '../ui.js';
 import { loadDashboardData } from '../api.js';
@@ -11,13 +10,13 @@ export function renderApartments() {
 
     const filtered = appData.apartments.filter(apt => {
         if (!searchVal) return true;
-        const idMatch = apt.id?.toString() === searchVal || `#${apt.id}` === searchVal || `${tr('mock_number_237')} ${apt.id}` === searchVal;
+        const idMatch = apt.id?.toString() === searchVal || `#${apt.id}` === searchVal || `no. ${apt.id}` === searchVal || `no ${apt.id}` === searchVal;
         const titleMatch = (apt.title || '').toLowerCase().includes(searchVal);
         const descMatch = (apt.description || '').toLowerCase().includes(searchVal);
         return idMatch || titleMatch || descMatch;
     });
 
-    const rtLabels = { apartment: tr('apartments.rental_type_apartment'), room_shared: `${tr('mock_room_7')} ${tr('shared_fem')}`, studio: tr('studio') };
+    const rtLabels = { apartment: window.t('apartments.type.apartment'), room_shared: window.t('apartments.type.room_shared'), studio: window.t('apartments.type.studio') };
     const rtColors = { apartment: '#fbbf24', room_shared: '#38bdf8', studio: '#a78bfa' };
     const rtRgb   = { apartment: '251,191,36', room_shared: '56,189,248', studio: '167,139,250' };
 
@@ -38,23 +37,23 @@ export function renderApartments() {
             <div class="card-body">
                 <div style="margin-bottom: 8px; display: flex; flex-wrap: wrap; gap: 6px; align-items: center;">
                     <span style="background: rgba(37, 211, 102, 0.18); color: #25D366; border: 1px solid #25D366; padding: 4px 12px; border-radius: 12px; font-weight: bold; font-size: 0.85rem;">
-                        ${tr('mock_apartment_number_10')}: #${apt.id}
+                        ${window.t('apartments.apartment_number')}: #${apt.id}
                     </span>
-                    ${apt.owner_phone ? `<span style="background: rgba(239, 68, 68, 0.15); color: #ef4444; border: 1px solid #ef4444; padding: 4px 10px; border-radius: 12px; font-weight: bold; font-size: 0.82rem; cursor: pointer;" onclick="navigator.clipboard.writeText('${apt.owner_phone}'); window.showToastGlobal && window.showToastGlobal(tr('mock_owner_number_copied__3'))"><i class="fa-solid fa-lock"></i> ${tr("owner_phone")}: ${apt.owner_phone}</span>` : ''}
+                    ${apt.owner_phone ? `<span style="background: rgba(239, 68, 68, 0.15); color: #ef4444; border: 1px solid #ef4444; padding: 4px 10px; border-radius: 12px; font-weight: bold; font-size: 0.82rem; cursor: pointer;" onclick="navigator.clipboard.writeText('${apt.owner_phone}'); window.showToastGlobal && window.showToastGlobal(window.t('messages.owner_phone_copied'))"><i class="fa-solid fa-lock"></i> ${window.t('apartments.owner_phone_label')}: ${apt.owner_phone}</span>` : ''}
                     ${rtLabel ? `<span style="background: rgba(${rtRgbVal},0.18); color: ${rtColor}; border: 1px solid ${rtColor}; padding: 4px 10px; border-radius: 12px; font-weight: bold; font-size: 0.82rem;">${rtLabel}</span>` : ''}
-                    ${apt.rooms_count ? `<span style="background: rgba(37,211,102,0.15); color: #25D366; border: 1px solid #25D366; padding: 4px 10px; border-radius: 12px; font-size: 0.82rem; font-weight:bold;">${tr("apartments.rooms_count_label", { count: apt.rooms_count })}</span>` : ''}
+                    ${apt.rooms_count ? `<span style="background: rgba(37,211,102,0.15); color: #25D366; border: 1px solid #25D366; padding: 4px 10px; border-radius: 12px; font-size: 0.82rem; font-weight:bold;">${window.t('apartments.bedrooms_count', {count: apt.rooms_count})}</span>` : ''}
                 </div>
                 <h3 class="card-title">${apt.title}</h3>
-                <p class="card-loc"><i class="fa-solid fa-location-dot"></i> ${tr("apartments.district_label", { district: apt.location })}</p>
+                <p class="card-loc"><i class="fa-solid fa-location-dot"></i> ${window.t('apartments.district_label')}: ${apt.location}</p>
                 <div style="margin: 8px 0; display: flex; gap: 8px; flex-wrap: wrap;">
                     <span style="background:var(--primary); color:#fff; padding:4px 10px; border-radius:12px; font-size:0.85rem; font-weight:bold; display:inline-block;">
-                         ${tr("apartments.rooms_capacity", { rooms: apt.capacity || `3 ${tr('mock_rooms_28')}` })}
+                         ${window.t('apartments.rooms_count_label')}: ${apt.capacity || window.t('apartments.default_rooms_desc')}
                     </span>
                 </div>
                 ${apt.roommate_reqs || apt.roommate_facilities ? `
                 <div style="background: rgba(251, 191, 36, 0.08); border: 1px dashed #fbbf24; padding: 10px; border-radius: 10px; margin: 8px 0; font-size: 0.85rem;">
-                    ${apt.roommate_reqs ? `<div style="margin-bottom: 4px;"><strong style="color: #fbbf24;"> ${tr('apartments.partner_conditions')}</strong> ${apt.roommate_reqs}</div>` : ''}
-                    ${apt.roommate_facilities ? `<div><strong style="color: #fbbf24;"> ${tr('apartments.available_for_partner')}</strong> ${apt.roommate_facilities}</div>` : ''}
+                    ${apt.roommate_reqs ? `<div style="margin-bottom: 4px;"><strong style="color: #fbbf24;"> ${window.t('apartments.roommate_reqs_label')}:</strong> ${apt.roommate_reqs}</div>` : ''}
+                    ${apt.roommate_facilities ? `<div><strong style="color: #fbbf24;"> ${window.t('apartments.roommate_facilities_label')}:</strong> ${apt.roommate_facilities}</div>` : ''}
                 </div>` : ''}
                 <div class="features-list">
                     ${(Array.isArray(apt.features) ? apt.features : [apt.features]).map(f => `<span class="feature-pill">${f}</span>`).join('')}
@@ -63,10 +62,10 @@ export function renderApartments() {
                 <div class="card-actions">
                     <button class="btn btn-primary" style="background: rgba(99,102,241,0.2); border: 1px solid #6366f1; color: #a5b4fc;"
                             onclick="window.openEditApartmentModalGlobal && window.openEditApartmentModalGlobal(${apt.id})">
-                        <i class="fa-solid fa-pen-to-square"></i> ${tr('actions.edit')}
+                        <i class="fa-solid fa-pen-to-square"></i> ${window.t('buttons.edit')}
                     </button>
-                    <button class="btn btn-danger" onclick="window.deleteApartmentGlobal && window.deleteApartmentGlobal(${apt.id})"><i class="fa-solid fa-trash"></i> ${tr('mock_delete_apartment_5')}</button>
-                    <span style="font-size:0.8rem; color:var(--accent-green); align-self:center;">${tr('mock_active_in_app_173')} </span>
+                    <button class="btn btn-danger" onclick="window.deleteApartmentGlobal && window.deleteApartmentGlobal(${apt.id})"><i class="fa-solid fa-trash"></i> ${window.t('buttons.delete')}</button>
+                    <span style="font-size:0.8rem; color:var(--accent-green); align-self:center;">${window.t('apartments.status_active')} </span>
                 </div>
             </div>
         </div>
@@ -75,20 +74,25 @@ export function renderApartments() {
 
 export async function handleAddApartment(e) {
     e.preventDefault();
-    const bathrooms = document.getElementById('aptBathrooms')?.value || `1 ${tr('mock_bathroom_162')}`;
-    const rentalTypeDisplay = document.getElementById('aptRentalType')?.value || tr('mock_apartment_212');
+    const bathroomsDisplay = document.getElementById('aptBathrooms')?.value || '1 حمام';
+    let bathroomsKey = 'apartments.bathrooms.1';
+    if (bathroomsDisplay === '2 حمام' || bathroomsDisplay === '2 Bathroom') bathroomsKey = 'apartments.bathrooms.2';
+    else if (bathroomsDisplay === '3+ حمامات' || bathroomsDisplay === '3+ Bathrooms') bathroomsKey = 'apartments.bathrooms.3plus';
+    const bathrooms = window.t(bathroomsKey);
+
+    const rentalTypeDisplay = document.getElementById('aptRentalType')?.value || 'شقة';
     const ownerPhone = document.getElementById('aptOwnerPhone')?.value || '';
     const roomReqs = document.getElementById('aptRoommateReqs')?.value || '';
     const roomFacs = document.getElementById('aptRoommateFacilities')?.value || '';
-    const capacity = document.getElementById('aptCapacity')?.value || `3 ${tr('mock_rooms_28')}`;
+    const capacity = document.getElementById('aptCapacity')?.value || window.t('apartments.default_rooms_desc');
     const districtId = document.getElementById('aptDistrictId')?.value || '';
     const roomsCount = parseInt(document.getElementById('aptRoomsCount')?.value || '0', 10) || null;
 
     // Map Arabic UI display value to canonical DB value
     const rentalTypeMap = {
-        [tr('mock_apartment_212')]: 'apartment', [tr('apartments.rental_type_apartment')]: 'apartment',
-        [tr('mock_room_in_apartment_100')]: 'room_shared', [tr('shared_masc')]: 'room_shared',
-        [tr('studio')]: 'studio', 'studio': 'studio',
+        'شقة': 'apartment', 'شقة كاملة': 'apartment',
+        'غرفة في شقة': 'room_shared', 'مشترك': 'room_shared',
+        'ستوديو': 'studio', 'studio': 'studio',
         'apartment': 'apartment', 'room_shared': 'room_shared'
     };
     const rentalType = rentalTypeMap[rentalTypeDisplay] || 'apartment';
@@ -99,18 +103,23 @@ export async function handleAddApartment(e) {
         const timeInputId = cb.getAttribute('data-id');
         const timeVal = document.getElementById(`uni_time_${timeInputId}`)?.value;
         if (timeVal) {
-            proxList.push(`${cb.value} (${timeVal} ${tr('mock_minute_55')})`);
+            proxList.push(`${cb.value} (${window.t('apartments.feature.minutes_walk', {minutes: timeVal})})`);
         }
         return cb.value;
     });
 
-    const baseProx = document.getElementById('aptProximity').value;
-    const finalProximity = proxList.length > 0 ? `${baseProx} | ${proxList.join(tr('apartments.edit_apt_features_join'))}` : baseProx;
+    const baseProxAr = document.getElementById('aptProximityAr').value;
+    const baseProxEn = document.getElementById('aptProximityEn').value;
+    const finalProximityAr = proxList.length > 0 ? `${baseProxAr} | ${proxList.join(' ، ')}` : baseProxAr;
+    const finalProximityEn = baseProxEn;  // Uni proximity list appended only for AR for now
 
-    let featArr = document.getElementById('aptFeatures').value.split(tr('apartments.edit_apt_features_join')).map(f => f.trim());
-    if (!featArr.includes(bathrooms)) featArr.unshift(bathrooms);
-    if (rentalTypeDisplay === tr('mock_room_in_apartment_100') && !featArr.includes(tr('mock_rent_with_a_roommate_27'))) featArr.push(tr('mock_rent_with_a_roommate_27'));
-    if (rentalTypeDisplay === tr('mock_apartment_212') && !featArr.includes(tr('mock_apartment_for_yourse_1'))) featArr.push(tr('mock_apartment_for_yourse_1'));
+    const featArrAr = document.getElementById('aptFeaturesAr').value.split(/[،,]/).map(f => f.trim()).filter(Boolean);
+    const featArrEn = document.getElementById('aptFeaturesEn').value.split(/[,،]/).map(f => f.trim()).filter(Boolean);
+    if (!featArrAr.includes(bathrooms)) featArrAr.unshift(bathrooms);
+    if (rentalType === 'room_shared' && !featArrAr.includes(window.t('apartments.feature.roommate'))) featArrAr.push(window.t('apartments.feature.roommate'));
+    if (rentalType === 'apartment' && !featArrAr.includes(window.t('apartments.feature.entire_apt'))) featArrAr.push(window.t('apartments.feature.entire_apt'));
+    // Keep AR features as the canonical features array for backward compat
+    let featArr = featArrAr;
 
     const rawVal = document.getElementById('aptImage').value;
     let imagesArr;
@@ -121,23 +130,39 @@ export async function handleAddApartment(e) {
     }
 
     const newApt = {
-        title: document.getElementById('aptTitle').value,
+        title: document.getElementById('aptTitleAr').value,
+        title_ar: document.getElementById('aptTitleAr').value,
+        title_en: document.getElementById('aptTitleEn').value,
         price: document.getElementById('aptPrice').value,
-        location: document.getElementById('aptLocation').value,
-        proximity: finalProximity,
+        location: document.getElementById('aptLocationAr').value,
+        location_ar: document.getElementById('aptLocationAr').value,
+        location_en: document.getElementById('aptLocationEn').value,
+        proximity: finalProximityAr,
+        proximity_ar: finalProximityAr,
+        proximity_en: finalProximityEn,
         universities: selectedUnis,
-        capacity: capacity,
-        rental_type: rentalType,       // canonical: apartment | room_shared | studio
-        rooms_count: roomsCount,       // int | null
+        capacity: document.getElementById('aptCapacityAr').value || window.t('apartments.default_rooms_desc'),
+        capacity_ar: document.getElementById('aptCapacityAr').value || window.t('apartments.default_rooms_desc'),
+        capacity_en: document.getElementById('aptCapacityEn').value || '',
+        rental_type: rentalType,
+        rooms_count: roomsCount,
         district_id: districtId !== '' ? parseInt(districtId, 10) : null,
-        move_in_type: tr('mock_immediate_23'),
-        move_in_date: tr('mock_immediate_move_in_269'),
+        move_in_type: document.getElementById('aptMoveInType').value === 'immediate' ? window.t('apartments.feature.immediate') : window.t('apartments.feature.scheduled'),
+        move_in_type_ar: document.getElementById('aptMoveInType').value === 'immediate' ? window.t('apartments.feature.immediate') : window.t('apartments.feature.scheduled'),
+        move_in_type_en: document.getElementById('aptMoveInType').value === 'immediate' ? 'Immediate' : 'Scheduled',
+        move_in_date: document.getElementById('aptMoveInType').value === 'immediate' ? window.t('apartments.feature.immediate_date') : document.getElementById('aptMoveInDateAr').value,
+        move_in_date_ar: document.getElementById('aptMoveInType').value === 'immediate' ? window.t('apartments.feature.immediate_date') : document.getElementById('aptMoveInDateAr').value,
+        move_in_date_en: document.getElementById('aptMoveInType').value === 'immediate' ? 'Immediate Move-in' : document.getElementById('aptMoveInDateEn').value,
         owner_phone: ownerPhone,
-        roommate_reqs: rentalTypeDisplay === tr('mock_room_in_apartment_100') ? roomReqs : null,
-        roommate_facilities: rentalTypeDisplay === tr('mock_room_in_apartment_100') ? roomFacs : null,
+        roommate_reqs: rentalType === 'room_shared' ? roomReqs : null,
+        roommate_facilities: rentalType === 'room_shared' ? roomFacs : null,
         features: featArr,
+        features_ar: featArrAr,
+        features_en: featArrEn,
         images: imagesArr,
-        description: document.getElementById('aptDesc').value + ` (${bathrooms})`
+        description: document.getElementById('aptDescAr').value + ` (${bathrooms})`,
+        description_ar: document.getElementById('aptDescAr').value,
+        description_en: document.getElementById('aptDescEn').value,
     };
 
     try {
@@ -153,46 +178,76 @@ export async function handleAddApartment(e) {
             document.getElementById('aptForm').reset();
             const aptContainer = document.getElementById('aptImgPreviewsContainer');
             if (aptContainer) aptContainer.innerHTML = '';
-            showToast(tr('apartments.add_success'));
+            showToast(window.t('messages.apartment_added'));
         } else {
-            showToast(`${tr('error_adding')}: ` + (data.message || ''));
+            showToast(window.t('messages.error_add_apartment') + ': ' + (data.message || ''));
         }
     } catch (ex) {
         console.error(ex);
-        showToast(tr('connection_error'));
+        showToast(window.t('messages.conn_error'));
     }
 }
 
-export function openEditApartmentModal(aptId) {
+export function openEditApartmentModal(aptId) { try {
     const apt = appData.apartments.find(a => a.id === aptId || a.id === String(aptId));
     if (!apt) {
-        showToast(tr('apartments.not_found'));
+        showToast(window.t('messages.not_found_apartment'));
         return;
     }
 
     // Populate scalar fields
     document.getElementById('editAptId').value = apt.id;
-    document.getElementById('editAptTitle').value = apt.title || '';
+    // Fill AR title: prefer title_ar, fallback to title
+    document.getElementById('editAptTitleAr').value = apt.title_ar || apt.title || '';
+    document.getElementById('editAptTitleEn').value = apt.title_en || '';
     document.getElementById('editAptPrice').value = apt.price || '';
-    document.getElementById('editAptLocation').value = apt.location || '';
-    document.getElementById('editAptProximity').value = apt.proximity || '';
-    document.getElementById('editAptCapacity').value = apt.capacity || '';
+    document.getElementById('editAptLocationAr').value = apt.location_ar || apt.location || '';
+    document.getElementById('editAptLocationEn').value = apt.location_en || '';
+    document.getElementById('editAptProximityAr').value = apt.proximity_ar || apt.proximity || '';
+    document.getElementById('editAptProximityEn').value = apt.proximity_en || '';
+    document.getElementById('editAptCapacityAr').value = apt.capacity_ar || apt.capacity || '';
+    document.getElementById('editAptCapacityEn').value = apt.capacity_en || '';
     document.getElementById('editAptOwnerPhone').value = apt.owner_phone || '';
     document.getElementById('editAptRoomsCount').value = apt.rooms_count || '';
-    document.getElementById('editAptDesc').value = apt.description || '';
+    document.getElementById('editAptDescAr').value = apt.description_ar || apt.description || '';
+    document.getElementById('editAptDescEn').value = apt.description_en || '';
 
-    // Features array → comma string
-    const featsArr = Array.isArray(apt.features) ? apt.features : [];
-    document.getElementById('editAptFeatures').value = featsArr.join(tr('apartments.edit_apt_features_join'));
+    // Move in type and date
+    const miTypeSel = document.getElementById('editAptMoveInType');
+    const isImmediate = apt.move_in_type === 'فوري' || apt.move_in_type === 'Immediate' || apt.move_in_type_en === 'Immediate';
+    if (miTypeSel) {
+        miTypeSel.value = isImmediate ? 'immediate' : 'scheduled';
+        document.getElementById('editAptMoveInDateContainer').style.display = isImmediate ? 'none' : 'block';
+    }
+    document.getElementById('editAptMoveInDateAr').value = (!isImmediate && (apt.move_in_date_ar || apt.move_in_date)) ? (apt.move_in_date_ar || apt.move_in_date) : '';
+    document.getElementById('editAptMoveInDateEn').value = (!isImmediate && apt.move_in_date_en) ? apt.move_in_date_en : '';
+
+    // Features array → comma string, fill AR and EN separately
+    const featsArr = Array.isArray(apt.features_ar) ? apt.features_ar : (Array.isArray(apt.features) ? apt.features : []);
+    const featsArrEn = Array.isArray(apt.features_en) ? apt.features_en : [];
+    document.getElementById('editAptFeaturesAr').value = featsArr.join(' ، ');
+    document.getElementById('editAptFeaturesEn').value = featsArrEn.join(', ');
 
     // Rental type
     const rtSel = document.getElementById('editAptRentalType');
     if (rtSel) rtSel.value = apt.rental_type || 'apartment';
 
+    // Roommate fields loading
+    if (document.getElementById('editAptRoommateReqs')) {
+        document.getElementById('editAptRoommateReqs').value = apt.roommate_reqs || '';
+    }
+    if (document.getElementById('editAptRoommateFacilities')) {
+        document.getElementById('editAptRoommateFacilities').value = apt.roommate_facilities || '';
+    }
+    const editRoommateSec = document.getElementById('editRoommateSection');
+    if (editRoommateSec) {
+        editRoommateSec.style.display = (apt.rental_type === 'room_shared') ? 'block' : 'none';
+    }
+
     // District dropdown — populated from appData
     const distSel = document.getElementById('editAptDistrictId');
     if (distSel) {
-        distSel.innerHTML = `<option value="">${tr('select_district_placeholder')}</option>` + (appData.districts || []).map(d =>
+        distSel.innerHTML = `<option value="">${window.t('apartments.select_district')}</option>` + (appData.districts || []).map(d =>
             `<option value="${d.id}" ${String(d.id) === String(apt.district_id) ? 'selected' : ''}>${d.name}</option>`
         ).join('');
     }
@@ -206,8 +261,8 @@ export function openEditApartmentModal(aptId) {
     const currentPrev = document.getElementById('editAptCurrentImgPreviews');
     if (currentPrev) {
         currentPrev.innerHTML = existingImages.length > 0
-            ? existingImages.map(url => `<img src="${resolveImgUrl(url)}" onerror="this.style.display='none'" style="width:60px;height:60px;border-radius:8px;object-fit:cover;border:2px solid var(--accent-amber);" title="${tr('apartments.current_image_title')}">`).join('')
-            : `<span style="font-size:0.8rem;color:var(--text-muted);">${tr('apartments.no_current_images')}</span>`;
+            ? existingImages.map(url => `<img src="${resolveImgUrl(url)}" onerror="this.style.display='none'" style="width:60px;height:60px;border-radius:8px;object-fit:cover;border:2px solid var(--accent-amber);" title="${window.t('apartments.current_image')}">`).join('')
+            : `<span style="font-size:0.8rem;color:var(--text-muted);">${window.t('apartments.no_current_images')}</span>`;
     }
 
     // Clear any previous new-upload previews
@@ -236,10 +291,12 @@ export function openEditApartmentModal(aptId) {
 export async function handleUpdateApartment(e) {
     e.preventDefault();
     const id = parseInt(document.getElementById('editAptId').value, 10);
-    if (!id) { showToast(tr('apt_id_not_found')); return; }
+    if (!id) { showToast(window.t('validation.apartment_id_missing')); return; }
 
-    const featuresRaw = document.getElementById('editAptFeatures').value;
-    const featArr = featuresRaw.split(/[،,]/).map(f => f.trim()).filter(Boolean);
+    const featuresRawAr = document.getElementById('editAptFeaturesAr').value;
+    const featuresRawEn = document.getElementById('editAptFeaturesEn').value;
+    const featArr = featuresRawAr.split(/[،,]/).map(f => f.trim()).filter(Boolean);
+    const featArrEn = featuresRawEn.split(/[,،]/).map(f => f.trim()).filter(Boolean);
     const roomsCountVal = parseInt(document.getElementById('editAptRoomsCount').value || '0', 10) || null;
     const districtIdVal = document.getElementById('editAptDistrictId').value;
 
@@ -258,21 +315,39 @@ export async function handleUpdateApartment(e) {
 
     const payload = {
         id,
-        title: document.getElementById('editAptTitle').value,
+        title: document.getElementById('editAptTitleAr').value,
+        title_ar: document.getElementById('editAptTitleAr').value,
+        title_en: document.getElementById('editAptTitleEn').value,
         price: document.getElementById('editAptPrice').value,
-        location: document.getElementById('editAptLocation').value,
-        proximity: document.getElementById('editAptProximity').value,
-        capacity: document.getElementById('editAptCapacity').value,
+        location: document.getElementById('editAptLocationAr').value,
+        location_ar: document.getElementById('editAptLocationAr').value,
+        location_en: document.getElementById('editAptLocationEn').value,
+        proximity: document.getElementById('editAptProximityAr').value,
+        proximity_ar: document.getElementById('editAptProximityAr').value,
+        proximity_en: document.getElementById('editAptProximityEn').value,
+        capacity: document.getElementById('editAptCapacityAr').value,
+        capacity_ar: document.getElementById('editAptCapacityAr').value,
+        capacity_en: document.getElementById('editAptCapacityEn').value,
         rental_type: document.getElementById('editAptRentalType').value,
         rooms_count: roomsCountVal,
         district_id: districtIdVal !== '' ? parseInt(districtIdVal, 10) : null,
         owner_phone: document.getElementById('editAptOwnerPhone').value,
+        roommate_reqs: document.getElementById('editAptRentalType').value === 'room_shared' ? document.getElementById('editAptRoommateReqs').value : null,
+        roommate_facilities: document.getElementById('editAptRentalType').value === 'room_shared' ? document.getElementById('editAptRoommateFacilities').value : null,
         features: featArr,
-        description: document.getElementById('editAptDesc').value,
+        features_ar: featArr,
+        features_en: featArrEn,
+        description: document.getElementById('editAptDescAr').value,
+        description_ar: document.getElementById('editAptDescAr').value,
+        description_en: document.getElementById('editAptDescEn').value,
         images: imagesArr,
         universities: selectedUnis,
-        move_in_type: existing.move_in_type || tr('mock_immediate_23'),
-        move_in_date: existing.move_in_date || tr('mock_immediate_move_in_269'),
+        move_in_type: document.getElementById('editAptMoveInType').value === 'immediate' ? window.t('apartments.feature.immediate') : window.t('apartments.feature.scheduled'),
+        move_in_type_ar: document.getElementById('editAptMoveInType').value === 'immediate' ? window.t('apartments.feature.immediate') : window.t('apartments.feature.scheduled'),
+        move_in_type_en: document.getElementById('editAptMoveInType').value === 'immediate' ? 'Immediate' : 'Scheduled',
+        move_in_date: document.getElementById('editAptMoveInType').value === 'immediate' ? window.t('apartments.feature.immediate_date') : document.getElementById('editAptMoveInDateAr').value,
+        move_in_date_ar: document.getElementById('editAptMoveInType').value === 'immediate' ? window.t('apartments.feature.immediate_date') : document.getElementById('editAptMoveInDateAr').value,
+        move_in_date_en: document.getElementById('editAptMoveInType').value === 'immediate' ? 'Immediate Move-in' : document.getElementById('editAptMoveInDateEn').value,
         is_available: existing.is_available !== undefined ? existing.is_available : 1,
     };
 
@@ -286,26 +361,26 @@ export async function handleUpdateApartment(e) {
         if (data.status === 'success') {
             await loadDashboardData();
             window.closeModalGlobal && window.closeModalGlobal('editAptModal');
-            showToast(tr('apt_update_success'));
+            showToast(window.t('messages.apartment_updated'));
         } else {
-            showToast(`${tr('error_updating')}: ` + (data.message || ''));
+            showToast(window.t('messages.error_update_apartment') + ': ' + (data.message || ''));
         }
     } catch (ex) {
         console.error(ex);
-        showToast(tr('connection_error'));
+        showToast(window.t('messages.conn_error'));
     }
 }
 
 export async function deleteApartment(id, confirmDeleteOffers = false) {
     if (!confirmDeleteOffers) {
-        const aptOk = await showConfirmDialog({
-            titleKey: 'confirm.delete_title',
-            messageKey: 'confirm.delete_message',
-            confirmKey: 'common.delete',
-            cancelKey: 'common.cancel',
+        const confirmed = await window.showConfirmDialog({
+            title: window.t('dialog.delete_apartment_title'),
+            message: window.t('dialog.delete_apartment_msg'),
+            confirmText: window.t('buttons.delete'),
+            cancelText: window.t('buttons.cancel'),
             variant: 'danger'
         });
-        if (!aptOk) return;
+        if (!confirmed) return;
     }
     try {
         const payload = { id };
@@ -320,41 +395,45 @@ export async function deleteApartment(id, confirmDeleteOffers = false) {
         const data = await res.json();
         if (data.status === 'success') {
             await loadDashboardData();
-            showToast(tr('apartments.delete_success'));
+            showToast(window.t('messages.apartment_deleted'));
         } else if (data.status === 'warning' && data.requires_confirmation) {
-            const cascadeOk = await showConfirmDialog({
-                titleKey: 'confirm.delete_title',
+            const confirmed = await window.showConfirmDialog({
+                title: window.t('dialog.delete_apartment_offers_title'),
                 message: data.message,
-                confirmKey: 'common.delete',
-                cancelKey: 'common.cancel',
+                confirmText: window.t('buttons.delete'),
+                cancelText: window.t('buttons.cancel'),
                 variant: 'danger'
             });
-            if (cascadeOk) {
+            if (confirmed) {
                 await deleteApartment(id, true);
             }
         } else {
-            showToast(`${tr('error_delete')}: ` + (data.message || ''));
+            showToast(window.t('messages.error_delete_apartment') + ': ' + (data.message || ''));
         }
     } catch (ex) {
         console.error(ex);
-        showToast(tr('connection_error'));
+        showToast(window.t('messages.conn_error'));
     }
 }
 
-export function toggleRoommateFields(val) {
-    const sec = document.getElementById('roommateSection');
-    if (sec) sec.style.display = val && val.includes(tr('mock_room_7')) ? 'block' : 'none';
+export function toggleRoommateFields(val, isEdit = false) {
+    const secId = isEdit ? 'editRoommateSection' : 'roommateSection';
+    const sec = document.getElementById(secId);
+    if (sec) {
+        const isRoom = val && (val.includes('غرفة') || val.includes('shared') || val.includes('room_shared'));
+        sec.style.display = isRoom ? 'block' : 'none';
+    }
 }
 
 export function toggleMoveInDateInput(val) {
     const grp = document.getElementById('moveInDateGroup');
-    if (grp) grp.style.display = (val === tr('mock_date_63')) ? 'block' : 'none';
+    if (grp) {
+        const isDate = val && (val === 'ميعاد' || val === 'date' || val.includes('ميعاد') || val.includes('date'));
+        grp.style.display = isDate ? 'block' : 'none';
+    }
 }
 
 export function initApartmentsModule() {
-    // Re-render on language change
-    window.addEventListener('languagechange', () => { renderApartments(); });
-
     const aptForm = document.getElementById('aptForm');
     if (aptForm) {
         aptForm.addEventListener('submit', handleAddApartment);
@@ -370,7 +449,36 @@ export function initApartmentsModule() {
         aptSearch.addEventListener('input', renderApartments);
     }
 
+    const rentalTypeSelect = document.getElementById('aptRentalType');
+    if (rentalTypeSelect) {
+        rentalTypeSelect.addEventListener('change', (e) => {
+            toggleRoommateFields(e.target.value, false);
+        });
+    }
+
+    const editRentalTypeSelect = document.getElementById('editAptRentalType');
+    if (editRentalTypeSelect) {
+        editRentalTypeSelect.addEventListener('change', (e) => {
+            toggleRoommateFields(e.target.value, true);
+        });
+    }
+
+    const aptMoveInType = document.getElementById('aptMoveInType');
+    if (aptMoveInType) {
+        aptMoveInType.addEventListener('change', (e) => {
+            document.getElementById('aptMoveInDateContainer').style.display = e.target.value === 'scheduled' ? 'block' : 'none';
+        });
+    }
+
+    const editAptMoveInType = document.getElementById('editAptMoveInType');
+    if (editAptMoveInType) {
+        editAptMoveInType.addEventListener('change', (e) => {
+            document.getElementById('editAptMoveInDateContainer').style.display = e.target.value === 'scheduled' ? 'block' : 'none';
+        });
+    }
+
     // Expose globals so inline onclick in rendered HTML can call them
+    } catch(e) { alert('EditApt Error: ' + e.stack); }
     window.deleteApartmentGlobal = deleteApartment;
     window.openEditApartmentModalGlobal = openEditApartmentModal;
 }

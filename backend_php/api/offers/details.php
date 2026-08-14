@@ -19,13 +19,32 @@ if (!is_numeric($id) || intval($id) <= 0) {
 $id = intval($id);
 
 try {
-    $sql = "SELECT ho.*, 
-                   apt.id AS apt_id, apt.title AS apt_title, apt.price AS apt_price, 
-                   apt.location AS apt_location, apt.proximity AS apt_proximity, 
-                   apt.universities AS apt_universities, apt.capacity AS apt_capacity, 
-                   apt.move_in_type AS apt_move_in_type, apt.move_in_date AS apt_move_in_date, 
-                   apt.images AS apt_images, apt.features AS apt_features, 
-                   apt.description AS apt_description, apt.is_available AS apt_is_available, 
+    $lang = $_GET['lang'] ?? 'ar';
+    if (!in_array($lang, ['ar', 'en'], true)) {
+        $lang = 'ar';
+    }
+
+    $titleCol = ($lang === 'en') ? "COALESCE(NULLIF(ho.title_en, ''), NULLIF(ho.title_ar, ''), ho.title)" : "COALESCE(NULLIF(ho.title_ar, ''), ho.title)";
+    $descCol  = ($lang === 'en') ? "COALESCE(NULLIF(ho.description_en, ''), NULLIF(ho.description_ar, ''), ho.description)" : "COALESCE(NULLIF(ho.description_ar, ''), ho.description)";
+    $badgeCol = ($lang === 'en') ? "COALESCE(NULLIF(ho.badge_text_en, ''), NULLIF(ho.badge_text_ar, ''), ho.badge_text)" : "COALESCE(NULLIF(ho.badge_text_ar, ''), ho.badge_text)";
+
+    $aptTitleCol = ($lang === 'en') ? "COALESCE(NULLIF(apt.title_en, ''), NULLIF(apt.title_ar, ''), apt.title)" : "COALESCE(NULLIF(apt.title_ar, ''), apt.title)";
+    $aptDescCol  = ($lang === 'en') ? "COALESCE(NULLIF(apt.description_en, ''), NULLIF(apt.description_ar, ''), apt.description)" : "COALESCE(NULLIF(apt.description_ar, ''), apt.description)";
+    $aptLocCol   = ($lang === 'en') ? "COALESCE(NULLIF(apt.location_en, ''), NULLIF(apt.location_ar, ''), apt.location)" : "COALESCE(NULLIF(apt.location_ar, ''), apt.location)";
+    $aptProxCol  = ($lang === 'en') ? "COALESCE(NULLIF(apt.proximity_en, ''), NULLIF(apt.proximity_ar, ''), apt.proximity)" : "COALESCE(NULLIF(apt.proximity_ar, ''), apt.proximity)";
+    $aptCapCol   = ($lang === 'en') ? "COALESCE(NULLIF(apt.capacity_en, ''), NULLIF(apt.capacity_ar, ''), apt.capacity)" : "COALESCE(NULLIF(apt.capacity_ar, ''), apt.capacity)";
+    $aptMitCol   = ($lang === 'en') ? "COALESCE(NULLIF(apt.move_in_type_en, ''), NULLIF(apt.move_in_type_ar, ''), apt.move_in_type)" : "COALESCE(NULLIF(apt.move_in_type_ar, ''), apt.move_in_type)";
+    $aptMidCol   = ($lang === 'en') ? "COALESCE(NULLIF(apt.move_in_date_en, ''), NULLIF(apt.move_in_date_ar, ''), apt.move_in_date)" : "COALESCE(NULLIF(apt.move_in_date_ar, ''), apt.move_in_date)";
+    $aptFeatsCol = ($lang === 'en') ? "COALESCE(NULLIF(apt.features_en, ''), NULLIF(apt.features_ar, ''), apt.features)" : "COALESCE(NULLIF(apt.features_ar, ''), apt.features)";
+
+    $sql = "SELECT ho.id, ho.apartment_id, ho.original_price, ho.offer_price, ho.image_url, ho.starts_at, ho.expires_at, ho.is_active, ho.display_order, ho.created_at, ho.updated_at,
+                   $titleCol AS title, $descCol AS description, $badgeCol AS badge_text,
+                   apt.id AS apt_id, $aptTitleCol AS apt_title, apt.price AS apt_price, 
+                   $aptLocCol AS apt_location, $aptProxCol AS apt_proximity, 
+                   apt.universities AS apt_universities, $aptCapCol AS apt_capacity, 
+                   $aptMitCol AS apt_move_in_type, $aptMidCol AS apt_move_in_date, 
+                   apt.images AS apt_images, $aptFeatsCol AS apt_features, 
+                   $aptDescCol AS apt_description, apt.is_available AS apt_is_available, 
                    apt.rental_type AS apt_rental_type, apt.rooms_count AS apt_rooms_count, 
                    apt.district_id AS apt_district_id
             FROM housing_offers ho

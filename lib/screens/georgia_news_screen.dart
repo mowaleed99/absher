@@ -20,6 +20,18 @@ class _GeorgiaNewsScreenState extends State<GeorgiaNewsScreen> {
   void initState() {
     super.initState();
     _fetchNews();
+    LanguageService.currentLang.addListener(_onLangChanged);
+  }
+
+  void _onLangChanged() {
+    if (!mounted) return;
+    _fetchNews();
+  }
+
+  @override
+  void dispose() {
+    LanguageService.currentLang.removeListener(_onLangChanged);
+    super.dispose();
   }
 
   Future<void> _fetchNews() async {

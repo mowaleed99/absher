@@ -76,6 +76,9 @@ class ApiService {
 
   static String get serverRoot => baseUrl.replaceAll('/api', '');
 
+  /// Returns the current language code for API requests ('ar' or 'en').
+  static String get _langParam => LanguageService.currentLang.value == 'en' ? 'en' : 'ar';
+
   static String resolveImageUrl(String path) {
     if (path.isEmpty) return 'assets/images/apt1.png';
     if (path.startsWith('http://') ||
@@ -202,13 +205,17 @@ class ApiService {
     try {
       final params = <String, String>{
         't': DateTime.now().millisecondsSinceEpoch.toString(),
+        'lang': _langParam,
       };
-      if (rentalType != null && rentalType.isNotEmpty)
+      if (rentalType != null && rentalType.isNotEmpty) {
         params['rental_type'] = rentalType;
-      if (roomsCount != null && roomsCount > 0)
+      }
+      if (roomsCount != null && roomsCount > 0) {
         params['rooms_count'] = roomsCount.toString();
-      if (districtId != null && districtId > 0)
+      }
+      if (districtId != null && districtId > 0) {
         params['district_id'] = districtId.toString();
+      }
 
       final uri = Uri.parse('$baseUrl/apartments/list.php')
           .replace(queryParameters: params);
@@ -270,7 +277,7 @@ class ApiService {
 
   static Future<List<HousingOffer>?> getHousingOffers() async {
     final String url =
-        '$baseUrl/offers/list.php?t=${DateTime.now().millisecondsSinceEpoch}';
+        '$baseUrl/offers/list.php?lang=$_langParam&t=${DateTime.now().millisecondsSinceEpoch}';
     try {
       final response =
           await http.get(Uri.parse(url)).timeout(const Duration(seconds: 10));
@@ -307,7 +314,7 @@ class ApiService {
     try {
       final response = await http.get(
         Uri.parse(
-            '$baseUrl/wallet_api.php?action=get_universities&t=${DateTime.now().millisecondsSinceEpoch}'),
+            '$baseUrl/wallet_api.php?action=get_universities&lang=$_langParam&t=${DateTime.now().millisecondsSinceEpoch}'),
       );
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
@@ -337,7 +344,7 @@ class ApiService {
     try {
       final response = await http.get(
         Uri.parse(
-            '$baseUrl/wallet_api.php?action=get_districts&t=${DateTime.now().millisecondsSinceEpoch}'),
+            '$baseUrl/wallet_api.php?action=get_districts&lang=$_langParam&t=${DateTime.now().millisecondsSinceEpoch}'),
       );
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
@@ -369,7 +376,7 @@ class ApiService {
     try {
       final response = await http.get(
         Uri.parse(
-            '$baseUrl/student_requests.php?action=get_news&t=${DateTime.now().millisecondsSinceEpoch}'),
+            '$baseUrl/student_requests.php?action=get_news&lang=$_langParam&t=${DateTime.now().millisecondsSinceEpoch}'),
       );
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
@@ -462,7 +469,7 @@ class ApiService {
     try {
       final response = await http.get(
         Uri.parse(
-            '$baseUrl/services/list.php?t=${DateTime.now().millisecondsSinceEpoch}'),
+            '$baseUrl/services/list.php?lang=$_langParam&t=${DateTime.now().millisecondsSinceEpoch}'),
       );
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body) as Map<String, dynamic>;

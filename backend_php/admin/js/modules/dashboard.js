@@ -83,12 +83,12 @@ export function renderStats() {
     const serviceContainer = document.getElementById('serviceAnalyticsContainer');
     if (serviceContainer) {
         if (approvedReviews.length === 0) {
-            serviceContainer.innerHTML = `<p style="color: var(--text-muted); text-align: center; font-size: 0.9rem; padding: 1rem;">${t('dashboard.no_service_stats')}</p>`;
+            serviceContainer.innerHTML = `<p style="color: var(--text-muted); text-align: center; font-size: 0.9rem; padding: 1rem;">${window.t('dashboard.no_service_stats')}</p>`;
         } else {
             const svcData = {};
             approvedReviews.forEach(r => {
                 const req = appData.requests ? appData.requests.find(x => x.id === r.service_request_id) : null;
-                const serviceTitle = req ? req.service_title : t('reviews.general_testimonial');
+                const serviceTitle = req ? req.service_title : window.t('reviews.general_testimonial');
                 if (!svcData[serviceTitle]) {
                     svcData[serviceTitle] = { sum: 0, count: 0 };
                 }
@@ -108,7 +108,7 @@ export function renderStats() {
                     <div style="display: flex; flex-direction: column; gap: 4px; font-size: 0.85rem; border-bottom: 1px dashed rgba(255,255,255,0.03); padding-bottom: 8px; width: 100%;">
                         <div style="display: flex; justify-content: space-between; align-items: center; color: var(--text-main); font-weight: 600;">
                             <span>${item.title}</span>
-                            <span style="color: var(--accent-amber); font-weight: bold;">${item.avg} ★ (${item.count} ${t('reviews.reviews_count')})</span>
+                            <span style="color: var(--accent-amber); font-weight: bold;">${item.avg} ★ (${item.count} ${window.t('reviews.reviews_count')})</span>
                         </div>
                         <div style="height: 6px; background: rgba(255,255,255,0.05); border-radius: 3px; overflow: hidden; width: 100%;">
                             <div style="width: ${fillWidth}%; height: 100%; background: var(--accent-green); border-radius: 3px; transition: var(--transition);"></div>
