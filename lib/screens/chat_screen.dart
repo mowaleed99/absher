@@ -720,11 +720,17 @@ class _ChatScreenState extends State<ChatScreen> {
                         color: AppColors.primary)),
               ),
               const SizedBox(width: 10),
-              Text(LanguageService.tr('absher_support_chat_title'),
+              Expanded(
+                child: Text(
+                  LanguageService.tr('absher_support_chat_title'),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
                       color: Colors.white,
-                      fontSize: 15,
-                      fontWeight: FontWeight.bold)),
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold),
+                ),
+              ),
             ],
           ),
           actions: [
