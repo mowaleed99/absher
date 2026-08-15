@@ -131,6 +131,43 @@ class _ChatScreenState extends State<ChatScreen> {
     });
 
     _initChat();
+    _dismissChatNotifications();
+  }
+
+  Future<void> _dismissChatNotifications() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final readList = prefs.getStringList('read_notification_ids') ?? [];
+      final readSet = readList.toSet();
+
+      final notifs = await ApiService.getNotifications();
+      bool changed = false;
+      for (final n in notifs) {
+        final id = n['id']?.toString() ?? '';
+        final type = (n['type'] ?? '').toString().toLowerCase();
+        final title = (n['title'] ?? n['title_ar'] ?? n['title_en'] ?? '').toString().toLowerCase();
+        final body = (n['content'] ?? n['body'] ?? '').toString().toLowerCase();
+        final isChat = type == 'chat' ||
+            type == 'support_reply' ||
+            type == 'chat_reply' ||
+            title.contains('رد جديد من الدعم') ||
+            title.contains('رد الدعم') ||
+            body.contains('الشات المباشر') ||
+            title.contains('support reply') ||
+            body.contains('live chat');
+
+        if (isChat && id.isNotEmpty && !readSet.contains(id)) {
+          readSet.add(id);
+          changed = true;
+        }
+      }
+      if (changed) {
+        await prefs.setStringList('read_notification_ids', readSet.toList());
+        RealtimeSyncService().triggerNotificationsUpdate();
+      }
+    } catch (e) {
+      debugPrint('Error clearing chat notifications on chat open: $e');
+    }
   }
 
   Future<void> _initChat() async {

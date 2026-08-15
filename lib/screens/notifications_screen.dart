@@ -34,7 +34,10 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     _loadReadStatus();
 
     _notifSub = RealtimeSyncService().onNotificationsUpdated.listen((_) {
-      if (mounted) _fetchNotifications(silent: true);
+      if (mounted) {
+        _loadReadStatus();
+        _fetchNotifications(silent: true);
+      }
     });
   }
 
@@ -74,36 +77,97 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     }
   }
 
+  bool _isChatNotification(Map<String, dynamic> notif) {
+    final type = notif['type']?.toString().toLowerCase() ?? '';
+    if (type == 'chat' || type == 'support_reply' || type == 'chat_reply') {
+      return true;
+    }
+    final title = _getNotifTitle(notif).toLowerCase();
+    final body = _getNotifBody(notif).toLowerCase();
+    final combined = '$title $body';
+    return combined.contains('رد جديد من الدعم') ||
+        combined.contains('رد الدعم') ||
+        combined.contains('الشات المباشر') ||
+        combined.contains('support reply') ||
+        combined.contains('live chat') ||
+        combined.contains('chat message');
+  }
+
+  List<Map<String, dynamic>> _getVisibleNotifications() {
+    // 1. Filter out chat notifications that have already been opened/read
+    final visible = _notifications.where((n) {
+      final id = n['id']?.toString() ?? '';
+      if (_isChatNotification(n) && _readIds.contains(id)) {
+        return false;
+      }
+      return true;
+    }).toList();
+
+    // 2. Sort: Chat reply notifications pinned at the top, then by date descending
+    visible.sort((a, b) {
+      final aIsChat = _isChatNotification(a);
+      final bIsChat = _isChatNotification(b);
+      if (aIsChat && !bIsChat) return -1;
+      if (!aIsChat && bIsChat) return 1;
+
+      final aDate = a['date']?.toString() ?? '';
+      final bDate = b['date']?.toString() ?? '';
+      return bDate.compareTo(aDate);
+    });
+
+    return visible;
+  }
+
   String _getNotifTitle(Map<String, dynamic> notif) {
     final isEn = LanguageService.currentLang.value == 'en';
-    if (isEn && notif['title_en'] != null && notif['title_en'].toString().trim().isNotEmpty) {
+    if (isEn &&
+        notif['title_en'] != null &&
+        notif['title_en'].toString().trim().isNotEmpty) {
       return notif['title_en'].toString();
     }
-    if (!isEn && notif['title_ar'] != null && notif['title_ar'].toString().trim().isNotEmpty) {
+    if (!isEn &&
+        notif['title_ar'] != null &&
+        notif['title_ar'].toString().trim().isNotEmpty) {
       return notif['title_ar'].toString();
     }
-    return notif['title']?.toString() ?? notif['title_ar']?.toString() ?? notif['title_en']?.toString() ?? '';
+    return notif['title']?.toString() ??
+        notif['title_ar']?.toString() ??
+        notif['title_en']?.toString() ??
+        '';
   }
 
   String _getNotifBody(Map<String, dynamic> notif) {
     final isEn = LanguageService.currentLang.value == 'en';
-    if (isEn && notif['body_en'] != null && notif['body_en'].toString().trim().isNotEmpty) {
+    if (isEn &&
+        notif['body_en'] != null &&
+        notif['body_en'].toString().trim().isNotEmpty) {
       return notif['body_en'].toString();
     }
-    if (isEn && notif['content_en'] != null && notif['content_en'].toString().trim().isNotEmpty) {
+    if (isEn &&
+        notif['content_en'] != null &&
+        notif['content_en'].toString().trim().isNotEmpty) {
       return notif['content_en'].toString();
     }
-    if (!isEn && notif['body_ar'] != null && notif['body_ar'].toString().trim().isNotEmpty) {
+    if (!isEn &&
+        notif['body_ar'] != null &&
+        notif['body_ar'].toString().trim().isNotEmpty) {
       return notif['body_ar'].toString();
     }
-    if (!isEn && notif['content_ar'] != null && notif['content_ar'].toString().trim().isNotEmpty) {
+    if (!isEn &&
+        notif['content_ar'] != null &&
+        notif['content_ar'].toString().trim().isNotEmpty) {
       return notif['content_ar'].toString();
     }
-    return notif['content']?.toString() ?? notif['body']?.toString() ?? notif['body_ar']?.toString() ?? notif['body_en']?.toString() ?? '';
+    return notif['content']?.toString() ??
+        notif['body']?.toString() ??
+        notif['body_ar']?.toString() ??
+        notif['body_en']?.toString() ??
+        '';
   }
 
   Map<String, dynamic>? _getNavigationTarget(Map<String, dynamic> notif) {
-    final text = ('${_getNotifTitle(notif)} ${_getNotifBody(notif)}').toLowerCase();
+    final text =
+        ('${_getNotifTitle(notif)} ${_getNotifBody(notif)}').toLowerCase();
     final isAr = LanguageService.currentLang.value == 'ar';
 
     if (text.contains('شات') ||
@@ -121,7 +185,12 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
             MaterialPageRoute(
               builder: (_) => ChatScreen(user: widget.user),
             ),
-          );
+          ).then((_) {
+            if (mounted) {
+              _loadReadStatus();
+              _fetchNotifications(silent: true);
+            }
+          });
         }
       };
     }
@@ -299,7 +368,8 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final unreadCount = _notifications
+    final visibleNotifications = _getVisibleNotifications();
+    final unreadCount = visibleNotifications
         .where((n) => !_readIds.contains(n['id']?.toString() ?? ''))
         .length;
 
@@ -338,7 +408,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
             ),
             body: _isLoading
                 ? const LoadingStateWidget(messageKey: 'loading_notifications')
-                : _notifications.isEmpty
+                : visibleNotifications.isEmpty
                     ? const EmptyStateWidget(
                         titleKey: 'no_notifications_title',
                         descriptionKey: 'no_notifications_desc',
@@ -349,24 +419,33 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                         color: AppColors.primary,
                         child: ListView.builder(
                           padding: const EdgeInsets.all(16),
-                          itemCount: _notifications.length,
+                          itemCount: visibleNotifications.length,
                           itemBuilder: (context, index) {
-                            final notif = _notifications[index];
+                            final notif = visibleNotifications[index];
                             final id = notif['id']?.toString() ?? '';
                             final isRead = _readIds.contains(id);
+                            final isChat = _isChatNotification(notif);
                             final target = _getNavigationTarget(notif);
 
                             return Card(
                               margin: const EdgeInsets.only(bottom: 16),
                               shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(20)),
-                              elevation: isRead ? 0.5 : 3.0,
+                              elevation: isChat ? 4.0 : (isRead ? 0.5 : 2.5),
                               clipBehavior: Clip.antiAlias,
                               child: InkWell(
-                                onTap: () {
-                                  _markAsRead(id);
+                                onTap: () async {
+                                  await _markAsRead(id);
+                                  if (isChat) {
+                                    setState(() {
+                                      _notifications.removeWhere(
+                                          (n) => (n['id']?.toString() ?? '') == id);
+                                    });
+                                  }
+                                  if (!context.mounted) return;
                                   if (target != null) {
-                                    (target['action'] as Function(BuildContext))(context);
+                                    (target['action'] as Function(BuildContext))(
+                                        context);
                                   } else {
                                     _showNotificationDetail(context, notif);
                                   }
@@ -375,38 +454,57 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                                   duration: const Duration(milliseconds: 300),
                                   padding: const EdgeInsets.all(16),
                                   decoration: BoxDecoration(
-                                    color: isRead
-                                        ? Colors.grey.shade100
-                                        : Colors.white,
+                                    color: isChat
+                                        ? const Color(0xFFF0FDF4)
+                                        : (isRead
+                                            ? Colors.grey.shade100
+                                            : Colors.white),
                                     border: Border.all(
-                                      color: isRead
-                                          ? Colors.grey.shade300
-                                          : AppColors.accent
-                                              .withValues(alpha: 0.4),
-                                      width: 1.5,
+                                      color: isChat
+                                          ? const Color(0xFF22C55E)
+                                          : (isRead
+                                              ? Colors.grey.shade300
+                                              : AppColors.accent
+                                                  .withValues(alpha: 0.4)),
+                                      width: isChat ? 1.8 : 1.5,
                                     ),
                                     borderRadius: BorderRadius.circular(20),
+                                    boxShadow: isChat
+                                        ? [
+                                            BoxShadow(
+                                              color: const Color(0xFF22C55E)
+                                                  .withValues(alpha: 0.12),
+                                              blurRadius: 10,
+                                              offset: const Offset(0, 3),
+                                            ),
+                                          ]
+                                        : null,
                                   ),
                                   child: Row(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
+                                    crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
                                       Container(
                                         padding: const EdgeInsets.all(12),
                                         decoration: BoxDecoration(
-                                          color: isRead
-                                              ? Colors.grey.shade300
-                                              : AppColors.accent
-                                                  .withValues(alpha: 0.12),
+                                          color: isChat
+                                              ? const Color(0xFFDCFCE7)
+                                              : (isRead
+                                                  ? Colors.grey.shade300
+                                                  : AppColors.accent
+                                                      .withValues(alpha: 0.12)),
                                           shape: BoxShape.circle,
                                         ),
                                         child: Icon(
-                                          target != null
-                                              ? (target['icon'] as IconData)
-                                              : Icons.campaign_rounded,
-                                          color: isRead
-                                              ? Colors.grey.shade600
-                                              : AppColors.accent,
+                                          isChat
+                                              ? Icons.mark_chat_unread_rounded
+                                              : (target != null
+                                                  ? (target['icon'] as IconData)
+                                                  : Icons.campaign_rounded),
+                                          color: isChat
+                                              ? const Color(0xFF16A34A)
+                                              : (isRead
+                                                  ? Colors.grey.shade600
+                                                  : AppColors.accent),
                                           size: 26,
                                         ),
                                       ),
@@ -418,21 +516,60 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                                           children: [
                                             Row(
                                               mainAxisAlignment:
-                                                  MainAxisAlignment
-                                                      .spaceBetween,
+                                                  MainAxisAlignment.spaceBetween,
                                               children: [
                                                 Expanded(
-                                                  child: Text(
-                                                    _getNotifTitle(notif),
-                                                    style: TextStyle(
-                                                      fontSize: 15,
-                                                      fontWeight:
-                                                          FontWeight.bold,
-                                                      color: isRead
-                                                          ? Colors.grey.shade700
-                                                          : AppColors
-                                                              .primaryDark,
-                                                    ),
+                                                  child: Row(
+                                                    children: [
+                                                      if (isChat) ...[
+                                                        Container(
+                                                          margin:
+                                                              const EdgeInsetsDirectional
+                                                                  .only(end: 6),
+                                                          padding:
+                                                              const EdgeInsets.symmetric(
+                                                                  horizontal: 6,
+                                                                  vertical: 2),
+                                                          decoration:
+                                                              BoxDecoration(
+                                                            color: const Color(
+                                                                0xFF16A34A),
+                                                            borderRadius:
+                                                                BorderRadius.circular(
+                                                                    6),
+                                                          ),
+                                                          child: Text(
+                                                            isAr
+                                                                ? "مثبت 📌"
+                                                                : "Pinned 📌",
+                                                            style: const TextStyle(
+                                                              color: Colors.white,
+                                                              fontSize: 10,
+                                                              fontWeight:
+                                                                  FontWeight.bold,
+                                                            ),
+                                                          ),
+                                                        ),
+                                                      ],
+                                                      Expanded(
+                                                        child: Text(
+                                                          _getNotifTitle(notif),
+                                                          style: TextStyle(
+                                                            fontSize: 15,
+                                                            fontWeight:
+                                                                FontWeight.bold,
+                                                            color: isChat
+                                                                ? const Color(
+                                                                    0xFF166534)
+                                                                : (isRead
+                                                                    ? Colors.grey
+                                                                        .shade700
+                                                                    : AppColors
+                                                                        .primaryDark),
+                                                          ),
+                                                        ),
+                                                      ),
+                                                    ],
                                                   ),
                                                 ),
                                                 const SizedBox(width: 6),
@@ -445,10 +582,14 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                                                             'auto_trans_1191'),
                                                     style: TextStyle(
                                                       fontSize: 10,
-                                                      color: isRead
-                                                          ? Colors.grey.shade500
-                                                          : Colors
-                                                              .grey.shade600,
+                                                      color: isChat
+                                                          ? const Color(
+                                                              0xFF16A34A)
+                                                          : (isRead
+                                                              ? Colors
+                                                                  .grey.shade500
+                                                              : Colors
+                                                                  .grey.shade600),
                                                       fontWeight:
                                                           FontWeight.bold,
                                                     ),
@@ -470,47 +611,82 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                                             if (target != null) ...[
                                               const SizedBox(height: 10),
                                               InkWell(
-                                                onTap: () {
-                                                  _markAsRead(id);
-                                                  (target['action'] as Function(BuildContext))(context);
+                                                onTap: () async {
+                                                  await _markAsRead(id);
+                                                  if (isChat) {
+                                                    setState(() {
+                                                      _notifications
+                                                          .removeWhere((n) =>
+                                                              (n['id']?.toString() ??
+                                                                  '') ==
+                                                              id);
+                                                    });
+                                                  }
+                                                  if (!context.mounted) return;
+                                                  (target['action'] as Function(
+                                                      BuildContext))(context);
                                                 },
-                                                borderRadius: BorderRadius.circular(10),
+                                                borderRadius:
+                                                    BorderRadius.circular(10),
                                                 child: Container(
-                                                  padding: const EdgeInsets.symmetric(
-                                                      horizontal: 12, vertical: 7),
+                                                  padding:
+                                                      const EdgeInsets.symmetric(
+                                                          horizontal: 12,
+                                                          vertical: 7),
                                                   decoration: BoxDecoration(
-                                                    color: AppColors.primary
-                                                        .withValues(alpha: 0.08),
+                                                    color: isChat
+                                                        ? const Color(0xFF16A34A)
+                                                        : AppColors.primary
+                                                            .withValues(
+                                                                alpha: 0.08),
                                                     borderRadius:
                                                         BorderRadius.circular(10),
                                                     border: Border.all(
-                                                      color: AppColors.primary
-                                                          .withValues(alpha: 0.2),
+                                                      color: isChat
+                                                          ? const Color(
+                                                              0xFF16A34A)
+                                                          : AppColors.primary
+                                                              .withValues(
+                                                                  alpha: 0.2),
                                                     ),
                                                   ),
                                                   child: Row(
-                                                    mainAxisSize: MainAxisSize.min,
+                                                    mainAxisSize:
+                                                        MainAxisSize.min,
                                                     children: [
                                                       Icon(
-                                                          target['icon'] as IconData,
+                                                          target['icon']
+                                                              as IconData,
                                                           size: 15,
-                                                          color: AppColors.primary),
+                                                          color: isChat
+                                                              ? Colors.white
+                                                              : AppColors
+                                                                  .primary),
                                                       const SizedBox(width: 6),
                                                       Text(
                                                         target['label'] as String,
-                                                        style: const TextStyle(
-                                                          color: AppColors.primary,
+                                                        style: TextStyle(
+                                                          color: isChat
+                                                              ? Colors.white
+                                                              : AppColors
+                                                                  .primary,
                                                           fontSize: 12,
-                                                          fontWeight: FontWeight.bold,
+                                                          fontWeight:
+                                                              FontWeight.bold,
                                                         ),
                                                       ),
                                                       const SizedBox(width: 4),
                                                       Icon(
                                                           LanguageService.isRtl
-                                                              ? Icons.arrow_back_ios
-                                                              : Icons.arrow_forward_ios,
+                                                              ? Icons
+                                                                  .arrow_back_ios
+                                                                : Icons
+                                                                  .arrow_forward_ios,
                                                           size: 11,
-                                                          color: AppColors.primary),
+                                                          color: isChat
+                                                              ? Colors.white
+                                                              : AppColors
+                                                                  .primary),
                                                     ],
                                                   ),
                                                 ),

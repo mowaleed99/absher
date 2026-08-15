@@ -442,8 +442,15 @@ class ApiService {
           return (data['notifications'] as List)
               .map((n) => <String, dynamic>{
                     'id': n['id']?.toString() ?? '',
+                    'type': n['type']?.toString() ?? '',
                     'title': n['title']?.toString() ?? '',
-                    'content': n['content']?.toString() ?? '',
+                    'title_ar': n['title_ar']?.toString(),
+                    'title_en': n['title_en']?.toString(),
+                    'content': n['content']?.toString() ??
+                        n['body']?.toString() ??
+                        '',
+                    'body_ar': n['body_ar']?.toString(),
+                    'body_en': n['body_en']?.toString(),
                     'date': n['date']?.toString() ??
                         n['created_at']?.toString() ??
                         LanguageService.tr('auto_trans_1366'),

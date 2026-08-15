@@ -60,6 +60,18 @@ class RealtimeSyncService with WidgetsBindingObserver {
     if (chatId != null) currentChatId = chatId;
   }
 
+  void triggerNotificationsUpdate() {
+    if (!_notificationsUpdateController.isClosed) {
+      _notificationsUpdateController.add(null);
+    }
+  }
+
+  void triggerChatUpdate() {
+    if (!_chatUpdateController.isClosed) {
+      _chatUpdateController.add(null);
+    }
+  }
+
   void startSync() {
     _timer?.cancel();
     _timer = Timer.periodic(const Duration(seconds: 4), (_) => checkSyncState());
