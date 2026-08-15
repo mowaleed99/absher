@@ -62,6 +62,19 @@ class FlatsListScreen extends StatelessWidget {
       }
     }).toList();
 
+    // Always sort featured / pinned apartments at the top
+    filteredList.sort((a, b) {
+      final bool aFeatured = (a['is_featured'] == true ||
+          a['is_featured'] == 1 ||
+          a['is_featured'] == '1');
+      final bool bFeatured = (b['is_featured'] == true ||
+          b['is_featured'] == 1 ||
+          b['is_featured'] == '1');
+      if (aFeatured && !bFeatured) return -1;
+      if (!aFeatured && bFeatured) return 1;
+      return 0;
+    });
+
     return Directionality(
       textDirection: LanguageService.textDirection,
       child: Scaffold(
@@ -205,6 +218,10 @@ class FlatsListScreen extends StatelessWidget {
                             moveInStr.contains(
                                 LanguageService.tr('auto_trans_1046'));
 
+                        final isFeatured = apt['is_featured'] == true ||
+                            apt['is_featured'] == 1 ||
+                            apt['is_featured'] == '1';
+
                         return GestureDetector(
                           onTap: () => Navigator.of(context).push(
                               MaterialPageRoute(
@@ -215,7 +232,20 @@ class FlatsListScreen extends StatelessWidget {
                             decoration: BoxDecoration(
                               color: Colors.white,
                               borderRadius: BorderRadius.circular(22),
+                              border: isFeatured
+                                  ? Border.all(
+                                      color: const Color(0xFFF59E0B),
+                                      width: 1.6)
+                                  : Border.all(
+                                      color: Colors.transparent, width: 0),
                               boxShadow: [
+                                if (isFeatured)
+                                  BoxShadow(
+                                    color: const Color(0xFFF59E0B)
+                                        .withValues(alpha: 0.18),
+                                    blurRadius: 16,
+                                    offset: const Offset(0, 4),
+                                  ),
                                 BoxShadow(
                                     color: Colors.black.withValues(alpha: 0.06),
                                     blurRadius: 15,
@@ -225,34 +255,87 @@ class FlatsListScreen extends StatelessWidget {
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                ClipRRect(
-                                  borderRadius: const BorderRadius.vertical(
-                                      top: Radius.circular(22)),
-                                  child: firstImg.startsWith('assets/')
-                                      ? Image.asset(
-                                          firstImg,
-                                          height: 200,
-                                          width: double.infinity,
-                                          fit: BoxFit.cover,
-                                          errorBuilder: (_, __, ___) =>
-                                              Image.asset(
-                                                  'assets/images/apt1.png',
-                                                  height: 200,
-                                                  width: double.infinity,
-                                                  fit: BoxFit.cover),
-                                        )
-                                      : Image.network(
-                                          ApiService.resolveImageUrl(firstImg),
-                                          height: 200,
-                                          width: double.infinity,
-                                          fit: BoxFit.cover,
-                                          errorBuilder: (_, __, ___) =>
-                                              Image.asset(
-                                                  'assets/images/apt1.png',
-                                                  height: 200,
-                                                  width: double.infinity,
-                                                  fit: BoxFit.cover),
+                                Stack(
+                                  children: [
+                                    ClipRRect(
+                                      borderRadius: const BorderRadius.vertical(
+                                          top: Radius.circular(21)),
+                                      child: firstImg.startsWith('assets/')
+                                          ? Image.asset(
+                                              firstImg,
+                                              height: 200,
+                                              width: double.infinity,
+                                              fit: BoxFit.cover,
+                                              errorBuilder: (_, __, ___) =>
+                                                  Image.asset(
+                                                      'assets/images/apt1.png',
+                                                      height: 200,
+                                                      width: double.infinity,
+                                                      fit: BoxFit.cover),
+                                            )
+                                          : Image.network(
+                                              ApiService.resolveImageUrl(firstImg),
+                                              height: 200,
+                                              width: double.infinity,
+                                              fit: BoxFit.cover,
+                                              errorBuilder: (_, __, ___) =>
+                                                  Image.asset(
+                                                      'assets/images/apt1.png',
+                                                      height: 200,
+                                                      width: double.infinity,
+                                                      fit: BoxFit.cover),
+                                            ),
+                                    ),
+                                    if (isFeatured)
+                                      PositionedDirectional(
+                                        top: 12,
+                                        end: 12,
+                                        child: Container(
+                                          padding: const EdgeInsets.symmetric(
+                                              horizontal: 10, vertical: 5),
+                                          decoration: BoxDecoration(
+                                            gradient: const LinearGradient(
+                                              colors: [
+                                                Color(0xFFF59E0B),
+                                                Color(0xFFD97706)
+                                              ],
+                                            ),
+                                            borderRadius:
+                                                BorderRadius.circular(20),
+                                            boxShadow: [
+                                              BoxShadow(
+                                                color: Colors.black
+                                                    .withValues(alpha: 0.25),
+                                                blurRadius: 6,
+                                                offset: const Offset(0, 2),
+                                              ),
+                                            ],
+                                          ),
+                                          child: Row(
+                                            mainAxisSize: MainAxisSize.min,
+                                            children: [
+                                              const Icon(Icons.star_rounded,
+                                                  color: Colors.white,
+                                                  size: 15),
+                                              const SizedBox(width: 4),
+                                              Text(
+                                                LanguageService.currentLang
+                                                            .value ==
+                                                        'ar'
+                                                    ? "مميز"
+                                                    : "Featured",
+                                                style: const TextStyle(
+                                                  color: Colors.white,
+                                                  fontSize: 11,
+                                                  fontWeight: FontWeight.bold,
+                                                  fontFamily: 'Cairo',
+                                                ),
+                                              ),
+                                            ],
+                                          ),
                                         ),
+                                      ),
+                                  ],
                                 ),
                                 Padding(
                                   padding: const EdgeInsets.all(18),

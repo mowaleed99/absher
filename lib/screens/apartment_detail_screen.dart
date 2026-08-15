@@ -596,8 +596,56 @@ class _ApartmentDetailScreenState extends State<ApartmentDetailScreen> {
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    Row(
+                                    Wrap(
+                                      spacing: 8,
+                                      runSpacing: 6,
+                                      crossAxisAlignment: WrapCrossAlignment.center,
                                       children: [
+                                        if (widget.apartment['is_featured'] == true ||
+                                            widget.apartment['is_featured'] == 1 ||
+                                            widget.apartment['is_featured'] == '1')
+                                          Container(
+                                            padding: const EdgeInsets.symmetric(
+                                                horizontal: 10, vertical: 4),
+                                            decoration: BoxDecoration(
+                                              gradient: const LinearGradient(
+                                                colors: [
+                                                  Color(0xFFF59E0B),
+                                                  Color(0xFFD97706)
+                                                ],
+                                              ),
+                                              borderRadius:
+                                                  BorderRadius.circular(8),
+                                              boxShadow: [
+                                                BoxShadow(
+                                                  color: const Color(0xFFF59E0B)
+                                                      .withValues(alpha: 0.3),
+                                                  blurRadius: 4,
+                                                ),
+                                              ],
+                                            ),
+                                            child: Row(
+                                              mainAxisSize: MainAxisSize.min,
+                                              children: [
+                                                const Icon(Icons.star_rounded,
+                                                    color: Colors.white,
+                                                    size: 14),
+                                                const SizedBox(width: 3),
+                                                Text(
+                                                  LanguageService.currentLang
+                                                              .value ==
+                                                          'ar'
+                                                      ? "إعلان مميز"
+                                                      : "Featured",
+                                                  style: const TextStyle(
+                                                      color: Colors.white,
+                                                      fontWeight:
+                                                          FontWeight.bold,
+                                                      fontSize: 12),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
                                         Container(
                                           padding: const EdgeInsets.symmetric(
                                               horizontal: 10, vertical: 4),
@@ -612,7 +660,6 @@ class _ApartmentDetailScreenState extends State<ApartmentDetailScreen> {
                                                   fontWeight: FontWeight.bold,
                                                   fontSize: 13)),
                                         ),
-                                        const SizedBox(width: 8),
                                         Container(
                                           padding: const EdgeInsets.symmetric(
                                               horizontal: 10, vertical: 4),
