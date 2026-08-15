@@ -1,8 +1,9 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useMemo } from 'react';
 import { PromoFormInput, DiscountType, ScopeType } from '../../types/promo';
 import { useServices } from '../../hooks/useServices';
 import { useStudents } from '../../hooks/useStudents';
 import { useToast } from '../../components/Toast';
+import { DateTimePickerField } from '../../components/DateTimePickerField';
 
 interface AddPromoCodeModalProps {
   isOpen: boolean;
@@ -32,6 +33,14 @@ export function AddPromoCodeModal({ isOpen, onClose, onAdd }: AddPromoCodeModalP
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const submitLockRef = useRef(false);
+
+  // Date validation error
+  const dateError = useMemo(() => {
+    if (startAt && expiresAt && startAt >= expiresAt) {
+      return 'تاريخ الانتهاء يجب أن يكون بعد تاريخ البدء';
+    }
+    return undefined;
+  }, [startAt, expiresAt]);
 
   if (!isOpen) return null;
 
@@ -366,26 +375,24 @@ export function AddPromoCodeModal({ isOpen, onClose, onAdd }: AddPromoCodeModalP
                 <span>الصلاحية وحدود الاستخدام</span>
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '12px' }}>
-                <div>
-                  <label style={labelStyle}>تاريخ بدء السريان (اختياري)</label>
-                  <input
-                    type="datetime-local"
-                    value={startAt}
-                    onChange={(e) => setStartAt(e.target.value)}
-                    style={inputStyle}
-                  />
-                </div>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '14px' }}>
+                {/* Enhanced Date + Time Pickers */}
+                <DateTimePickerField
+                  label="تاريخ بدء السريان"
+                  value={startAt}
+                  onChange={setStartAt}
+                  max={expiresAt || undefined}
+                  helperText="اختياري • ساري فوراً إذا تُرك فارغاً"
+                />
 
-                <div>
-                  <label style={labelStyle}>تاريخ انتهاء السريان (اختياري)</label>
-                  <input
-                    type="datetime-local"
-                    value={expiresAt}
-                    onChange={(e) => setExpiresAt(e.target.value)}
-                    style={inputStyle}
-                  />
-                </div>
+                <DateTimePickerField
+                  label="تاريخ انتهاء السريان"
+                  value={expiresAt}
+                  onChange={setExpiresAt}
+                  min={startAt || undefined}
+                  error={dateError}
+                  helperText="اختياري • لا ينتهي إذا تُرك فارغاً"
+                />
 
                 <div>
                   <label style={labelStyle}>الحد الأقصى الكلي (مرات الاستخدام)</label>
@@ -397,6 +404,9 @@ export function AddPromoCodeModal({ isOpen, onClose, onAdd }: AddPromoCodeModalP
                     onChange={(e) => setTotalUsageLimit(e.target.value)}
                     style={inputStyle}
                   />
+                  <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginTop: '4px', display: 'block' }}>
+                    اختياري • سقف الاستخدام الكلي لجميع الطلاب
+                  </span>
                 </div>
 
                 <div>
@@ -409,6 +419,9 @@ export function AddPromoCodeModal({ isOpen, onClose, onAdd }: AddPromoCodeModalP
                     style={inputStyle}
                     required
                   />
+                  <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginTop: '4px', display: 'block' }}>
+                    عدد مرات استخدام الكود للطالب الواحد
+                  </span>
                 </div>
               </div>
             </div>
@@ -548,7 +561,7 @@ export function AddPromoCodeModal({ isOpen, onClose, onAdd }: AddPromoCodeModalP
             </button>
             <button
               type="submit"
-              disabled={isSubmitting}
+              disabled={isSubmitting || !!dateError}
               style={{
                 height: '38px',
                 padding: '0 20px',
@@ -558,11 +571,11 @@ export function AddPromoCodeModal({ isOpen, onClose, onAdd }: AddPromoCodeModalP
                 color: '#ffffff',
                 fontSize: '0.85rem',
                 fontWeight: 700,
-                cursor: isSubmitting ? 'not-allowed' : 'pointer',
+                cursor: (isSubmitting || !!dateError) ? 'not-allowed' : 'pointer',
                 display: 'inline-flex',
                 alignItems: 'center',
                 gap: '8px',
-                opacity: isSubmitting ? 0.7 : 1,
+                opacity: (isSubmitting || !!dateError) ? 0.7 : 1,
               }}
             >
               {isSubmitting ? (

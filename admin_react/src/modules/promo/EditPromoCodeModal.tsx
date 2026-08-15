@@ -1,8 +1,9 @@
-import React, { useState, useRef } from 'react';
-import { PromoCode, PromoFormInput, DiscountType, ScopeType, PromoStatus } from '../../types/promo';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
+import { PromoCode, PromoFormInput, DiscountType, ScopeType } from '../../types/promo';
 import { useServices } from '../../hooks/useServices';
 import { useStudents } from '../../hooks/useStudents';
 import { useToast } from '../../components/Toast';
+import { DateTimePickerField } from '../../components/DateTimePickerField';
 
 interface EditPromoCodeModalProps {
   isOpen: boolean;
@@ -16,28 +17,72 @@ export function EditPromoCodeModal({ isOpen, onClose, promo, onUpdate }: EditPro
   const { services } = useServices();
   const { students } = useStudents();
 
-  const [campaignName, setCampaignName] = useState(promo?.campaign_name || '');
-  const [code, setCode] = useState(promo?.code || '');
-  const [discountType, setDiscountType] = useState<DiscountType>(promo?.discount_type || 'percentage');
-  const [discountValue, setDiscountValue] = useState<number>(promo?.discount_value || 20);
-  const [maxDiscountPoints, setMaxDiscountPoints] = useState<string>(promo?.max_discount_points ? String(promo.max_discount_points) : '');
-  const [minServicePrice, setMinServicePrice] = useState<number>(promo?.min_service_price_points || 0);
-  const [startAt, setStartAt] = useState<string>(promo?.start_at ? promo.start_at.replace(' ', 'T').slice(0, 16) : '');
-  const [expiresAt, setExpiresAt] = useState<string>(promo?.expires_at ? promo.expires_at.replace(' ', 'T').slice(0, 16) : '');
-  const [status, setStatus] = useState<PromoStatus>(promo?.status || 'active');
-  const [serviceScope, setServiceScope] = useState<ScopeType>(promo?.service_scope || 'all');
-  const [serviceIds, setServiceIds] = useState<number[]>(promo?.service_ids || []);
-  const [audienceScope, setAudienceScope] = useState<ScopeType>(promo?.audience_scope || 'all');
-  const [studentIds, setStudentIds] = useState<number[]>(promo?.student_ids || []);
-  const [totalUsageLimit, setTotalUsageLimit] = useState<string>(promo?.total_usage_limit ? String(promo.total_usage_limit) : '');
-  const [perStudentLimit, setPerStudentLimit] = useState<number>(promo?.per_student_limit || 1);
+  const [campaignName, setCampaignName] = useState('');
+  const [code, setCode] = useState('');
+  const [discountType, setDiscountType] = useState<DiscountType>('percentage');
+  const [discountValue, setDiscountValue] = useState<number>(20);
+  const [maxDiscountPoints, setMaxDiscountPoints] = useState<string>('');
+  const [minServicePrice, setMinServicePrice] = useState<number>(0);
+  const [startAt, setStartAt] = useState<string>('');
+  const [expiresAt, setExpiresAt] = useState<string>('');
+  const [status, setStatus] = useState<'active' | 'paused' | 'archived'>('active');
+  const [serviceScope, setServiceScope] = useState<ScopeType>('all');
+  const [serviceIds, setServiceIds] = useState<number[]>([]);
+  const [audienceScope, setAudienceScope] = useState<ScopeType>('all');
+  const [studentIds, setStudentIds] = useState<number[]>([]);
+  const [totalUsageLimit, setTotalUsageLimit] = useState<string>('');
+  const [perStudentLimit, setPerStudentLimit] = useState<number>(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const submitLockRef = useRef(false);
 
+  // Parse ISO date string to YYYY-MM-DDTHH:mm format for datetime-local
+  const formatForInput = (dateStr: string | null | undefined): string => {
+    if (!dateStr) return '';
+    try {
+      const clean = dateStr.replace(' ', 'T');
+      return clean.length >= 16 ? clean.substring(0, 16) : clean;
+    } catch {
+      return '';
+    }
+  };
+
+  useEffect(() => {
+    if (promo) {
+      setCampaignName(promo.campaign_name || '');
+      setCode(promo.code || '');
+      setDiscountType(promo.discount_type || 'percentage');
+      setDiscountValue(promo.discount_value || 0);
+      setMaxDiscountPoints(promo.max_discount_points !== null ? String(promo.max_discount_points) : '');
+      setMinServicePrice(promo.min_service_price_points || 0);
+      setStartAt(formatForInput(promo.start_at));
+      setExpiresAt(formatForInput(promo.expires_at));
+      setStatus(promo.status || 'active');
+      setServiceScope(promo.service_scope || 'all');
+      setServiceIds(promo.service_ids || []);
+      setAudienceScope(promo.audience_scope || 'all');
+      setStudentIds(promo.student_ids || []);
+      setTotalUsageLimit(promo.total_usage_limit !== null ? String(promo.total_usage_limit) : '');
+      setPerStudentLimit(promo.per_student_limit || 1);
+    }
+  }, [promo]);
+
+  const isUsed = promo ? (promo.used_count || 0) > 0 : false;
+
+  // Date validation error
+  const dateError = useMemo(() => {
+    if (startAt && expiresAt && startAt >= expiresAt) {
+      return 'تاريخ الانتهاء يجب أن يكون بعد تاريخ البدء';
+    }
+    return undefined;
+  }, [startAt, expiresAt]);
+
   if (!isOpen || !promo) return null;
 
-  const isCodeLocked = (promo.used_count || 0) > 0;
+  const handleCodeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (isUsed) return;
+    setCode(e.target.value.toUpperCase().replace(/[^A-Z0-9_-]/g, ''));
+  };
 
   const handleToggleService = (id: number) => {
     setServiceIds((prev) => (prev.includes(id) ? prev.filter((sId) => sId !== id) : [...prev, id]));
@@ -56,7 +101,7 @@ export function EditPromoCodeModal({ isOpen, onClose, promo, onUpdate }: EditPro
       return;
     }
     if (!code.trim() || code.length < 3) {
-      showToast('يرجى إدخال رمز كود صحيح', 'error');
+      showToast('يرجى إدخال رمز كود صحيح (3 أحرف على الأقل)', 'error');
       return;
     }
     if (discountType === 'percentage' && (discountValue <= 0 || discountValue > 100)) {
@@ -86,7 +131,7 @@ export function EditPromoCodeModal({ isOpen, onClose, promo, onUpdate }: EditPro
     try {
       await onUpdate(promo.id, {
         campaign_name: campaignName.trim(),
-        code: code.trim().toUpperCase(),
+        code: code.trim(),
         discount_type: discountType,
         discount_value: discountType === 'free' ? 0 : Number(discountValue),
         max_discount_points: maxDiscountPoints ? Number(maxDiscountPoints) : null,
@@ -193,7 +238,7 @@ export function EditPromoCodeModal({ isOpen, onClose, promo, onUpdate }: EditPro
               <i className="fa-solid fa-pen-to-square"></i>
             </div>
             <h3 style={{ margin: 0, fontSize: '1.1rem', color: 'var(--text-main)', fontWeight: 800 }}>
-              تعديل بيانات كود الخصم ({promo.code})
+              تعديل كود الخصم: {promo.code}
             </h3>
           </div>
           <button
@@ -239,10 +284,10 @@ export function EditPromoCodeModal({ isOpen, onClose, promo, onUpdate }: EditPro
             >
               <div style={{ fontSize: '0.8rem', fontWeight: 700, color: '#38bdf8', display: 'flex', alignItems: 'center', gap: '6px' }}>
                 <i className="fa-solid fa-circle-info"></i>
-                <span>بيانات الحملة ورمز الخصم</span>
+                <span>بيانات الحملة وحالة الكود</span>
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px' }}>
                 <div>
                   <label style={labelStyle}>
                     اسم الحملة <span style={{ color: '#ef4444' }}>*</span>
@@ -258,22 +303,36 @@ export function EditPromoCodeModal({ isOpen, onClose, promo, onUpdate }: EditPro
 
                 <div>
                   <label style={labelStyle}>
-                    رمز الكود {isCodeLocked && <span style={{ color: '#fbbf24', fontSize: '0.72rem' }}>(مغلق - تم استخدامه)</span>}
+                    رمز الكود {isUsed && <span style={{ fontSize: '0.7rem', color: '#fbbf24' }}>(ثابت - مستخدم سابقاً)</span>}
                   </label>
                   <input
                     type="text"
                     value={code}
-                    disabled={isCodeLocked}
-                    onChange={(e) => setCode(e.target.value.toUpperCase().replace(/[^A-Z0-9_-]/g, ''))}
+                    disabled={isUsed}
+                    onChange={handleCodeChange}
                     style={{
                       ...inputStyle,
                       fontFamily: 'monospace',
                       fontWeight: 'bold',
-                      opacity: isCodeLocked ? 0.6 : 1,
-                      cursor: isCodeLocked ? 'not-allowed' : 'text',
+                      letterSpacing: '1px',
+                      opacity: isUsed ? 0.6 : 1,
+                      cursor: isUsed ? 'not-allowed' : 'text',
                     }}
                     required
                   />
+                </div>
+
+                <div>
+                  <label style={labelStyle}>حالة الكود</label>
+                  <select
+                    value={status}
+                    onChange={(e) => setStatus(e.target.value as 'active' | 'paused' | 'archived')}
+                    style={inputStyle}
+                  >
+                    <option value="active">نشط</option>
+                    <option value="paused">معطل مؤقتاً</option>
+                    <option value="archived">مؤرشف</option>
+                  </select>
                 </div>
               </div>
             </div>
@@ -354,7 +413,7 @@ export function EditPromoCodeModal({ isOpen, onClose, promo, onUpdate }: EditPro
               </div>
             </div>
 
-            {/* Section 3: Dates, Status & Limits */}
+            {/* Section 3: Dates & Limits */}
             <div
               style={{
                 background: 'rgba(0, 0, 0, 0.18)',
@@ -368,42 +427,27 @@ export function EditPromoCodeModal({ isOpen, onClose, promo, onUpdate }: EditPro
             >
               <div style={{ fontSize: '0.8rem', fontWeight: 700, color: '#fbbf24', display: 'flex', alignItems: 'center', gap: '6px' }}>
                 <i className="fa-solid fa-calendar-check"></i>
-                <span>الحالة والصلاحية وحدود الاستخدام</span>
+                <span>الصلاحية وحدود الاستخدام</span>
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '12px' }}>
-                <div>
-                  <label style={labelStyle}>حالة الكود</label>
-                  <select
-                    value={status}
-                    onChange={(e) => setStatus(e.target.value as PromoStatus)}
-                    style={inputStyle}
-                  >
-                    <option value="active">نشط</option>
-                    <option value="paused">معطل مؤقتاً</option>
-                    <option value="archived">مؤرشف</option>
-                  </select>
-                </div>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '14px' }}>
+                {/* Enhanced Date + Time Pickers */}
+                <DateTimePickerField
+                  label="تاريخ بدء السريان"
+                  value={startAt}
+                  onChange={setStartAt}
+                  max={expiresAt || undefined}
+                  helperText="اختياري • ساري فوراً إذا تُرك فارغاً"
+                />
 
-                <div>
-                  <label style={labelStyle}>تاريخ بدء السريان (اختياري)</label>
-                  <input
-                    type="datetime-local"
-                    value={startAt}
-                    onChange={(e) => setStartAt(e.target.value)}
-                    style={inputStyle}
-                  />
-                </div>
-
-                <div>
-                  <label style={labelStyle}>تاريخ انتهاء السريان (اختياري)</label>
-                  <input
-                    type="datetime-local"
-                    value={expiresAt}
-                    onChange={(e) => setExpiresAt(e.target.value)}
-                    style={inputStyle}
-                  />
-                </div>
+                <DateTimePickerField
+                  label="تاريخ انتهاء السريان"
+                  value={expiresAt}
+                  onChange={setExpiresAt}
+                  min={startAt || undefined}
+                  error={dateError}
+                  helperText="اختياري • لا ينتهي إذا تُرك فارغاً"
+                />
 
                 <div>
                   <label style={labelStyle}>الحد الأقصى الكلي (مرات الاستخدام)</label>
@@ -415,6 +459,9 @@ export function EditPromoCodeModal({ isOpen, onClose, promo, onUpdate }: EditPro
                     onChange={(e) => setTotalUsageLimit(e.target.value)}
                     style={inputStyle}
                   />
+                  <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginTop: '4px', display: 'block' }}>
+                    اختياري • سقف الاستخدام الكلي لجميع الطلاب
+                  </span>
                 </div>
 
                 <div>
@@ -427,6 +474,9 @@ export function EditPromoCodeModal({ isOpen, onClose, promo, onUpdate }: EditPro
                     style={inputStyle}
                     required
                   />
+                  <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginTop: '4px', display: 'block' }}>
+                    عدد مرات استخدام الكود للطالب الواحد
+                  </span>
                 </div>
               </div>
             </div>
@@ -566,7 +616,7 @@ export function EditPromoCodeModal({ isOpen, onClose, promo, onUpdate }: EditPro
             </button>
             <button
               type="submit"
-              disabled={isSubmitting}
+              disabled={isSubmitting || !!dateError}
               style={{
                 height: '38px',
                 padding: '0 20px',
@@ -576,11 +626,11 @@ export function EditPromoCodeModal({ isOpen, onClose, promo, onUpdate }: EditPro
                 color: '#ffffff',
                 fontSize: '0.85rem',
                 fontWeight: 700,
-                cursor: isSubmitting ? 'not-allowed' : 'pointer',
+                cursor: (isSubmitting || !!dateError) ? 'not-allowed' : 'pointer',
                 display: 'inline-flex',
                 alignItems: 'center',
                 gap: '8px',
-                opacity: isSubmitting ? 0.7 : 1,
+                opacity: (isSubmitting || !!dateError) ? 0.7 : 1,
               }}
             >
               {isSubmitting ? (
