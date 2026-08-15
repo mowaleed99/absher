@@ -1,7 +1,9 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import '../theme/app_colors.dart';
 import '../services/language_service.dart';
 import '../services/api_service.dart';
+import '../services/realtime_sync_service.dart';
 import '../models/student.dart';
 import '../models/housing_offer.dart';
 import 'apartment_detail_screen.dart';
@@ -25,12 +27,17 @@ class _OffersScreenState extends State<OffersScreen> {
   List<HousingOffer> _offers = [];
   bool _isLoading = true;
   bool _isError = false;
+  StreamSubscription? _offersSub;
 
   @override
   void initState() {
     super.initState();
     _fetchOffers();
     LanguageService.currentLang.addListener(_onLangChanged);
+
+    _offersSub = RealtimeSyncService().onOffersUpdated.listen((_) {
+      if (mounted) _fetchOffers(silent: true);
+    });
   }
 
   void _onLangChanged() {
@@ -40,28 +47,35 @@ class _OffersScreenState extends State<OffersScreen> {
 
   @override
   void dispose() {
+    _offersSub?.cancel();
     LanguageService.currentLang.removeListener(_onLangChanged);
     super.dispose();
   }
 
-  Future<void> _fetchOffers() async {
-    setState(() {
-      _isLoading = true;
-      _isError = false;
-    });
+  Future<void> _fetchOffers({bool silent = false}) async {
+    if (!silent) {
+      setState(() {
+        _isLoading = true;
+        _isError = false;
+      });
+    }
     final res = await ApiService.getHousingOffers();
     if (res == null) {
-      setState(() {
-        _isLoading = false;
-        _isError = true;
-      });
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+          _isError = true;
+        });
+      }
     } else {
-      setState(() {
-        _offers = res;
-        _isLoading = false;
-        _isError = false;
-        _buildDynamicFilters();
-      });
+      if (mounted) {
+        setState(() {
+          _offers = res;
+          _isLoading = false;
+          _isError = false;
+          _buildDynamicFilters();
+        });
+      }
     }
   }
 

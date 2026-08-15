@@ -18,12 +18,18 @@ class RealtimeSyncService with WidgetsBindingObserver {
 
   // Cached versions
   String? _lastApartmentsVersion;
+  String? _lastServicesVersion;
+  String? _lastOffersVersion;
+  String? _lastNewsVersion;
   String? _lastRequestsVersion;
   String? _lastNotificationsVersion;
   String? _lastChatVersion;
 
   // Stream Controllers for live UI updates
   final _apartmentsUpdateController = StreamController<void>.broadcast();
+  final _servicesUpdateController = StreamController<void>.broadcast();
+  final _offersUpdateController = StreamController<void>.broadcast();
+  final _newsUpdateController = StreamController<void>.broadcast();
   final _requestsUpdateController = StreamController<void>.broadcast();
   final _notificationsUpdateController = StreamController<void>.broadcast();
   final _chatUpdateController = StreamController<void>.broadcast();
@@ -31,6 +37,9 @@ class RealtimeSyncService with WidgetsBindingObserver {
       StreamController<Map<String, dynamic>>.broadcast();
 
   Stream<void> get onApartmentsUpdated => _apartmentsUpdateController.stream;
+  Stream<void> get onServicesUpdated => _servicesUpdateController.stream;
+  Stream<void> get onOffersUpdated => _offersUpdateController.stream;
+  Stream<void> get onNewsUpdated => _newsUpdateController.stream;
   Stream<void> get onRequestsUpdated => _requestsUpdateController.stream;
   Stream<void> get onNotificationsUpdated =>
       _notificationsUpdateController.stream;
@@ -96,7 +105,7 @@ class RealtimeSyncService with WidgetsBindingObserver {
         if (data['status'] == 'success' && data['versions'] != null) {
           final versions = data['versions'];
 
-          // 1. Apartments & Housing Offers
+          // 1. Apartments
           final aptVer = versions['apartments']?.toString();
           if (_lastApartmentsVersion != null &&
               _lastApartmentsVersion != aptVer) {
@@ -104,14 +113,35 @@ class RealtimeSyncService with WidgetsBindingObserver {
           }
           _lastApartmentsVersion = aptVer;
 
-          // 2. Service Requests
+          // 2. Services
+          final srvVer = versions['services']?.toString();
+          if (_lastServicesVersion != null && _lastServicesVersion != srvVer) {
+            _servicesUpdateController.add(null);
+          }
+          _lastServicesVersion = srvVer;
+
+          // 3. Housing Offers
+          final offVer = versions['housing_offers']?.toString();
+          if (_lastOffersVersion != null && _lastOffersVersion != offVer) {
+            _offersUpdateController.add(null);
+          }
+          _lastOffersVersion = offVer;
+
+          // 4. News
+          final newsVer = versions['news']?.toString();
+          if (_lastNewsVersion != null && _lastNewsVersion != newsVer) {
+            _newsUpdateController.add(null);
+          }
+          _lastNewsVersion = newsVer;
+
+          // 5. Service Requests
           final reqVer = versions['requests']?.toString();
           if (_lastRequestsVersion != null && _lastRequestsVersion != reqVer) {
             _requestsUpdateController.add(null);
           }
           _lastRequestsVersion = reqVer;
 
-          // 3. Notifications
+          // 6. Notifications
           final notifVer = versions['notifications']?.toString();
           if (_lastNotificationsVersion != null &&
               _lastNotificationsVersion != notifVer) {
@@ -119,14 +149,14 @@ class RealtimeSyncService with WidgetsBindingObserver {
           }
           _lastNotificationsVersion = notifVer;
 
-          // 4. Chat Messages
+          // 7. Chat Messages
           final chatVer = versions['chat']?.toString();
           if (_lastChatVersion != null && _lastChatVersion != chatVer) {
             _chatUpdateController.add(null);
           }
           _lastChatVersion = chatVer;
 
-          // 5. Student Profile Metadata (points, is_blocked, admin_status)
+          // 8. Student Profile Metadata (points, is_blocked, admin_status)
           if (data['student'] != null) {
             _profileUpdateController
                 .add(Map<String, dynamic>.from(data['student']));
@@ -144,6 +174,9 @@ class RealtimeSyncService with WidgetsBindingObserver {
     WidgetsBinding.instance.removeObserver(this);
     stopSync();
     _apartmentsUpdateController.close();
+    _servicesUpdateController.close();
+    _offersUpdateController.close();
+    _newsUpdateController.close();
     _requestsUpdateController.close();
     _notificationsUpdateController.close();
     _chatUpdateController.close();

@@ -15,49 +15,98 @@ $studentId = intval($_GET['student_id'] ?? ($_POST['student_id'] ?? 0));
 $chatId = intval($_GET['chat_id'] ?? ($_POST['chat_id'] ?? 0));
 
 try {
-    // 1. Apartments version (last created or updated or featured status change)
+    // 1. Apartments version (counts, max id, and max created/featured timestamp)
     $aptStmt = $conn->query("
-        SELECT COALESCE(
-            MAX(GREATEST(
-                COALESCE(created_at, '2026-01-01 00:00:00'),
-                COALESCE(featured_until, '2026-01-01 00:00:00')
-            )), 
-            '2026-01-01 00:00:00'
-        ) AS v FROM apartments
+        SELECT CONCAT(
+            COUNT(*), '_',
+            COALESCE(MAX(id), 0), '_',
+            COALESCE(
+                MAX(GREATEST(
+                    COALESCE(created_at, '2026-01-01 00:00:00'),
+                    COALESCE(featured_until, '2026-01-01 00:00:00')
+                )), 
+                '2026-01-01 00:00:00'
+            )
+        ) FROM apartments
     ");
-    $apartmentsVersion = $aptStmt->fetchColumn() ?: '2026-01-01 00:00:00';
+    $apartmentsVersion = strval($aptStmt->fetchColumn() ?: '0');
 
-    // 2. Services version
-    $srvStmt = $conn->query("SELECT COALESCE(MAX(id), 0) FROM services");
+    // 2. Services version (counts, max id, and any changes to titles/prices)
+    $srvStmt = $conn->query("
+        SELECT CONCAT(
+            COUNT(*), '_',
+            COALESCE(MAX(id), 0), '_',
+            COALESCE(MAX(price_points), 0), '_',
+            COALESCE(MAX(created_at), '2026-01-01 00:00:00')
+        ) FROM services
+    ");
     $servicesVersion = strval($srvStmt->fetchColumn() ?: '0');
 
-    // 3. Housing offers version
-    $offStmt = $conn->query("SELECT COALESCE(MAX(id), 0) FROM housing_offers");
+    // 3. Housing offers version (counts, max id, updated_at)
+    $offStmt = $conn->query("
+        SELECT CONCAT(
+            COUNT(*), '_',
+            COALESCE(MAX(id), 0), '_',
+            COALESCE(MAX(COALESCE(updated_at, created_at)), '2026-01-01 00:00:00')
+        ) FROM housing_offers
+    ");
     $offersVersion = strval($offStmt->fetchColumn() ?: '0');
 
-    // 4. Requests version (filtered for this student or overall)
+    // 4. News version
+    $newsStmt = $conn->query("
+        SELECT CONCAT(
+            COUNT(*), '_',
+            COALESCE(MAX(id), 0), '_',
+            COALESCE(MAX(created_at), '2026-01-01 00:00:00')
+        ) FROM news
+    ");
+    $newsVersion = strval($newsStmt->fetchColumn() ?: '0');
+
+    // 5. Requests version (filtered for this student or overall)
     if ($studentId > 0) {
-        $reqStmt = $conn->prepare("SELECT COALESCE(MAX(created_at), '2026-01-01 00:00:00'), COALESCE(MAX(status), '') FROM service_requests WHERE student_id = ?");
+        $reqStmt = $conn->prepare("
+            SELECT CONCAT(
+                COUNT(*), '_',
+                COALESCE(MAX(id), 0), '_',
+                COALESCE(MAX(CONCAT(id, ':', status)), '')
+            ) FROM service_requests WHERE student_id = ?
+        ");
         $reqStmt->execute([$studentId]);
-        $reqRow = $reqStmt->fetch(PDO::FETCH_NUM);
-        $requestsVersion = ($reqRow ? $reqRow[0] . '_' . $reqRow[1] : '2026-01-01 00:00:00');
+        $requestsVersion = strval($reqStmt->fetchColumn() ?: '0');
     } else {
-        $reqStmt = $conn->query("SELECT COALESCE(MAX(id), 0), COALESCE(MAX(status), '') FROM service_requests");
-        $reqRow = $reqStmt->fetch(PDO::FETCH_NUM);
-        $requestsVersion = ($reqRow ? $reqRow[0] . '_' . $reqRow[1] : '0');
+        $reqStmt = $conn->query("
+            SELECT CONCAT(
+                COUNT(*), '_',
+                COALESCE(MAX(id), 0), '_',
+                COALESCE(MAX(CONCAT(id, ':', status)), '')
+            ) FROM service_requests
+        ");
+        $requestsVersion = strval($reqStmt->fetchColumn() ?: '0');
     }
 
-    // 5. Notifications version (broadcast or specific to student)
+    // 6. Notifications version (broadcast or specific to student)
     if ($studentId > 0) {
-        $notifStmt = $conn->prepare("SELECT COALESCE(MAX(created_at), '2026-01-01 00:00:00') FROM notifications WHERE student_id = 0 OR student_id = ?");
+        $notifStmt = $conn->prepare("
+            SELECT CONCAT(
+                COUNT(*), '_',
+                COALESCE(MAX(id), 0), '_',
+                COALESCE(MAX(created_at), '2026-01-01 00:00:00')
+            ) FROM notifications WHERE student_id = 0 OR student_id = ?
+        ");
         $notifStmt->execute([$studentId]);
-        $notificationsVersion = $notifStmt->fetchColumn() ?: '2026-01-01 00:00:00';
+        $notificationsVersion = strval($notifStmt->fetchColumn() ?: '0');
     } else {
-        $notifStmt = $conn->query("SELECT COALESCE(MAX(created_at), '2026-01-01 00:00:00') FROM notifications WHERE student_id = 0");
-        $notificationsVersion = $notifStmt->fetchColumn() ?: '2026-01-01 00:00:00';
+        $notifStmt = $conn->query("
+            SELECT CONCAT(
+                COUNT(*), '_',
+                COALESCE(MAX(id), 0), '_',
+                COALESCE(MAX(created_at), '2026-01-01 00:00:00')
+            ) FROM notifications WHERE student_id = 0
+        ");
+        $notificationsVersion = strval($notifStmt->fetchColumn() ?: '0');
     }
 
-    // 6. Chat version
+    // 7. Chat version
     $chatVersion = '0';
     if ($chatId > 0) {
         $cStmt = $conn->prepare("SELECT COALESCE(MAX(id), 0) FROM chat_messages WHERE chat_id = ?");
@@ -74,7 +123,7 @@ try {
         $chatVersion = strval($cStmt->fetchColumn() ?: '0');
     }
 
-    // 7. Student profile metadata (points, blocked, admin status)
+    // 8. Student profile metadata (points, blocked, admin status)
     $studentData = null;
     if ($studentId > 0) {
         $sStmt = $conn->prepare("SELECT points, is_blocked, admin_status FROM students WHERE id = ? LIMIT 1");
@@ -96,6 +145,7 @@ try {
             "apartments" => $apartmentsVersion,
             "services" => $servicesVersion,
             "housing_offers" => $offersVersion,
+            "news" => $newsVersion,
             "requests" => $requestsVersion,
             "notifications" => $notificationsVersion,
             "chat" => $chatVersion

@@ -1,7 +1,9 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import '../models/student_request.dart';
 import '../services/api_service.dart';
 import '../services/language_service.dart';
+import '../services/realtime_sync_service.dart';
 import '../theme/app_colors.dart';
 import '../core/loading_state_widget.dart';
 import '../core/error_state_widget.dart';
@@ -18,19 +20,32 @@ class _RequestsHistoryScreenState extends State<RequestsHistoryScreen> {
   List<StudentRequest> _requests = [];
   bool _isLoading = true;
   String? _errorMessage;
+  StreamSubscription? _requestsSub;
 
   @override
   void initState() {
     super.initState();
     _loadRequests();
+
+    _requestsSub = RealtimeSyncService().onRequestsUpdated.listen((_) {
+      if (mounted) _loadRequests(silent: true);
+    });
   }
 
-  Future<void> _loadRequests() async {
+  @override
+  void dispose() {
+    _requestsSub?.cancel();
+    super.dispose();
+  }
+
+  Future<void> _loadRequests({bool silent = false}) async {
     if (!mounted) return;
-    setState(() {
-      _isLoading = true;
-      _errorMessage = null;
-    });
+    if (!silent) {
+      setState(() {
+        _isLoading = true;
+        _errorMessage = null;
+      });
+    }
 
     try {
       final requests = await ApiService.getMyStudentRequests();

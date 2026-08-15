@@ -1,8 +1,10 @@
 // ignore_for_file: deprecated_member_use
+import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import '../theme/app_colors.dart';
 import '../services/api_service.dart';
+import '../services/realtime_sync_service.dart';
 import 'login_screen.dart';
 import 'chat_screen.dart';
 import '../services/language_service.dart';
@@ -21,6 +23,8 @@ class _ServicesScreenState extends State<ServicesScreen> {
   List<Map<String, dynamic>> _services = [];
   bool _isLoading = true;
   String? _loadErrorKey;
+  StreamSubscription? _servicesSub;
+  StreamSubscription? _profileSub;
 
   @override
   void initState() {
@@ -28,6 +32,21 @@ class _ServicesScreenState extends State<ServicesScreen> {
     _pointsBalance = widget.user?.pointsBalance;
     _loadServices();
     LanguageService.currentLang.addListener(_onLangChanged);
+
+    _servicesSub = RealtimeSyncService().onServicesUpdated.listen((_) {
+      if (mounted) _loadServices(silent: true);
+    });
+
+    _profileSub = RealtimeSyncService().onProfileUpdated.listen((meta) {
+      if (mounted) {
+        final pts = meta['points'] is int
+            ? meta['points'] as int
+            : int.tryParse(meta['points']?.toString() ?? '');
+        if (pts != null && pts != _pointsBalance) {
+          setState(() => _pointsBalance = pts);
+        }
+      }
+    });
   }
 
   void _onLangChanged() {
@@ -37,16 +56,20 @@ class _ServicesScreenState extends State<ServicesScreen> {
 
   @override
   void dispose() {
+    _servicesSub?.cancel();
+    _profileSub?.cancel();
     LanguageService.currentLang.removeListener(_onLangChanged);
     super.dispose();
   }
 
-  Future<void> _loadServices() async {
+  Future<void> _loadServices({bool silent = false}) async {
     if (!mounted) return;
-    setState(() {
-      _isLoading = true;
-      _loadErrorKey = null;
-    });
+    if (!silent) {
+      setState(() {
+        _isLoading = true;
+        _loadErrorKey = null;
+      });
+    }
     try {
       final list = await ApiService.getServices();
       if (mounted) {

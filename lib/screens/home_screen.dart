@@ -42,6 +42,7 @@ class _HomeScreenState extends State<HomeScreen>
 
   // Realtime Sync Subscriptions
   StreamSubscription? _aptSyncSub;
+  StreamSubscription? _newsSyncSub;
   StreamSubscription? _notifSyncSub;
   StreamSubscription? _reqSyncSub;
   StreamSubscription? _chatSyncSub;
@@ -273,6 +274,10 @@ class _HomeScreenState extends State<HomeScreen>
       if (mounted) _loadApartments();
     });
 
+    _newsSyncSub = sync.onNewsUpdated.listen((_) {
+      if (mounted) _loadNews();
+    });
+
     _notifSyncSub = sync.onNotificationsUpdated.listen((_) {
       if (mounted) _loadNotifications();
     });
@@ -305,6 +310,22 @@ class _HomeScreenState extends State<HomeScreen>
 
     // إعادة جلب البيانات المترجمة عند تغيير اللغة
     LanguageService.currentLang.addListener(_onLangChanged);
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _adTimer?.cancel();
+    _adController.dispose();
+    _chatPollTimer?.cancel();
+    _aptSyncSub?.cancel();
+    _newsSyncSub?.cancel();
+    _notifSyncSub?.cancel();
+    _reqSyncSub?.cancel();
+    _chatSyncSub?.cancel();
+    _profSyncSub?.cancel();
+    LanguageService.currentLang.removeListener(_onLangChanged);
+    super.dispose();
   }
 
   /// Called whenever the user switches language — triggers a full refetch so
