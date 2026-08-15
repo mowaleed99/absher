@@ -16,7 +16,7 @@ if (!$file || $file['error'] !== UPLOAD_ERR_OK) {
 }
 
 $folder = $_POST['folder'] ?? $_GET['folder'] ?? 'general';
-$allowed_folders = ['apartments', 'services', 'profiles', 'chat', 'general', 'requests', 'news'];
+$allowed_folders = ['apartments', 'services', 'profiles', 'chat', 'general', 'requests', 'news', 'housing_offers'];
 
 if (!in_array($folder, $allowed_folders)) {
     $folder = 'general';

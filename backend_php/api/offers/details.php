@@ -86,7 +86,6 @@ try {
     $features     = json_decode($row['apt_features'] ?? '[]', true) ?: [];
     $universities = json_decode($row['apt_universities'] ?? '[]', true) ?: [];
 
-    // Calculate discount percentage on the fly
     $orig = floatval($row['original_price']);
     $off = floatval($row['offer_price']);
     $discountPercent = 0;
@@ -94,7 +93,6 @@ try {
         $discountPercent = round((($orig - $off) / $orig) * 100);
     }
 
-    // Image fallback logic: if image_url is empty, use the first apartment image
     $finalImageUrl = $row['image_url'];
     if (empty($finalImageUrl)) {
         $finalImageUrl = !empty($images) ? $images[0] : null;

@@ -3,6 +3,7 @@
 require_once '../config/db.php';
 require_once __DIR__ . '/middleware/auth.php';
 require_once __DIR__ . '/core/notification.php';
+require_once __DIR__ . '/core/identity_block.php';
 
 AuthMiddleware::requireAdmin();
 function saveBase64IfPresent($url) {
@@ -44,7 +45,8 @@ try {
             FROM services 
             ORDER BY id DESC
         ")->fetchAll();
-        $students = $conn->query("SELECT id, full_name, email, phone, university, points, created_at FROM students ORDER BY id DESC")->fetchAll();
+        $students = $conn->query("SELECT id, full_name, email, phone, university, nationality, points, admin_status, admin_note, is_blocked, created_at FROM students ORDER BY id DESC")->fetchAll(PDO::FETCH_ASSOC);
+        $blocked_identities = $conn->query("SELECT id, identifier_type, identifier_value, normalized_value, source_student_id, reason, created_by_admin, created_at FROM blocked_identities ORDER BY id DESC")->fetchAll(PDO::FETCH_ASSOC);
         $universities = $conn->query("
             SELECT *, 
                    COALESCE(NULLIF(name_ar, ''), name) AS display_name
@@ -116,7 +118,17 @@ try {
             FROM news 
             ORDER BY created_at DESC
         ")->fetchAll();
-        $notifications = $conn->query("SELECT *, DATE_FORMAT(created_at,'%Y-%m-%d %h:%i %p') AS date FROM notifications WHERE student_id = 0 ORDER BY created_at DESC")->fetchAll();
+        $notifications = $conn->query("
+            SELECT id, student_id, title, body,
+                   COALESCE(NULLIF(title_ar, ''), title) AS title_ar,
+                   COALESCE(NULLIF(title_en, ''), title) AS title_en,
+                   COALESCE(NULLIF(body_ar, ''), body) AS body_ar,
+                   COALESCE(NULLIF(body_en, ''), body) AS body_en,
+                   DATE_FORMAT(created_at,'%Y-%m-%d %h:%i %p') AS date
+            FROM notifications 
+            WHERE student_id = 0 
+            ORDER BY created_at DESC
+        ")->fetchAll();
         $housing_offers = $conn->query("
             SELECT *, 
                    COALESCE(NULLIF(title_ar, ''), title) AS display_title,
@@ -139,17 +151,43 @@ try {
             $c['time'] = !empty($msgs) ? end($msgs)['time'] :'';
         }
 
-        // فك تشفير مصفوفات الصور والمميزات في الشقق
-        foreach ($apartments as &$apt) {
-            $apt['images'] = json_decode($apt['images'], true) ?? [$apt['images']];
-            $apt['features'] = json_decode($apt['features'], true) ?? [$apt['features']];
-            $apt['features_ar'] = json_decode($apt['features_ar'] ?? '[]', true) ?? [];
-            $apt['features_en'] = json_decode($apt['features_en'] ?? '[]', true) ?? [];
-            $apt['universities'] = json_decode($apt['universities'] ??'[]', true) ?? [];
-        }
+        // Promo Codes Summary List
+        $promo_codes = $conn->query("
+            SELECT pc.*, 
+                   (SELECT COUNT(*) FROM promo_code_redemptions WHERE promo_code_id = pc.id AND status = 'applied') AS applied_redemptions_count,
+                   (SELECT COUNT(*) FROM promo_code_redemptions WHERE promo_code_id = pc.id) AS total_redemptions_count,
+                   (SELECT COALESCE(SUM(discount_points), 0) FROM promo_code_redemptions WHERE promo_code_id = pc.id AND status = 'applied') AS points_saved
+            FROM promo_codes pc
+            ORDER BY pc.id DESC
+        ")->fetchAll(PDO::FETCH_ASSOC);
 
-        echo json_encode(["status"=>"success","stats"=> ["total_apartments"=> count($apartments),"total_services"=> count($services),"total_students"=> count($students),"total_universities"=> count($universities),"total_districts"=> count($districts),"pending_requests"=> count(array_filter($requests, fn($r) => $r['status'] ==='قيد المراجعة'))
-            ],"apartments"=> $apartments,"services"=> $services,"students"=> $students,"universities"=> $universities,"districts"=> $districts,"requests"=> $requests,"reviews"=> $reviews,"reviews_analytics"=> $reviews_analytics,"application_feedback"=> $application_feedback,"chats"=> $chats,"news"=> $news,"notifications"=> $notifications,"housing_offers"=> $housing_offers
+        foreach ($promo_codes as &$p) {
+            $p['service_ids'] = [];
+            if ($p['service_scope'] === 'selected') {
+                $sStmt = $conn->prepare("SELECT service_id FROM promo_code_services WHERE promo_code_id = ?");
+                $sStmt->execute([$p['id']]);
+                $p['service_ids'] = $sStmt->fetchAll(PDO::FETCH_COLUMN);
+            }
+            $p['student_ids'] = [];
+            if ($p['audience_scope'] === 'selected') {
+                $aStmt = $conn->prepare("SELECT student_id FROM promo_code_students WHERE promo_code_id = ?");
+                $aStmt->execute([$p['id']]);
+                $p['student_ids'] = $aStmt->fetchAll(PDO::FETCH_COLUMN);
+            }
+        }
+        $now = date('Y-m-d H:i:s');
+        $active_housing_offers_count = (int)$conn->query("
+            SELECT COUNT(*) 
+            FROM housing_offers ho
+            INNER JOIN apartments apt ON ho.apartment_id = apt.id
+            WHERE ho.is_active = 1
+              AND (ho.starts_at IS NULL OR ho.starts_at <= '$now')
+              AND (ho.expires_at IS NULL OR ho.expires_at > '$now')
+              AND apt.is_available = 1
+        ")->fetchColumn();
+
+        echo json_encode(["status"=>"success","stats"=> ["total_apartments"=> count($apartments),"total_services"=> count($services),"total_students"=> count($students),"total_universities"=> count($universities),"total_districts"=> count($districts),"pending_requests"=> count(array_filter($requests, fn($r) => $r['status'] ==='قيد المراجعة')),"active_housing_offers_count" => $active_housing_offers_count,"promo_codes_count" => count($promo_codes)
+            ],"apartments"=> $apartments,"services"=> $services,"students"=> $students,"universities"=> $universities,"districts"=> $districts,"requests"=> $requests,"reviews"=> $reviews,"reviews_analytics"=> $reviews_analytics,"application_feedback"=> $application_feedback,"chats"=> $chats,"news"=> $news,"notifications"=> $notifications,"housing_offers"=> $housing_offers,"active_housing_offers_count" => $active_housing_offers_count,"blocked_identities"=> $blocked_identities,"promo_codes"=> $promo_codes
         ], JSON_UNESCAPED_UNICODE);
         exit();
     }
@@ -214,11 +252,17 @@ try {
         $totalSvcs = $conn->query("SELECT COUNT(*) FROM services")->fetchColumn();
         $totalStds = $conn->query("SELECT COUNT(*) FROM students")->fetchColumn();
         $pendingReqs = $conn->query("SELECT COUNT(*) FROM service_requests WHERE status='قيد المراجعة'")->fetchColumn();
+        $activePromos = $conn->query("SELECT COUNT(*) FROM promo_codes WHERE status='active'")->fetchColumn();
+        $totalRedemptions = $conn->query("SELECT COUNT(*) FROM promo_code_redemptions WHERE status='applied'")->fetchColumn();
+        $totalPointsSaved = $conn->query("SELECT COALESCE(SUM(discount_points), 0) FROM promo_code_redemptions WHERE status='applied'")->fetchColumn();
         echo json_encode(["status" => "success", "data" => [
-            "total_apartments" => $totalApts,
-            "total_services" => $totalSvcs,
-            "total_students" => $totalStds,
-            "pending_requests" => $pendingReqs
+            "total_apartments" => (int)$totalApts,
+            "total_services" => (int)$totalSvcs,
+            "total_students" => (int)$totalStds,
+            "pending_requests" => (int)$pendingReqs,
+            "active_promos" => (int)$activePromos,
+            "total_redemptions" => (int)$totalRedemptions,
+            "total_points_saved" => (int)$totalPointsSaved
         ]], JSON_UNESCAPED_UNICODE);
         exit();
     }
@@ -551,14 +595,15 @@ try {
         $content_ar = trim($data['content_ar'] ?? '');
         $content_en = trim($data['content_en'] ?? '');
 
-        $title = $title_ar;
-        $content = $content_ar;
-        $image_url = trim($data['image_url'] ??'');
+        $title = !empty($title_ar) ? $title_ar : $title_en;
+        $content = !empty($content_ar) ? $content_ar : $content_en;
+        $image_url = trim($data['image_url'] ?? $data['image'] ?? '');
+        $image_url = saveBase64IfPresent($image_url);
 
         if (!empty($title) && !empty($content)) {
             $stmt = $conn->prepare("INSERT INTO news (title, content, image_url, title_ar, title_en, content_ar, content_en) VALUES (?, ?, ?, ?, ?, ?, ?)");
             $stmt->execute([$title, $content, $image_url, $title_ar, $title_en, $content_ar, $content_en]);
-            echo json_encode(["status"=>"success","message"=>"تم نشر الخبر والتنبيه بنجاح"], JSON_UNESCAPED_UNICODE);
+            echo json_encode(["status"=>"success","message"=>"تم نشر الخبر بنجاح"], JSON_UNESCAPED_UNICODE);
         } else {
             echo json_encode(["status"=>"error","message"=>"عنوان الخبر والتفاصيل مطلوبان"], JSON_UNESCAPED_UNICODE);
         }
@@ -572,11 +617,21 @@ try {
         $content_ar = trim($data['content_ar'] ?? '');
         $content_en = trim($data['content_en'] ?? '');
 
-        $title = $title_ar;
-        $content = $content_ar;
-        $image_url = trim($data['image'] ??'');
+        $title = !empty($title_ar) ? $title_ar : $title_en;
+        $content = !empty($content_ar) ? $content_ar : $content_en;
+        $image_url = trim($data['image_url'] ?? $data['image'] ?? '');
 
         if ($id > 0 && !empty($title) && !empty($content)) {
+            // Check existing image to preserve if no new image uploaded
+            $curr = $conn->prepare("SELECT image_url FROM news WHERE id = ?");
+            $curr->execute([$id]);
+            $currRow = $curr->fetch();
+            if (empty($image_url) && $currRow && !empty($currRow['image_url']) && empty($data['remove_image'])) {
+                $image_url = $currRow['image_url'];
+            } else {
+                $image_url = saveBase64IfPresent($image_url);
+            }
+
             $stmt = $conn->prepare("UPDATE news SET title=?, content=?, image_url=?, title_ar=?, title_en=?, content_ar=?, content_en=? WHERE id=?");
             $stmt->execute([$title, $content, $image_url, $title_ar, $title_en, $content_ar, $content_en, $id]);
             echo json_encode(["status"=>"success","message"=>"تم تعديل الخبر بنجاح"], JSON_UNESCAPED_UNICODE);
@@ -603,12 +658,17 @@ try {
     }
 
     if ($action ==='add_notification') {
-        $title = trim($data['title'] ??'');
-        $body = trim($data['body'] ?? ($data['content'] ?? ''));
+        $title_ar = trim($data['title_ar'] ?? ($data['title'] ?? ''));
+        $title_en = trim($data['title_en'] ?? '');
+        $body_ar = trim($data['body_ar'] ?? ($data['body'] ?? ($data['content'] ?? '')));
+        $body_en = trim($data['body_en'] ?? '');
+
+        $title = !empty($title_ar) ? $title_ar : $title_en;
+        $body = !empty($body_ar) ? $body_ar : $body_en;
 
         if (!empty($title) && !empty($body)) {
-            $stmt = $conn->prepare("INSERT INTO notifications (student_id, title, body) VALUES (0, ?, ?)");
-            $stmt->execute([$title, $body]);
+            $stmt = $conn->prepare("INSERT INTO notifications (student_id, title, body, title_ar, title_en, body_ar, body_en) VALUES (0, ?, ?, ?, ?, ?, ?)");
+            $stmt->execute([$title, $body, $title_ar, $title_en, $body_ar, $body_en]);
             echo json_encode(["status"=>"success","message"=>"تم نشر التنبيه والإشعار بنجاح"], JSON_UNESCAPED_UNICODE);
         } else {
             echo json_encode(["status"=>"error","message"=>"عنوان التنبيه والمحتوى مطلوبان"], JSON_UNESCAPED_UNICODE);
@@ -634,52 +694,565 @@ try {
 
     if ($action ==='update_request_status') {
         $id = intval($data['id'] ?? 0);
-        $status = trim($data['status'] ??'مكتمل');
-        if ($id > 0) {
-            // 1. Get the current details of this request to find the student phone and student_id
-            $stmtReq = $conn->prepare("SELECT student_id, student_name, student_phone, service_title FROM service_requests WHERE id = ?");
+        $status = trim($data['status'] ?? 'مكتمل');
+        $cancellationReason = trim($data['cancellation_reason'] ?? '');
+        $adminId = intval(AuthMiddleware::$payload['admin_id'] ?? 0);
+
+        if ($id <= 0) {
+            echo json_encode(["status" => "error", "message" => "معرف الطلب غير صالح"], JSON_UNESCAPED_UNICODE);
+            exit();
+        }
+
+        try {
+            $conn->beginTransaction();
+
+            // 1. Lock request row FOR UPDATE
+            $stmtReq = $conn->prepare("
+                SELECT sr.*, s.title_ar, s.title_en
+                FROM service_requests sr
+                LEFT JOIN services s ON sr.service_id = s.id
+                WHERE sr.id = ?
+                FOR UPDATE
+            ");
             $stmtReq->execute([$id]);
-            $reqData = $stmtReq->fetch();
+            $reqData = $stmtReq->fetch(PDO::FETCH_ASSOC);
 
-            $conn->prepare("UPDATE service_requests SET status = ? WHERE id = ?")->execute([$status, $id]);
-
-            // Send targeted notification to the specific student
-            if ($reqData && !empty($reqData['student_id'])) {
-                $studentId = intval($reqData['student_id']);
-                $notifTitle = "تحديث حالة الطلب";
-                $notifBody = "تم تغيير حالة طلبك الخاص بـ (" . $reqData['service_title'] . ") إلى: " . $status;
-                sendStudentNotification($studentId, $notifTitle, $notifBody);
+            if (!$reqData) {
+                $conn->rollBack();
+                echo json_encode(["status" => "error", "message" => "لم يتم العثور على الطلب"], JSON_UNESCAPED_UNICODE);
+                exit();
             }
 
-            // 2. Insert status update notification message in the chat
-            if ($reqData && !empty($reqData['student_phone'])) {
-                $phone = $reqData['student_phone'];
-                $serviceTitle = $reqData['service_title'];
+            $currentStatus = $reqData['status'] ?? '';
 
-                // Find or create chat
-                $stmtChat = $conn->prepare("SELECT id FROM chats WHERE phone = ?");
-                $stmtChat->execute([$phone]);
-                $chat = $stmtChat->fetch();
+            // Handle Cancellation Flow
+            if ($status === 'ملغي') {
+                if (empty($cancellationReason)) {
+                    $conn->rollBack();
+                    http_response_code(400);
+                    echo json_encode(["status" => "error", "error_code" => "MISSING_REASON", "message" => "يرجى توضيح سبب إلغاء الطلب"], JSON_UNESCAPED_UNICODE);
+                    exit();
+                }
 
-                $msgText ="تحديث الطلب (#$id): تم تغيير حالة طلبك الخاص بـ ($serviceTitle) إلى: * $status *";
+                if ($currentStatus === 'مكتمل') {
+                    $conn->rollBack();
+                    http_response_code(400);
+                    echo json_encode(["status" => "error", "error_code" => "CANNOT_CANCEL_COMPLETED", "message" => "لا يمكن إلغاء طلب مكتمل"], JSON_UNESCAPED_UNICODE);
+                    exit();
+                }
+
+                // Idempotent return if already cancelled
+                if ($currentStatus === 'ملغي') {
+                    $conn->rollBack();
+                    echo json_encode([
+                        "status" => "success",
+                        "message" => "الطلب ملغي مسبقاً",
+                        "data" => [
+                            "id" => $id,
+                            "status" => "ملغي",
+                            "points_refunded" => 0,
+                            "promo_reversed" => false,
+                            "refund_status" => $reqData['refund_status'] ?? 'none'
+                        ]
+                    ], JSON_UNESCAPED_UNICODE);
+                    exit();
+                }
+
+                // Lock redemption record if exists
+                $stmtRed = $conn->prepare("SELECT * FROM promo_code_redemptions WHERE service_request_id = ? AND status = 'applied' FOR UPDATE");
+                $stmtRed->execute([$id]);
+                $redemption = $stmtRed->fetch(PDO::FETCH_ASSOC);
+
+                // Lock promo code row if redemption exists
+                $promoCodeId = $redemption ? intval($redemption['promo_code_id']) : intval($reqData['promo_code_id'] ?? 0);
+                if ($promoCodeId > 0) {
+                    $conn->prepare("SELECT id FROM promo_codes WHERE id = ? FOR UPDATE")->execute([$promoCodeId]);
+                }
+
+                $pointsCharged = intval($reqData['points_charged'] ?? 0);
+                $studentId = intval($reqData['student_id'] ?? 0);
+                $refundStatus = 'not_applicable';
+                $pointsRefunded = 0;
+                $promoReversed = false;
+
+                // Automatic Wallet Refund
+                if ($reqData['payment_method'] === 'wallet' && $pointsCharged > 0 && $studentId > 0) {
+                    // Lock student wallet FOR UPDATE
+                    $stmtStd = $conn->prepare("SELECT points FROM students WHERE id = ? FOR UPDATE");
+                    $stmtStd->execute([$studentId]);
+                    $stdRow = $stmtStd->fetch(PDO::FETCH_ASSOC);
+
+                    if ($stdRow) {
+                        $conn->prepare("UPDATE students SET points = points + ? WHERE id = ?")->execute([$pointsCharged, $studentId]);
+
+                        $svcTitle = $reqData['service_title'] ?? 'خدمة';
+                        $txDesc = "استرجاع نقاط لطلب ملغي (#$id): " . $svcTitle . " - السبب: " . $cancellationReason;
+                        
+                        $stmtTx = $conn->prepare("INSERT INTO wallet_transactions (student_id, service_request_id, amount, type, description, created_at) VALUES (?, ?, ?, 'استرجاع', ?, NOW())");
+                        $stmtTx->execute([$studentId, $id, $pointsCharged, $txDesc]);
+
+                        $pointsRefunded = $pointsCharged;
+                        $refundStatus = 'refunded';
+
+                        // Notification
+                        $notifTitleAr = "استرجاع نقاط";
+                        $notifBodyAr = "تم استرجاع $pointsCharged نقطة إلى محفظتك بسبب إلغاء الطلب (#$id): $cancellationReason";
+                        $notifTitleEn = "Points Refund";
+                        $notifBodyEn = "Your $pointsCharged points have been refunded due to request cancellation (#$id): $cancellationReason";
+                        sendStudentNotification($studentId, $notifTitleAr, $notifBodyAr, $notifTitleEn, $notifBodyEn);
+                    }
+                }
+
+                // Promo Redemption Reversal
+                if ($redemption) {
+                    $upRed = $conn->prepare("UPDATE promo_code_redemptions SET status = 'reversed', reversed_at = NOW(), reversed_reason = ? WHERE id = ? AND status = 'applied'");
+                    $upRed->execute([$cancellationReason, $redemption['id']]);
+                    if ($upRed->rowCount() > 0 && $promoCodeId > 0) {
+                        $conn->prepare("UPDATE promo_codes SET used_count = GREATEST(0, used_count - 1) WHERE id = ?")->execute([$promoCodeId]);
+                        $promoReversed = true;
+                    }
+                }
+
+                // Verify admin exists for FK safety
+                $adminValidId = null;
+                if ($adminId > 0) {
+                    $aCheck = $conn->prepare("SELECT id FROM admins WHERE id = ?");
+                    $aCheck->execute([$adminId]);
+                    if ($aCheck->fetch()) {
+                        $adminValidId = $adminId;
+                    }
+                }
+
+                // Update service request status and audit fields
+                $conn->prepare("
+                    UPDATE service_requests 
+                    SET status = 'ملغي', cancelled_at = NOW(), cancelled_by_admin_id = ?, cancellation_reason = ?, refund_status = ? 
+                    WHERE id = ?
+                ")->execute([$adminValidId, $cancellationReason, $refundStatus, $id]);
+
+            } else {
+                // Non-cancellation status transition (e.g. قيد التنفيذ, مكتمل)
+                if ($currentStatus === 'ملغي') {
+                    $conn->rollBack();
+                    http_response_code(400);
+                    echo json_encode(["status" => "error", "error_code" => "CANNOT_REOPEN_CANCELLED", "message" => "لا يمكن إعادة فتح أو تغيير حالة طلب ملغي"], JSON_UNESCAPED_UNICODE);
+                    exit();
+                }
+
+                $conn->prepare("UPDATE service_requests SET status = ? WHERE id = ?")->execute([$status, $id]);
+            }
+
+            // Notification mappings & chat message
+            $statusMapAr = ['جديد' => 'جديد', 'قيد المراجعة' => 'قيد المراجعة', 'قيد التنفيذ' => 'قيد التنفيذ', 'مكتمل' => 'مكتمل', 'ملغي' => 'ملغي'];
+            $statusMapEn = ['جديد' => 'New', 'قيد المراجعة' => 'Under Review', 'قيد التنفيذ' => 'In Progress', 'مكتمل' => 'Completed', 'ملغي' => 'Cancelled'];
+            $statusAr = $statusMapAr[$status] ?? $status;
+            $statusEn = $statusMapEn[$status] ?? $status;
+            $svcTitleAr = (!empty($reqData['title_ar'])) ? $reqData['title_ar'] : ($reqData['service_title'] ?? '');
+            $svcTitleEn = (!empty($reqData['title_en'])) ? $reqData['title_en'] : ($reqData['service_title'] ?? '');
+
+            if ($status !== 'ملغي' && !empty($reqData['student_id'])) {
+                $studentId = intval($reqData['student_id']);
+                $notifTitleAr = "تحديث حالة الطلب (#$id)";
+                $notifBodyAr = "تم تغيير حالة طلبك الخاص بـ ($svcTitleAr) إلى: $statusAr";
+                $notifTitleEn = "Request Update (#$id)";
+                $notifBodyEn = "The status of your request for ($svcTitleEn) has been changed to: $statusEn";
+                sendStudentNotification($studentId, $notifTitleAr, $notifBodyAr, $notifTitleEn, $notifBodyEn);
+            }
+
+            // Insert status update in chat
+            if (!empty($reqData['student_id']) || !empty($reqData['student_phone'])) {
+                $studentId = intval($reqData['student_id'] ?? 0);
+                $phone = $reqData['student_phone'] ?? '';
+                $chat = null;
+                if ($studentId > 0) {
+                    $stmtChat = $conn->prepare("SELECT id FROM chats WHERE student_id = ?");
+                    $stmtChat->execute([$studentId]);
+                    $chat = $stmtChat->fetch();
+                }
+                if (!$chat && !empty($phone)) {
+                    $stmtChat = $conn->prepare("SELECT id FROM chats WHERE phone = ?");
+                    $stmtChat->execute([$phone]);
+                    $chat = $stmtChat->fetch();
+                }
+
+                $msgText = ($status === 'ملغي')
+                    ? "تحديث الطلب (#$id): تم إلغاء طلبك الخاص بـ ($svcTitleAr).\nالسبب: $cancellationReason" . ($pointsRefunded > 0 ? "\n[تم استرجاع $pointsRefunded نقطة إلى محفظتك بنجاح]" : "")
+                    : "تحديث الطلب (#$id): تم تغيير حالة طلبك الخاص بـ ($svcTitleAr) إلى: * $statusAr *";
 
                 if ($chat) {
                     $chatId = $chat['id'];
-                    $conn->prepare("UPDATE chats SET last_msg = ?, status ='تحديث الطلب'WHERE id = ?")->execute([$msgText, $chatId]);
+                    $conn->prepare("UPDATE chats SET last_msg = ?, status = 'تحديث الطلب', updated_at = NOW() WHERE id = ?")->execute([$msgText, $chatId]);
                 } else {
-                    $conn->prepare("INSERT INTO chats (student_name, phone, last_msg, status) VALUES (?, ?, ?,'تحديث الطلب')")->execute([$reqData['student_name'] ??'طالب', $phone, $msgText]);
+                    $conn->prepare("INSERT INTO chats (student_id, student_name, phone, last_msg, status, updated_at) VALUES (?, ?, ?, ?, 'تحديث الطلب', NOW())")
+                         ->execute([$studentId, $reqData['student_name'] ?? 'طالب', $phone, $msgText]);
                     $chatId = $conn->lastInsertId();
                 }
 
-                // Insert the system notification message in chat_messages as admin
-                $stmtMsg = $conn->prepare("INSERT INTO chat_messages (chat_id, sender, text) VALUES (?,'admin', ?)");
+                $stmtMsg = $conn->prepare("INSERT INTO chat_messages (chat_id, sender, text) VALUES (?, 'admin', ?)");
                 $stmtMsg->execute([$chatId, $msgText]);
             }
 
-            echo json_encode(["status"=>"success","message"=>"تم تحديث حالة الطلب"], JSON_UNESCAPED_UNICODE);
-        } else {
-            echo json_encode(["status"=>"error","message"=>"معرف الطلب غير صالح"], JSON_UNESCAPED_UNICODE);
+            $conn->commit();
+
+            echo json_encode([
+                "status" => "success",
+                "message" => ($status === 'ملغي') ? "تم إلغاء الطلب ومعالجة الاسترجاع بنجاح" : "تم تحديث حالة الطلب",
+                "data" => [
+                    "id" => $id,
+                    "status" => $status,
+                    "points_refunded" => $pointsRefunded ?? 0,
+                    "promo_reversed" => $promoReversed ?? false,
+                    "refund_status" => $refundStatus ?? 'none'
+                ]
+            ], JSON_UNESCAPED_UNICODE);
+
+        } catch (Exception $e) {
+            if ($conn->inTransaction()) {
+                $conn->rollBack();
+            }
+            http_response_code(500);
+            echo json_encode(["status" => "error", "message" => "فشل تحديث حالة الطلب: " . $e->getMessage()], JSON_UNESCAPED_UNICODE);
         }
+        exit();
+    }
+
+    // ── Promo Code CRUD Actions ──────────────────────────────────────────────
+    if ($action === 'add_promo_code') {
+        $campaignName = trim($data['campaign_name'] ?? '');
+        $code = strtoupper(trim($data['code'] ?? ''));
+        $discountType = trim($data['discount_type'] ?? 'percentage');
+        $discountValue = floatval($data['discount_value'] ?? 0.0);
+        $maxDiscountPoints = !empty($data['max_discount_points']) ? intval($data['max_discount_points']) : null;
+        $minServicePrice = intval($data['min_service_price_points'] ?? 0);
+        $startAt = !empty($data['start_at']) ? trim($data['start_at']) : null;
+        $expiresAt = !empty($data['expires_at']) ? trim($data['expires_at']) : null;
+        $status = in_array($data['status'] ?? '', ['active', 'paused']) ? $data['status'] : 'active';
+        $serviceScope = in_array($data['service_scope'] ?? '', ['all', 'selected']) ? $data['service_scope'] : 'all';
+        $serviceIds = is_array($data['service_ids'] ?? null) ? $data['service_ids'] : [];
+        $audienceScope = in_array($data['audience_scope'] ?? '', ['all', 'selected']) ? $data['audience_scope'] : 'all';
+        $studentIds = is_array($data['student_ids'] ?? null) ? $data['student_ids'] : [];
+        $totalUsageLimit = !empty($data['total_usage_limit']) ? intval($data['total_usage_limit']) : null;
+        $perStudentLimit = isset($data['per_student_limit']) ? intval($data['per_student_limit']) : 1;
+
+        if (empty($campaignName)) {
+            echo json_encode(["status" => "error", "message" => "اسم الحملة مطلوب"], JSON_UNESCAPED_UNICODE);
+            exit();
+        }
+        if (empty($code) || !preg_match('/^[A-Z0-9_-]{3,50}$/', $code)) {
+            echo json_encode(["status" => "error", "message" => "كود الخصم يجب أن يتكون من 3-50 حرفاً وأرقاماً إنجليزية"], JSON_UNESCAPED_UNICODE);
+            exit();
+        }
+        if (!in_array($discountType, ['percentage', 'fixed', 'free'])) {
+            echo json_encode(["status" => "error", "message" => "نوع الخصم غير صالح"], JSON_UNESCAPED_UNICODE);
+            exit();
+        }
+        if ($discountType === 'percentage' && ($discountValue <= 0 || $discountValue > 100)) {
+            echo json_encode(["status" => "error", "error_code" => "INVALID_DISCOUNT_VALUE", "message" => "نسبة الخصم يجب أن تكون بين 1 و 100%"], JSON_UNESCAPED_UNICODE);
+            exit();
+        }
+        if ($discountType === 'fixed' && $discountValue <= 0) {
+            echo json_encode(["status" => "error", "error_code" => "INVALID_DISCOUNT_VALUE", "message" => "قيمة الخصم الثابت يجب أن تكون أكبر من صفر"], JSON_UNESCAPED_UNICODE);
+            exit();
+        }
+        if ($startAt && $expiresAt && $startAt >= $expiresAt) {
+            echo json_encode(["status" => "error", "error_code" => "INVALID_DATE_RANGE", "message" => "تاريخ البدء يجب أن يكون قبل تاريخ الانتهاء"], JSON_UNESCAPED_UNICODE);
+            exit();
+        }
+        if ($serviceScope === 'selected' && empty($serviceIds)) {
+            echo json_encode(["status" => "error", "error_code" => "EMPTY_SERVICES", "message" => "يرجى تحديد خدمة واحدة على الأقل عند اختيار نطاق خدمات محددة"], JSON_UNESCAPED_UNICODE);
+            exit();
+        }
+        if ($audienceScope === 'selected' && empty($studentIds)) {
+            echo json_encode(["status" => "error", "error_code" => "EMPTY_STUDENTS", "message" => "يرجى تحديد طالب واحد على الأقل عند اختيار نطاق جمهور محدد"], JSON_UNESCAPED_UNICODE);
+            exit();
+        }
+        if ($serviceScope === 'selected' && !empty($serviceIds)) {
+            $placeholders = implode(',', array_fill(0, count($serviceIds), '?'));
+            $chkSvc = $conn->prepare("SELECT COUNT(*) FROM services WHERE id IN ($placeholders)");
+            $chkSvc->execute(array_map('intval', $serviceIds));
+            if ((int)$chkSvc->fetchColumn() !== count($serviceIds)) {
+                echo json_encode(["status" => "error", "error_code" => "INVALID_SERVICE_IDS", "message" => "بعض الخدمات المحددة غير موجودة في النظام"], JSON_UNESCAPED_UNICODE);
+                exit();
+            }
+        }
+        if ($audienceScope === 'selected' && !empty($studentIds)) {
+            $placeholders = implode(',', array_fill(0, count($studentIds), '?'));
+            $chkStd = $conn->prepare("SELECT COUNT(*) FROM students WHERE id IN ($placeholders)");
+            $chkStd->execute(array_map('intval', $studentIds));
+            if ((int)$chkStd->fetchColumn() !== count($studentIds)) {
+                echo json_encode(["status" => "error", "error_code" => "INVALID_STUDENT_IDS", "message" => "بعض الطلاب المحددون غير موجودين في النظام"], JSON_UNESCAPED_UNICODE);
+                exit();
+            }
+        }
+        if ($totalUsageLimit !== null && $totalUsageLimit <= 0) {
+            echo json_encode(["status" => "error", "error_code" => "INVALID_TOTAL_LIMIT", "message" => "الحد الأقصى للاستخدام الكلي يجب أن يكون أكبر من صفر"], JSON_UNESCAPED_UNICODE);
+            exit();
+        }
+        if ($perStudentLimit <= 0) {
+            echo json_encode(["status" => "error", "error_code" => "INVALID_PER_STUDENT_LIMIT", "message" => "الحد الأقصى لكل طالب يجب أن يكون أكبر من صفر"], JSON_UNESCAPED_UNICODE);
+            exit();
+        }
+
+        // Check unique code
+        $checkStmt = $conn->prepare("SELECT id FROM promo_codes WHERE code = ?");
+        $checkStmt->execute([$code]);
+        if ($checkStmt->fetch()) {
+            echo json_encode(["status" => "error", "error_code" => "CODE_EXISTS", "message" => "كود الخصم مستخدم بالفعل، يرجى اختيار كود آخر"], JSON_UNESCAPED_UNICODE);
+            exit();
+        }
+
+        try {
+            $conn->beginTransaction();
+            $stmt = $conn->prepare("
+                INSERT INTO promo_codes (
+                    campaign_name, code, discount_type, discount_value, max_discount_points,
+                    min_service_price_points, start_at, expires_at, status, service_scope,
+                    audience_scope, total_usage_limit, per_student_limit, used_count, created_at
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, NOW())
+            ");
+            $stmt->execute([
+                $campaignName, $code, $discountType, ($discountType === 'free' ? 0.0 : $discountValue),
+                $maxDiscountPoints, $minServicePrice, $startAt, $expiresAt, $status,
+                $serviceScope, $audienceScope, $totalUsageLimit, $perStudentLimit
+            ]);
+            $promoId = $conn->lastInsertId();
+
+            if ($serviceScope === 'selected' && !empty($serviceIds)) {
+                $insSvc = $conn->prepare("INSERT IGNORE INTO promo_code_services (promo_code_id, service_id) VALUES (?, ?)");
+                foreach ($serviceIds as $sId) {
+                    $insSvc->execute([$promoId, intval($sId)]);
+                }
+            }
+
+            if ($audienceScope === 'selected' && !empty($studentIds)) {
+                $insStd = $conn->prepare("INSERT IGNORE INTO promo_code_students (promo_code_id, student_id) VALUES (?, ?)");
+                foreach ($studentIds as $stId) {
+                    $insStd->execute([$promoId, intval($stId)]);
+                }
+            }
+
+            $conn->commit();
+            echo json_encode(["status" => "success", "message" => "تم إنشاء كود الخصم بنجاح", "id" => $promoId], JSON_UNESCAPED_UNICODE);
+        } catch (Exception $e) {
+            if ($conn->inTransaction()) $conn->rollBack();
+            echo json_encode(["status" => "error", "message" => "فشل إنشاء كود الخصم: " . $e->getMessage()], JSON_UNESCAPED_UNICODE);
+        }
+        exit();
+    }
+
+    if ($action === 'update_promo_code') {
+        $id = intval($data['id'] ?? 0);
+        $campaignName = trim($data['campaign_name'] ?? '');
+        $code = strtoupper(trim($data['code'] ?? ''));
+        $discountType = trim($data['discount_type'] ?? 'percentage');
+        $discountValue = floatval($data['discount_value'] ?? 0.0);
+        $maxDiscountPoints = !empty($data['max_discount_points']) ? intval($data['max_discount_points']) : null;
+        $minServicePrice = intval($data['min_service_price_points'] ?? 0);
+        $startAt = !empty($data['start_at']) ? trim($data['start_at']) : null;
+        $expiresAt = !empty($data['expires_at']) ? trim($data['expires_at']) : null;
+        $status = in_array($data['status'] ?? '', ['active', 'paused', 'archived']) ? $data['status'] : 'active';
+        $serviceScope = in_array($data['service_scope'] ?? '', ['all', 'selected']) ? $data['service_scope'] : 'all';
+        $serviceIds = is_array($data['service_ids'] ?? null) ? $data['service_ids'] : [];
+        $audienceScope = in_array($data['audience_scope'] ?? '', ['all', 'selected']) ? $data['audience_scope'] : 'all';
+        $studentIds = is_array($data['student_ids'] ?? null) ? $data['student_ids'] : [];
+        $totalUsageLimit = !empty($data['total_usage_limit']) ? intval($data['total_usage_limit']) : null;
+        $perStudentLimit = !empty($data['per_student_limit']) ? intval($data['per_student_limit']) : 1;
+
+        if ($id <= 0) {
+            echo json_encode(["status" => "error", "error_code" => "INVALID_ID", "message" => "معرف كود الخصم غير صالح"], JSON_UNESCAPED_UNICODE);
+            exit();
+        }
+
+        $exStmt = $conn->prepare("SELECT * FROM promo_codes WHERE id = ?");
+        $exStmt->execute([$id]);
+        $existing = $exStmt->fetch(PDO::FETCH_ASSOC);
+        if (!$existing) {
+            echo json_encode(["status" => "error", "error_code" => "PROMO_NOT_FOUND", "message" => "كود الخصم غير موجود"], JSON_UNESCAPED_UNICODE);
+            exit();
+        }
+
+        // Immutability: If code was already used, code string cannot be modified
+        if ($existing['used_count'] > 0 && $existing['code'] !== $code) {
+            echo json_encode(["status" => "error", "error_code" => "CODE_IMMUTABLE", "message" => "لا يمكن تعديل رمز الكود بعد استخدامه من قبل الطلاب للحفاظ على سجلات التدقيق"], JSON_UNESCAPED_UNICODE);
+            exit();
+        }
+
+        if (empty($campaignName)) {
+            echo json_encode(["status" => "error", "message" => "اسم الحملة مطلوب"], JSON_UNESCAPED_UNICODE);
+            exit();
+        }
+        if (empty($code) || !preg_match('/^[A-Z0-9_-]{3,50}$/', $code)) {
+            echo json_encode(["status" => "error", "message" => "صيغة كود الخصم غير صالحة"], JSON_UNESCAPED_UNICODE);
+            exit();
+        }
+        if ($startAt && $expiresAt && $startAt >= $expiresAt) {
+            echo json_encode(["status" => "error", "message" => "تاريخ البدء يجب أن يكون قبل تاريخ الانتهاء"], JSON_UNESCAPED_UNICODE);
+            exit();
+        }
+
+        try {
+            $conn->beginTransaction();
+            $stmt = $conn->prepare("
+                UPDATE promo_codes SET
+                    campaign_name = ?, code = ?, discount_type = ?, discount_value = ?,
+                    max_discount_points = ?, min_service_price_points = ?, start_at = ?,
+                    expires_at = ?, status = ?, service_scope = ?, audience_scope = ?,
+                    total_usage_limit = ?, per_student_limit = ?
+                WHERE id = ?
+            ");
+            $stmt->execute([
+                $campaignName, $code, $discountType, ($discountType === 'free' ? 0.0 : $discountValue),
+                $maxDiscountPoints, $minServicePrice, $startAt, $expiresAt, $status,
+                $serviceScope, $audienceScope, $totalUsageLimit, $perStudentLimit, $id
+            ]);
+
+            // Sync junction tables
+            $conn->prepare("DELETE FROM promo_code_services WHERE promo_code_id = ?")->execute([$id]);
+            if ($serviceScope === 'selected' && !empty($serviceIds)) {
+                $insSvc = $conn->prepare("INSERT INTO promo_code_services (promo_code_id, service_id) VALUES (?, ?)");
+                foreach ($serviceIds as $sId) {
+                    $insSvc->execute([$id, intval($sId)]);
+                }
+            }
+
+            $conn->prepare("DELETE FROM promo_code_students WHERE promo_code_id = ?")->execute([$id]);
+            if ($audienceScope === 'selected' && !empty($studentIds)) {
+                $insStd = $conn->prepare("INSERT INTO promo_code_students (promo_code_id, student_id) VALUES (?, ?)");
+                foreach ($studentIds as $stId) {
+                    $insStd->execute([$id, intval($stId)]);
+                }
+            }
+
+            $conn->commit();
+            echo json_encode(["status" => "success", "message" => "تم تحديث كود الخصم بنجاح"], JSON_UNESCAPED_UNICODE);
+        } catch (Exception $e) {
+            if ($conn->inTransaction()) $conn->rollBack();
+            echo json_encode(["status" => "error", "message" => "فشل تحديث كود الخصم: " . $e->getMessage()], JSON_UNESCAPED_UNICODE);
+        }
+        exit();
+    }
+
+    if ($action === 'toggle_promo_code_status') {
+        $id = intval($data['id'] ?? 0);
+        if ($id <= 0) {
+            echo json_encode(["status" => "error", "message" => "معرف كود الخصم غير صالح"], JSON_UNESCAPED_UNICODE);
+            exit();
+        }
+        $pStmt = $conn->prepare("SELECT id, status FROM promo_codes WHERE id = ?");
+        $pStmt->execute([$id]);
+        $promo = $pStmt->fetch(PDO::FETCH_ASSOC);
+        if (!$promo) {
+            echo json_encode(["status" => "error", "message" => "كود الخصم غير موجود"], JSON_UNESCAPED_UNICODE);
+            exit();
+        }
+        $newStatus = ($promo['status'] === 'active') ? 'paused' : 'active';
+        $conn->prepare("UPDATE promo_codes SET status = ? WHERE id = ?")->execute([$newStatus, $id]);
+        echo json_encode(["status" => "success", "message" => "تم تغيير حالة الكود بنجاح", "new_status" => $newStatus], JSON_UNESCAPED_UNICODE);
+        exit();
+    }
+
+    if ($action === 'archive_promo_code') {
+        $id = intval($data['id'] ?? 0);
+        if ($id <= 0) {
+            echo json_encode(["status" => "error", "message" => "معرف كود الخصم غير صالح"], JSON_UNESCAPED_UNICODE);
+            exit();
+        }
+        $conn->prepare("UPDATE promo_codes SET status = 'archived' WHERE id = ?")->execute([$id]);
+        echo json_encode(["status" => "success", "message" => "تم أرشفة كود الخصم بنجاح"], JSON_UNESCAPED_UNICODE);
+        exit();
+    }
+
+    if ($action === 'get_promo_redemptions') {
+        $promoId = intval($_GET['promo_id'] ?? $data['promo_id'] ?? 0);
+        $page = max(1, intval($_GET['page'] ?? $data['page'] ?? 1));
+        $limit = max(1, min(100, intval($_GET['limit'] ?? $data['limit'] ?? 20)));
+        $offset = ($page - 1) * $limit;
+
+        if ($promoId <= 0) {
+            echo json_encode(["status" => "error", "message" => "معرف كود الخصم غير صالح"], JSON_UNESCAPED_UNICODE);
+            exit();
+        }
+
+        $cntStmt = $conn->prepare("SELECT COUNT(*) FROM promo_code_redemptions WHERE promo_code_id = ?");
+        $cntStmt->execute([$promoId]);
+        $total = intval($cntStmt->fetchColumn());
+
+        $stmt = $conn->prepare("
+            SELECT r.*, DATE_FORMAT(r.created_at, '%Y-%m-%d %h:%i %p') AS formatted_date,
+                   DATE_FORMAT(r.reversed_at, '%Y-%m-%d %h:%i %p') AS formatted_reversed_date
+            FROM promo_code_redemptions r
+            WHERE r.promo_code_id = ?
+            ORDER BY r.id DESC
+            LIMIT ? OFFSET ?
+        ");
+        $stmt->bindValue(1, $promoId, PDO::PARAM_INT);
+        $stmt->bindValue(2, $limit, PDO::PARAM_INT);
+        $stmt->bindValue(3, $offset, PDO::PARAM_INT);
+        $stmt->execute();
+        $redemptions = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        echo json_encode([
+            "status" => "success",
+            "data" => [
+                "redemptions" => $redemptions,
+                "pagination" => [
+                    "total" => $total,
+                    "page" => $page,
+                    "limit" => $limit,
+                    "total_pages" => ceil($total / $limit)
+                ]
+            ]
+        ], JSON_UNESCAPED_UNICODE);
+        exit();
+    }
+
+    if ($action === 'ensure_support_chat') {
+        $studentId = intval($data['student_id'] ?? 0);
+        if ($studentId <= 0) {
+            echo json_encode(["status" => "error", "message" => "معرف الطالب غير صالح"], JSON_UNESCAPED_UNICODE);
+            exit();
+        }
+
+        // Check student exists
+        $stuStmt = $conn->prepare("SELECT id, full_name, university, phone FROM students WHERE id = ?");
+        $stuStmt->execute([$studentId]);
+        $student = $stuStmt->fetch(PDO::FETCH_ASSOC);
+
+        if (!$student) {
+            echo json_encode(["status" => "error", "message" => "الطالب غير موجود"], JSON_UNESCAPED_UNICODE);
+            exit();
+        }
+
+        // Search by student_id first, then by phone if orphaned
+        $chatStmt = $conn->prepare("SELECT id FROM chats WHERE student_id = ?");
+        $chatStmt->execute([$studentId]);
+        $chat = $chatStmt->fetch(PDO::FETCH_ASSOC);
+
+        if (!$chat && !empty($student['phone'])) {
+            $chatPhoneStmt = $conn->prepare("SELECT id FROM chats WHERE phone = ?");
+            $chatPhoneStmt->execute([$student['phone']]);
+            $chatPhone = $chatPhoneStmt->fetch(PDO::FETCH_ASSOC);
+            if ($chatPhone) {
+                // Link existing chat to this student_id
+                $conn->prepare("UPDATE chats SET student_id = ? WHERE id = ?")->execute([$studentId, $chatPhone['id']]);
+                $chat = $chatPhone;
+            }
+        }
+
+        if (!$chat) {
+            $ins = $conn->prepare("INSERT INTO chats (student_id, student_name, student_uni, phone, last_msg, status, updated_at) VALUES (?, ?, ?, ?, '', 'جديد', NOW())");
+            $ins->execute([
+                $studentId,
+                $student['full_name'],
+                $student['university'] ?? 'جامعة في جورجيا',
+                $student['phone'] ?? ''
+            ]);
+            $chatId = intval($conn->lastInsertId());
+        } else {
+            $chatId = intval($chat['id']);
+        }
+
+        echo json_encode(["status" => "success", "data" => ["chat_id" => $chatId]], JSON_UNESCAPED_UNICODE);
         exit();
     }
 
@@ -725,8 +1298,9 @@ try {
         $fullName = trim($data['full_name'] ?? '');
         $email    = trim($data['email']     ?? '');
         $phone    = trim($data['phone']     ?? '');
-        $uni      = trim($data['university'] ?? '');
-        $password = $data['password'] ?? '';
+        $uni         = trim($data['university'] ?? 'جامعة في جورجيا');
+        $nationality = trim($data['nationality'] ?? '');
+        $password    = $data['password'] ?? '12345678';
 
         if (empty($fullName) || strlen($fullName) < 3) {
             echo json_encode(["status"=>"error","message"=>"الاسم الكامل مطلوب (3 أحرف على الأقل)"], JSON_UNESCAPED_UNICODE);
@@ -740,8 +1314,19 @@ try {
             echo json_encode(["status"=>"error","message"=>"رقم الهاتف مطلوب"], JSON_UNESCAPED_UNICODE);
             exit();
         }
+        if (empty($nationality)) {
+            echo json_encode(["status"=>"error","message"=>"حقل الجنسية مطلوب"], JSON_UNESCAPED_UNICODE);
+            exit();
+        }
         if (strlen($password) < 6) {
-            echo json_encode(["status"=>"error","message"=>"كلمة المرور يجب أن تكون 6 أحرف على الأقل"], JSON_UNESCAPED_UNICODE);
+            $password = '12345678';
+        }
+
+        // Check persistent blocklist
+        $blocked = isIdentityBlocked($conn, $email, $phone);
+        if ($blocked) {
+            $reasonMsg = !empty($blocked['reason']) ? " (السبب: {$blocked['reason']})" : "";
+            echo json_encode(["status"=>"error","message"=>"هذا البريد أو رقم الهاتف محظور من قبل الإدارة{$reasonMsg}"], JSON_UNESCAPED_UNICODE);
             exit();
         }
 
@@ -756,8 +1341,8 @@ try {
         }
 
         $passwordHash = password_hash($password, PASSWORD_DEFAULT);
-        $stmt = $conn->prepare("INSERT INTO students (full_name, email, phone, password, university, points) VALUES (?, ?, ?, ?, ?, 0)");
-        $stmt->execute([$fullName, $email, $phone, $passwordHash, $uni]);
+        $stmt = $conn->prepare("INSERT INTO students (full_name, email, phone, password, university, nationality, points, is_blocked) VALUES (?, ?, ?, ?, ?, ?, 0, 0)");
+        $stmt->execute([$fullName, $email, $phone, $passwordHash, $uni, $nationality]);
         if ($stmt->rowCount() > 0) {
             echo json_encode(["status"=>"success","message"=>"تم إضافة الطالب بنجاح"], JSON_UNESCAPED_UNICODE);
         } else {
@@ -801,6 +1386,127 @@ try {
         $stmt->execute([$passwordHash, $id]);
 
         echo json_encode(["status" => "success", "message" => "تم تغيير كلمة المرور بنجاح"], JSON_UNESCAPED_UNICODE);
+        exit();
+    }
+
+    if ($action === 'update_student_admin_meta') {
+        $id = intval($data['id'] ?? 0);
+        $adminStatus = isset($data['admin_status']) ? trim($data['admin_status']) : null;
+        $adminNote = isset($data['admin_note']) ? trim($data['admin_note']) : null;
+
+        if ($id <= 0) {
+            echo json_encode(["status" => "error", "message" => "معرف الطالب غير صالح"], JSON_UNESCAPED_UNICODE);
+            exit();
+        }
+
+        $stmt = $conn->prepare("UPDATE students SET admin_status = ?, admin_note = ? WHERE id = ?");
+        $stmt->execute([$adminStatus !== '' ? $adminStatus : null, $adminNote !== '' ? $adminNote : null, $id]);
+
+        echo json_encode(["status" => "success", "message" => "تم حفظ الملاحظات والحالة بنجاح"], JSON_UNESCAPED_UNICODE);
+        exit();
+    }
+
+    if ($action === 'block_student') {
+        $id = intval($data['id'] ?? 0);
+        $reason = trim($data['reason'] ?? 'حظر بواسطة الإدارة');
+
+        if ($id <= 0) {
+            echo json_encode(["status" => "error", "message" => "معرف الطالب غير صالح"], JSON_UNESCAPED_UNICODE);
+            exit();
+        }
+
+        $stuStmt = $conn->prepare("SELECT id, email, phone FROM students WHERE id = ?");
+        $stuStmt->execute([$id]);
+        $student = $stuStmt->fetch(PDO::FETCH_ASSOC);
+
+        if (!$student) {
+            echo json_encode(["status" => "error", "message" => "الطالب غير موجود"], JSON_UNESCAPED_UNICODE);
+            exit();
+        }
+
+        // 1. Mark student account as blocked
+        $upd = $conn->prepare("UPDATE students SET is_blocked = 1 WHERE id = ?");
+        $upd->execute([$id]);
+
+        // 2. Persist in blocked_identities
+        $normEmail = normalizeIdentityEmail($student['email']);
+        $normPhone = normalizeIdentityPhone($student['phone']);
+
+        if (!empty($normEmail)) {
+            $ins = $conn->prepare("INSERT INTO blocked_identities (identifier_type, identifier_value, normalized_value, source_student_id, reason, created_by_admin) VALUES ('email', ?, ?, ?, ?, 'Admin') ON DUPLICATE KEY UPDATE reason = VALUES(reason), source_student_id = VALUES(source_student_id)");
+            $ins->execute([$student['email'], $normEmail, $id, $reason]);
+        }
+
+        if (!empty($normPhone)) {
+            $ins = $conn->prepare("INSERT INTO blocked_identities (identifier_type, identifier_value, normalized_value, source_student_id, reason, created_by_admin) VALUES ('phone', ?, ?, ?, ?, 'Admin') ON DUPLICATE KEY UPDATE reason = VALUES(reason), source_student_id = VALUES(source_student_id)");
+            $ins->execute([$student['phone'], $normPhone, $id, $reason]);
+        }
+
+        echo json_encode(["status" => "success", "message" => "تم حظر الطالب وإدراج معرفاته في قائمة الحظر بنجاح"], JSON_UNESCAPED_UNICODE);
+        exit();
+    }
+
+    if ($action === 'unblock_student') {
+        $id = intval($data['id'] ?? 0);
+        if ($id <= 0) {
+            echo json_encode(["status" => "error", "message" => "معرف الطالب غير صالح"], JSON_UNESCAPED_UNICODE);
+            exit();
+        }
+
+        $stuStmt = $conn->prepare("SELECT id, email, phone FROM students WHERE id = ?");
+        $stuStmt->execute([$id]);
+        $student = $stuStmt->fetch(PDO::FETCH_ASSOC);
+
+        if ($student) {
+            $upd = $conn->prepare("UPDATE students SET is_blocked = 0 WHERE id = ?");
+            $upd->execute([$id]);
+
+            $normEmail = normalizeIdentityEmail($student['email']);
+            $normPhone = normalizeIdentityPhone($student['phone']);
+
+            $del = $conn->prepare("DELETE FROM blocked_identities WHERE source_student_id = ? OR (identifier_type = 'email' AND normalized_value = ?) OR (identifier_type = 'phone' AND normalized_value = ?)");
+            $del->execute([$id, $normEmail, $normPhone]);
+        } else {
+            $del = $conn->prepare("DELETE FROM blocked_identities WHERE source_student_id = ?");
+            $del->execute([$id]);
+        }
+
+        echo json_encode(["status" => "success", "message" => "تم إلغاء حظر الطالب بنجاح"], JSON_UNESCAPED_UNICODE);
+        exit();
+    }
+
+    if ($action === 'get_blocked_identities') {
+        $list = $conn->query("SELECT id, identifier_type, identifier_value, normalized_value, source_student_id, reason, created_by_admin, created_at FROM blocked_identities ORDER BY id DESC")->fetchAll(PDO::FETCH_ASSOC);
+        echo json_encode(["status" => "success", "data" => ["blocked_identities" => $list]], JSON_UNESCAPED_UNICODE);
+        exit();
+    }
+
+    if ($action === 'unblock_identity') {
+        $id = intval($data['id'] ?? 0);
+        if ($id <= 0) {
+            echo json_encode(["status" => "error", "message" => "معرف الحظر غير صالح"], JSON_UNESCAPED_UNICODE);
+            exit();
+        }
+
+        $f = $conn->prepare("SELECT identifier_type, normalized_value, source_student_id FROM blocked_identities WHERE id = ?");
+        $f->execute([$id]);
+        $row = $f->fetch(PDO::FETCH_ASSOC);
+
+        if ($row) {
+            $del = $conn->prepare("DELETE FROM blocked_identities WHERE id = ?");
+            $del->execute([$id]);
+
+            // If this was linked to a student, check if they have any remaining blocks
+            if (!empty($row['source_student_id'])) {
+                $chk = $conn->prepare("SELECT COUNT(*) FROM blocked_identities WHERE source_student_id = ?");
+                $chk->execute([$row['source_student_id']]);
+                if ($chk->fetchColumn() == 0) {
+                    $conn->prepare("UPDATE students SET is_blocked = 0 WHERE id = ?")->execute([$row['source_student_id']]);
+                }
+            }
+        }
+
+        echo json_encode(["status" => "success", "message" => "تم إلغاء الحظر بنجاح"], JSON_UNESCAPED_UNICODE);
         exit();
     }
 
@@ -1101,13 +1807,13 @@ try {
 
     if ($action === 'add_housing_offer') {
         $apartment_id   = isset($data['apartment_id']) ? intval($data['apartment_id']) : 0;
-        $title_ar       = isset($data['title_ar']) ? trim($data['title_ar']) : '';
+        $title_ar       = isset($data['title_ar']) ? trim($data['title_ar']) : (isset($data['title']) ? trim($data['title']) : '');
         $title_en       = isset($data['title_en']) ? trim($data['title_en']) : '';
-        $description_ar = isset($data['description_ar']) ? trim($data['description_ar']) : '';
+        $description_ar = isset($data['description_ar']) ? trim($data['description_ar']) : (isset($data['description']) ? trim($data['description']) : '');
         $description_en = isset($data['description_en']) ? trim($data['description_en']) : '';
         $original_price = isset($data['original_price']) ? floatval($data['original_price']) : 0.0;
         $offer_price    = isset($data['offer_price']) ? floatval($data['offer_price']) : 0.0;
-        $badge_text_ar  = isset($data['badge_text_ar']) && trim($data['badge_text_ar']) !== '' ? trim($data['badge_text_ar']) : null;
+        $badge_text_ar  = isset($data['badge_text_ar']) && trim($data['badge_text_ar']) !== '' ? trim($data['badge_text_ar']) : (isset($data['badge_text']) && trim($data['badge_text']) !== '' ? trim($data['badge_text']) : null);
         $badge_text_en  = isset($data['badge_text_en']) && trim($data['badge_text_en']) !== '' ? trim($data['badge_text_en']) : null;
         $image_url      = isset($data['image_url']) && trim($data['image_url']) !== '' ? trim($data['image_url']) : null;
         $is_active      = isset($data['is_active']) ? (intval($data['is_active']) ? 1 : 0) : 1;
@@ -1166,7 +1872,8 @@ try {
             $title_ar, $title_en, $description_ar, $description_en, $badge_text_ar, $badge_text_en
         ]);
 
-        echo json_encode(["status" => "success", "message" => "تم إضافة العرض بنجاح"], JSON_UNESCAPED_UNICODE);
+        $newOfferId = intval($conn->lastInsertId());
+        echo json_encode(["status" => "success", "id" => $newOfferId, "offer_id" => $newOfferId, "message" => "تم إضافة العرض بنجاح"], JSON_UNESCAPED_UNICODE);
         exit();
     }
 
@@ -1259,6 +1966,25 @@ try {
             $title_ar, $title_en, $description_ar, $description_en, $badge_text_ar, $badge_text_en, $id
         ]);
 
+        // If image_url was explicitly changed/removed, safely clean up old file if stored in managed housing_offers folder
+        if ($image_url !== $existing['image_url'] && !empty($existing['image_url'])) {
+            $oldClean = trim($existing['image_url']);
+            if (strpos($oldClean, 'uploads/housing_offers/') === 0 || strpos($oldClean, 'uploads/housing_offers/') === 0) {
+                $base = basename($oldClean);
+                $paths = [
+                    __DIR__ . '/../uploads/housing_offers/' . $base,
+                    __DIR__ . '/../../uploads/housing_offers/' . $base,
+                    __DIR__ . '/../uploads/housing_offers/' . $base,
+                    __DIR__ . '/../../uploads/housing_offers/' . $base,
+                ];
+                foreach ($paths as $p) {
+                    if (file_exists($p) && is_file($p)) {
+                        @unlink($p);
+                    }
+                }
+            }
+        }
+
         echo json_encode(["status" => "success", "message" => "تم تعديل العرض بنجاح"], JSON_UNESCAPED_UNICODE);
         exit();
     }
@@ -1270,9 +1996,32 @@ try {
             exit();
         }
 
+        // Fetch existing record first for image cleanup
+        $stmtExist = $conn->prepare("SELECT image_url FROM housing_offers WHERE id = ?");
+        $stmtExist->execute([$id]);
+        $existingRow = $stmtExist->fetch(PDO::FETCH_ASSOC);
+
         $stmt = $conn->prepare("DELETE FROM housing_offers WHERE id = ?");
         $stmt->execute([$id]);
         if ($stmt->rowCount() > 0) {
+            // Clean up custom offer image if stored in managed folder
+            if ($existingRow && !empty($existingRow['image_url'])) {
+                $oldClean = trim($existingRow['image_url']);
+                if (strpos($oldClean, 'uploads/housing_offers/') === 0 || strpos($oldClean, 'uploads/housing_offers/') === 0) {
+                    $base = basename($oldClean);
+                    $paths = [
+                        __DIR__ . '/../uploads/housing_offers/' . $base,
+                        __DIR__ . '/../../uploads/housing_offers/' . $base,
+                        __DIR__ . '/../uploads/housing_offers/' . $base,
+                        __DIR__ . '/../../uploads/housing_offers/' . $base,
+                    ];
+                    foreach ($paths as $p) {
+                        if (file_exists($p) && is_file($p)) {
+                            @unlink($p);
+                        }
+                    }
+                }
+            }
             echo json_encode(["status" => "success", "message" => "تم حذف العرض بنجاح"], JSON_UNESCAPED_UNICODE);
         } else {
             echo json_encode(["status" => "error", "message" => "لم يتم العثور على العرض أو فشل الحذف"], JSON_UNESCAPED_UNICODE);

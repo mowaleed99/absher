@@ -186,7 +186,7 @@ try {
               AND apt.is_available = 1
         ")->fetchColumn();
 
-        echo json_encode(["status"=>"success","stats"=> ["total_apartments"=> count($apartments),"total_services"=> count($services),"total_students"=> count($students),"total_universities"=> count($universities),"total_districts"=> count($districts),"pending_requests"=> count(array_filter($requests, fn($r) => $r['status'] ==='قيد المراجعة')),"active_housing_offers_count" => $active_housing_offers_count
+        echo json_encode(["status"=>"success","stats"=> ["total_apartments"=> count($apartments),"total_services"=> count($services),"total_students"=> count($students),"total_universities"=> count($universities),"total_districts"=> count($districts),"pending_requests"=> count(array_filter($requests, fn($r) => $r['status'] ==='قيد المراجعة')),"active_housing_offers_count" => $active_housing_offers_count,"promo_codes_count" => count($promo_codes)
             ],"apartments"=> $apartments,"services"=> $services,"students"=> $students,"universities"=> $universities,"districts"=> $districts,"requests"=> $requests,"reviews"=> $reviews,"reviews_analytics"=> $reviews_analytics,"application_feedback"=> $application_feedback,"chats"=> $chats,"news"=> $news,"notifications"=> $notifications,"housing_offers"=> $housing_offers,"active_housing_offers_count" => $active_housing_offers_count,"blocked_identities"=> $blocked_identities,"promo_codes"=> $promo_codes
         ], JSON_UNESCAPED_UNICODE);
         exit();
@@ -1807,13 +1807,13 @@ try {
 
     if ($action === 'add_housing_offer') {
         $apartment_id   = isset($data['apartment_id']) ? intval($data['apartment_id']) : 0;
-        $title_ar       = isset($data['title_ar']) ? trim($data['title_ar']) : '';
+        $title_ar       = isset($data['title_ar']) ? trim($data['title_ar']) : (isset($data['title']) ? trim($data['title']) : '');
         $title_en       = isset($data['title_en']) ? trim($data['title_en']) : '';
-        $description_ar = isset($data['description_ar']) ? trim($data['description_ar']) : '';
+        $description_ar = isset($data['description_ar']) ? trim($data['description_ar']) : (isset($data['description']) ? trim($data['description']) : '');
         $description_en = isset($data['description_en']) ? trim($data['description_en']) : '';
         $original_price = isset($data['original_price']) ? floatval($data['original_price']) : 0.0;
         $offer_price    = isset($data['offer_price']) ? floatval($data['offer_price']) : 0.0;
-        $badge_text_ar  = isset($data['badge_text_ar']) && trim($data['badge_text_ar']) !== '' ? trim($data['badge_text_ar']) : null;
+        $badge_text_ar  = isset($data['badge_text_ar']) && trim($data['badge_text_ar']) !== '' ? trim($data['badge_text_ar']) : (isset($data['badge_text']) && trim($data['badge_text']) !== '' ? trim($data['badge_text']) : null);
         $badge_text_en  = isset($data['badge_text_en']) && trim($data['badge_text_en']) !== '' ? trim($data['badge_text_en']) : null;
         $image_url      = isset($data['image_url']) && trim($data['image_url']) !== '' ? trim($data['image_url']) : null;
         $is_active      = isset($data['is_active']) ? (intval($data['is_active']) ? 1 : 0) : 1;
@@ -1872,7 +1872,8 @@ try {
             $title_ar, $title_en, $description_ar, $description_en, $badge_text_ar, $badge_text_en
         ]);
 
-        echo json_encode(["status" => "success", "message" => "تم إضافة العرض بنجاح"], JSON_UNESCAPED_UNICODE);
+        $newOfferId = intval($conn->lastInsertId());
+        echo json_encode(["status" => "success", "id" => $newOfferId, "offer_id" => $newOfferId, "message" => "تم إضافة العرض بنجاح"], JSON_UNESCAPED_UNICODE);
         exit();
     }
 
