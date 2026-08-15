@@ -553,6 +553,7 @@ class _ChatScreenState extends State<ChatScreen> {
         appBar: AppBar(
           backgroundColor: AppColors.primary,
           elevation: 1,
+          iconTheme: const IconThemeData(color: Colors.white),
           title: Row(
             children: [
               CircleAvatar(
