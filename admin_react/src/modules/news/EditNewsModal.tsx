@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { NewsItem } from '../../types/news';
 import { useI18n } from '../../lib/i18n';
 import { hasMedia, getMediaUrl } from '../../lib/media';
+import { compressImageClientSide } from '../../hooks/useUpload';
 
 interface EditNewsModalProps {
   isOpen: boolean;
@@ -49,7 +50,7 @@ export function EditNewsModal({ isOpen, newsItem, onClose, onSubmit, showToast }
 
   if (!isOpen || !newsItem) return null;
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
@@ -58,14 +59,22 @@ export function EditNewsModal({ isOpen, newsItem, onClose, onSubmit, showToast }
       return;
     }
 
-    const reader = new FileReader();
-    reader.onload = () => {
-      if (typeof reader.result === 'string') {
-        setImageUrl(reader.result);
+    try {
+      const compressed = await compressImageClientSide(file, 1200, 0.82);
+      if (compressed.dataUrl) {
+        setImageUrl(compressed.dataUrl);
         setRemoveImage(false);
       }
-    };
-    reader.readAsDataURL(file);
+    } catch {
+      const reader = new FileReader();
+      reader.onload = () => {
+        if (typeof reader.result === 'string') {
+          setImageUrl(reader.result);
+          setRemoveImage(false);
+        }
+      };
+      reader.readAsDataURL(file);
+    }
   };
 
   const handleRemoveImage = () => {

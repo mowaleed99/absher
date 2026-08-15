@@ -1,6 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { useI18n } from '../../lib/i18n';
 import { hasMedia, getMediaUrl } from '../../lib/media';
+import { compressImageClientSide } from '../../hooks/useUpload';
 
 interface AddNewsModalProps {
   isOpen: boolean;
@@ -31,7 +32,7 @@ export function AddNewsModal({ isOpen, onClose, onSubmit, showToast }: AddNewsMo
 
   if (!isOpen) return null;
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
@@ -40,13 +41,20 @@ export function AddNewsModal({ isOpen, onClose, onSubmit, showToast }: AddNewsMo
       return;
     }
 
-    const reader = new FileReader();
-    reader.onload = () => {
-      if (typeof reader.result === 'string') {
-        setImageUrl(reader.result);
+    try {
+      const compressed = await compressImageClientSide(file, 1200, 0.82);
+      if (compressed.dataUrl) {
+        setImageUrl(compressed.dataUrl);
       }
-    };
-    reader.readAsDataURL(file);
+    } catch {
+      const reader = new FileReader();
+      reader.onload = () => {
+        if (typeof reader.result === 'string') {
+          setImageUrl(reader.result);
+        }
+      };
+      reader.readAsDataURL(file);
+    }
   };
 
   const handleRemoveImage = () => {
