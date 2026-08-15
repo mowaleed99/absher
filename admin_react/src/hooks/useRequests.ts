@@ -42,6 +42,19 @@ export function useRequests() {
 
   useEffect(() => {
     fetchRequests();
+    const interval = setInterval(() => {
+      const token = localStorage.getItem('adminToken');
+      if (!token) return;
+      apiFetch<Record<string, unknown>>('get_all').then((result) => {
+        if (result.success && result.data) {
+          const parsed = parseRequests(result.data.requests);
+          if (parsed) {
+            setRequests(parsed);
+          }
+        }
+      }).catch(() => {});
+    }, 10000);
+    return () => clearInterval(interval);
   }, [fetchRequests]);
 
   const updateRequestStatus = async (
