@@ -1,4 +1,4 @@
-import { useRef } from 'react';
+import React, { useRef, useState } from 'react';
 import { useI18n } from '../lib/i18n';
 
 interface DateTimePickerFieldProps {
@@ -27,6 +27,8 @@ export function DateTimePickerField({
   const { lang } = useI18n();
   const isRtl = lang === 'ar';
   const inputRef = useRef<HTMLInputElement>(null);
+  const [isFocused, setIsFocused] = useState(false);
+  const [isHovered, setIsHovered] = useState(false);
 
   const handleOpenPicker = () => {
     if (disabled) return;
@@ -50,9 +52,9 @@ export function DateTimePickerField({
   };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', width: '100%' }}>
-      {/* Label */}
-      <label
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '5px', width: '100%' }}>
+      {/* Field Label & Clear Button */}
+      <div
         style={{
           display: 'flex',
           alignItems: 'center',
@@ -70,53 +72,84 @@ export function DateTimePickerField({
             type="button"
             onClick={handleClear}
             style={{
-              background: 'transparent',
-              border: 'none',
-              color: 'var(--text-muted)',
+              background: 'rgba(239, 68, 68, 0.12)',
+              border: '1px solid rgba(239, 68, 68, 0.3)',
+              color: '#f87171',
               fontSize: '0.72rem',
+              fontWeight: 700,
               cursor: 'pointer',
               display: 'inline-flex',
               alignItems: 'center',
-              gap: '3px',
-              padding: '1px 4px',
+              gap: '4px',
+              padding: '2px 8px',
+              borderRadius: '5px',
+              transition: 'all 0.15s ease',
             }}
-            title="مسح التاريخ والوقت"
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = 'rgba(239, 68, 68, 0.22)';
+              e.currentTarget.style.borderColor = '#ef4444';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = 'rgba(239, 68, 68, 0.12)';
+              e.currentTarget.style.borderColor = 'rgba(239, 68, 68, 0.3)';
+            }}
+            title="مسح القيمة المحددة"
           >
             <i className="fa-solid fa-xmark"></i>
             <span>مسح</span>
           </button>
         )}
-      </label>
+      </div>
 
       {/* Input Container */}
       <div
         onClick={handleOpenPicker}
+        onMouseEnter={() => !disabled && setIsHovered(true)}
+        onMouseLeave={() => setIsHovered(false)}
         style={{
           position: 'relative',
           display: 'flex',
           alignItems: 'center',
           background: disabled ? '#080d1a' : '#0d1527',
-          border: `1px solid ${error ? '#ef4444' : 'var(--border-color)'}`,
+          border: `1px solid ${
+            error
+              ? '#ef4444'
+              : isFocused
+              ? '#38bdf8'
+              : isHovered
+              ? 'rgba(56, 189, 248, 0.5)'
+              : 'var(--border-color)'
+          }`,
           borderRadius: '8px',
           cursor: disabled ? 'not-allowed' : 'pointer',
           transition: 'all 0.15s ease',
-          height: '38px',
+          height: '40px',
           overflow: 'hidden',
+          boxShadow: isFocused ? '0 0 0 2px rgba(56, 189, 248, 0.2)' : 'none',
         }}
       >
-        {/* Calendar Icon Tile */}
+        {/* Single High-Contrast Cyan Calendar Icon Tile */}
         <div
           onClick={handleOpenPicker}
           style={{
             position: 'absolute',
-            right: isRtl ? '10px' : 'auto',
-            left: isRtl ? 'auto' : '10px',
-            color: value ? '#38bdf8' : 'var(--text-muted)',
+            right: isRtl ? '6px' : 'auto',
+            left: isRtl ? 'auto' : '6px',
+            top: '50%',
+            transform: 'translateY(-50%)',
+            width: '28px',
+            height: '28px',
+            borderRadius: '6px',
+            background: 'rgba(56, 189, 248, 0.18)',
+            border: '1px solid rgba(56, 189, 248, 0.35)',
+            color: '#38bdf8',
             fontSize: '0.9rem',
-            pointerEvents: 'none',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
+            pointerEvents: 'none',
+            flexShrink: 0,
+            zIndex: 2,
           }}
         >
           <i className="fa-solid fa-calendar-days"></i>
@@ -132,9 +165,11 @@ export function DateTimePickerField({
           required={required}
           disabled={disabled}
           onChange={(e) => onChange(e.target.value)}
+          onFocus={() => setIsFocused(true)}
+          onBlur={() => setIsFocused(false)}
           onClick={(e) => {
-            // Allow native interactions while facilitating showPicker
             e.stopPropagation();
+            handleOpenPicker();
           }}
           style={{
             width: '100%',
@@ -142,20 +177,21 @@ export function DateTimePickerField({
             background: 'transparent',
             border: 'none',
             outline: 'none',
-            color: '#f8fafc',
+            color: value ? '#f8fafc' : '#94a3b8',
             colorScheme: 'dark',
-            fontSize: '0.84rem',
+            fontSize: '0.86rem',
             fontWeight: 600,
-            paddingRight: isRtl ? '34px' : '10px',
-            paddingLeft: isRtl ? '10px' : '34px',
+            paddingRight: isRtl ? '42px' : '12px',
+            paddingLeft: isRtl ? '12px' : '42px',
             cursor: disabled ? 'not-allowed' : 'pointer',
+            zIndex: 1,
           }}
         />
       </div>
 
-      {/* Helper text / Error message */}
+      {/* Helper text / Validation Error */}
       {error ? (
-        <span style={{ fontSize: '0.72rem', color: '#ef4444', display: 'flex', alignItems: 'center', gap: '4px' }}>
+        <span style={{ fontSize: '0.72rem', color: '#ef4444', display: 'flex', alignItems: 'center', gap: '4px', fontWeight: 600 }}>
           <i className="fa-solid fa-circle-exclamation"></i>
           <span>{error}</span>
         </span>
