@@ -45,8 +45,12 @@ export function useNotifications() {
   const addNotification = async (data: NotificationFormData): Promise<{ success: boolean; error?: string }> => {
     try {
       const result = await apiFetch<Record<string, unknown>>('add_notification', {
-        title: data.title,
-        body: data.body,
+        title: data.title || data.title_ar,
+        body: data.body || data.body_ar,
+        title_ar: data.title_ar,
+        title_en: data.title_en,
+        body_ar: data.body_ar,
+        body_en: data.body_en,
       });
 
       if (!result.success) {
