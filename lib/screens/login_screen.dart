@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../theme/app_colors.dart';
 import '../services/api_service.dart';
 import 'register_screen.dart';
@@ -20,6 +21,23 @@ class _LoginScreenState extends State<LoginScreen> {
   bool _isLoading = false;
   bool _obscurePassword = true;
   String _errorMessage = '';
+
+  Future<void> _handleForgotPassword() async {
+    final isAr = LanguageService.currentLang.value == 'ar';
+    final message = isAr
+        ? 'مرحباً، أود استعادة كلمة المرور لحسابي في تطبيق أبشر.'
+        : 'Hello, I would like to recover my password for my Absher App account.';
+    final encodedMsg = Uri.encodeComponent(message);
+    final urlStr = 'https://wa.me/995551529019?text=$encodedMsg';
+    try {
+      final uri = Uri.parse(urlStr);
+      if (!await launchUrl(uri, mode: LaunchMode.externalApplication)) {
+        await launchUrl(uri, mode: LaunchMode.platformDefault);
+      }
+    } catch (e) {
+      debugPrint('Could not launch WhatsApp: $e');
+    }
+  }
 
   Future<void> _handleLogin() async {
     if (!_formKey.currentState!.validate()) return;
@@ -95,18 +113,24 @@ class _LoginScreenState extends State<LoginScreen> {
                 children: [
                   // اللوجو الرسمي في أعلى الدخول
                   Container(
-                    width: 100,
-                    height: 100,
-                    padding: const EdgeInsets.all(8),
+                    width: 96,
+                    height: 96,
                     decoration: BoxDecoration(
-                      color: AppColors.primaryDark,
-                      shape: BoxShape.circle,
-                      border: Border.all(color: AppColors.accent, width: 2),
+                      color: const Color(0xFF0F2A38),
+                      borderRadius: BorderRadius.circular(22),
+                      boxShadow: [
+                        BoxShadow(
+                          color: const Color(0xFF0F2A38).withValues(alpha: 0.25),
+                          blurRadius: 16,
+                          offset: const Offset(0, 6),
+                        ),
+                      ],
                     ),
-                    child: ClipOval(
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(22),
                       child: Image.asset(
                         'assets/images/logo.png',
-                        fit: BoxFit.contain,
+                        fit: BoxFit.cover,
                         errorBuilder: (context, error, stackTrace) => Center(
                           child: Text(
                               LanguageService.tr('app_title').split(' ')[0],
@@ -223,10 +247,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           Align(
                             alignment: AlignmentDirectional.centerStart,
                             child: TextButton(
-                              onPressed: () => ScaffoldMessenger.of(context)
-                                  .showSnackBar(SnackBar(
-                                      content: Text(LanguageService.tr(
-                                          'contact_support_pw')))),
+                              onPressed: _handleForgotPassword,
                               child: Text(LanguageService.tr('forgot_pw'),
                                   style: const TextStyle(
                                       color: AppColors.primary)),
