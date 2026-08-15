@@ -1,7 +1,8 @@
-# Final Master Implementation Plan: Complete Admin Dashboard Migration to React + Vite + TypeScript
-*(Fully Audited & Frozen — Master Plan for All Phases)*
+# Verified Phase 6A Implementation Plan — Promo Codes & Discounts
 
-> **⛔ Status: MASTER PLAN FROZEN — READY FOR PHASE-BY-PHASE EXECUTION**
+*(Audit-Backed Architectural Specification & Implementation Roadmap)*
+
+> **⛔ Status: AUDIT AND IMPLEMENTATION PLAN COMPLETE — NO CODE CHANGES MADE — WAITING FOR USER APPROVAL TO START PHASE 6A**
 > 
 > | Phase | Description | Status |
 > |---|---|---|
@@ -11,404 +12,441 @@
 > | Phase 4 | Reviews Moderation, Feedback, Students & Points | `COMPLETED / VERIFIED / USER ACCEPTED ✅` |
 > | Phase 5 | News, Notifications, Customer Support Chats | `COMPLETED / VERIFIED / USER ACCEPTED ✅` |
 > | Phase 6 | Executive Dashboard & Cross-Module Analytics | `COMPLETED / VERIFIED / USER ACCEPTED ✅` |
+> | **Phase 6A** | **Promo Codes & Discounts System** | **PLANNED / READY FOR REVIEW (THIS SPEC)** |
 > | Deferred | Housing Offers (Waiting for User Requirements) | `DEFERRED / FROZEN` |
 > | Cutover | Phase 7 / Production Promotion | `NOT STARTED — REQUIRES EXPLICIT USER GO` |
-> 
-> **Execution Rule:** Each phase is executed sequentially (GO → Implement → Verify → Accept → STOP) without reopening architecture or redesigning interfaces.
 
 ---
 
-## 🏛️ Master Architecture & Invariant Principles (Frozen & Authoritative)
+## 1. Verified Current-State Audit (with File & Line References)
 
-1. **Functional + Visual Parity:** Exact visual and functional match with the Vanilla Admin dashboard. Zero UI/UX redesigns.
-2. **Feature-Based Modular Structure:** All features reside in `src/modules/<feature>/`, `src/hooks/`, and `src/types/`.
-3. **Environment & Path Isolation:**
-   - Development (`.env.development`): `VITE_BASE_PATH=/`, `VITE_API_ROOT=/api_staging` (proxied to staging backend).
-   - Staging (`.env.staging`): `VITE_BASE_PATH=/admin_v2/`, `VITE_API_ROOT=/api_staging` (connected to `absher_georgia_staging`).
-   - Production (`.env.production`): `VITE_BASE_PATH=/admin/`, `VITE_API_ROOT=/api` (connected to `absher_georgia_db`).
-4. **Synchronous Authentication Invariant:**
-   - JWT token is synchronously persisted to `localStorage` before updating React state.
-   - Protected routers and data-fetching hooks are strictly NOT mounted before authentication.
-   - 401 status wipes token, triggers `auth:logout`, and smoothly displays the Login Overlay.
-5. **Double-Submit Protection:**
-   - Layer 1: Synchronous `useRef(false)` submit lock in form components.
-   - Layer 2: Entity-specific `dedupeKey` in `apiFetch` for mutation requests.
-6. **Runtime Response Validation:**
-   - Raw wire responses are normalized and validated via `src/lib/validators.ts` before updating React state.
-7. **Strict Production DB Safety:**
-   - All migrations, feature implementations, and CRUD testing happen strictly against `absher_georgia_staging`.
-   - Production DB `absher_georgia_db` is NEVER modified during intermediate phases.
-   - The production Vanilla Admin (`/admin/`) remains 100% active and untouched until Final Cutover (Phase 7).
+A thorough audit of the real repository codebase and Staging MySQL database (`absher_georgia_staging`) was performed:
 
----
+### A. Flutter Student Service Request Flow
+- **Form Screen:** [`lib/screens/services_screen.dart`](file:///c:/Users/moham/Desktop/absher/lib/screens/services_screen.dart#L180-L710)
+  - Line 189: `final promoCtrl = TextEditingController();`
+  - Lines 481–490: Dumb input field rendered as:
+    ```dart
+    TextField(
+      controller: promoCtrl,
+      decoration: InputDecoration(
+        labelText: LanguageService.tr('promo_code'),
+        prefixIcon: const Icon(Icons.discount, color: AppColors.accent),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+      ),
+    )
+    ```
+  - Lines 642–657: The promo code is purely concatenated into a localized free-text string `details` (e.g. `\n[كود الخصم: XYZ]`).
+  - Lines 690–705: `ApiService.submitServiceRequest` is called. **`promo_code` is NOT transmitted as a discrete parameter.**
+  - **Audit Finding:** Zero validation, zero discount calculation, and zero pricing breakdown currently exist on Flutter.
 
-## 🗺️ Master Dependency Map & Table Inventory
+### B. Mobile API Service Layer
+- **File:** [`lib/services/api_service.dart`](file:///c:/Users/moham/Desktop/absher/lib/services/api_service.dart#L523-L576)
+  - Method `submitServiceRequest` accepts: `serviceId`, `studentName`, `studentPhone`, `studentUni`, `universityId`, `serviceTitle`, `details`, `payWithPoints`, `paymentMethod`, `requestUuid`.
+  - Dispatches `POST` to `$baseUrl/student_requests.php` with `action: 'submit'`.
+  - **Audit Finding:** No validation endpoint (`validate_promo`) exists.
 
-### Complete Database Tables Inventory (15 Tables)
+### C. Backend Request Reception & Pricing
+- **File:** [`backend_php/api_staging/student_requests.php`](file:///c:/Users/moham/Desktop/absher/backend_php/api_staging/student_requests.php#L285-L475)
+  - Service price is loaded strictly from `services.price_points` (line 293: `SELECT title, price_points FROM services WHERE id = ?`).
+  - Wallet deduction: If `payWithPoints && pricePoints > 0`, acquires a row lock on student balance via `SELECT points FROM students WHERE id = ? FOR UPDATE` (line 352).
+  - Deducts full `pricePoints` via `UPDATE students SET points = points - ? WHERE id = ? AND points >= ?` (line 364).
+  - Inserts `service_requests` row with `service_price_points` and `points_charged` (line 375).
+  - Inserts `wallet_transactions` row with `amount = pricePoints`, `type = 'خصم'`, `service_request_id = requestId` (line 383).
+  - **Audit Finding:** Staging backend currently deducts 100% of `service_price_points` without support for promo discounts.
 
-| # | Table Name | Domain / Purpose | Parent Table(s) | Foreign Key / Cascade Rules | Migration Phase |
-|---|---|---|---|---|---|
-| 1 | `admins` | Admin credentials & JWT auth | None | — | **Phase 1 ✅** |
-| 2 | `apartments` | Apartments listings | `districts` | `district_id` -> `districts.id` (RESTRICT) | **Phase 1 ✅** |
-| 3 | `districts` | Reference districts list | None | Referenced by `apartments.district_id` | **Phase 2** |
-| 4 | `universities` | Reference universities list | None | Referenced in `apartments.universities` JSON | **Phase 2** |
-| 5 | `housing_offers` | Exclusive housing discounts | `apartments` | `apartment_id` -> `apartments.id` (CASCADE) | **DEFERRED (User Requirements)** |
-| 6 | `services` | Student services catalog | None | Referenced by `service_requests.service_id` | **Phase 3** |
-| 7 | `service_requests` | Student booking requests | `services`, `students` | `service_id` -> `services.id`, `student_id` -> `students.id` | **Phase 3** |
-| 8 | `service_reviews` | Student ratings & testimonials | `service_requests`, `students` | `service_request_id` -> `service_requests.id`, `student_id` -> `students.id` | **Phase 4** |
-| 9 | `application_feedback` | User suggestions & bug reports | `students` | `student_id` -> `students.id` | **Phase 4** |
-| 10 | `students` | Student accounts & profiles | None | Referenced by `requests`, `reviews`, `feedback`, `chats` | **Phase 4** |
-| 11 | `wallet_transactions` | Points & wallet transactions | `service_requests`, `students` | Points log audit trail | **Phase 4** |
-| 12 | `news` | Georgia & student news | None | Independent catalog | **Phase 5** |
-| 13 | `notifications` | Push broadcast notifications | None | Target: all students or specific segment | **Phase 5** |
-| 14 | `chats` | Student support conversations | `students` | `student_id` -> `students.id` | **Phase 5** |
-| 15 | `chat_messages` | Chat messages & media | `chats` | `chat_id` -> `chats.id` | **Phase 5** |
+### D. Staging Database Schema & Table Inventory
+- Executed `SHOW TABLES` on `absher_georgia_staging`:
+  - 16 existing tables: `admins`, `apartments`, `application_feedback`, `blocked_identities`, `chat_messages`, `chats`, `districts`, `housing_offers`, `news`, `notifications`, `service_requests`, `service_reviews`, `services`, `students`, `universities`, `wallet_transactions`.
+  - **Audit Finding:** **Zero promo code tables or columns exist in the database.**
 
 ---
 
-### Cross-Module Dependency Flowchart
+## 2. Confirmed Existing Request & Payment Flow
 
 ```mermaid
-graph TD
-    subgraph Phase 1: Completed
-        A[Auth / Admins] --> B[Apartments Pilot]
-    end
+sequenceDiagram
+    autonumber
+    actor Student as Student (Flutter App)
+    participant API as /api_staging/student_requests.php
+    participant DB as MySQL (absher_georgia_staging)
 
-    subgraph Phase 2: Master Reference Data
-        C[Districts CRUD] -.->|Reference Data| B
-        D[Universities CRUD] -.->|Reference Data| B
-        DEFERRED_OFFERS[Housing Offers: DEFERRED]
+    Student->>API: POST action=submit { service_id, payment_method, details, request_uuid }
+    Note over API: 1. Idempotency Check via request_uuid
+    API->>DB: SELECT title, price_points FROM services WHERE id = ?
+    alt payment_method == 'wallet' && price_points > 0
+        API->>DB: SELECT points FROM students WHERE id = ? FOR UPDATE
+        API->>DB: UPDATE students SET points = points - price_points
+        API->>DB: INSERT INTO wallet_transactions (amount, type='خصم')
     end
-
-    subgraph Phase 3: Services & Requests
-        F[Services Catalog] --> G[Service Requests]
-    end
-
-    subgraph Phase 4: Feedback & Accounts
-        G --> H[Service Reviews]
-        I[Students & Points] --> G
-        I --> H
-        I --> J[Application Feedback]
-        I --> K[Wallet Transactions]
-    end
-
-    subgraph Phase 5: Comms & Content
-        L[Georgia News]
-        M[Push Notifications]
-        I --> N[Support Chats & Messages]
-    end
-
-    subgraph Phase 6: Executive Analytics
-        B & F & G & H & I & L & N --> O[Executive Dashboard & Stats]
-    end
-
-    subgraph Phase 7: Production Release
-        O --> P[Final Production Cutover]
-    end
+    API->>DB: INSERT INTO service_requests (status='under_review' | 'pending_cash')
+    API->>DB: INSERT INTO chat_messages (support sync)
+    API-->>Student: 200 OK { request_id, points_charged, balance_after }
 ```
 
 ---
 
-## 📡 Non-admin_api Direct Endpoints Inventory & Staging Isolation
+## 3. Verified Gaps & Data-Model Blockers
 
-The following direct PHP endpoints exist outside `admin_api.php` and are used by the dashboard. All have been verified and isolated in `api_staging/`:
-
-| Direct Endpoint | Path (Production) | Path (Staging) | Auth Middleware | DB / Upload Dependency | Staging Isolation Proof |
-|---|---|---|---|---|---|
-| **Admin Login** | `api/admin/login.php` | `api_staging/admin/login.php` | Public / Bcrypt verification | Loads `config/db_staging.php` | Connects strictly to `absher_georgia_staging` DB |
-| **Image Upload** | `api/upload/image.php` | `api_staging/upload/image.php` | `AuthMiddleware::requireAdmin()` | Loads `config/db_staging.php` | Writes physically to `uploads_staging/{folder}/` and returns `uploads_staging/{folder}/...` |
-| **Chat Admin Reply** | `api/chat/admin_reply.php` | `api_staging/chat/admin_reply.php` | `AuthMiddleware::requireAdmin()` | Loads `config/db_staging.php` | Inserts message strictly into `absher_georgia_staging.chat_messages` |
-
----
-
-## 🔔 External Side-Effect Audit & Isolation
-
-### Audit Findings from Codebase
-1. **Push Notifications:**
-   - In `api/core/notification.php`, the function `sendStudentNotification($studentId, $title, $body)` executes an internal MySQL `INSERT INTO notifications (student_id, title, body, created_at) VALUES (?, ?, ?, NOW())`.
-   - **Zero external FCM / Apple APNS HTTP requests** are made directly by PHP backend endpoints.
-2. **Chat Replies:**
-   - In `api/chat/admin_reply.php`, sending an admin reply executes an internal MySQL `INSERT INTO chat_messages` and calls `sendStudentNotification()`.
-   - **Zero external SMS, Email, or Webhooks** are triggered.
-3. **News & Services Announcements:**
-   - Adding a news item or service creates an internal notification row in MySQL table `notifications`.
-
-### Staging Isolation Guarantee
-Because all staging endpoints load `config/db_staging.php`, all notification inserts and chat messages are written strictly to `absher_georgia_staging.notifications` and `absher_georgia_staging.chat_messages`. No production student devices receive notifications from staging operations.
+> [!IMPORTANT]
+> ### Critical Finding: Cash Pricing Model
+> 1. **Data Model Fact:** In the existing database, `services` has ONLY `price_points` (integer). There is NO separate cash monetary column (e.g. `price_gel` or `price_usd`) in `services` or `service_requests`.
+> 2. **Current Cash Flow:** When a student chooses `payment_method = 'cash'`, `points_charged` is set to `0`, `service_requests.status` is set to `'pending_cash'`, and the service request detail notes that payment will be collected in cash upon execution.
+> 3. **Promo Code Implication on Cash:** 
+>    - For **Percentage Discount** and **Free Service** codes: The discount applies cleanly to the cash order (e.g. 20% off or Free).
+>    - For **Fixed Value Discount** codes: Because prices in the system are currently unitless points/integers, fixed discounts apply to the base `services.price_points` integer value.
+>    - **Architectural Decision:** We do NOT invent artificial currency conversion rates. Discounts operate directly on the authoritative service price value (`services.price_points`).
 
 ---
 
-## 📅 Master Phase Execution Breakdown
+## 4. Exact Database Schema & Migration Plan
+
+### Migration Script: `sql/migrations/2026_08_phase6a_promo_codes.sql`
+
+```sql
+-- Phase 6A: Promo Codes & Discounts Schema Migration
+-- Target: absher_georgia_staging ONLY (Production isolated)
+
+-- 1. Main Promo Codes Table
+CREATE TABLE IF NOT EXISTS `promo_codes` (
+  `id` INT AUTO_INCREMENT PRIMARY KEY,
+  `campaign_name` VARCHAR(255) NOT NULL,
+  `code` VARCHAR(50) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `discount_type` ENUM('percentage', 'fixed', 'free') NOT NULL,
+  `discount_value` DECIMAL(10, 2) NOT NULL DEFAULT 0.00,
+  `max_discount_points` INT NULL DEFAULT NULL,
+  `min_service_price_points` INT NOT NULL DEFAULT 0,
+  `start_at` DATETIME NULL DEFAULT NULL,
+  `expires_at` DATETIME NULL DEFAULT NULL,
+  `status` ENUM('active', 'paused', 'archived') NOT NULL DEFAULT 'active',
+  `service_scope` ENUM('all', 'selected') NOT NULL DEFAULT 'all',
+  `payment_scope` ENUM('all', 'wallet', 'cash') NOT NULL DEFAULT 'all',
+  `audience_scope` ENUM('all', 'selected') NOT NULL DEFAULT 'all',
+  `total_usage_limit` INT NULL DEFAULT NULL,
+  `per_student_limit` INT NOT NULL DEFAULT 1,
+  `used_count` INT NOT NULL DEFAULT 0,
+  `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  UNIQUE KEY `uq_promo_code` (`code`),
+  INDEX `idx_promo_status_dates` (`status`, `start_at`, `expires_at`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- 2. Promo Code Service Eligibility (when service_scope = 'selected')
+CREATE TABLE IF NOT EXISTS `promo_code_services` (
+  `id` INT AUTO_INCREMENT PRIMARY KEY,
+  `promo_code_id` INT NOT NULL,
+  `service_id` INT NOT NULL,
+  `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE KEY `uq_promo_service` (`promo_code_id`, `service_id`),
+  CONSTRAINT `fk_pcs_promo` FOREIGN KEY (`promo_code_id`) REFERENCES `promo_codes` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_pcs_service` FOREIGN KEY (`service_id`) REFERENCES `services` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- 3. Promo Code Student Audience Eligibility (when audience_scope = 'selected')
+CREATE TABLE IF NOT EXISTS `promo_code_students` (
+  `id` INT AUTO_INCREMENT PRIMARY KEY,
+  `promo_code_id` INT NOT NULL,
+  `student_id` INT NOT NULL,
+  `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE KEY `uq_promo_student` (`promo_code_id`, `student_id`),
+  CONSTRAINT `fk_pcst_promo` FOREIGN KEY (`promo_code_id`) REFERENCES `promo_codes` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_pcst_student` FOREIGN KEY (`student_id`) REFERENCES `students` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- 4. Immutable Redemption History & Audit Trail
+CREATE TABLE IF NOT EXISTS `promo_code_redemptions` (
+  `id` INT AUTO_INCREMENT PRIMARY KEY,
+  `promo_code_id` INT NOT NULL,
+  `service_request_id` INT NOT NULL,
+  `student_id` INT NOT NULL,
+  `service_id` INT NOT NULL,
+  `code_snapshot` VARCHAR(50) NOT NULL,
+  `campaign_snapshot` VARCHAR(255) NOT NULL,
+  `discount_type_snapshot` VARCHAR(20) NOT NULL,
+  `discount_value_snapshot` DECIMAL(10, 2) NOT NULL,
+  `original_price_points` INT NOT NULL,
+  `discount_points` INT NOT NULL,
+  `final_price_points` INT NOT NULL,
+  `payment_method` VARCHAR(30) NOT NULL,
+  `status` ENUM('applied', 'reversed') NOT NULL DEFAULT 'applied',
+  `reversed_at` DATETIME NULL DEFAULT NULL,
+  `reversed_reason` VARCHAR(255) NULL DEFAULT NULL,
+  `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE KEY `uq_redemption_request` (`service_request_id`),
+  INDEX `idx_redemption_promo_student` (`promo_code_id`, `student_id`),
+  INDEX `idx_redemption_student` (`student_id`, `created_at`),
+  CONSTRAINT `fk_pcr_promo` FOREIGN KEY (`promo_code_id`) REFERENCES `promo_codes` (`id`) ON DELETE RESTRICT,
+  CONSTRAINT `fk_pcr_request` FOREIGN KEY (`service_request_id`) REFERENCES `service_requests` (`id`) ON DELETE RESTRICT,
+  CONSTRAINT `fk_pcr_student` FOREIGN KEY (`student_id`) REFERENCES `students` (`id`) ON DELETE RESTRICT,
+  CONSTRAINT `fk_pcr_service` FOREIGN KEY (`service_id`) REFERENCES `services` (`id`) ON DELETE RESTRICT
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- 5. Extend service_requests table with snapshot fields
+ALTER TABLE `service_requests`
+  ADD COLUMN `promo_code_id` INT NULL AFTER `service_id`,
+  ADD COLUMN `discount_points` INT NOT NULL DEFAULT 0 AFTER `service_price_points`,
+  ADD COLUMN `final_price_points` INT NOT NULL DEFAULT 0 AFTER `discount_points`,
+  ADD CONSTRAINT `fk_sr_promo` FOREIGN KEY (`promo_code_id`) REFERENCES `promo_codes` (`id`) ON DELETE SET NULL;
+```
 
 ---
 
-### Phase 1: Foundation & Apartments Pilot
-- **Status:** `COMPLETED / VERIFIED / ACCEPTED ✅`
-- **Accomplished Scope:**
-  - Complete React 18 + Vite 5 + TypeScript foundation in `admin_react/`.
-  - Environment-aware configurations (`.env.development`, `.env.staging`, `.env.production`).
-  - Isolated Staging Backend (`api_staging/`, `config/db_staging.php`, `absher_georgia_staging`, `uploads_staging/`).
-  - 12/12 Staging Safety Verification Gate tests passed.
-  - Complete Apartments CRUD module with search, district filter, rental type filter, multi-image upload, image preservation/replacement, roommate fields toggle, double-submit protection.
-  - Read-only loaders for `useDistricts` and `useUniversities`.
-  - Fixed Authentication Race Condition (synchronous storage + strict route guard).
-  - Deployed to `/var/www/absher/backend_php/admin_v2/` and passed user UAT.
+## 5. Exact Backend Endpoints & Payloads
 
----
-
-### Phase 2: Master Reference Data (Districts & Universities)
-*(Housing Offers is explicitly deferred)*
-- **Goal:** Provide full CRUD management for Districts and Universities reference catalogs.
-- **Modules Included:**
-  1. **Districts Module (`/districts`)**:
-     - **Exact Endpoint:** `ADMIN_API_URL` (`/api_staging/admin_api.php`)
-     - **Get All:** `GET /api_staging/admin_api.php?action=get_all` -> Response: `res.districts` (Array of `{ id: number, name: string, name_ar: string, name_en: string|null, display_name: string }`)
-     - **Add District:** `POST /api_staging/admin_api.php?action=add_district` -> Payload: `{ name: string, name_ar: string, name_en: string }` -> Response: `{ status: "success", message: "تم إضافة المنطقة بنجاح" }`
-     - **Update District:** `POST /api_staging/admin_api.php?action=update_district` -> Payload: `{ id: number, name: string, name_ar: string, name_en: string }` -> Response: `{ status: "success", message: "تم تعديل المنطقة بنجاح" }`
-     - **Delete District:** `POST /api_staging/admin_api.php?action=delete_district` -> Payload: `{ id: number }` -> Response: `{ status: "success", message: "تم حذف المنطقة بنجاح" }`
-     - **UI / Behavior:** Search bar, card list with location icons, Add District Modal, Edit District Modal, Delete confirmation dialog.
-  2. **Universities Module (`/universities`)**:
-     - **Exact Endpoint:** `ADMIN_API_URL` (`/api_staging/admin_api.php`)
-     - **Get All:** `GET /api_staging/admin_api.php?action=get_all` -> Response: `res.universities` (Array of `{ id: number, name: string, name_ar: string, name_en: string|null, display_name: string }`)
-     - **Add University:** `POST /api_staging/admin_api.php?action=add_university` -> Payload: `{ name: string, name_ar: string, name_en: string }` -> Response: `{ status: "success", message: "تم إضافة الجامعة بنجاح" }`
-     - **Update University:** `POST /api_staging/admin_api.php?action=update_university` -> Payload: `{ id: number, name: string, name_ar: string, name_en: string }` -> Response: `{ status: "success", message: "تم تعديل الجامعة بنجاح" }`
-     - **Delete University:** `POST /api_staging/admin_api.php?action=delete_university` -> Payload: `{ id: number }` -> Response: `{ status: "success", message: "تم حذف الجامعة بنجاح" }`
-     - **UI / Behavior:** Search bar, university card list with graduation cap icon, Add University Modal, Edit University Modal, Delete confirmation dialog.
-  3. **Housing Offers Module:**
-     > **DEFERRED — USER REQUIREMENTS WILL BE PROVIDED LATER.**
-     > No final contracts, no implementation files, no acceptance criteria, and no code changes will be performed until requirements are received from the user.
-- **Files to Create:**
-  - `src/modules/districts/DistrictsModule.tsx`, `AddDistrictModal.tsx`, `EditDistrictModal.tsx`
-  - `src/modules/universities/UniversitiesModule.tsx`, `AddUniversityModal.tsx`, `EditUniversityModal.tsx`
-- **Files to Modify:**
-  - `src/hooks/useDistricts.ts` (add `addDistrict`, `updateDistrict`, `deleteDistrict` mutation functions)
-  - `src/hooks/useUniversities.ts` (add `addUniversity`, `updateUniversity`, `deleteUniversity` mutation functions)
-  - `src/App.tsx` (register routes: `/districts`, `/universities`)
-  - `src/layouts/AdminLayout.tsx` (activate sidebar items for Districts and Universities)
-- **Staging Fixtures (Phase 2):**
-  - Staging DB already contains 8 standard reference districts and 8 standard reference universities.
-- **Acceptance Checklist (Phase 2):**
-  - `[ ]` Districts: List rendered, Add bilingual district, Edit district, Delete district.
-  - `[ ]` Universities: List rendered, Add bilingual university, Edit university, Delete university.
-  - `[ ]` Cross-update: Adding/editing a district/university immediately reflects in Apartments Add/Edit dropdowns.
-  - `[ ]` Direct refresh: `/admin_v2/districts` and `/admin_v2/universities` load on browser refresh with HTTP 200.
-  - `[ ]` Quality Gates: `npx tsc --noEmit` (0 errors), `npm run lint` (0 errors), `npm run build:staging` (succeeds).
-- **STOP Condition:** Deploy Phase 2 to staging `/admin_v2/` and wait for user acceptance before Phase 3.
-
----
-
-### Phase 3: Student Services & Requests Lifecycle
-- **Goal:** Manage student services catalog and handle service booking requests operational lifecycle.
-- **Dependency Invariant:** Service Requests in Phase 3 requires ONLY Student reference data (provided via relational join `s.full_name, s.phone` in `get_all` and deterministic student fixtures), NOT the full Student Accounts CRUD module.
-- **Modules Included:**
-  1. **Services Module (`/services`)**:
-     - **Exact Endpoint:** `ADMIN_API_URL` (`/api_staging/admin_api.php`)
-     - **Get All:** `GET /api_staging/admin_api.php?action=get_all` -> Response: `res.services` (Array of `{ id: number, title: string, title_ar: string, title_en: string, description: string, description_ar: string, description_en: string, image_url: string, has_form: number, price_points: number }`)
-     - **Add Service:** `POST /api_staging/admin_api.php?action=add_service` -> Payload: `{ title_ar: string, title_en: string, description_ar: string, description_en: string, image_url: string, has_form: number, price_points: number }` -> Response: `{ status: "success", message: "تم إضافة الخدمة بنجاح" }`
-     - **Update Service:** `POST /api_staging/admin_api.php?action=update_service` -> Payload: `{ id: number, title_ar: string, title_en: string, description_ar: string, description_en: string, image_url: string, has_form: number, price_points: number }` -> Response: `{ status: "success", message: "تم تعديل الخدمة بنجاح" }`
-     - **Delete Service:** `POST /api_staging/admin_api.php?action=delete_service` -> Payload: `{ id: number }` -> Response: `{ status: "success", message: "تم حذف الخدمة بنجاح" }`
-     - **Upload Mechanism:** Base64 image upload via `saveBase64IfPresent` in `add_service` / `update_service`.
-     - **UI / Behavior:** Grid of service cards, Add Service Modal with image selector, Edit Service Modal, points toggle, Delete confirmation.
-  2. **Service Requests Module (`/requests`)**:
-     - **Exact Endpoint:** `ADMIN_API_URL` (`/api_staging/admin_api.php`)
-     - **Get All:** `GET /api_staging/admin_api.php?action=get_all` -> Response: `res.requests` (Array of `{ id: number, student_id: number, service_id: number, service_title: string, student_name: string, student_phone: string, status: string, form_data: string, created_at: string }`)
-     - **Update Status:** `POST /api_staging/admin_api.php?action=update_request_status` -> Payload: `{ id: number, status: 'جديد' | 'قيد التنفيذ' | 'مكتمل' | 'ملغي' }` -> Response: `{ status: "success", message: "تم تحديث حالة الطلب بنجاح" }`
-     - **Delete Request:** `POST /api_staging/admin_api.php?action=delete_request` -> Payload: `{ id: number }` -> Response: `{ status: "success", message: "تم حذف الطلب بنجاح" }`
-     - **UI / Behavior:** Status filter tabs (All, New, In Progress, Completed, Cancelled), Request details modal displaying submitted student form data, status transition dropdown, dual direct contact buttons: WhatsApp direct link (`https://wa.me/...`) AND Open Support Chat button (`/chats?student_id=<REQUEST_STUDENT_ID>`).
-     - **Cross-Module Link Invariant (Service Requests -> Customer Support Chat):**
-        - Request cards and Request details modal must render both buttons (`[ واتساب ]` and `[ فتح محادثة الدعم ]`).
-        - The chat button navigates directly to `/chats?student_id=${request.student_id}`.
-        - Primary key linkage is strictly `student_id` (never student name or phone).
-        - In Phase 3, this link is rendered without executing or stubbing the Phase 5 Chats module.
-- **Media & Image Handling Rules:**
-  - Zero external stock photos / Unsplash URLs in database or code fixtures.
-  - All image rendering across cards and modals must use the centralized `getMediaUrl(url)` resolver (`src/lib/media.ts`) to ensure relative upload paths (`uploads_staging/...`) normalize to root paths (`/uploads_staging/...`) and avoid 404s under SPA subpaths (`/admin_v2/`).
-  - When an image is absent or errors, render a clean, neutral dark-surface placeholder UI with an icon, not a remote placeholder image.
-- **Files to Create:**
-  - `src/lib/media.ts`
-  - `src/types/service.ts`, `src/types/request.ts`
-  - `src/hooks/useServices.ts`, `src/hooks/useRequests.ts`
-  - `src/modules/services/ServicesModule.tsx`, `ServiceCard.tsx`, `AddServiceModal.tsx`, `EditServiceModal.tsx`
-  - `src/modules/requests/RequestsModule.tsx`, `RequestCard.tsx`, `RequestDetailsModal.tsx`
-- **Files to Modify:**
-  - `src/lib/validators.ts` (added `parseService`, `parseServices`, `parseRequest`, `parseRequests`)
-  - `src/lib/i18n.tsx` (added full translation keys for services and requests)
-  - `src/App.tsx` (register routes: `/services`, `/requests`)
-  - `src/layouts/AdminLayout.tsx` (activate sidebar items for Services and Requests)
-- **Staging Fixtures (Phase 3):**
-  - 4 deterministic services (e.g. "إقامة دراسية", "ترجمة مستندات", "تأمين صحي", "استقبال مطار").
-  - 4 deterministic service requests spanning each status (`جديد`, `قيد التنفيذ`, `مكتمل`, `ملغي`).
-- **Acceptance Checklist (Phase 3):**
-  - `[ ]` Services: Grid renders, Add service with image, Edit service, Delete service.
-  - `[ ]` Requests: Requests display student name, service name, date, and status.
-  - `[ ]` Status transition: Transition request from `جديد` -> `قيد التنفيذ` -> `مكتمل`.
-  - `[ ]` Details Modal: View full student form submissions.
-  - `[ ]` Quality Gates: `npx tsc --noEmit` (0 errors), `npm run lint` (0 errors), `npm run build:staging` (succeeds).
-- **STOP Condition:** Deploy Phase 3 to staging `/admin_v2/` and wait for user acceptance before Phase 4.
-
----
-
-### Phase 4: Feedback, Moderation & Student Accounts (High-Density & Extension)
-- **Status:** `IMPLEMENTED / STAGING VERIFIED / READY FOR USER REVIEW ✅`
-- **Accomplished Scope:**
-  1. **Service Reviews Moderation (`/reviews`)**:
-     - **High-Density Compact Layout:** Single ultra-compact analytics strip (average score, star distribution, total count), unified single-line toolbar (status pills, search, count), responsive 3-4 card grid (`minmax(260px, 1fr)`), compact clamped comments with expand toggle.
-     - Moderation (`approved` / `rejected`), Delete review with confirmation.
-     - Sidebar Attention Badge: Live counter of pending reviews (`status === 'pending'`).
-  2. **Application Feedback Inbox (`/feedback`)**:
-     - **High-Density Compact Layout:** Unified single-row toolbar (status tabs, category select, search, count), responsive 3-4 card grid (`minmax(260px, 1fr)`), compact comments with expand toggle, streamlined status actions.
-     - Status transition (`pending` -> `reviewed` -> `resolved`), Delete feedback.
-     - Sidebar Attention Badge: Live counter of pending feedback (`status === 'pending'`).
-  3. **Students Administration & Extension (`/students`)**:
-     - **Preserved User-Approved Design:** Clean integration of all new fields without bloating card heights.
-     - **Nationality Field:** Added `students.nationality` (required in Admin Add Student Modal, displayed on Student Card).
-     - **Admin Status & Note (Strict Privacy Invariant):** Added `admin_status` and `admin_note` to `students` table. Managed via centered `AdminMetaModal.tsx`. 100% PRIVATE to admin—never exposed to public/student endpoints (`auth/me.php`, `login.php`, `register.php`, `profile/get.php`).
-     - **Persistent Identity Blocklist & Enforcement:** Dedicated `blocked_identities` table with canonical email/phone normalization (`identity_block.php`). Block action on card sets `is_blocked = 1` and inserts normalized credentials into `blocked_identities`. Rejects student login and registration attempts with 403.
-     - **Block-After-Delete Invariant:** Deleting student account via `delete_student` preserves records in `blocked_identities`. Registration with blocked identity remains blocked even after student row deletion.
-     - **Blocked List Modal:** `BlockedIdentitiesModal.tsx` accessible via `[ قائمة المحظورين ]` button on header to view and unblock orphaned or persistent blocked identities.
-  4. **Database & Backend Isolation:**
-     - Migration `2026_08_phase4_students_extension.sql` applied to `absher_georgia_staging`.
-     - Production database `absher_georgia_db` is **100% UNTOUCHED and ISOLATED**.
-  5. **Automated Verification:**
-     - 13/13 automated staging backend tests passed (schema, nationality validation, admin meta, privacy check, blocking, login denial, registration rejection, delete + block persistence, registration rejection after deletion, unblocking, prod DB isolation).
-     - `npx tsc --noEmit` (0 errors), `npx eslint` (0 errors), `npm run build:staging` (succeeded).
-     - Deployed to `http://80.241.218.23/admin_v2/`.
-
----
-
-### Phase 5: Content, Broadcasting & Live Communications
-- **Goal:** Manage news publishing, bilingual broadcast push notifications, and live customer support console with complete Vanilla feature parity and bounded viewport isolation.
-- **Status:** `COMPLETED / VERIFIED / USER ACCEPTED ✅`
-- **Modules Included:**
-  1. **Georgia News Module (`/news`)**:
-     - **Exact Endpoint:** `ADMIN_API_URL` (`/api_staging/admin_api.php`)
-     - **Get All:** `GET /api_staging/admin_api.php?action=get_all` -> Response: `res.news` (Array of `{ id: number, title: string, title_ar: string, title_en: string, content: string, content_ar: string, content_en: string, image_url: string, created_at: string }`)
-     - **Add News:** `POST /api_staging/admin_api.php?action=add_news` -> Payload: `{ title_ar: string, title_en: string, content_ar: string, content_en: string, image_url: string }` -> Response: `{ status: "success", message: "تم نشر الخبر والتنبيه بنجاح" }`
-     - **Update News:** `POST /api_staging/admin_api.php?action=update_news` -> Payload: `{ id: number, title_ar: string, title_en: string, content_ar: string, content_en: string, image: string }` -> Response: `{ status: "success", message: "تم تعديل الخبر بنجاح" }`
-     - **Delete News:** `POST /api_staging/admin_api.php?action=delete_news` -> Payload: `{ id: number }` -> Response: `{ status: "success", message: "تم حذف الخبر بنجاح" }`
-     - **Upload Mechanism:** Image upload via `upload/image.php?folder=news` with base64 safety handler `saveBase64IfPresent` preserving existing images on edit when no new file is uploaded.
-     - **UI / Behavior:** Responsive 3–4 card grid layout with 140px media banners, date pills, ID badges, real-time search, counter badge, client-side pagination (12 items/page), compact bilingual Add/Edit modals with dark scrollbars, custom image picker with live preview/replace/remove, zero untranslated button keys.
-  2. **Alerts & Notifications Module (`/notifications`)**:
-     - **Exact Endpoint:** `ADMIN_API_URL` (`/api_staging/admin_api.php`)
-     - **Database Schema:** `notifications` table (`id`, `student_id`, `title`, `body`, `title_ar`, `title_en`, `body_ar`, `body_en`, `created_at`).
-     - **Get All:** `GET /api_staging/admin_api.php?action=get_all` -> Response: `res.notifications` (Array of `{ id: number, student_id: number, title: string, body: string, title_ar: string, title_en: string, body_ar: string, body_en: string, date: string, created_at: string }`)
-     - **Add Notification:** `POST /api_staging/admin_api.php?action=add_notification` -> Payload: `{ title_ar: string, title_en: string, body_ar: string, body_en: string }` -> Response: `{ status: "success", message: "تم نشر التنبيه والإشعار بنجاح" }`
-     - **Delete Notification:** `POST /api_staging/admin_api.php?action=delete_notification` -> Payload: `{ id: number }` -> Response: `{ status: "success", message: "تم حذف التنبيه بنجاح" }`
-     - **High-Density Table Contract:** Professional high-density data table (`#`, Arabic Title with bell icon, English Title, 2-line clamped preview, Date/Time, Status badge `Active for Students` vs `Archive >48h`, and isolated Delete button with `e.stopPropagation()`).
-     - **Table Controls & Interactivity:** Primary "Send Broadcast Notification" button, live count badge, search filter across all bilingual columns, client-side pagination (15 items/page), click-to-view details modal with dedicated Arabic and English text boxes.
-     - **Mobile Localization Invariant:** Flutter `notifications_screen.dart` dynamically selects `title_en`/`body_en` when app language is English, and `title_ar`/`body_ar` when Arabic.
-     - **System-Generated Notifications Invariant:** `update_request_status` joins `services` for bilingual title and maps request status translations (`New` -> `جديد`, `In Progress` -> `قيد التنفيذ`, `Completed` -> `مكتمل`, `Cancelled` -> `ملغي`). `chat/admin_reply.php` dispatches bilingual push notifications.
-  3. **Customer Support Chats Module (`/chats`)**:
-     - **Get All Conversations:** `GET /api_staging/admin_api.php?action=get_all` -> Response: `res.chats` (Array of `{ id: number, student_name: string, phone: string, student_uni: string|null, student_id: number|null, last_msg: string, status: string, time: string, messages: Array<{ id: number, sender: 'student'|'admin', text: string, type: 'text'|'image', imageUrl: string|null, quoteText: string|null, quoteSender: string|null, deleted: boolean, time: string }> }`)
-     - **Ensure Support Chat Endpoint (Addendum A):** `POST /api_staging/admin_api.php?action=ensure_support_chat` -> Payload: `{ student_id: number }` -> Response: `{ status: "success", data: { chat_id: number } }`. Deep-link `/chats?student_id=X` auto-creates or retrieves chat and auto-focuses composer without dead-ends.
-     - **Send Reply Endpoint:** `POST /api_staging/chat/admin_reply.php` -> Payload: `{ chat_id: number, content: string, message_type: 'text' | 'image', image_url?: string, quote_text?: string, quote_sender?: string }` -> Response: `{ success: true, message: "Message sent", data: { message_id: number } }`.
-     - **Edit Message:** `POST /api_staging/admin_api.php?action=edit_chat_message` -> Payload: `{ message_id: number, text: string }` -> Response: `{ status: "success", message: "تم تعديل الرسالة بنجاح" }`. Centered dark modal with textarea.
-     - **Delete Message:** `POST /api_staging/admin_api.php?action=delete_chat_message` -> Payload: `{ message_id: number }` -> Response: `{ status: "success", message: "تم حذف الرسالة بنجاح" }`.
-     - **Delete Conversation:** `POST /api_staging/admin_api.php?action=delete_chat` -> Payload: `{ chat_id: number }` -> Response: `{ status: "success", message: "تم حذف المحادثة بنجاح" }`.
-     - **Upload Mechanism:** Authenticated upload via `/api_staging/upload/image.php?folder=chat` saving to `uploads_staging/chat/<filename>`.
-     - **Consecutive Identical Image Sending Invariant:** File input value is reset immediately after selection, removal, and send, allowing consecutive identical images to be chosen and sent as distinct message rows without deduplication suppression.
-     - **Authoritative Attention State & Immediate Invalidation:** Sole source of truth for chat attention is `latest active non-deleted message sender === 'student'`. Admin reply, edit, or delete immediately calls `refetchBadges()`.
-     - **Localized Deleted Message Tombstone Invariant:** Controlled strictly by `deleted: true`. Renders localized `t('chats.deleted_message')` (`'تم حذف هذه الرسالة'` / `'This message was deleted'`) in a subtle tombstone bubble with a ban icon. Original media, quotes, and edit/delete actions are completely hidden.
-     - **Vanilla Parity Console:** Student avatar initial, name, `#id`, university, phone, WhatsApp direct link with pre-filled message template, Student Profile modal, Block Student button linking to Phase 4 blocking API.
-     - **Chat Composer Invariant:** Scoped WhatsApp/Telegram-style horizontal row (`.chat-composer`) with approximately 68–76px total composer height, comfortable 46–50px minimum textarea height occupying most of the available Chat width (`flex: 1`), auto-expanding smoothly up to 4 lines (max 120px) before internal scrolling, `Enter` to send, `Shift+Enter` for newline, 44px attachment button, 44px send button, compact reply and image preview strips, zero global form CSS leakage.
-     - **Smart Non-Intrusive Auto-Scroll Invariant:** Auto-scroll to bottom occurs strictly on: (1) opening or switching conversation, (2) local Admin send completion, (3) new message arriving while Admin is already near bottom (<=100px threshold). When Admin scrolls up to read history, 3s polling never forces the scrollbar down; incoming messages trigger a floating non-intrusive "New messages ↓" pill indicator that scrolls to bottom only when clicked.
-     - **Bounded Viewport Isolation Invariant:** Browser document/window never scrolls because of chat content. `AdminLayout` applies `height: 100vh; overflow: hidden;` and `content-area-no-scroll` on `/chats`. Top header and sidebar remain fixed; internal scrolling is bounded strictly to conversations list and message stream.
-- **Files Created / Modified:**
-  - `src/types/news.ts`, `src/types/notification.ts`, `src/types/chat.ts`
-  - `src/hooks/useNews.ts`, `src/hooks/useNotifications.ts`, `src/hooks/useChats.ts`
-  - `src/modules/news/NewsModule.tsx`, `NewsCard.tsx`, `AddNewsModal.tsx`, `EditNewsModal.tsx`
-  - `src/modules/notifications/NotificationsModule.tsx`, `SendNotificationModal.tsx`
-  - `src/modules/chats/ChatsModule.tsx`
-  - `src/layouts/AdminLayout.tsx`, `src/style.css`, `src/lib/i18n.tsx`, `src/lib/media.ts`
-  - `backend_php/api_staging/admin_api.php`, `backend_php/api_staging/core/notification.php`, `backend_php/api_staging/chat/admin_reply.php`
-- **Acceptance Checklist (Phase 5):**
-  - `[x]` News: Grid renders, Add bilingual news, Edit with image preservation, Delete news.
-  - `[x]` Notifications: High-density data table, bilingual broadcast modal, row details modal, mobile language selection.
-  - `[x]` Chats: Viewport isolation (zero document scroll), conversation list with attention badge, WhatsApp link, block student, send reply, consecutive identical images, edit message, localized deleted tombstone.
-  - `[x]` Quality Gates: `npx tsc --noEmit` (0 errors), `npm run lint` (0 errors), `npm run build:staging` (succeeds).
-- **Status:** COMPLETED / VERIFIED / USER ACCEPTED ✅
-
----
-
-### Phase 6: Executive Dashboard & Cross-Module Analytics
-- **Goal:** Complete the top-level Overview Dashboard aggregating metrics across all modules.
-- **Status:** `COMPLETED / VERIFIED / USER ACCEPTED ✅`
-- **Modules Included:**
-  1. **Dashboard Overview (`/` and `/dashboard`)**:
-     - **Exact Endpoint:** `ADMIN_API_URL` (`/api_staging/admin_api.php`)
-     - **Get All:** `GET /api_staging/admin_api.php?action=get_all`
-     - **Metrics Aggregated:** Total Apartments, Total Services, Active Requests, Total Students, Average Review Rating, Pending Feedback, Active Support Chats.
-     - **UI / Behavior:** 6 top KPI summary cards, Service bookings breakdown widget, Reviews rating distribution widget, Quick Action shortcuts to each module, Latest 5 requests feed, Latest 5 student registrations feed.
-- **Files Created / Modified:**
-  - `src/types/dashboard.ts`
-  - `src/hooks/useDashboardStats.ts`
-  - `src/modules/dashboard/DashboardModule.tsx`, `StatCard.tsx`, `RecentActivityWidget.tsx`, `RatingDistributionWidget.tsx`
-  - `src/App.tsx` (configured `/` and `/dashboard` to render `DashboardModule`)
-  - `src/layouts/AdminLayout.tsx` (activated sidebar navigation for Dashboard Overview)
-- **Acceptance Checklist (Phase 6):**
-  - `[x]` Dashboard KPIs match real database counts in Staging.
-  - `[x]` Rating distribution and service analytics widgets render correctly.
-  - `[x]` Quick action links navigate directly to respective modules.
-  - `[x]` All 12 Sidebar navigation items are active, functional, and fully migrated.
-  - `[x]` Zero remaining Vanilla JS files needed for dashboard functionality.
-  - `[x]` Quality Gates: `npx tsc --noEmit` (0 errors), `npm run lint` (0 errors), `npm run build:staging` (succeeds).
-- **Status:** COMPLETED / VERIFIED / USER ACCEPTED ✅
-
----
-
-### Phase 7: Final Production Cutover & Promotion
-- **Goal:** Safely promote the accepted React build to `/admin/` (Production) with zero downtime and instant rollback capability.
-- **Prerequisites:**
-  1. All Phases (1 through 6) fully accepted on Staging.
-  2. Git commit SHA recorded and verified (`git rev-parse HEAD`).
-  3. Production build generated with `npm run build:prod` (verifying `VITE_BASE_PATH=/admin/` and `VITE_API_ROOT=/api`).
-  4. Gate 4 verified: `grep -r "admin_v2" dist/` returns 0 matches in code bundles.
-- **Cutover Execution Runbook (on VPS `80.241.218.23`):**
-  1. Upload production release folder to `/var/www/absher/backend_php/admin_release_<RELEASE_ID>/`.
-  2. Verify release checksum and `.release_sha`.
-  3. Atomic Backup & Swap:
-     ```bash
-     cd /var/www/absher/backend_php
-     BACKUP_ID=$(date +%Y%m%d_%H%M%S)
-     mv admin "admin_backup_${BACKUP_ID}"
-     mv "admin_release_${RELEASE_ID}" admin || mv "admin_backup_${BACKUP_ID}" admin
-     ```
-  4. Record cutover log in `/var/www/absher/last_cutover.txt`.
-  5. Post-Cutover Smoke Tests on `http://80.241.218.23/admin/`:
-     - Login with production admin credentials.
-     - Verify Dashboard, Apartments, Services, Requests, Reviews, Feedback, Students, News, Notifications, Chats.
-     - Direct route refresh on `/admin/apartments` (HTTP 200).
-     - Verify Network requests go to `/api/admin_api.php` (Production DB).
-- **Rollback Runbook (if any unexpected blocker occurs):**
-  ```bash
-  cd /var/www/absher/backend_php
-  mv admin "admin_failed_$(date +%Y%m%d_%H%M%S)"
-  mv "admin_backup_${BACKUP_ID}" admin
+### A. Student Validation Endpoint: `POST /api_staging/services/validate_promo.php`
+- **Authentication:** Optional/Bearer JWT (if authenticated, evaluates student audience & per-student usage limits).
+- **Request Payload:**
+  ```json
+  {
+    "code": "WELCOME20",
+    "service_id": 3,
+    "payment_method": "wallet"
+  }
   ```
-- **Post-Cutover Completion:**
-  - Preserve `admin_v2/` for future feature development/staging testing.
-  - Archive old Vanilla JS assets safely in `/var/www/absher/legacy_vanilla_backup/`.
+- **Success Response (HTTP 200):**
+  ```json
+  {
+    "status": "success",
+    "data": {
+      "is_valid": true,
+      "promo_code_id": 1,
+      "code": "WELCOME20",
+      "campaign_name": "خصم ترحيبي بالطلاب الجدد",
+      "discount_type": "percentage",
+      "discount_value": 20.0,
+      "original_price": 100,
+      "discount_amount": 20,
+      "final_price": 80,
+      "message": "تم تطبيق كود الخصم بنجاح (-20 نقطة)"
+    }
+  }
+  ```
+- **Failure Response (HTTP 200 / 400 with machine codes):**
+  ```json
+  {
+    "status": "error",
+    "error_code": "EXPIRED",
+    "message": "كود الخصم منتهي الصلاحية"
+  }
+  ```
+  **Supported Error Codes:**
+  - `INVALID_CODE` (`كود الخصم غير موجود أو غير صحيح`)
+  - `DISABLED` (`كود الخصم معطل حالياً`)
+  - `NOT_STARTED` (`كود الخصم لم يبدأ بعد`)
+  - `EXPIRED` (`كود الخصم منتهي الصلاحية`)
+  - `TOTAL_LIMIT_REACHED` (`تم استنفاد الحد الأقصى لاستخدام كود الخصم`)
+  - `STUDENT_LIMIT_REACHED` (`لقد تجاوزت الحد المسموح لك لاستخدام هذا الكود`)
+  - `SERVICE_NOT_ELIGIBLE` (`كود الخصم غير متاح للخدمة المحددة`)
+  - `PAYMENT_NOT_ELIGIBLE` (`كود الخصم غير متاح لطريقة الدفع المختارة`)
+  - `MIN_PRICE_NOT_MET` (`سعر الخدمة أقل من الحد الأدنى لتطبيق كود الخصم`)
+
+### B. Student Request Submission: `POST /api_staging/student_requests.php` (action=submit)
+- **Request Payload:**
+  ```json
+  {
+    "action": "submit",
+    "service_id": 3,
+    "promo_code": "WELCOME20",
+    "payment_method": "wallet",
+    "student_name": "أحمد محمود",
+    "student_phone": "+995555123456",
+    "details": "...",
+    "request_uuid": "e2a4b8..."
+  }
+  ```
+- **Processing:**
+  1. Opens MySQL Transaction.
+  2. Resolves canonical service price from `services.price_points`.
+  3. If `promo_code` is provided:
+     - Locks promo code row with `SELECT * FROM promo_codes WHERE code = ? FOR UPDATE`.
+     - Re-verifies all eligibility rules.
+     - Calculates `discount_points` and `final_price_points`.
+     - Increments `used_count = used_count + 1`.
+  4. If `payment_method == 'wallet'`:
+     - Locks student wallet with `SELECT points FROM students WHERE id = ? FOR UPDATE`.
+     - Verifies `points >= final_price_points`.
+     - Deducts `final_price_points` (NOT original price).
+     - Inserts `wallet_transactions` row for `amount = final_price_points`.
+  5. Inserts `service_requests` row.
+  6. Inserts immutable row in `promo_code_redemptions`.
+  7. Commits transaction.
+
+### C. Admin Endpoints: `POST /api_staging/admin_api.php`
+- `action=get_all`: Returns `res.promo_codes` array.
+- `action=add_promo_code`: Payload: `{ campaign_name, code, discount_type, discount_value, max_discount_points, min_service_price_points, start_at, expires_at, status, service_scope, service_ids, payment_scope, audience_scope, student_ids, total_usage_limit, per_student_limit }`.
+- `action=update_promo_code`: Updates promo configuration (if `used_count > 0`, `code` string is locked/immutable).
+- `action=toggle_promo_code_status`: Toggles `active` <-> `paused`.
+- `action=archive_promo_code`: Sets `status = 'archived'` (preserves redemption history).
+- `action=get_promo_redemptions`: Payload: `promo_code_id`. Returns redemption list.
 
 ---
 
-## 🛡️ Risk Matrix & Mitigations
+## 6. Exact Admin React Dashboard Modules & Files
 
-| Risk | Likelihood | Impact | Built-in Mitigation in Plan |
+### A. New Types: `src/types/promo.ts`
+- `PromoCode`, `DiscountType`, `PromoStatus`, `ServiceScope`, `PaymentScope`, `AudienceScope`, `PromoRedemption`, `PromoCodeFormData`.
+
+### B. New Hook: `src/hooks/usePromoCodes.ts`
+- Encapsulates `promoCodes`, `isLoading`, `error`, `addPromoCode`, `updatePromoCode`, `toggleStatus`, `archivePromoCode`, `getPromoRedemptions`.
+- Integrated with `BadgesContext` and `apiFetch` mutation deduplication.
+
+### C. New Module: `src/modules/promo/`
+- `PromoCodesModule.tsx`:
+  - **Summary Metrics Strip:** Active Campaigns, Total Redemptions, Total Points Saved, Expired/Exhausted Codes.
+  - **Toolbar:** Status tabs (`All`, `Active`, `Paused`, `Archived`), Discount Type filter, Search bar, `[ Add Promo Code ]` button.
+  - **Data Table / Cards:** High-density table consistent with Notifications module with code badge, campaign name, discount pill, usage progress bar (`used / limit`), validity dates, status badge, copy code button, and action dropdown.
+- `AddPromoCodeModal.tsx`: Bilingual creation modal with code generator, discount type selector, scope pickers (multi-select services/students), usage limit inputs.
+- `EditPromoCodeModal.tsx`: Edit modal with safety guards for active/used codes.
+- `PromoDetailsModal.tsx`: View campaign statistics + full searchable redemption audit logs.
+
+### D. Routing & Navigation:
+- **`src/App.tsx`:** Register route `/promo-codes` -> `<PromoCodesModule />`.
+- **`src/layouts/AdminLayout.tsx`:** Add Sidebar navigation entry with icon `<i className="fa-solid fa-tags"></i>` and translation key `nav.promo_codes`.
+- **`src/lib/i18n.tsx`:** Complete Arabic and English dictionaries for promo codes.
+
+---
+
+## 7. Exact Flutter Mobile Implementation
+
+### A. `lib/services/api_service.dart`
+- Add method:
+  ```dart
+  static Future<Map<String, dynamic>> validatePromoCode({
+    required String code,
+    required int serviceId,
+    required String paymentMethod,
+  }) async { ... }
+  ```
+
+### B. `lib/screens/services_screen.dart`
+- **State Variables:**
+  - `bool _isValidatingPromo = false;`
+  - `Map<String, dynamic>? _appliedPromoData;`
+  - `String? _promoError;`
+- **Interactive UI Component:**
+  ```text
+  [ TextField: كود الخصم ] [ زر: تطبيق / Apply ]
+  -------------------------------------------------------------
+  [ بطاقة الخصم المطبق ]:
+  السعر الأصلي: 100 نقطة | الخصم: -20 نقطة | السعر النهائي: 80 نقطة
+  [ زر إلغاء الكود × ]
+  ```
+- **State Invalidation Rule:** If the student changes the selected service dropdown or switches between Wallet and Cash, `_appliedPromoData` is automatically cleared, prompting re-validation.
+
+---
+
+## 8. Cancellation & Refund Policy Analysis
+
+| Scenario | Wallet Points Action | Promo Code Usage Action | Audit Record |
+| :--- | :--- | :--- | :--- |
+| **Student Cancels Request** | Refund `final_price_points` to student wallet | Decrement `promo_codes.used_count` by 1; mark redemption as `reversed` | Insert `wallet_transactions` (`type='إضافة'`, description: 'استرجاع نقاط إلغاء طلب') |
+| **Admin Cancels Request (`ملغي`)** | Admin can choose to refund points | Decrement `promo_codes.used_count`; mark redemption as `reversed` | Audit log updated |
+| **Cash Request Cancelled** | 0 points refunded (0 was charged) | Usage reversed if request was never executed | Audit log updated |
+
+---
+
+## 9. Security, Concurrency & Idempotency Design
+
+1. **Race Condition Protection:**
+   ```sql
+   -- Inside atomic transaction:
+   SELECT points FROM students WHERE id = ? FOR UPDATE;
+   SELECT used_count, total_usage_limit FROM promo_codes WHERE id = ? FOR UPDATE;
+   ```
+2. **Double-Submit Prevention:**
+   - Client: `useRef(false)` submit lock in React + disabling buttons in Flutter.
+   - Network: `request_uuid` with `UNIQUE` constraint in `service_requests`.
+   - Database: `UNIQUE(service_request_id)` on `promo_code_redemptions`.
+3. **Price Manipulation Immunity:**
+   - Server strictly recalculates prices from database rows. Client discount numbers are completely ignored.
+
+---
+
+## 10. Updated Master Dependency Map & Table Inventory
+
+### Complete Database Tables Inventory (19 Tables)
+
+| # | Table Name | Domain / Purpose | Migration Phase |
 |---|---|---|---|
-| **Foreign Key Constraint Violations** | Low | High | Deletion of parent entities (e.g. Apartments, Services, Students) is guarded by cascade warnings and automated child deletion where supported by DB schema (`housing_offers` CASCADE). |
-| **Double-Submit on Slow Connections** | Medium | Medium | Two-tier locking: `useRef` synchronous component lock + `apiFetch` inFlight deduplication. |
-| **Authentication / Session Loss** | Low | High | Synchronous JWT persistence in `AuthContext` + early exit in `apiFetch` + route guard preventing unauthenticated component mounting. |
-| **SPA 404 on Browser Refresh** | Low | High | Source-controlled `.htaccess` with directory-relative rewrite rules (`RewriteRule ^ index.html [L]`) and anti-cache headers for `index.html`. |
-| **Production Cross-Contamination** | Zero | Critical | Absolute separation of `.env`, database (`absher_georgia_staging`), API endpoints (`api_staging/`), and upload folders (`uploads_staging/`). Production DB remains untouched until Phase 7. |
+| 1 | `admins` | Admin credentials & JWT auth | Phase 1 ✅ |
+| 2 | `apartments` | Apartments listings | Phase 1 ✅ |
+| 3 | `districts` | Reference districts list | Phase 2 ✅ |
+| 4 | `universities` | Reference universities list | Phase 2 ✅ |
+| 5 | `services` | Student services catalog | Phase 3 ✅ |
+| 6 | `service_requests` | Student booking requests (extended with promo snapshot) | Phase 3 ✅ / Phase 6A |
+| 7 | `service_reviews` | Student ratings & testimonials | Phase 4 ✅ |
+| 8 | `application_feedback` | User suggestions & bug reports | Phase 4 ✅ |
+| 9 | `students` | Student accounts & profiles | Phase 4 ✅ |
+| 10 | `blocked_identities` | Persistent blocked identities | Phase 4 ✅ |
+| 11 | `wallet_transactions` | Points & wallet audit trail | Phase 4 ✅ |
+| 12 | `news` | Georgia & student news | Phase 5 ✅ |
+| 13 | `notifications` | Push broadcast notifications | Phase 5 ✅ |
+| 14 | `chats` | Student support conversations | Phase 5 ✅ |
+| 15 | `chat_messages` | Chat messages & media | Phase 5 ✅ |
+| 16 | **`promo_codes`** | **Promo campaigns & discount rules** | **Phase 6A** |
+| 17 | **`promo_code_services`** | **Service-specific promo eligibility** | **Phase 6A** |
+| 18 | **`promo_code_students`** | **Student audience promo eligibility** | **Phase 6A** |
+| 19 | **`promo_code_redemptions`**| **Immutable redemption snapshot & audit** | **Phase 6A** |
+| — | `housing_offers` | Exclusive housing discounts | `DEFERRED / FROZEN` |
 
 ---
 
-## 🔒 Consistency Audit & Authoritative Freezing
+## 11. Automated Verification Matrix (Staging Tests)
 
-This Master Plan has undergone a comprehensive consistency audit:
-- **0 Ambiguities:** All actions, endpoints, HTTP methods, payloads, response paths, and upload mechanisms are specified with exact names.
-- **0 Missing Modules:** All 13 Vanilla admin modules and all 15 database tables are assigned to exact phases.
-- **0 Overlapping Scopes:** Every module is mapped to exactly one phase.
-- **Housing Offers Handled:** Explicitly documented as `DEFERRED — WAITING FOR USER REQUIREMENTS`.
-- **Strict Reuse:** AuthContext, apiFetch, validators, i18n, ThemeContext, Toast, ConfirmDialog, and AdminLayout from Phase 1 are reused as the core foundation for all subsequent phases.
-- **Execution-Ready:** Phases 2 through 7 are completely specified and ready for sequential execution upon user instruction.
+1. `test_valid_percentage_discount`: Verifies 20% discount on 100 pt service yields 80 pts charged.
+2. `test_percentage_with_max_cap`: Verifies 50% discount capped at 30 pts on 100 pt service yields 70 pts charged.
+3. `test_valid_fixed_discount`: Verifies 25 pt discount on 100 pt service yields 75 pts charged.
+4. `test_fixed_discount_exceeds_price`: Verifies 150 pt discount on 100 pt service yields 0 pts charged (no negative points).
+5. `test_free_service_code`: Verifies free discount yields 0 pts charged and 0 wallet deduction.
+6. `test_invalid_code`: Verifies 400 error with `INVALID_CODE`.
+7. `test_paused_code`: Verifies 400 error with `DISABLED`.
+8. `test_scheduled_future_code`: Verifies 400 error with `NOT_STARTED`.
+9. `test_expired_code`: Verifies 400 error with `EXPIRED`.
+10. `test_service_scope_exclusion`: Verifies code restricted to Service A fails on Service B.
+11. `test_payment_scope_exclusion`: Verifies wallet-only code fails on cash payment.
+12. `test_student_audience_exclusion`: Verifies private code fails for unlisted student.
+13. `test_total_usage_limit_exhausted`: Verifies 11th attempt fails when limit is 10.
+14. `test_per_student_limit_exhausted`: Verifies 2nd attempt fails when limit is 1.
+15. `test_min_service_price_rule`: Verifies code fails on service cheaper than minimum threshold.
+16. `test_wallet_exact_deduction`: Verifies student balance changes by exactly `final_price_points`.
+17. `test_cash_zero_points_deduction`: Verifies student balance is unchanged on cash orders.
+18. `test_idempotent_request_uuid_replay`: Verifies replaying same UUID returns identical response without double deduction.
+19. `test_code_immutability_after_use`: Verifies code string cannot be altered once redemptions exist.
+20. `test_production_db_isolation`: Verifies `absher_georgia_db` is 100% untouched.
+
+---
+
+## 12. Implementation Files to Create & Modify
+
+### Database:
+- `[NEW]` `sql/migrations/2026_08_phase6a_promo_codes.sql`
+
+### Backend PHP:
+- `[NEW]` `backend_php/api_staging/services/validate_promo.php`
+- `[MODIFY]` `backend_php/api_staging/student_requests.php`
+- `[MODIFY]` `backend_php/api_staging/admin_api.php`
+
+### Admin React:
+- `[NEW]` `admin_react/src/types/promo.ts`
+- `[NEW]` `admin_react/src/hooks/usePromoCodes.ts`
+- `[NEW]` `admin_react/src/modules/promo/PromoCodesModule.tsx`
+- `[NEW]` `admin_react/src/modules/promo/AddPromoCodeModal.tsx`
+- `[NEW]` `admin_react/src/modules/promo/EditPromoCodeModal.tsx`
+- `[NEW]` `admin_react/src/modules/promo/PromoDetailsModal.tsx`
+- `[MODIFY]` `admin_react/src/App.tsx`
+- `[MODIFY]` `admin_react/src/layouts/AdminLayout.tsx`
+- `[MODIFY]` `admin_react/src/lib/i18n.tsx`
+- `[MODIFY]` `admin_react/src/lib/validators.ts`
+
+### Flutter Mobile App:
+- `[MODIFY]` `lib/services/api_service.dart`
+- `[MODIFY]` `lib/screens/services_screen.dart`
+- `[MODIFY]` `lib/services/language_service.dart`
+
+---
+
+## 13. Staging and Production Safety Confirmation
+
+- **Development & Staging Only:** All migrations, endpoints, and UI will be deployed to Staging (`absher_georgia_staging`, `/api_staging/`, `/admin_v2/`).
+- **Production Isolation:** Production (`/admin/`, `/api/`, `absher_georgia_db`, mobile app production build) will remain **100% untouched**.
+- **Cutover (Phase 7):** Halted until complete Phase 6A implementation is verified and accepted by user.
