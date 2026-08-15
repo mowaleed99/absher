@@ -520,6 +520,7 @@ const arTranslations: Translations = {
   'promo.cancel_confirm_btn': 'تأكيد الإلغاء والاسترجاع',
   'promo.cannot_cancel_completed': 'لا يمكن إلغاء طلب بحالة مكتمل',
   'promo.already_cancelled': 'الطلب ملغي بالفعل',
+  'btn.login': 'تسجيل الدخول',
   'msg.login_failed': 'بيانات الدخول غير صحيحة',
   'msg.not_found_apartment': 'لم يتم العثور على بيانات الشقة المطلوبة',
 };
@@ -1038,6 +1039,7 @@ const enTranslations: Translations = {
   'promo.cancel_confirm_btn': 'Confirm Cancellation & Refund',
   'promo.cannot_cancel_completed': 'Cannot cancel a completed request',
   'promo.already_cancelled': 'Request is already cancelled',
+  'btn.login': 'Log In',
   'msg.login_failed': 'Invalid login credentials',
   'msg.not_found_apartment': 'Requested apartment was not found',
 };
