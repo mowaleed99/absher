@@ -86,6 +86,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     final body = _getNotifBody(notif).toLowerCase();
     final combined = '$title $body';
     return combined.contains('رد جديد من الدعم') ||
+        combined.contains('ردود جديدة من الدعم') ||
         combined.contains('رد الدعم') ||
         combined.contains('الشات المباشر') ||
         combined.contains('support reply') ||
@@ -94,28 +95,76 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
   }
 
   List<Map<String, dynamic>> _getVisibleNotifications() {
-    // 1. Filter out chat notifications that have already been opened/read
-    final visible = _notifications.where((n) {
+    final isAr = LanguageService.currentLang.value == 'ar';
+
+    // 1. Separate unread chat notifications from non-chat notifications
+    final unreadChatNotifs = _notifications.where((n) {
       final id = n['id']?.toString() ?? '';
-      if (_isChatNotification(n) && _readIds.contains(id)) {
-        return false;
-      }
-      return true;
+      return _isChatNotification(n) && !_readIds.contains(id);
     }).toList();
 
-    // 2. Sort: Chat reply notifications pinned at the top, then by date descending
-    visible.sort((a, b) {
-      final aIsChat = _isChatNotification(a);
-      final bIsChat = _isChatNotification(b);
-      if (aIsChat && !bIsChat) return -1;
-      if (!aIsChat && bIsChat) return 1;
+    final nonChatNotifs = _notifications.where((n) {
+      return !_isChatNotification(n);
+    }).toList();
 
+    // Sort non-chat notifications by date descending
+    nonChatNotifs.sort((a, b) {
       final aDate = a['date']?.toString() ?? '';
       final bDate = b['date']?.toString() ?? '';
       return bDate.compareTo(aDate);
     });
 
-    return visible;
+    final List<Map<String, dynamic>> result = [];
+
+    // 2. If there are unread chat notifications, consolidate into ONE single pinned card with count
+    if (unreadChatNotifs.isNotEmpty) {
+      unreadChatNotifs.sort((a, b) {
+        final aDate = a['date']?.toString() ?? '';
+        final bDate = b['date']?.toString() ?? '';
+        return bDate.compareTo(aDate);
+      });
+
+      final latest = unreadChatNotifs.first;
+      final count = unreadChatNotifs.length;
+      final allChatIds = unreadChatNotifs
+          .map((n) => n['id']?.toString() ?? '')
+          .where((id) => id.isNotEmpty)
+          .toList();
+
+      final String title = count > 1
+          ? (isAr
+              ? 'ردود جديدة من الدعم الفني ($count)'
+              : 'New Support Replies ($count)')
+          : (isAr ? 'رد جديد من الدعم الفني' : 'New Reply from Support');
+
+      final String body = count > 1
+          ? (isAr
+              ? 'لديك $count رسائل جديدة غير مقروءة في الشات المباشر مع فريق الدعم.'
+              : 'You have $count unread messages in live chat.')
+          : (isAr
+              ? 'لديك رد جديد على استفسارك في الشات المباشر'
+              : 'You have a new reply in live chat');
+
+      result.add({
+        'id': latest['id']?.toString() ?? '',
+        'all_grouped_ids': allChatIds,
+        'is_grouped_chat': true,
+        'chat_unread_count': count,
+        'type': 'chat',
+        'title': title,
+        'title_ar': title,
+        'title_en': title,
+        'content': body,
+        'body_ar': body,
+        'body_en': body,
+        'date': latest['date']?.toString() ?? '',
+      });
+    }
+
+    // 3. Add all regular notifications below
+    result.addAll(nonChatNotifs);
+
+    return result;
   }
 
   String _getNotifTitle(Map<String, dynamic> notif) {
@@ -170,7 +219,8 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
         ('${_getNotifTitle(notif)} ${_getNotifBody(notif)}').toLowerCase();
     final isAr = LanguageService.currentLang.value == 'ar';
 
-    if (text.contains('شات') ||
+    if (notif['is_grouped_chat'] == true ||
+        text.contains('شات') ||
         text.contains('محادثة') ||
         text.contains('رسالة') ||
         text.contains('رد الدعم') ||
@@ -366,6 +416,37 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     await prefs.setStringList('read_notification_ids', _readIds.toList());
   }
 
+  Future<void> _handleNotificationTap(Map<String, dynamic> notif) async {
+    final isGrouped = notif['is_grouped_chat'] == true;
+    final isChat = _isChatNotification(notif) || isGrouped;
+
+    if (isGrouped && notif['all_grouped_ids'] is List) {
+      final ids = List<String>.from(notif['all_grouped_ids']);
+      for (final id in ids) {
+        await _markAsRead(id);
+      }
+      setState(() {
+        _notifications.removeWhere((n) => ids.contains(n['id']?.toString() ?? ''));
+      });
+    } else {
+      final id = notif['id']?.toString() ?? '';
+      await _markAsRead(id);
+      if (isChat) {
+        setState(() {
+          _notifications.removeWhere((n) => (n['id']?.toString() ?? '') == id);
+        });
+      }
+    }
+
+    if (!mounted) return;
+    final target = _getNavigationTarget(notif);
+    if (target != null) {
+      (target['action'] as Function(BuildContext))(context);
+    } else {
+      _showNotificationDetail(context, notif);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final visibleNotifications = _getVisibleNotifications();
@@ -424,7 +505,10 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                             final notif = visibleNotifications[index];
                             final id = notif['id']?.toString() ?? '';
                             final isRead = _readIds.contains(id);
-                            final isChat = _isChatNotification(notif);
+                            final isChat = _isChatNotification(notif) ||
+                                notif['is_grouped_chat'] == true;
+                            final chatCount =
+                                (notif['chat_unread_count'] as int?) ?? 1;
                             final target = _getNavigationTarget(notif);
 
                             return Card(
@@ -434,22 +518,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                               elevation: isChat ? 4.0 : (isRead ? 0.5 : 2.5),
                               clipBehavior: Clip.antiAlias,
                               child: InkWell(
-                                onTap: () async {
-                                  await _markAsRead(id);
-                                  if (isChat) {
-                                    setState(() {
-                                      _notifications.removeWhere(
-                                          (n) => (n['id']?.toString() ?? '') == id);
-                                    });
-                                  }
-                                  if (!context.mounted) return;
-                                  if (target != null) {
-                                    (target['action'] as Function(BuildContext))(
-                                        context);
-                                  } else {
-                                    _showNotificationDetail(context, notif);
-                                  }
-                                },
+                                onTap: () => _handleNotificationTap(notif),
                                 child: AnimatedContainer(
                                   duration: const Duration(milliseconds: 300),
                                   padding: const EdgeInsets.all(16),
@@ -481,32 +550,61 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                                         : null,
                                   ),
                                   child: Row(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     children: [
-                                      Container(
-                                        padding: const EdgeInsets.all(12),
-                                        decoration: BoxDecoration(
-                                          color: isChat
-                                              ? const Color(0xFFDCFCE7)
-                                              : (isRead
-                                                  ? Colors.grey.shade300
-                                                  : AppColors.accent
-                                                      .withValues(alpha: 0.12)),
-                                          shape: BoxShape.circle,
-                                        ),
-                                        child: Icon(
-                                          isChat
-                                              ? Icons.mark_chat_unread_rounded
-                                              : (target != null
-                                                  ? (target['icon'] as IconData)
-                                                  : Icons.campaign_rounded),
-                                          color: isChat
-                                              ? const Color(0xFF16A34A)
-                                              : (isRead
-                                                  ? Colors.grey.shade600
-                                                  : AppColors.accent),
-                                          size: 26,
-                                        ),
+                                      Stack(
+                                        clipBehavior: Clip.none,
+                                        children: [
+                                          Container(
+                                            padding: const EdgeInsets.all(12),
+                                            decoration: BoxDecoration(
+                                              color: isChat
+                                                  ? const Color(0xFFDCFCE7)
+                                                  : (isRead
+                                                      ? Colors.grey.shade300
+                                                      : AppColors.accent
+                                                          .withValues(
+                                                              alpha: 0.12)),
+                                              shape: BoxShape.circle,
+                                            ),
+                                            child: Icon(
+                                              isChat
+                                                  ? Icons
+                                                      .mark_chat_unread_rounded
+                                                  : (target != null
+                                                      ? (target['icon']
+                                                          as IconData)
+                                                      : Icons.campaign_rounded),
+                                              color: isChat
+                                                  ? const Color(0xFF16A34A)
+                                                  : (isRead
+                                                      ? Colors.grey.shade600
+                                                      : AppColors.accent),
+                                              size: 26,
+                                            ),
+                                          ),
+                                          if (isChat && chatCount > 1)
+                                            Positioned(
+                                              top: -4,
+                                              right: -4,
+                                              child: Container(
+                                                padding: const EdgeInsets.all(5),
+                                                decoration: const BoxDecoration(
+                                                  color: Color(0xFFEF4444),
+                                                  shape: BoxShape.circle,
+                                                ),
+                                                child: Text(
+                                                  '$chatCount',
+                                                  style: const TextStyle(
+                                                    color: Colors.white,
+                                                    fontSize: 10,
+                                                    fontWeight: FontWeight.bold,
+                                                  ),
+                                                ),
+                                              ),
+                                            ),
+                                        ],
                                       ),
                                       const SizedBox(width: 14),
                                       Expanded(
@@ -516,7 +614,8 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                                           children: [
                                             Row(
                                               mainAxisAlignment:
-                                                  MainAxisAlignment.spaceBetween,
+                                                  MainAxisAlignment
+                                                      .spaceBetween,
                                               children: [
                                                 Expanded(
                                                   child: Row(
@@ -527,7 +626,8 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                                                               const EdgeInsetsDirectional
                                                                   .only(end: 6),
                                                           padding:
-                                                              const EdgeInsets.symmetric(
+                                                              const EdgeInsets
+                                                                  .symmetric(
                                                                   horizontal: 6,
                                                                   vertical: 2),
                                                           decoration:
@@ -535,21 +635,62 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                                                             color: const Color(
                                                                 0xFF16A34A),
                                                             borderRadius:
-                                                                BorderRadius.circular(
-                                                                    6),
+                                                                BorderRadius
+                                                                    .circular(
+                                                                        6),
                                                           ),
                                                           child: Text(
                                                             isAr
                                                                 ? "مثبت 📌"
                                                                 : "Pinned 📌",
-                                                            style: const TextStyle(
-                                                              color: Colors.white,
+                                                            style:
+                                                                const TextStyle(
+                                                              color:
+                                                                  Colors.white,
                                                               fontSize: 10,
                                                               fontWeight:
-                                                                  FontWeight.bold,
+                                                                  FontWeight
+                                                                      .bold,
                                                             ),
                                                           ),
                                                         ),
+                                                        if (chatCount > 1)
+                                                          Container(
+                                                            margin:
+                                                                const EdgeInsetsDirectional
+                                                                    .only(
+                                                                    end: 6),
+                                                            padding:
+                                                                const EdgeInsets
+                                                                    .symmetric(
+                                                                    horizontal:
+                                                                        6,
+                                                                    vertical:
+                                                                        2),
+                                                            decoration:
+                                                                BoxDecoration(
+                                                              color: const Color(
+                                                                  0xFFDC2626),
+                                                              borderRadius:
+                                                                  BorderRadius
+                                                                      .circular(
+                                                                          6),
+                                                            ),
+                                                            child: Text(
+                                                              isAr
+                                                                  ? "$chatCount جديد"
+                                                                  : "$chatCount New",
+                                                              style:
+                                                                  const TextStyle(
+                                                                color: Colors
+                                                                    .white,
+                                                                fontSize: 10,
+                                                                fontWeight:
+                                                                    FontWeight
+                                                                        .bold,
+                                                              ),
+                                                            ),
+                                                          ),
                                                       ],
                                                       Expanded(
                                                         child: Text(
@@ -562,7 +703,8 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                                                                 ? const Color(
                                                                     0xFF166534)
                                                                 : (isRead
-                                                                    ? Colors.grey
+                                                                    ? Colors
+                                                                        .grey
                                                                         .shade700
                                                                     : AppColors
                                                                         .primaryDark),
@@ -589,7 +731,8 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                                                               ? Colors
                                                                   .grey.shade500
                                                               : Colors
-                                                                  .grey.shade600),
+                                                                  .grey
+                                                                  .shade600),
                                                       fontWeight:
                                                           FontWeight.bold,
                                                     ),
@@ -611,36 +754,26 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                                             if (target != null) ...[
                                               const SizedBox(height: 10),
                                               InkWell(
-                                                onTap: () async {
-                                                  await _markAsRead(id);
-                                                  if (isChat) {
-                                                    setState(() {
-                                                      _notifications
-                                                          .removeWhere((n) =>
-                                                              (n['id']?.toString() ??
-                                                                  '') ==
-                                                              id);
-                                                    });
-                                                  }
-                                                  if (!context.mounted) return;
-                                                  (target['action'] as Function(
-                                                      BuildContext))(context);
-                                                },
+                                                onTap: () =>
+                                                    _handleNotificationTap(
+                                                        notif),
                                                 borderRadius:
                                                     BorderRadius.circular(10),
                                                 child: Container(
-                                                  padding:
-                                                      const EdgeInsets.symmetric(
-                                                          horizontal: 12,
-                                                          vertical: 7),
+                                                  padding: const EdgeInsets
+                                                      .symmetric(
+                                                      horizontal: 12,
+                                                      vertical: 7),
                                                   decoration: BoxDecoration(
                                                     color: isChat
-                                                        ? const Color(0xFF16A34A)
+                                                        ? const Color(
+                                                            0xFF16A34A)
                                                         : AppColors.primary
                                                             .withValues(
                                                                 alpha: 0.08),
                                                     borderRadius:
-                                                        BorderRadius.circular(10),
+                                                        BorderRadius.circular(
+                                                            10),
                                                     border: Border.all(
                                                       color: isChat
                                                           ? const Color(
@@ -664,7 +797,8 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                                                                   .primary),
                                                       const SizedBox(width: 6),
                                                       Text(
-                                                        target['label'] as String,
+                                                        target['label']
+                                                            as String,
                                                         style: TextStyle(
                                                           color: isChat
                                                               ? Colors.white
@@ -680,7 +814,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                                                           LanguageService.isRtl
                                                               ? Icons
                                                                   .arrow_back_ios
-                                                                : Icons
+                                                              : Icons
                                                                   .arrow_forward_ios,
                                                           size: 11,
                                                           color: isChat
