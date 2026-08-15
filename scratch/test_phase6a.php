@@ -787,9 +787,9 @@ $usedPromoId = (int)$conn->lastInsertId();
 
 // Insert 3 matching applied redemption records to maintain 100% data consistency
 $insRedStmt = $conn->prepare("INSERT INTO promo_code_redemptions (promo_code_id, service_request_id, request_id_snapshot, student_id, student_name_snapshot, student_phone_snapshot, student_email_snapshot, service_id, service_title_snapshot, code_snapshot, campaign_snapshot, discount_type_snapshot, discount_value_snapshot, original_price_points, discount_points, final_price_points, payment_method, status) VALUES (?, NULL, 9999, ?, 'طالب تجريبي', '0500000000', 'test@absher.ge', ?, 'خدمة تجريبية', 'TEST_USED_IMMUTABLE', 'Used Promo', 'percentage', 20.00, 100, 20, 80, 'wallet', 'applied')");
-$insRedStmt->execute([$usedPromoId, $testStudentId1, $testServiceId1]);
-$insRedStmt->execute([$usedPromoId, $testStudentId1, $testServiceId1]);
-$insRedStmt->execute([$usedPromoId, $testStudentId1, $testServiceId1]);
+$insRedStmt->execute([$usedPromoId, $testStudentId1, $testServiceId100]);
+$insRedStmt->execute([$usedPromoId, $testStudentId1, $testServiceId100]);
+$insRedStmt->execute([$usedPromoId, $testStudentId1, $testServiceId100]);
 
 $upPromoRes = (function() use ($adminToken, $usedPromoId) {
     $url = 'http://127.0.0.1/api_staging/admin_api.php?action=update_promo_code';
@@ -943,6 +943,34 @@ $inconsistentRows = $conn->query("
     HAVING p.used_count != applied_cnt
 ")->fetchAll(PDO::FETCH_ASSOC);
 assertTest('test_used_count_equals_applied_redemptions', count($inconsistentRows) === 0, $inconsistentRows);
+
+// --- Mandatory Teardown: Self-Cleaning Test Lifecycle Hook ---
+echo "\n--- Teardown: Self-Cleaning Test Lifecycle Hook ---\n";
+try {
+    $conn->exec("DELETE FROM promo_code_redemptions WHERE code_snapshot LIKE 'TEST_%' OR code_snapshot LIKE 'ADMIN_%'");
+    $conn->exec("DELETE FROM wallet_transactions WHERE student_id IN (SELECT id FROM students WHERE email LIKE '%@absher.test')");
+    $conn->exec("DELETE FROM service_requests WHERE student_id IN (SELECT id FROM students WHERE email LIKE '%@absher.test') OR promo_code_id IN (SELECT id FROM promo_codes WHERE code LIKE 'TEST_%')");
+    $conn->exec("DELETE FROM students WHERE email LIKE '%@absher.test'");
+    $conn->exec("DELETE FROM services WHERE title LIKE 'TEST_SVC_%'");
+    $conn->exec("DELETE FROM promo_codes WHERE code LIKE 'TEST_%' OR code LIKE 'ADMIN_%'");
+    $conn->exec("
+        UPDATE promo_codes p
+        SET p.used_count = (
+            SELECT COUNT(*) 
+            FROM promo_code_redemptions r 
+            WHERE r.promo_code_id = p.id AND r.status = 'applied'
+        )
+    ");
+    $remPromos = $conn->query("SELECT COUNT(*) FROM promo_codes WHERE code LIKE 'TEST_%'")->fetchColumn();
+    $remRedemptions = $conn->query("SELECT COUNT(*) FROM promo_code_redemptions WHERE code_snapshot LIKE 'TEST_%'")->fetchColumn();
+    if ((int)$remPromos === 0 && (int)$remRedemptions === 0) {
+        echo "  🧹 TEARDOWN SUCCESS: 0 test artifacts remain in absher_georgia_staging.\n";
+    } else {
+        echo "  ⚠️ WARNING: Residual test artifacts detected after teardown.\n";
+    }
+} catch (Exception $e) {
+    echo "  ⚠️ Teardown error: " . $e->getMessage() . "\n";
+}
 
 echo "\n===================================================\n";
 echo "📊 TEST RESULTS SUMMARY:\n";
