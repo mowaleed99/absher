@@ -24,6 +24,7 @@ class NotificationsScreen extends StatefulWidget {
 class _NotificationsScreenState extends State<NotificationsScreen> {
   List<Map<String, dynamic>> _notifications = [];
   Set<String> _readIds = {};
+  Set<String> _deletedIds = {};
   bool _isLoading = true;
   StreamSubscription? _notifSub;
 
@@ -31,11 +32,11 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
   void initState() {
     super.initState();
     _fetchNotifications();
-    _loadReadStatus();
+    _loadStoredStatus();
 
     _notifSub = RealtimeSyncService().onNotificationsUpdated.listen((_) {
       if (mounted) {
-        _loadReadStatus();
+        _loadStoredStatus();
         _fetchNotifications(silent: true);
       }
     });
@@ -47,12 +48,14 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     super.dispose();
   }
 
-  Future<void> _loadReadStatus() async {
+  Future<void> _loadStoredStatus() async {
     final prefs = await SharedPreferences.getInstance();
-    final list = prefs.getStringList('read_notification_ids') ?? [];
+    final readList = prefs.getStringList('read_notification_ids') ?? [];
+    final deletedList = prefs.getStringList('deleted_notification_ids') ?? [];
     if (mounted) {
       setState(() {
-        _readIds = list.toSet();
+        _readIds = readList.toSet();
+        _deletedIds = deletedList.toSet();
       });
     }
   }
@@ -64,6 +67,110 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
       _readIds.add(id);
     });
     await prefs.setStringList('read_notification_ids', _readIds.toList());
+  }
+
+  Future<void> _deleteNotification(Map<String, dynamic> notif) async {
+    final prefs = await SharedPreferences.getInstance();
+    final isGrouped = notif['is_grouped_chat'] == true;
+
+    if (isGrouped && notif['all_grouped_ids'] is List) {
+      final ids = List<String>.from(notif['all_grouped_ids']);
+      setState(() {
+        _deletedIds.addAll(ids);
+        _readIds.addAll(ids);
+        _notifications.removeWhere((n) => ids.contains(n['id']?.toString() ?? ''));
+      });
+    } else {
+      final id = notif['id']?.toString() ?? '';
+      if (id.isNotEmpty) {
+        setState(() {
+          _deletedIds.add(id);
+          _readIds.add(id);
+          _notifications.removeWhere((n) => (n['id']?.toString() ?? '') == id);
+        });
+      }
+    }
+
+    await prefs.setStringList('deleted_notification_ids', _deletedIds.toList());
+    await prefs.setStringList('read_notification_ids', _readIds.toList());
+
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(LanguageService.tr('delete_notif_success')),
+          duration: const Duration(seconds: 2),
+        ),
+      );
+    }
+  }
+
+  Future<void> _deleteAllNotifications() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Row(
+          children: [
+            const Icon(Icons.delete_outline, color: Colors.red, size: 24),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                LanguageService.tr('delete_all_confirm_title'),
+                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+              ),
+            ),
+          ],
+        ),
+        content: Text(
+          LanguageService.tr('delete_all_confirm_msg'),
+          style: const TextStyle(fontSize: 14),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: Text(
+              LanguageService.tr('cancel'),
+              style: const TextStyle(color: Colors.grey),
+            ),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            ),
+            onPressed: () => Navigator.pop(ctx, true),
+            child: Text(LanguageService.tr('delete_notif_btn')),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true) return;
+
+    final allIds = _notifications
+        .map((n) => n['id']?.toString() ?? '')
+        .where((id) => id.isNotEmpty)
+        .toList();
+
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      _deletedIds.addAll(allIds);
+      _readIds.addAll(allIds);
+      _notifications.clear();
+    });
+
+    await prefs.setStringList('deleted_notification_ids', _deletedIds.toList());
+    await prefs.setStringList('read_notification_ids', _readIds.toList());
+
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(LanguageService.tr('delete_all_notifs_success')),
+          backgroundColor: Colors.red.shade700,
+        ),
+      );
+    }
   }
 
   Future<void> _fetchNotifications({bool silent = false}) async {
@@ -97,13 +204,19 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
   List<Map<String, dynamic>> _getVisibleNotifications() {
     final isAr = LanguageService.currentLang.value == 'ar';
 
+    // Filter out permanently deleted notifications
+    final activeNotifs = _notifications.where((n) {
+      final id = n['id']?.toString() ?? '';
+      return !_deletedIds.contains(id);
+    }).toList();
+
     // 1. Separate unread chat notifications from non-chat notifications
-    final unreadChatNotifs = _notifications.where((n) {
+    final unreadChatNotifs = activeNotifs.where((n) {
       final id = n['id']?.toString() ?? '';
       return _isChatNotification(n) && !_readIds.contains(id);
     }).toList();
 
-    final nonChatNotifs = _notifications.where((n) {
+    final nonChatNotifs = activeNotifs.where((n) {
       return !_isChatNotification(n);
     }).toList();
 
@@ -237,7 +350,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
             ),
           ).then((_) {
             if (mounted) {
-              _loadReadStatus();
+              _loadStoredStatus();
               _fetchNotifications(silent: true);
             }
           });
@@ -480,11 +593,12 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                     tooltip: isAr ? 'تحديد الكل كمقروء' : 'Mark all as read',
                     onPressed: _markAllAsRead,
                   ),
-                IconButton(
-                  icon: const Icon(Icons.refresh),
-                  onPressed: _fetchNotifications,
-                  tooltip: LanguageService.tr('auto_trans_1188'),
-                ),
+                if (visibleNotifications.isNotEmpty)
+                  IconButton(
+                    icon: const Icon(Icons.delete_sweep_outlined),
+                    tooltip: LanguageService.tr('delete_all_notifs'),
+                    onPressed: _deleteAllNotifications,
+                  ),
               ],
             ),
             body: _isLoading
@@ -495,23 +609,39 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                         descriptionKey: 'no_notifications_desc',
                         icon: Icons.notifications_off_outlined,
                       )
-                    : RefreshIndicator(
-                        onRefresh: _fetchNotifications,
-                        color: AppColors.primary,
-                        child: ListView.builder(
-                          padding: const EdgeInsets.all(16),
-                          itemCount: visibleNotifications.length,
-                          itemBuilder: (context, index) {
-                            final notif = visibleNotifications[index];
-                            final id = notif['id']?.toString() ?? '';
-                            final isRead = _readIds.contains(id);
-                            final isChat = _isChatNotification(notif) ||
-                                notif['is_grouped_chat'] == true;
-                            final chatCount =
-                                (notif['chat_unread_count'] as int?) ?? 1;
-                            final target = _getNavigationTarget(notif);
+                    : ListView.builder(
+                        padding: const EdgeInsets.all(16),
+                        itemCount: visibleNotifications.length,
+                        itemBuilder: (context, index) {
+                          final notif = visibleNotifications[index];
+                          final id = notif['id']?.toString() ?? '';
+                          final isRead = _readIds.contains(id);
+                          final isChat = _isChatNotification(notif) ||
+                              notif['is_grouped_chat'] == true;
+                          final chatCount =
+                              (notif['chat_unread_count'] as int?) ?? 1;
+                          final target = _getNavigationTarget(notif);
 
-                            return Card(
+                          return Dismissible(
+                            key: Key('notif_${id}_$index'),
+                            direction: DismissDirection.endToStart,
+                            background: Container(
+                              alignment: AlignmentDirectional.centerEnd,
+                              padding: const EdgeInsets.symmetric(horizontal: 20),
+                              margin: const EdgeInsets.only(bottom: 16),
+                              decoration: BoxDecoration(
+                                color: Colors.red.shade600,
+                                borderRadius: BorderRadius.circular(20),
+                              ),
+                              child: const Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(Icons.delete_outline, color: Colors.white, size: 26),
+                                ],
+                              ),
+                            ),
+                            onDismissed: (_) => _deleteNotification(notif),
+                            child: Card(
                               margin: const EdgeInsets.only(bottom: 16),
                               shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(20)),
@@ -714,31 +844,39 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                                                     ],
                                                   ),
                                                 ),
-                                                const SizedBox(width: 6),
-                                                Directionality(
-                                                  textDirection:
-                                                      TextDirection.ltr,
-                                                  child: Text(
-                                                    notif['date']?.toString() ??
-                                                        LanguageService.tr(
-                                                            'auto_trans_1191'),
-                                                    style: TextStyle(
-                                                      fontSize: 10,
-                                                      color: isChat
-                                                          ? const Color(
-                                                              0xFF16A34A)
-                                                          : (isRead
-                                                              ? Colors
-                                                                  .grey.shade500
-                                                              : Colors
-                                                                  .grey
-                                                                  .shade600),
-                                                      fontWeight:
-                                                          FontWeight.bold,
+                                                const SizedBox(width: 4),
+                                                // Individual Delete Button
+                                                InkWell(
+                                                  onTap: () => _deleteNotification(notif),
+                                                  borderRadius: BorderRadius.circular(12),
+                                                  child: Padding(
+                                                    padding: const EdgeInsets.all(4.0),
+                                                    child: Icon(
+                                                      Icons.close_rounded,
+                                                      size: 17,
+                                                      color: Colors.grey.shade400,
                                                     ),
                                                   ),
                                                 ),
                                               ],
+                                            ),
+                                            const SizedBox(height: 4),
+                                            Directionality(
+                                              textDirection: TextDirection.ltr,
+                                              child: Text(
+                                                notif['date']?.toString() ??
+                                                    LanguageService.tr(
+                                                        'auto_trans_1191'),
+                                                style: TextStyle(
+                                                  fontSize: 10,
+                                                  color: isChat
+                                                      ? const Color(0xFF16A34A)
+                                                      : (isRead
+                                                          ? Colors.grey.shade500
+                                                          : Colors.grey.shade600),
+                                                  fontWeight: FontWeight.bold,
+                                                ),
+                                              ),
                                             ),
                                             const SizedBox(height: 8),
                                             Text(
@@ -833,9 +971,9 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                                   ),
                                 ),
                               ),
-                            );
-                          },
-                        ),
+                            ),
+                          );
+                        },
                       ),
           ),
         );
