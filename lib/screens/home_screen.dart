@@ -11,6 +11,7 @@ import 'chat_screen.dart';
 import 'offers_screen.dart';
 import 'profile_screen.dart';
 import 'notifications_screen.dart';
+import 'login_screen.dart';
 import '../services/api_service.dart';
 import '../models/student.dart';
 import '../models/news.dart';
@@ -1166,54 +1167,116 @@ class _HomeScreenState extends State<HomeScreen>
                   ),
                   child: Row(
                     children: [
-                      CircleAvatar(
-                        radius: 26,
-                        backgroundColor: AppColors.accent,
+                      GestureDetector(
+                        onTap: (widget.isGuest || usr == null)
+                            ? () => Navigator.of(context).push(
+                                  MaterialPageRoute(
+                                      builder: (_) => const LoginScreen()),
+                                )
+                            : null,
                         child: CircleAvatar(
-                          radius: 24,
-                          backgroundColor: Colors.white,
-                          backgroundImage: (usr?.avatarUrl != null && usr!.avatarUrl!.isNotEmpty)
-                              ? NetworkImage(ApiService.resolveImageUrl(usr.avatarUrl!))
-                              : null,
-                          child: (usr?.avatarUrl == null || usr!.avatarUrl!.isEmpty)
-                              ? Icon(
-                                  widget.isGuest
-                                      ? Icons.person_outline
-                                      : Icons.person,
-                                  color: AppColors.primary,
-                                  size: 30)
-                              : null,
+                          radius: 26,
+                          backgroundColor: AppColors.accent,
+                          child: CircleAvatar(
+                            radius: 24,
+                            backgroundColor: Colors.white,
+                            backgroundImage: (usr?.avatarUrl != null &&
+                                    usr!.avatarUrl!.isNotEmpty)
+                                ? NetworkImage(
+                                    ApiService.resolveImageUrl(usr.avatarUrl!))
+                                : null,
+                            child: (usr?.avatarUrl == null ||
+                                    usr!.avatarUrl!.isEmpty)
+                                ? Icon(
+                                    widget.isGuest
+                                        ? Icons.person_outline
+                                        : Icons.person,
+                                    color: AppColors.primary,
+                                    size: 30)
+                                : null,
+                          ),
                         ),
                       ),
                       const SizedBox(width: 14),
                       Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Text(
-                              widget.isGuest || usr == null
-                                  ? (LanguageService.currentLang.value == 'ar'
-                                      ? 'الزائر الكريم'
-                                      : 'Honored Guest')
-                                  : '${LanguageService.tr('welcome')} ${usr.fullName}',
-                              style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.bold),
-                            ),
-                            if (!widget.isGuest &&
-                                usr?.university != null &&
-                                usr!.university!.isNotEmpty) ...[
-                              const SizedBox(height: 4),
-                              Text(
-                                usr.university!,
-                                style: const TextStyle(
-                                    color: AppColors.accentLight, fontSize: 13),
+                        child: widget.isGuest || usr == null
+                            ? Align(
+                                alignment: LanguageService.isRtl
+                                    ? Alignment.centerRight
+                                    : Alignment.centerLeft,
+                                child: InkWell(
+                                  onTap: () => Navigator.of(context).push(
+                                    MaterialPageRoute(
+                                        builder: (_) => const LoginScreen()),
+                                  ),
+                                  borderRadius: BorderRadius.circular(20),
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 14, vertical: 7),
+                                    decoration: BoxDecoration(
+                                      gradient: const LinearGradient(
+                                        colors: [
+                                          AppColors.accent,
+                                          Color(0xFFE5A610),
+                                        ],
+                                      ),
+                                      borderRadius: BorderRadius.circular(20),
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: AppColors.accent
+                                              .withValues(alpha: 0.35),
+                                          blurRadius: 8,
+                                          offset: const Offset(0, 2),
+                                        ),
+                                      ],
+                                    ),
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        const Icon(
+                                          Icons.login_rounded,
+                                          color: AppColors.primaryDark,
+                                          size: 17,
+                                        ),
+                                        const SizedBox(width: 6),
+                                        Text(
+                                          LanguageService.currentLang.value == 'ar'
+                                              ? 'تسجيل الدخول'
+                                              : 'Log In',
+                                          style: const TextStyle(
+                                            color: AppColors.primaryDark,
+                                            fontSize: 13,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              )
+                            : Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Text(
+                                    '${LanguageService.tr('welcome')} ${usr.fullName}',
+                                    style: const TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 18,
+                                        fontWeight: FontWeight.bold),
+                                  ),
+                                  if (usr.university != null &&
+                                      usr.university!.isNotEmpty) ...[
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      usr.university!,
+                                      style: const TextStyle(
+                                          color: AppColors.accentLight,
+                                          fontSize: 13),
+                                    ),
+                                  ],
+                                ],
                               ),
-                            ],
-                          ],
-                        ),
                       ),
                       IconButton(
                         onPressed: () async {
