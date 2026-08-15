@@ -1,8 +1,28 @@
 # دليل التسليم والتوثيق الشامل للمطورين (Developer Handover & Architecture Guide)
 # منصة أبشر جورجيا (Absher Georgia Platform)
 
-> **تنبيه هام للمطور القادم:**  
+> **تنبيه هام للمطور القادم:**
 > هذا الدليل مرجع هندسي شامل يوثق بنية النظام بالكامل (الواجهات، الـ API، قواعد البيانات، والتطبيق). يُرجى قراءة هذا الملف بعناية فائقة قبل إجراء أي تعديل لتجنب كسر التوافق بين لوحة التحكم وتطبيق الهاتف وقواعد البيانات.
+
+---
+
+> [!CAUTION]
+> ## ⛔ قواعد صارمة لا يجوز كسرها — اقرأها قبل أي شيء
+>
+> 1. **لا تعدّل ملف `i18n.tsx` دون فهم كامل للـ keys الموجودة.** كل key مذكورة مرة واحدة فقط. إضافة key موجودة مسبقاً يسبب خطأ TypeScript `TS1117` ويوقف البناء كاملاً.
+>
+> 2. **لا تعمل Redeploy للإنتاج مباشرةً دون بناء نظيف أولاً.** الترتيب الإلزامي دائماً:
+>    ```
+>    npm run typecheck   ← يجب أن يكتمل بدون أخطاء
+>    npm run lint        ← يجب أن يكتمل بدون أخطاء
+>    npm run build:production  ← ثم فقط انشر الـ dist/
+>    ```
+>
+> 3. **لا تخلط ملفات staging بالإنتاج أبداً.** بيئة الاختبار (`/admin_v2/`, `/api_staging/`, `absher_georgia_staging`) معزولة تماماً عن الإنتاج (`/admin/`, `/api/`, `absher_georgia_db`).
+>
+> 4. **لا تنسخ بيانات staging (promo codes مثل `WELCOME20`, `FIXED25`, `FREEPASS`, `TEST_*`) إلى قاعدة الإنتاج.**
+>
+> 5. **عند تعديل أي Endpoint في الـ API، يجب تحديث الـ TypeScript types في لوحة التحكم.** انظر القسم 5 للتفاصيل.
 
 ---
 
@@ -14,13 +34,14 @@
 2. **لوحة التحكم الذكية (Admin Dashboard):** مبنية بتقنية React 18 + TypeScript + Vite + CSS النقي المطور بتصميم عصري (Dark/Light Mode) وتدعم اللغتين العربية والإنجليزية.
 3. **الواجهة الخلفية (Backend API):** مكتوبة بلغة PHP 8.1 (Native/Modular) متصلة بقواعد بيانات MySQL.
 
-```mermaid
-graph TD
-    A[تطبيق فلاتر - Flutter Mobile App] -->|REST API / Token Auth| C[PHP Backend API]
-    B[لوحة تحكم ريآكت - React Admin Dashboard] -->|REST API / Admin JWT| C
-    C -->|absher_georgia_db| D[(قاعدة بيانات الإنتاج Production DB)]
-    C -->|absher_georgia_staging| E[(قاعدة بيانات الاختبار Staging DB)]
-    C -->|التخزين السحابي / المحلي| F[/uploads/ & /uploads_staging/]
+```
+Flutter Mobile App  ──REST API / Token──►  PHP Backend
+React Admin Panel   ──REST API / JWT──►    PHP Backend
+                                               │
+                          ┌────────────────────┼────────────────────┐
+                          ▼                    ▼                    ▼
+                   absher_georgia_db   absher_georgia_staging   uploads/
+                   (Production DB)       (Staging DB)        housing_offers/
 ```
 
 ---
@@ -32,168 +53,180 @@ absher/
 ├── admin_react/                 # كود لوحة تحكم الإدارة (React + TS + Vite)
 │   ├── src/
 │   │   ├── components/          # المكونات (Modals, Forms, Charts, Cards)
-│   │   ├── pages/               # الصفحات الرئيسية (Dashboard, PromoCodes, HousingOffers, etc.)
-│   │   ├── context/             # إدارة الحالة (AuthContext, AdminContext, ThemeContext)
-│   │   ├── services/            # استدعاءات API ومحولات البيانات
+│   │   │   └── LoginOverlay.tsx # نافذة تسجيل الدخول — تستخدم t('btn.login')
+│   │   ├── pages/               # الصفحات الرئيسية
+│   │   ├── contexts/            # إدارة الحالة (AuthContext, ThemeContext, BadgesContext)
+│   │   ├── lib/
+│   │   │   └── i18n.tsx         # ⚠️ ملف الترجمة — لا تضف keys موجودة مسبقاً
 │   │   └── types/               # تعريفات TypeScript ونماذج البيانات
-│   ├── .env.production          # إعدادات الإنتاج (VITE_BASE_PATH=/admin/, VITE_API_ROOT=/api)
-│   ├── .env.staging             # إعدادات الستيجينج (VITE_BASE_PATH=/admin_v2/, VITE_API_ROOT=/api_staging)
-│   └── package.json
+│   ├── .env.production          # VITE_BASE_PATH=/admin/, VITE_API_ROOT=/api
+│   ├── .env.staging             # VITE_BASE_PATH=/admin_v2/, VITE_API_ROOT=/api_staging
+│   └── public/
+│       └── .htaccess            # ⚠️ ضروري للـ SPA routing — لا تحذفه
 │
 ├── backend_php/                 # الواجهة الخلفية وقواعد البيانات
 │   ├── api/                     # مسارات الـ API للإنتاج (Production)
-│   │   ├── admin_api.php        # المتحكم الرئيسي لجميع عمليات لوحة الإدارة
-│   │   ├── student_requests.php # معالجة طلبات الطلاب، الخصومات، والاسترداد المالي
-│   │   ├── services/            # خدمات الطلاب والتحقق من الأكواد
-│   │   ├── offers/              # استعراض عروض السكن للطلاب
-│   │   ├── upload/image.php     # رفع وضغط ومعالجة الصور
-│   │   └── core/                # الدوال المركزية (Identity Block, Notifications, Env)
-│   ├── api_staging/             # مسارات الـ API للستيجينج (معزولة بالكامل)
-│   ├── config/                  # إعدادات الاتصال (db.php للإنتاج، db_staging.php للاختبار)
-│   ├── uploads/                 # مجلد الصور المرفوعة للإنتاج
-│   └── uploads_staging/         # مجلد صور الستيجينج
+│   │   ├── admin_api.php        # ⚠️ المتحكم الرئيسي — عند تعديله راجع القسم 5
+│   │   ├── student_requests.php # معالجة الطلبات والخصومات والاسترداد
+│   │   ├── upload/image.php     # رفع وضغط الصور (GD + WebP)
+│   │   └── core/                # JWT, Response, Notification, Identity Block
+│   ├── api_staging/             # ⚠️ معزول بالكامل — لا تعدّله في الإنتاج
+│   ├── config/
+│   │   ├── db.php               # اتصال قاعدة الإنتاج
+│   │   └── db_staging.php       # اتصال قاعدة الستيجينج
+│   ├── admin/                   # React build للإنتاج (dist/ ← هنا)
+│   ├── admin_v2/                # React build للستيجينج
+│   ├── uploads/                 # صور الإنتاج
+│   └── uploads_staging/         # صور الستيجينج
 │
 ├── lib/                         # كود تطبيق Flutter
-│   ├── core/                    # الثوابت، البيئة، الألوان والترجمة
-│   ├── models/                  # نماذج البيانات (Student, Request, Offer, Promo)
+│   ├── models/                  # نماذج البيانات — حدّثها عند تغيير الـ API
 │   ├── screens/                 # شاشات التطبيق
 │   └── services/                # استدعاءات API والتخزين المحلي
 │
-├── docs/                        # وثائق التطوير ومخططات المراحل
-│   ├── implementation_plan.md   # خطة التنفيذ المعتمدة للمراحل 1 إلى 7
-│   └── DEVELOPER_HANDOVER.md    # هذا الملف
-│
-└── scratch/                     # سكربتات الاختبار والفحص التلقائي (مستبعدة من الـ Production Build)
+├── DEVELOPER_HANDOVER.md        # هذا الملف (نسخة root)
+├── docs/
+│   └── DEVELOPER_HANDOVER.md   # هذا الملف (نسخة docs)
+└── scratch/                     # سكربتات اختبار — مستبعدة من البيلد
 ```
 
 ---
 
 ## 3. بيئات العمل والروابط الحية (Environments & Live URLs)
 
-السيرفر: Contabo Ubuntu 22.04 LTS (IP: `80.241.218.23` - Apache 2.4.52 - PHP 8.1 - MySQL 8.0).
+**السيرفر:** Contabo Ubuntu 22.04 LTS — IP: `80.241.218.23` — Apache 2.4.52 — PHP 8.1 — MySQL 8.0
 
-| البيئة | رابط لوحة التحكم (Dashboard) | رابط الـ API | قاعدة البيانات | مجلد الصور |
+| البيئة | لوحة التحكم | الـ API | قاعدة البيانات | مجلد الصور |
 | :--- | :--- | :--- | :--- | :--- |
-| **Production (الإنتاج)** | `http://80.241.218.23/admin/` | `http://80.241.218.23/api/` | `absher_georgia_db` | `uploads/` |
-| **Staging (الاختبار)** | `http://80.241.218.23/admin_v2/` | `http://80.241.218.23/api_staging/` | `absher_georgia_staging` | `uploads_staging/` |
-
-> [!IMPORTANT]
-> **عزل البيئات التام:**  
-> يُمنع منعاً باتاً استدعاء ملفات الـ `staging` من بيئة الـ `production` أو العكس. تم ضبط كل بيئة لتعمل بشكل منفصل بقاعدتها ومجلداتها الخاصة.
+| **Production** | `http://80.241.218.23/admin/` | `http://80.241.218.23/api/` | `absher_georgia_db` | `uploads/` |
+| **Staging** | `http://80.241.218.23/admin_v2/` | `http://80.241.218.23/api_staging/` | `absher_georgia_staging` | `uploads_staging/` |
 
 ---
 
 ## 4. الميزات المنجزة وقواعد العمل الأساسية (Core Modules & Business Logic)
 
-### أ. لوحة الإدارة التنفيذية ومؤشرات الأداء (Executive Dashboard & 8 KPIs)
-تحتوي لوحة الإدارة على شبكة تفاعلية تضم 8 بطاقات KPI محسوبة بدقة من الـ Backend:
-1. **إجمالي الشقق** (`total_apartments`)
-2. **إجمالي الخدمات** (`total_services`)
-3. **إجمالي الطلاب المسجلين** (`total_students`)
-4. **الجامعات المعتمدة** (`total_universities`)
-5. **المناطق والأحياء** (`total_districts`)
-6. **الطلبات قيد المراجعة** (`pending_requests`)
-7. **أكواد الخصم النشطة** (`promo_codes_count`)
-8. **عروض السكن النشطة (المؤشر الثامن)** (`active_housing_offers_count`):
-   * يُحسب فقط للعروض النشطة (`is_active = 1`) والمرتبطة بشقق متاحة (`apartments.is_available = 1`) والتي يقع التاريخ الحالي ضمن فترتها الزمنية (`starts_at <= NOW < expires_at`).
+### أ. لوحة الإدارة التنفيذية — 8 مؤشرات KPI
 
-### ب. نظام أكواد الخصم والمحفظة (Promo Codes & Wallet Discounts)
-1. **قاعدة الدفع بالمحفظة حصراً:** الخصومات تنطبق **فقط** عند اختيار الدفع بنقاط المحفظة (`payment_method = 'wallet'`).
-2. **منع الدفع النقدي مع الخصم:** محاولة استخدام كود خصم مع الدفع النقدي يتم رفضها بـ `HTTP 400` والرمز `PROMO_WALLET_ONLY`.
-3. **دورة الاسترداد المالي (Refund State Machine):**
-   * عند تقديم طلب خصم بالمحفظة: يتم خصم النقاط الصافية (`final_price_points`) وتسجيل سجل استرداد بحالة `applied` في جدول `promo_code_redemptions`.
-   * عند إلغاء الطلب من قبل الإدارة أو الطالب: يتم استرداد النقاط تلقائياً للمحفظة مع حماية من التكرار عبر الفهرس الفريد المركب `uq_request_tx_type` على `(service_request_id, type)` في `wallet_transactions`.
+| # | المؤشر | اسم الحقل في الـ API | ملاحظة |
+| :--- | :--- | :--- | :--- |
+| 1 | إجمالي الشقق | `total_apartments` | |
+| 2 | إجمالي الخدمات | `total_services` | |
+| 3 | إجمالي الطلاب | `total_students` | |
+| 4 | الجامعات | `total_universities` | |
+| 5 | المناطق | `total_districts` | |
+| 6 | طلبات قيد المراجعة | `pending_requests` | |
+| 7 | أكواد الخصم النشطة | `promo_codes_count` | |
+| 8 | عروض السكن النشطة | `active_housing_offers_count` | `is_active=1` + شقة متاحة + ضمن الفترة الزمنية |
 
-### ج. نظام عروض السكن (Housing Offers)
-1. يدعم رفع الصور الحقيقية مباشرة من لوحة التحكم أو الرابط الخارجي.
-2. يدعم تحديد فترات زمنية للصلاحية (تاريخ البدء والانتهاء)، السعر الأصلي وسعر العرض والشارات الترويجية.
-3. يدعم اللغتين العربية والإنجليزية بالحقول (`title_ar`, `title_en`, `description_ar`, `description_en`, `badge_text_ar`, `badge_text_en`).
-4. عند حذف العرض، يتم حذف الصورة المخصصة من القرص تلقائياً إذا كانت مرفوعة محلياً داخل `uploads/housing_offers/`.
+> [!IMPORTANT]
+> إذا أضفت KPI جديد في `admin_api.php`، يجب أن تضيف الحقل المقابل في TypeScript Interface الـ Dashboard داخل `admin_react/src/types/` أو `admin_react/src/pages/` مع Nullish Coalescing Fallback `?? 0`.
 
-### د. رفع ومعالجة الصور (Image Upload & Optimization)
-* نقطة النهاية: `POST /api/upload/image.php?folder={folder_name}`
-* يتم ضغط الصور تلقائياً لأقصى بُعد 1920px مع الحفاظ على شفافية الـ PNG/WebP ودعم تحويلها وجودتها (85%).
+### ب. نظام أكواد الخصم والمحفظة
+
+- الخصم يعمل **فقط** مع `payment_method = 'wallet'` — أي محاولة مع الكاش تُرفض بـ `HTTP 400` ورمز `PROMO_WALLET_ONLY`.
+- عند الإلغاء: النقاط تُسترجع تلقائياً، مع حماية من التكرار عبر الفهرس الفريد `uq_request_tx_type` على `wallet_transactions(service_request_id, type)`.
+
+### ج. عروض السكن (Housing Offers)
+
+- يدعم رفع الصور الحقيقية أو رابط خارجي.
+- عند حذف عرض: الصورة تُحذف تلقائياً من `uploads/housing_offers/` إذا كانت محلية.
+- يدعم ثنائية اللغة: `title_ar/en`, `description_ar/en`, `badge_text_ar/en`.
+
+### د. رفع الصور
+
+- Endpoint: `POST /api/upload/image.php?folder={folder_name}`
+- يضغط تلقائياً لأقصى بُعد 1920px، يدعم JPEG/PNG/WebP بجودة 85%.
 
 ---
 
-## 5. تعليمات إلزامية لأي تعديل على الـ API ولوحة التحكم (Developer Rules)
+## 5. ⚠️ تعليمات إلزامية عند تعديل الـ API (أهم قسم — اقرأه بعناية)
 
+### إذا عدّلت اسم حقل أو أضفت حقلاً جديداً في `admin_api.php`:
+
+**الخطوة 1 — حدّث TypeScript types في لوحة التحكم:**
+```
+admin_react/src/types/         ← ابحث عن الـ Interface المقابل
+admin_react/src/pages/         ← أو في بعض الأحيان inline في الـ page component
+```
+
+مثال: لو أضفت `housing_offers_revenue` في الـ API، أضفه في TypeScript:
+```typescript
+// قبل
+interface DashboardStats {
+  active_housing_offers_count: number;
+}
+
+// بعد
+interface DashboardStats {
+  active_housing_offers_count: number;
+  housing_offers_revenue?: number; // استخدم ? مع fallback ?? 0
+}
+```
+
+**الخطوة 2 — إذا أضفت نص جديد يظهر في الـ UI، أضفه في الترجمة:**
+```
+admin_react/src/lib/i18n.tsx
+```
 > [!WARNING]
-> **قاعدة التوافق ثلاثي الأبعاد (API ⟷ Dashboard ⟷ Mobile App):**  
-> عند قيامك بتعديل أي Endpoint في ملف `admin_api.php` أو الـ API العام، يجب عليك الالتزام بالخطوات التالية:
+> **لا تضف key موجود مسبقاً!** ابحث أولاً بـ Ctrl+F قبل الإضافة. تكرار الـ key يسبب خطأ `TS1117`.
 
-### الخطوة 1: فحص وتحديث أنواع البيانات في React (TypeScript Types)
-* توجه إلى المسار `admin_react/src/types/` أو واجهات الـ Context/Services.
-* إذا قمت بتغيير اسم حقل أو إضافة حقل جديد (مثل `promo_codes_count` أو `active_housing_offers_count`):
-  1. قم بتحديث الـ Interface المقابل له.
-  2. تأكد من أن الـ Fallback مأخوذ بالاعتبار (`data?.stats?.promo_codes_count ?? 0`).
-
-### الخطوة 2: اختبار الواجهة والأنواع (TypeScript & Lint Check)
-قبل بناء أي كود للإدارة، شغّل دائماً:
+**الخطوة 3 — شغّل الفحص الكامل قبل أي نشر:**
 ```bash
 cd admin_react
-npm run typecheck
-npm run lint
+npm run typecheck    # يجب 0 أخطاء
+npm run lint         # يجب 0 أخطاء
+npm run build:production
 ```
-يجب ألا يكون هناك أي خطأ برمجي (0 errors).
 
-### الخطوة 3: بناء لوحة التحكم للبيئة المناسبة (Build Command)
-* لبناء الستيجينج: `npm run build:staging` (المخرجات في `dist/` مع مسار أساسي `/admin_v2/`).
-* لبناء الإنتاج: `npm run build:production` (المخرجات في `dist/` مع مسار أساسي `/admin/`).
-
-### الخطوة 4: التحقق من التطبيق (Flutter App)
-إذا كان التعديل يمس واجهات الـ Student API:
-1. حدّث النماذج المقابلة في `lib/models/`.
-2. شغّل الفحص واختبارات الوحدة للتأكد من سلامة التطبيق:
+**الخطوة 4 — إذا مسّ التعديل الـ Flutter API:**
 ```bash
-flutter analyze
-flutter test
+# حدّث lib/models/ أولاً ثم:
+flutter analyze      # يجب No issues found!
+flutter test         # يجب All tests passed!
 ```
 
 ---
 
-## 6. إجراءات النشر اليدوي والآلي (Deployment Guide)
+## 6. إجراءات النشر (Deployment Guide)
 
-### أ. نشر الـ Backend (PHP)
-1. ملفات الإنتاج توضع في: `/var/www/absher/backend_php/api/`
-2. ملفات الستيجينج توضع في: `/var/www/absher/backend_php/api_staging/`
-3. ضبط الصلاحيات دائماً:
+### نشر لوحة التحكم (React Admin)
+
 ```bash
-chown -R www-data:www-data /var/www/absher/backend_php/
-chmod -R 755 /var/www/absher/backend_php/api/
-chmod -R 755 /var/www/absher/backend_php/uploads/
+# بناء الإنتاج
+cd admin_react
+npm run build:production
+
+# نشر على السيرفر
+scp -r dist/* root@80.241.218.23:/var/www/absher/backend_php/admin/
+scp public/.htaccess root@80.241.218.23:/var/www/absher/backend_php/admin/.htaccess
 ```
 
-### ب. نشر لوحة التحكم (React Admin)
-بعد عمل البناء على جهازك:
+> [!IMPORTANT]
+> ملف `.htaccess` **ضروري** في كل مجلد Admin. بدونه كل مسار عميق مثل `/admin/dashboard` يعطي 404 عند Refresh.
+
+### نشر الـ Backend (PHP)
+
 ```bash
-# لنشر الإنتاج (/admin/):
-scp -r admin_react/dist/* root@80.241.218.23:/var/www/absher/backend_php/admin/
-scp admin_react/public/.htaccess root@80.241.218.23:/var/www/absher/backend_php/admin/.htaccess
-
-# لنشر الستيجينج (/admin_v2/):
-scp -r admin_react/dist/* root@80.241.218.23:/var/www/absher/backend_php/admin_v2/
-scp admin_react/public/.htaccess root@80.241.218.23:/var/www/absher/backend_php/admin_v2/.htaccess
+# ضبط الصلاحيات بعد كل نشر
+ssh root@80.241.218.23 "chown -R www-data:www-data /var/www/absher/backend_php/ && chmod -R 755 /var/www/absher/backend_php/api/ && chmod -R 755 /var/www/absher/backend_php/uploads/"
 ```
-
-> [!NOTE]
-> تأكد دائماً من وجود ملف `.htaccess` داخل مجلدات الـ Admin لضمان عمل التوجيه الداخلي لـ React Router (Single Page Application) وعدم ظهور خطأ 404 عند تحديث الصفحة على مسار مثل `/admin/dashboard`.
 
 ---
 
-## 7. فحص الجودة التلقائي (Automated Smoke Test Suite)
+## 7. فحص الجودة التلقائي (Smoke Tests)
 
-يتوفر في المستودع ملف فحص ذاتي شامل ومنظف لنفسه تلقائياً [scratch/smoke_test_prod.php](file:///c:/Users/moham/Desktop/absher/scratch/smoke_test_prod.php) لفحص سلامة الـ API، الإحصائيات، الأكواد، رفع الصور، وتأكيد سلامة أرصدة الطلاب 100%.
-
-لتشغيله على السيرفر في أي وقت:
 ```bash
+# على السيرفر مباشرة — يفحص 20 نقطة ويتنظف تلقائياً
 php /var/www/absher/scratch/smoke_test_prod.php
 ```
 
 ---
 
-## 8. مسؤولية الصيانة والتواصل (Maintenance Notes)
+## 8. المستودع والحالة الحالية
 
-* مستودع الـ Git الرئيسي: `https://github.com/mowaleed99/absher.git` (الفرع المعتمد: `main`).
-* جميع الأكواد مفحوصة وخالية من أي أخطاء ترجمة (Clean Working Tree).
-* يُرجى الالتزام بالـ Conventional Commits عند رفع أي تعديلات مستقبلية.
+- **Git:** `https://github.com/mowaleed99/absher.git` — الفرع: `main`
+- **آخر حالة مُعتمدة:** Working tree نظيفة، 0 أخطاء في Flutter و React.
+- **يُرجى الالتزام بـ Conventional Commits** عند رفع أي تعديلات:
+  - `feat(module): وصف الميزة`
+  - `fix(module): وصف الإصلاح`
+  - `docs: تحديث التوثيق`
