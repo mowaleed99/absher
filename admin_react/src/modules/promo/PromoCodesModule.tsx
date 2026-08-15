@@ -290,7 +290,7 @@ export function PromoCodesModule() {
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           <button
             type="button"
-            onClick={refresh}
+            onClick={() => refresh(false)}
             disabled={isLoading}
             title="تحديث البيانات"
             style={{

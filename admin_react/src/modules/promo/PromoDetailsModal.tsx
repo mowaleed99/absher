@@ -22,9 +22,9 @@ export function PromoDetailsModal({ isOpen, onClose, promo, fetchRedemptions }: 
   const [isLoading, setIsLoading] = useState(false);
   const [copiedCode, setCopiedCode] = useState(false);
 
-  const loadData = useCallback(async (p: number) => {
+  const loadData = useCallback(async (p: number, silent = false) => {
     if (!promo) return;
-    setIsLoading(true);
+    if (!silent) setIsLoading(true);
     try {
       const res = await fetchRedemptions(promo.id, p, 10);
       setRedemptions(res.redemptions || []);
@@ -32,18 +32,24 @@ export function PromoDetailsModal({ isOpen, onClose, promo, fetchRedemptions }: 
       setTotalPages(Math.max(1, res.totalPages || 1));
       setPage(p);
     } catch {
-      setRedemptions([]);
-      setTotal(0);
+      if (!silent) {
+        setRedemptions([]);
+        setTotal(0);
+      }
     } finally {
-      setIsLoading(false);
+      if (!silent) setIsLoading(false);
     }
   }, [promo, fetchRedemptions]);
 
   useEffect(() => {
     if (isOpen && promo) {
-      loadData(1);
+      loadData(page, false);
+      const timer = setInterval(() => {
+        loadData(page, true);
+      }, 3000);
+      return () => clearInterval(timer);
     }
-  }, [isOpen, promo, loadData]);
+  }, [isOpen, promo, page, loadData]);
 
   if (!isOpen || !promo) return null;
 

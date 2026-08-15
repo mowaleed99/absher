@@ -8,9 +8,11 @@ export function usePromoCodes() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchPromoCodes = useCallback(async () => {
-    setIsLoading(true);
-    setError(null);
+  const fetchPromoCodes = useCallback(async (silent = false) => {
+    if (!silent) {
+      setIsLoading(true);
+      setError(null);
+    }
     try {
       const res = await apiFetch<Record<string, unknown>>('get_all');
       if (res.success && res.data && res.data.promo_codes) {
@@ -21,14 +23,18 @@ export function usePromoCodes() {
       }
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'فشل تحميل قائمة أكواد الخصم';
-      setError(msg);
+      if (!silent) setError(msg);
     } finally {
-      setIsLoading(false);
+      if (!silent) setIsLoading(false);
     }
   }, []);
 
   useEffect(() => {
-    fetchPromoCodes();
+    fetchPromoCodes(false);
+    const timer = setInterval(() => {
+      fetchPromoCodes(true);
+    }, 3000);
+    return () => clearInterval(timer);
   }, [fetchPromoCodes]);
 
   const addPromoCode = async (data: PromoFormInput) => {
