@@ -1,6 +1,6 @@
 <?php
 // واجهة برمجة تطبيقات لوحة التحكم (Admin API Endpoint) لـ تطبيق وموقع أبشر جورجيا
-require_once '../config/db_staging.php';
+require_once '../config/db.php';
 require_once __DIR__ . '/middleware/auth.php';
 require_once __DIR__ . '/core/notification.php';
 require_once __DIR__ . '/core/identity_block.php';
@@ -11,11 +11,11 @@ function saveBase64IfPresent($url) {
         $ext = $matches[1] ?:'jpg';
         $data = base64_decode(preg_replace('/^data:image\/\w+;base64,/','', $url));
         if ($data !== false) {
-            $uploadDir = __DIR__ .'/../uploads_staging/';
+            $uploadDir = __DIR__ .'/../uploads/';
             if (!file_exists($uploadDir)) mkdir($uploadDir, 0777, true);
             $filename ='img_'. time() .'_'. rand(1000, 9999) .'.'. $ext;
             file_put_contents($uploadDir . $filename, $data);
-            return'uploads_staging/'. $filename;
+            return'uploads/'. $filename;
         }
     }
     return $url;
@@ -186,8 +186,10 @@ try {
               AND apt.is_available = 1
         ")->fetchColumn();
 
+        $status_reply_templates = $conn->query("SELECT * FROM status_reply_templates ORDER BY id ASC")->fetchAll(PDO::FETCH_ASSOC);
+
         echo json_encode(["status"=>"success","stats"=> ["total_apartments"=> count($apartments),"total_services"=> count($services),"total_students"=> count($students),"total_universities"=> count($universities),"total_districts"=> count($districts),"pending_requests"=> count(array_filter($requests, fn($r) => $r['status'] ==='قيد المراجعة')),"active_housing_offers_count" => $active_housing_offers_count,"promo_codes_count" => count($promo_codes)
-            ],"apartments"=> $apartments,"services"=> $services,"students"=> $students,"universities"=> $universities,"districts"=> $districts,"requests"=> $requests,"reviews"=> $reviews,"reviews_analytics"=> $reviews_analytics,"application_feedback"=> $application_feedback,"chats"=> $chats,"news"=> $news,"notifications"=> $notifications,"housing_offers"=> $housing_offers,"active_housing_offers_count" => $active_housing_offers_count,"blocked_identities"=> $blocked_identities,"promo_codes"=> $promo_codes
+            ],"apartments"=> $apartments,"services"=> $services,"students"=> $students,"universities"=> $universities,"districts"=> $districts,"requests"=> $requests,"reviews"=> $reviews,"reviews_analytics"=> $reviews_analytics,"application_feedback"=> $application_feedback,"chats"=> $chats,"news"=> $news,"notifications"=> $notifications,"housing_offers"=> $housing_offers,"active_housing_offers_count" => $active_housing_offers_count,"blocked_identities"=> $blocked_identities,"promo_codes"=> $promo_codes,"status_reply_templates"=> $status_reply_templates
         ], JSON_UNESCAPED_UNICODE);
         exit();
     }
@@ -696,6 +698,9 @@ try {
         $id = intval($data['id'] ?? 0);
         $status = trim($data['status'] ?? 'مكتمل');
         $cancellationReason = trim($data['cancellation_reason'] ?? '');
+        $customMessage = trim($data['custom_message'] ?? '');
+        $sendChat = isset($data['send_chat']) ? filter_var($data['send_chat'], FILTER_VALIDATE_BOOLEAN) : true;
+        $msgLang = trim($data['msg_lang'] ?? 'ar'); // 'ar', 'en', 'both'
         $adminId = intval(AuthMiddleware::$payload['admin_id'] ?? 0);
 
         if ($id <= 0) {
@@ -859,8 +864,8 @@ try {
                 sendStudentNotification($studentId, $notifTitleAr, $notifBodyAr, $notifTitleEn, $notifBodyEn);
             }
 
-            // Insert status update in chat
-            if (!empty($reqData['student_id']) || !empty($reqData['student_phone'])) {
+            // Insert status update in chat if sendChat is enabled
+            if ($sendChat && (!empty($reqData['student_id']) || !empty($reqData['student_phone']))) {
                 $studentId = intval($reqData['student_id'] ?? 0);
                 $phone = $reqData['student_phone'] ?? '';
                 $chat = null;
@@ -875,9 +880,34 @@ try {
                     $chat = $stmtChat->fetch();
                 }
 
-                $msgText = ($status === 'ملغي')
-                    ? "تحديث الطلب (#$id): تم إلغاء طلبك الخاص بـ ($svcTitleAr).\nالسبب: $cancellationReason" . ($pointsRefunded > 0 ? "\n[تم استرجاع $pointsRefunded نقطة إلى محفظتك بنجاح]" : "")
-                    : "تحديث الطلب (#$id): تم تغيير حالة طلبك الخاص بـ ($svcTitleAr) إلى: * $statusAr *";
+                if (!empty($customMessage)) {
+                    $msgText = $customMessage;
+                } else {
+                    $stmtTpl = $conn->prepare("SELECT * FROM status_reply_templates WHERE status_key = ? AND is_enabled = 1");
+                    $stmtTpl->execute([$status]);
+                    $tplRow = $stmtTpl->fetch(PDO::FETCH_ASSOC);
+
+                    if ($tplRow) {
+                        $searchVals = ['{id}', '{service}', '{status}', '{reason}', '{points}'];
+                        $replaceValsAr = [$id, $svcTitleAr, $statusAr, $cancellationReason, $pointsRefunded ?? 0];
+                        $replaceValsEn = [$id, $svcTitleEn, $statusEn, $cancellationReason, $pointsRefunded ?? 0];
+
+                        $renderedAr = str_replace($searchVals, $replaceValsAr, $tplRow['template_ar']);
+                        $renderedEn = str_replace($searchVals, $replaceValsEn, $tplRow['template_en']);
+
+                        if ($msgLang === 'en') {
+                            $msgText = $renderedEn;
+                        } elseif ($msgLang === 'both') {
+                            $msgText = $renderedAr . "\n\n" . $renderedEn;
+                        } else {
+                            $msgText = $renderedAr;
+                        }
+                    } else {
+                        $msgText = ($status === 'ملغي')
+                            ? "تحديث الطلب (#$id): تم إلغاء طلبك الخاص بـ ($svcTitleAr).\nالسبب: $cancellationReason" . (($pointsRefunded ?? 0) > 0 ? "\n[تم استرجاع $pointsRefunded نقطة إلى محفظتك بنجاح]" : "")
+                            : "تحديث الطلب (#$id): تم تغيير حالة طلبك الخاص بـ ($svcTitleAr) إلى: * $statusAr *";
+                    }
+                }
 
                 if ($chat) {
                     $chatId = $chat['id'];
@@ -912,6 +942,28 @@ try {
             }
             http_response_code(500);
             echo json_encode(["status" => "error", "message" => "فشل تحديث حالة الطلب: " . $e->getMessage()], JSON_UNESCAPED_UNICODE);
+        }
+        exit();
+    }
+
+    if ($action === 'get_status_templates') {
+        $templates = $conn->query("SELECT * FROM status_reply_templates ORDER BY id ASC")->fetchAll(PDO::FETCH_ASSOC);
+        echo json_encode(["status" => "success", "templates" => $templates], JSON_UNESCAPED_UNICODE);
+        exit();
+    }
+
+    if ($action === 'update_status_template') {
+        $id = intval($data['id'] ?? 0);
+        $template_ar = trim($data['template_ar'] ?? '');
+        $template_en = trim($data['template_en'] ?? '');
+        $is_enabled = isset($data['is_enabled']) ? (int)$data['is_enabled'] : 1;
+
+        if ($id > 0 && !empty($template_ar)) {
+            $stmt = $conn->prepare("UPDATE status_reply_templates SET template_ar = ?, template_en = ?, is_enabled = ?, updated_at = NOW() WHERE id = ?");
+            $stmt->execute([$template_ar, $template_en, $is_enabled, $id]);
+            echo json_encode(["status" => "success", "message" => "تم حفظ القالب بنجاح"], JSON_UNESCAPED_UNICODE);
+        } else {
+            echo json_encode(["status" => "error", "message" => "بيانات القالب غير صالحة"], JSON_UNESCAPED_UNICODE);
         }
         exit();
     }
@@ -1969,11 +2021,11 @@ try {
         // If image_url was explicitly changed/removed, safely clean up old file if stored in managed housing_offers folder
         if ($image_url !== $existing['image_url'] && !empty($existing['image_url'])) {
             $oldClean = trim($existing['image_url']);
-            if (strpos($oldClean, 'uploads_staging/housing_offers/') === 0 || strpos($oldClean, 'uploads/housing_offers/') === 0) {
+            if (strpos($oldClean, 'uploads/housing_offers/') === 0 || strpos($oldClean, 'uploads/housing_offers/') === 0) {
                 $base = basename($oldClean);
                 $paths = [
-                    __DIR__ . '/../uploads_staging/housing_offers/' . $base,
-                    __DIR__ . '/../../uploads_staging/housing_offers/' . $base,
+                    __DIR__ . '/../uploads/housing_offers/' . $base,
+                    __DIR__ . '/../../uploads/housing_offers/' . $base,
                     __DIR__ . '/../uploads/housing_offers/' . $base,
                     __DIR__ . '/../../uploads/housing_offers/' . $base,
                 ];
@@ -2007,11 +2059,11 @@ try {
             // Clean up custom offer image if stored in managed folder
             if ($existingRow && !empty($existingRow['image_url'])) {
                 $oldClean = trim($existingRow['image_url']);
-                if (strpos($oldClean, 'uploads_staging/housing_offers/') === 0 || strpos($oldClean, 'uploads/housing_offers/') === 0) {
+                if (strpos($oldClean, 'uploads/housing_offers/') === 0 || strpos($oldClean, 'uploads/housing_offers/') === 0) {
                     $base = basename($oldClean);
                     $paths = [
-                        __DIR__ . '/../uploads_staging/housing_offers/' . $base,
-                        __DIR__ . '/../../uploads_staging/housing_offers/' . $base,
+                        __DIR__ . '/../uploads/housing_offers/' . $base,
+                        __DIR__ . '/../../uploads/housing_offers/' . $base,
                         __DIR__ . '/../uploads/housing_offers/' . $base,
                         __DIR__ . '/../../uploads/housing_offers/' . $base,
                     ];

@@ -1,14 +1,16 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { ServiceRequest } from '../../types/request';
+import { ServiceRequest, StatusReplyTemplate, UpdateStatusPayload } from '../../types/request';
 import { useI18n } from '../../lib/i18n';
+import { StatusChangeModal } from './StatusChangeModal';
 
 interface RequestDetailsModalProps {
   isOpen: boolean;
   request: ServiceRequest | null;
   onClose: () => void;
-  onStatusChange: (id: number, status: string, cancellationReason?: string) => Promise<{ success: boolean; error?: string }>;
+  onStatusChange: (payload: UpdateStatusPayload) => Promise<{ success: boolean; error?: string }>;
   showToast: (msg: string, type?: 'success' | 'error') => void;
+  templates?: StatusReplyTemplate[];
 }
 
 export function RequestDetailsModal({
@@ -17,67 +19,43 @@ export function RequestDetailsModal({
   onClose,
   onStatusChange,
   showToast,
+  templates = [],
 }: RequestDetailsModalProps) {
   const { t } = useI18n();
   const [currentStatus, setCurrentStatus] = useState<string>('جديد');
-  const [isUpdating, setIsUpdating] = useState(false);
-  const [showCancelDialog, setShowCancelDialog] = useState(false);
-  const [cancelReason, setCancelReason] = useState('');
+  const [pendingTargetStatus, setPendingTargetStatus] = useState<string | null>(null);
 
   useEffect(() => {
     if (request) {
       setCurrentStatus(request.status || 'جديد');
-      setShowCancelDialog(false);
-      setCancelReason('');
+      setPendingTargetStatus(null);
     }
   }, [request]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && isOpen && !isUpdating) {
+      if (e.key === 'Escape' && isOpen && !pendingTargetStatus) {
         onClose();
       }
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isOpen, isUpdating, onClose]);
+  }, [isOpen, pendingTargetStatus, onClose]);
 
   if (!isOpen || !request) return null;
 
-  const handleStatusSelect = async (newStatus: string) => {
-    if (newStatus === currentStatus || isUpdating) return;
-    setIsUpdating(true);
-    try {
-      const res = await onStatusChange(request.id, newStatus);
-      if (res.success) {
-        setCurrentStatus(newStatus);
-        showToast(t('msg.request_status_updated'), 'success');
-      } else {
-        showToast(res.error || t('msg.error_update_request_status'), 'error');
-      }
-    } finally {
-      setIsUpdating(false);
-    }
+  const handleStatusSelect = (newStatus: string) => {
+    if (newStatus === currentStatus) return;
+    setPendingTargetStatus(newStatus);
   };
 
-  const handleCancelSubmit = async () => {
-    if (!cancelReason.trim()) {
-      showToast('يرجى كتابة سبب الإلغاء', 'error');
-      return;
+  const handleStatusConfirm = async (payload: UpdateStatusPayload) => {
+    const res = await onStatusChange(payload);
+    if (res.success) {
+      setCurrentStatus(payload.status);
+      setPendingTargetStatus(null);
     }
-    setIsUpdating(true);
-    try {
-      const res = await onStatusChange(request.id, 'ملغي', cancelReason.trim());
-      if (res.success) {
-        setCurrentStatus('ملغي');
-        setShowCancelDialog(false);
-        showToast('تم إلغاء الطلب واسترجاع النقاط وإلغاء الكود بنجاح', 'success');
-      } else {
-        showToast(res.error || 'فشل إلغاء الطلب', 'error');
-      }
-    } finally {
-      setIsUpdating(false);
-    }
+    return res;
   };
 
   // Parse Form Data / Details
@@ -121,7 +99,7 @@ export function RequestDetailsModal({
     <div
       className="modal-overlay active"
       onClick={(e) => {
-        if (e.target === e.currentTarget && !isUpdating) onClose();
+        if (e.target === e.currentTarget && !pendingTargetStatus) onClose();
       }}
       style={{
         position: 'fixed',
@@ -193,7 +171,7 @@ export function RequestDetailsModal({
           <button
             type="button"
             onClick={onClose}
-            disabled={isUpdating}
+            disabled={Boolean(pendingTargetStatus)}
             style={{
               background: 'transparent',
               border: 'none',
@@ -341,21 +319,20 @@ export function RequestDetailsModal({
                 {t('requests.change_status')}
               </label>
               <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
-                {(['جديد', 'قيد التنفيذ', 'مكتمل'] as const).map((st) => {
+                {(['قيد المراجعة', 'قيد التنفيذ', 'مكتمل'] as const).map((st) => {
                   const isActive = currentStatus === st;
                   const badgeStyle = getStatusBadgeStyle(st);
                   return (
                     <button
                       key={st}
                       type="button"
-                      disabled={isUpdating}
                       onClick={() => handleStatusSelect(st)}
                       style={{
                         padding: '8px 16px',
                         borderRadius: '10px',
                         fontSize: '0.85rem',
                         fontWeight: 700,
-                        cursor: isUpdating ? 'not-allowed' : 'pointer',
+                        cursor: 'pointer',
                         border: isActive ? '2px solid var(--primary)' : badgeStyle.border,
                         background: isActive ? 'var(--primary)' : badgeStyle.background,
                         color: isActive ? '#fff' : badgeStyle.color,
@@ -363,26 +340,22 @@ export function RequestDetailsModal({
                         transition: 'all 0.2s',
                       }}
                     >
-                      {isActive && isUpdating ? (
-                        <i className="fa-solid fa-circle-notch fa-spin" style={{ marginLeft: '4px' }}></i>
-                      ) : null}
                       {st}
                     </button>
                   );
                 })}
 
                 {/* Cancel Request Button */}
-                {request.status !== 'مكتمل' && (
+                {request.status !== 'مكتمل' && request.status !== 'ملغي' && (
                   <button
                     type="button"
-                    disabled={isUpdating}
-                    onClick={() => setShowCancelDialog(true)}
+                    onClick={() => handleStatusSelect('ملغي')}
                     style={{
                       padding: '8px 16px',
                       borderRadius: '10px',
                       fontSize: '0.85rem',
                       fontWeight: 700,
-                      cursor: isUpdating ? 'not-allowed' : 'pointer',
+                      cursor: 'pointer',
                       border: '1px solid rgba(239, 68, 68, 0.4)',
                       background: 'rgba(239, 68, 68, 0.15)',
                       color: '#f87171',
@@ -390,74 +363,9 @@ export function RequestDetailsModal({
                     }}
                   >
                     <i className="fa-solid fa-ban" style={{ marginLeft: '4px' }}></i>
-                    إلغاء الطلب واسترجاع النقاط
+                    {t('promo.cancel_request_title')}
                   </button>
                 )}
-              </div>
-            </div>
-          )}
-
-          {/* Cancellation Confirmation Dialog */}
-          {showCancelDialog && (
-            <div style={{ background: 'var(--bg-main)', border: '2px solid #ef4444', borderRadius: '12px', padding: '16px' }}>
-              <h4 style={{ margin: '0 0 8px', color: '#ef4444', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <i className="fa-solid fa-triangle-exclamation"></i>
-                {t('promo.cancel_request_title')}
-              </h4>
-
-              <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '12px' }}>
-                {request.payment_method === 'wallet' && (request.points_charged ?? 0) > 0 ? (
-                  <p style={{ margin: '0 0 6px', color: '#10b981' }}>
-                    <i className="fa-solid fa-rotate-left"></i> {t('promo.refund_amount_info', { points: request.points_charged ?? 0 })}
-                  </p>
-                ) : (
-                  <p style={{ margin: '0 0 6px' }}>هذا الطلب لم يتم خصم نقاط منه (دفع نقدي أو خدمة مجانية).</p>
-                )}
-
-                {request.promo_code_id && (
-                  <p style={{ margin: 0, color: '#38bdf8' }}>
-                    <i className="fa-solid fa-tags"></i> {t('promo.promo_reversal_info')}
-                  </p>
-                )}
-              </div>
-
-              <div style={{ marginBottom: '12px' }}>
-                <label style={{ display: 'block', marginBottom: '6px', fontSize: '0.85rem', fontWeight: 600 }}>
-                  {t('promo.cancel_reason_label')} *
-                </label>
-                <textarea
-                  className="input-field"
-                  rows={3}
-                  placeholder={t('promo.cancel_reason_placeholder')}
-                  value={cancelReason}
-                  onChange={(e) => setCancelReason(e.target.value)}
-                  style={{ width: '100%', resize: 'vertical' }}
-                  required
-                />
-              </div>
-
-              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
-                <button
-                  type="button"
-                  className="btn btn-secondary"
-                  onClick={() => { setShowCancelDialog(false); setCancelReason(''); }}
-                  disabled={isUpdating}
-                >
-                  تراجع
-                </button>
-                <button
-                  type="button"
-                  className="btn"
-                  onClick={handleCancelSubmit}
-                  disabled={isUpdating || !cancelReason.trim()}
-                  style={{ background: '#ef4444', color: '#fff', fontWeight: 700 }}
-                >
-                  {isUpdating ? (
-                    <span><i className="fa-solid fa-spinner fa-spin"></i> جارِ الإلغاء...</span>
-                  ) : (
-                    <span><i className="fa-solid fa-ban"></i> {t('promo.cancel_confirm_btn')}</span>
-                  )}
-                </button>
               </div>
             </div>
           )}
@@ -550,6 +458,17 @@ export function RequestDetailsModal({
           </button>
         </div>
       </div>
+
+      {/* Interactive Status Change & Custom Reply Modal */}
+      <StatusChangeModal
+        isOpen={Boolean(pendingTargetStatus)}
+        request={request}
+        targetStatus={pendingTargetStatus || 'مكتمل'}
+        templates={templates}
+        onClose={() => setPendingTargetStatus(null)}
+        onConfirm={handleStatusConfirm}
+        showToast={showToast}
+      />
     </div>
   );
 }

@@ -21,5 +21,25 @@ export interface ServiceRequest {
   cancelled_by_admin_id?: number | null;
   cancellation_reason?: string | null;
   refund_status?: string;
-  created_at: string;
+  created_at?: string;
+}
+
+export interface StatusReplyTemplate {
+  id: number;
+  status_key: string;
+  status_name_ar: string;
+  status_name_en: string;
+  template_ar: string;
+  template_en: string;
+  is_enabled: number | boolean;
+  updated_at?: string;
+}
+
+export interface UpdateStatusPayload {
+  id: number;
+  status: string;
+  cancellationReason?: string;
+  customMessage?: string;
+  sendChat?: boolean;
+  msgLang?: 'ar' | 'en' | 'both';
 }

@@ -1,8 +1,10 @@
 import { useState, useMemo } from 'react';
 import { useRequests } from '../../hooks/useRequests';
+import { useStatusTemplates } from '../../hooks/useStatusTemplates';
 import { ServiceRequest } from '../../types/request';
 import { RequestCard } from './RequestCard';
 import { RequestDetailsModal } from './RequestDetailsModal';
+import { StatusTemplatesModal } from './StatusTemplatesModal';
 import { useConfirmDialog } from '../../components/ConfirmDialog';
 import { useToast } from '../../components/Toast';
 import { useI18n } from '../../lib/i18n';
@@ -13,11 +15,13 @@ export function RequestsModule() {
   const { confirm } = useConfirmDialog();
   const { showToast } = useToast();
   const { requests, isLoading, error, refetch, updateRequestStatus, deleteRequest } = useRequests();
+  const { templates, updateTemplate } = useStatusTemplates();
 
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [isFocused, setIsFocused] = useState(false);
   const [selectedRequest, setSelectedRequest] = useState<ServiceRequest | null>(null);
+  const [isTemplatesOpen, setIsTemplatesOpen] = useState(false);
 
   // Status Filter options
   const statusOptions = [
@@ -86,6 +90,28 @@ export function RequestsModule() {
             {t('requests.desc')}
           </p>
         </div>
+
+        {/* Templates Management Action Button */}
+        <button
+          type="button"
+          className="btn btn-secondary"
+          onClick={() => setIsTemplatesOpen(true)}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            padding: '10px 18px',
+            borderRadius: '12px',
+            fontWeight: 600,
+            fontSize: '0.88rem',
+            background: 'var(--bg-card)',
+            border: '1px solid var(--border-color)',
+            boxShadow: '0 2px 8px rgba(0, 0, 0, 0.08)',
+          }}
+        >
+          <i className="fa-solid fa-wand-magic-sparkles" style={{ color: 'var(--primary)' }} />
+          <span>{t('req.manage_templates')}</span>
+        </button>
       </div>
 
       {/* Status Filter Tabs */}
@@ -144,24 +170,9 @@ export function RequestsModule() {
         })}
       </div>
 
-      {/* Search Bar & Total Counter */}
-      <div
-        style={{
-          display: 'flex',
-          gap: '16px',
-          marginBottom: '28px',
-          alignItems: 'center',
-          flexWrap: 'wrap',
-        }}
-      >
-        <div
-          style={{
-            position: 'relative',
-            flex: '1 1 320px',
-            maxWidth: '560px',
-          }}
-        >
-          {/* Integrated Search Icon */}
+      {/* Search Input */}
+      <div style={{ marginBottom: '24px', display: 'flex', gap: '14px', alignItems: 'center', flexWrap: 'wrap' }}>
+        <div style={{ position: 'relative', flex: 1, minWidth: '280px' }}>
           <i
             className="fa-solid fa-magnifying-glass"
             style={{
@@ -170,39 +181,38 @@ export function RequestsModule() {
               top: '50%',
               transform: 'translateY(-50%)',
               color: isFocused ? 'var(--primary)' : 'var(--text-muted)',
+              transition: 'color 0.2s ease',
               fontSize: '0.95rem',
               pointerEvents: 'none',
-              transition: 'color 0.2s ease',
             }}
-          ></i>
-
-          {/* Premium Dark Search Input */}
+          />
           <input
             type="text"
+            className="search-input"
+            placeholder={t('requests.search_placeholder')}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             onFocus={() => setIsFocused(true)}
             onBlur={() => setIsFocused(false)}
-            placeholder={t('requests.search_placeholder')}
             style={{
               width: '100%',
-              height: '46px',
-              paddingRight: isRtl ? '44px' : '40px',
-              paddingLeft: isRtl ? '40px' : '44px',
-              borderRadius: '12px',
-              border: isFocused ? '1px solid var(--primary)' : '1px solid var(--border-color)',
+              paddingTop: '12px',
+              paddingBottom: '12px',
+              paddingInlineStart: '44px',
+              paddingInlineEnd: searchQuery ? '36px' : '16px',
               background: 'var(--bg-card)',
+              border: isFocused ? '1px solid var(--primary)' : '1px solid var(--border-color)',
+              borderRadius: '12px',
               color: 'var(--text-main)',
               fontSize: '0.95rem',
               outline: 'none',
               boxShadow: isFocused
-                ? '0 0 0 3px rgba(99, 102, 241, 0.2), 0 4px 12px rgba(0, 0, 0, 0.15)'
+                ? '0 0 0 3px var(--primary-glow), 0 4px 12px rgba(0, 0, 0, 0.1)'
                 : '0 2px 6px rgba(0, 0, 0, 0.08)',
               transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
             }}
           />
 
-          {/* Clear Search Button */}
           {searchQuery && (
             <button
               type="button"
@@ -223,16 +233,13 @@ export function RequestsModule() {
                 alignItems: 'center',
                 justifyContent: 'center',
                 fontSize: '0.85rem',
-                lineHeight: 1,
               }}
-              title={t('btn.cancel')}
             >
               &times;
             </button>
           )}
         </div>
 
-        {/* Count Badge */}
         <div
           style={{
             background: 'var(--bg-card)',
@@ -295,8 +302,18 @@ export function RequestsModule() {
       <RequestDetailsModal
         isOpen={!!selectedRequest}
         request={selectedRequest}
+        templates={templates}
         onClose={() => setSelectedRequest(null)}
         onStatusChange={updateRequestStatus}
+        showToast={showToast}
+      />
+
+      {/* Status Reply Templates Management Modal */}
+      <StatusTemplatesModal
+        isOpen={isTemplatesOpen}
+        templates={templates}
+        onClose={() => setIsTemplatesOpen(false)}
+        onUpdate={updateTemplate}
         showToast={showToast}
       />
     </section>
