@@ -3,6 +3,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
 import { useBadges } from '../contexts/BadgesContext';
 import { useI18n } from '../lib/i18n';
+import logoImg from '../assets/logo.png';
 
 export function AdminLayout() {
   const { logout } = useAuth();
@@ -32,8 +33,8 @@ export function AdminLayout() {
       {/* Header */}
       <header className="admin-header">
         <div className="logo-area">
-          <div className="logo-icon">
-            <i className="fa-solid fa-graduation-cap"></i>
+          <div className="logo-icon" style={{ padding: '4px', overflow: 'hidden', background: 'rgba(255, 255, 255, 0.08)', border: '1.5px solid #fbbf24', borderRadius: '12px' }}>
+            <img src={logoImg} alt="Absher Logo" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
           </div>
           <div className="logo-text">
             <h1>

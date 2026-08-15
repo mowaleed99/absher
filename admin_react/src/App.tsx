@@ -21,6 +21,7 @@ import { ChatsModule } from './modules/chats/ChatsModule';
 import { PromoCodesModule } from './modules/promo/PromoCodesModule';
 import { HousingOffersModule } from './modules/offers/HousingOffersModule';
 import { LoginOverlay } from './components/LoginOverlay';
+import logoImg from './assets/logo.png';
 import './style.css';
 
 function MainRouter() {
@@ -46,7 +47,7 @@ function MainRouter() {
         }}
       >
         <div style={{ textAlign: 'center', color: '#fbbf24' }}>
-          <i className="fa-solid fa-graduation-cap" style={{ fontSize: '3rem', marginBottom: '10px' }}></i>
+          <img src={logoImg} alt="Absher Logo" style={{ width: '64px', height: '64px', objectFit: 'contain', marginBottom: '12px' }} />
           <p style={{ fontSize: '1.1rem', color: '#9ca3af' }}>{t('admin.auth_checking')}</p>
         </div>
       </div>

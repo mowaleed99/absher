@@ -2,6 +2,7 @@ import React, { useState, useRef } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from './Toast';
 import { useI18n } from '../lib/i18n';
+import logoImg from '../assets/logo.png';
 
 export function LoginOverlay() {
   const { login } = useAuth();
@@ -68,20 +69,20 @@ export function LoginOverlay() {
         <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
           <div
             style={{
-              width: '60px',
-              height: '60px',
-              borderRadius: '16px',
-              background: 'linear-gradient(135deg, var(--primary), var(--secondary))',
+              width: '72px',
+              height: '72px',
+              borderRadius: '20px',
+              background: 'rgba(255, 255, 255, 0.08)',
+              border: '2px solid #fbbf24',
               display: 'inline-flex',
               alignItems: 'center',
               justifyContent: 'center',
-              fontSize: '1.8rem',
-              color: '#fff',
+              padding: '8px',
               marginBottom: '1rem',
-              boxShadow: '0 0 20px var(--primary-glow)',
+              boxShadow: '0 0 25px rgba(251, 191, 36, 0.35)',
             }}
           >
-            <i className="fa-solid fa-graduation-cap"></i>
+            <img src={logoImg} alt="Absher Logo" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
           </div>
           <h2 style={{ fontSize: '1.5rem', fontWeight: 800, color: '#fff', marginBottom: '0.4rem' }}>
             {t('admin.title')} <span className="badge">{t('admin.badge')}</span>
