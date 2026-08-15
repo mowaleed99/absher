@@ -1,7 +1,9 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../theme/app_colors.dart';
 import '../services/api_service.dart';
+import '../services/realtime_sync_service.dart';
 import '../services/language_service.dart';
 import '../models/student.dart';
 import '../core/loading_state_widget.dart';
@@ -23,12 +25,23 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
   List<Map<String, dynamic>> _notifications = [];
   Set<String> _readIds = {};
   bool _isLoading = true;
+  StreamSubscription? _notifSub;
 
   @override
   void initState() {
     super.initState();
     _fetchNotifications();
     _loadReadStatus();
+
+    _notifSub = RealtimeSyncService().onNotificationsUpdated.listen((_) {
+      if (mounted) _fetchNotifications(silent: true);
+    });
+  }
+
+  @override
+  void dispose() {
+    _notifSub?.cancel();
+    super.dispose();
   }
 
   Future<void> _loadReadStatus() async {
@@ -50,8 +63,8 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     await prefs.setStringList('read_notification_ids', _readIds.toList());
   }
 
-  Future<void> _fetchNotifications() async {
-    setState(() => _isLoading = true);
+  Future<void> _fetchNotifications({bool silent = false}) async {
+    if (!silent) setState(() => _isLoading = true);
     final list = await ApiService.getNotifications();
     if (mounted) {
       setState(() {

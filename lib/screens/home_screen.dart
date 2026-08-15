@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../theme/app_colors.dart';
 import '../services/language_service.dart';
+import '../services/realtime_sync_service.dart';
 import 'apartment_detail_screen.dart';
 import 'rent_flat_screen.dart';
 import 'services_screen.dart';
@@ -38,6 +39,13 @@ class _HomeScreenState extends State<HomeScreen>
   bool _myRequestsLoaded = false;
   bool _isRatingPromptShowing = false;
   Timer? _chatPollTimer;
+
+  // Realtime Sync Subscriptions
+  StreamSubscription? _aptSyncSub;
+  StreamSubscription? _notifSyncSub;
+  StreamSubscription? _reqSyncSub;
+  StreamSubscription? _chatSyncSub;
+  StreamSubscription? _profSyncSub;
 
   // Server-side filter state — null means "no filter" (show all)
   List<String> _selectedUniversities = [];
@@ -255,6 +263,44 @@ class _HomeScreenState extends State<HomeScreen>
     _loadUnreadChatCount();
     _chatPollTimer = Timer.periodic(const Duration(seconds: 4), (_) {
       if (mounted) _loadUnreadChatCount();
+    });
+
+    // إعداد المزامنة الحية والفورية (Real-Time Live Sync)
+    final sync = RealtimeSyncService();
+    sync.updateContext(studentId: _currentUser?.id);
+
+    _aptSyncSub = sync.onApartmentsUpdated.listen((_) {
+      if (mounted) _loadApartments();
+    });
+
+    _notifSyncSub = sync.onNotificationsUpdated.listen((_) {
+      if (mounted) _loadNotifications();
+    });
+
+    _reqSyncSub = sync.onRequestsUpdated.listen((_) {
+      if (mounted && !widget.isGuest) {
+        setState(() {
+          _myRequestsLoaded = false;
+        });
+        _checkCompletedServiceRequestsForRating();
+      }
+    });
+
+    _chatSyncSub = sync.onChatUpdated.listen((_) {
+      if (mounted) _loadUnreadChatCount();
+    });
+
+    _profSyncSub = sync.onProfileUpdated.listen((meta) {
+      if (mounted && _currentUser != null) {
+        final newPoints = meta['points'] is int
+            ? meta['points'] as int
+            : int.tryParse(meta['points']?.toString() ?? '');
+        if (newPoints != null && newPoints != _currentUser!.pointsBalance) {
+          setState(() {
+            _currentUser = _currentUser!.copyWith(pointsBalance: newPoints);
+          });
+        }
+      }
     });
 
     // إعادة جلب البيانات المترجمة عند تغيير اللغة
@@ -650,6 +696,11 @@ class _HomeScreenState extends State<HomeScreen>
 
   @override
   void dispose() {
+    _aptSyncSub?.cancel();
+    _notifSyncSub?.cancel();
+    _reqSyncSub?.cancel();
+    _chatSyncSub?.cancel();
+    _profSyncSub?.cancel();
     LanguageService.currentLang.removeListener(_onLangChanged);
     WidgetsBinding.instance.removeObserver(this);
     _adTimer?.cancel();

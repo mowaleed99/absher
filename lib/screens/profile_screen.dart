@@ -1,6 +1,8 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import '../theme/app_colors.dart';
 import '../services/language_service.dart';
+import '../services/realtime_sync_service.dart';
 import 'login_screen.dart';
 import 'wallet_screen.dart';
 import '../services/api_service.dart';
@@ -31,6 +33,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   String _errorMessage = '';
   bool _isUploadingAvatar = false;
   int _avatarTimestamp = DateTime.now().millisecondsSinceEpoch;
+  StreamSubscription? _profileSub;
 
   @override
   void initState() {
@@ -39,6 +42,25 @@ class _ProfileScreenState extends State<ProfileScreen> {
     if (!widget.isGuest) {
       _fetchProfile();
     }
+
+    _profileSub = RealtimeSyncService().onProfileUpdated.listen((meta) {
+      if (mounted && _student != null) {
+        final newPoints = meta['points'] is int
+            ? meta['points'] as int
+            : int.tryParse(meta['points']?.toString() ?? '');
+        if (newPoints != null && newPoints != _student!.pointsBalance) {
+          setState(() {
+            _student = _student!.copyWith(pointsBalance: newPoints);
+          });
+        }
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _profileSub?.cancel();
+    super.dispose();
   }
 
   Future<void> _fetchProfile() async {

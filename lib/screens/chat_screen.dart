@@ -4,6 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../theme/app_colors.dart';
 import 'package:image_picker/image_picker.dart';
 import '../services/api_service.dart';
+import '../services/realtime_sync_service.dart';
 import '../services/web_helper.dart';
 import '../services/language_service.dart';
 import '../models/student.dart';
@@ -25,6 +26,7 @@ class _ChatScreenState extends State<ChatScreen> {
   final ScrollController _scrollController = ScrollController();
   bool _isInitialLoad = true;
   Timer? _pollTimer;
+  StreamSubscription? _chatSyncSub;
   bool _isLoadingMessages = false;
   bool _isDisposed = false;
   int _currentChatId = 0;
@@ -118,8 +120,13 @@ class _ChatScreenState extends State<ChatScreen> {
     // تحميل الرسائل المباشرة السابقة
     _loadMessages();
 
-    // بدء مؤقت جلب الرسائل الجديدة كل 3 ثوانٍ
-    _pollTimer = Timer.periodic(const Duration(seconds: 3), (timer) {
+    // استماع للمزامنة الحية الفورية للرسائل الجديدة
+    _chatSyncSub = RealtimeSyncService().onChatUpdated.listen((_) {
+      if (!_isDisposed) _loadMessages();
+    });
+
+    // بدء مؤقت جلب احتياطي كل 4 ثوانٍ
+    _pollTimer = Timer.periodic(const Duration(seconds: 4), (timer) {
       if (!_isDisposed) _loadMessages();
     });
 
@@ -131,6 +138,7 @@ class _ChatScreenState extends State<ChatScreen> {
       int? chatId = await ApiService.createChat(widget.user!.id);
       if (chatId != null && mounted) {
         setState(() => _currentChatId = chatId);
+        RealtimeSyncService().updateContext(studentId: widget.user!.id, chatId: chatId);
         _loadMessages();
       }
     }
@@ -139,6 +147,7 @@ class _ChatScreenState extends State<ChatScreen> {
   @override
   void dispose() {
     _isDisposed = true;
+    _chatSyncSub?.cancel();
     _pollTimer?.cancel();
     _messageController.dispose();
     _scrollController.dispose();
