@@ -2,7 +2,7 @@
 
 *(Authoritative Architecture, Cancellation & Refund State Machine, Concurrency Safeguards & Execution Roadmap)*
 
-> **STATUS: PHASE 6A IMPLEMENTED AND AUTOMATED-VERIFIED ON STAGING — PRODUCTION UNTOUCHED — WAITING FOR USER UAT — PHASE 7 NOT STARTED**
+> **STATUS: PHASE 6A PROMO CODES & DISCOUNTS FULLY COMPLETED — AUTOMATED TESTS AND USER UAT PASSED — STAGING APPROVED — PRODUCTION UNTOUCHED**
 > 
 > | Phase | Description | Status |
 > |---|---|---|
@@ -12,7 +12,8 @@
 > | Phase 4 | Reviews Moderation, Feedback, Students & Points | `COMPLETED / VERIFIED / USER ACCEPTED ✅` |
 > | Phase 5 | News, Notifications, Customer Support Chats | `COMPLETED / VERIFIED / USER ACCEPTED ✅` |
 > | Phase 6 | Executive Dashboard & Cross-Module Analytics | `COMPLETED / VERIFIED / USER ACCEPTED ✅` |
-> | **Phase 6A** | **Promo Codes & Discounts System** | `IMPLEMENTED AND AUTOMATED-VERIFIED ON STAGING — WAITING FOR USER UAT ✅` |
+> | **Phase 6A** | **Promo Codes & Discounts System** | `COMPLETED / FULLY VERIFIED / USER ACCEPTED ✅` |
+> | Executive UI | Executive Dashboard UI/UX Redesign | `IN PROGRESS (STAGING ONLY) ⏳` |
 > | Deferred | Housing Offers (Waiting for User Requirements) | `DEFERRED / FROZEN` |
 > | Cutover | Phase 7 / Production Promotion | `NOT STARTED — REQUIRES EXPLICIT USER GO` |
 
