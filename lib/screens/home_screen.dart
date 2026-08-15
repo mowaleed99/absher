@@ -715,21 +715,6 @@ class _HomeScreenState extends State<HomeScreen>
     }
   }
 
-  @override
-  void dispose() {
-    _aptSyncSub?.cancel();
-    _notifSyncSub?.cancel();
-    _reqSyncSub?.cancel();
-    _chatSyncSub?.cancel();
-    _profSyncSub?.cancel();
-    LanguageService.currentLang.removeListener(_onLangChanged);
-    WidgetsBinding.instance.removeObserver(this);
-    _adTimer?.cancel();
-    _chatPollTimer?.cancel();
-    _adController.dispose();
-    super.dispose();
-  }
-
   Future<void> _loadUnreadChatCount() async {
     final usr = _currentUser ?? widget.user;
     if (usr == null || usr.id <= 0 || widget.isGuest) {
