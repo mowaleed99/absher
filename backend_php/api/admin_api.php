@@ -34,9 +34,11 @@ try {
                    COALESCE(NULLIF(proximity_ar, ''), proximity) AS display_proximity,
                    COALESCE(NULLIF(capacity_ar, ''), capacity) AS display_capacity,
                    COALESCE(NULLIF(move_in_type_ar, ''), move_in_type) AS display_move_in_type,
-                   COALESCE(NULLIF(move_in_date_ar, ''), move_in_date) AS display_move_in_date
+                   COALESCE(NULLIF(move_in_date_ar, ''), move_in_date) AS display_move_in_date,
+                   is_featured,
+                   featured_until
             FROM apartments 
-            ORDER BY id DESC
+            ORDER BY (is_featured = 1 AND (featured_until IS NULL OR featured_until > NOW())) DESC, id DESC
         ")->fetchAll();
         $services = $conn->query("
             SELECT *, 
@@ -208,9 +210,11 @@ try {
                    COALESCE(NULLIF(proximity_ar, ''), proximity) AS display_proximity,
                    COALESCE(NULLIF(capacity_ar, ''), capacity) AS display_capacity,
                    COALESCE(NULLIF(move_in_type_ar, ''), move_in_type) AS display_move_in_type,
-                   COALESCE(NULLIF(move_in_date_ar, ''), move_in_date) AS display_move_in_date
+                   COALESCE(NULLIF(move_in_date_ar, ''), move_in_date) AS display_move_in_date,
+                   is_featured,
+                   featured_until
             FROM apartments 
-            ORDER BY id DESC
+            ORDER BY (is_featured = 1 AND (featured_until IS NULL OR featured_until > NOW())) DESC, id DESC
         ")->fetchAll();
         foreach ($apartments as &$apt) {
             $apt['images'] = json_decode($apt['images'], true) ?? [$apt['images']];
@@ -254,19 +258,29 @@ try {
         exit();
     }
 
-    if ($action === 'get_dashboard_stats') {
-        $totalApts = $conn->query("SELECT COUNT(*) FROM apartments")->fetchColumn();
-        $totalSvcs = $conn->query("SELECT COUNT(*) FROM services")->fetchColumn();
-        $totalStds = $conn->query("SELECT COUNT(*) FROM students")->fetchColumn();
-        $pendingReqs = $conn->query("SELECT COUNT(*) FROM service_requests WHERE status='قيد المراجعة'")->fetchColumn();
-        $activePromos = $conn->query("SELECT COUNT(*) FROM promo_codes WHERE status='active'")->fetchColumn();
-        $totalRedemptions = $conn->query("SELECT COUNT(*) FROM promo_code_redemptions WHERE status='applied'")->fetchColumn();
-        $totalPointsSaved = $conn->query("SELECT COALESCE(SUM(discount_points), 0) FROM promo_code_redemptions WHERE status='applied'")->fetchColumn();
+    if ($action === 'get_analytics') {
+        $totalUsers = $conn->query("SELECT COUNT(*) FROM students")->fetchColumn();
+        $totalApartments = $conn->query("SELECT COUNT(*) FROM apartments")->fetchColumn();
+        $totalServices = $conn->query("SELECT COUNT(*) FROM services")->fetchColumn();
+        $totalOrders = $conn->query("SELECT COUNT(*) FROM service_requests")->fetchColumn();
+        $recentOrders = $conn->query("SELECT * FROM service_requests ORDER BY id DESC LIMIT 5")->fetchAll();
+
+        // Promo metrics for Analytics tab
+        $activePromos = $conn->query("
+            SELECT COUNT(*) FROM promo_codes 
+            WHERE status = 'active' 
+              AND (expires_at IS NULL OR expires_at > NOW())
+              AND (start_at IS NULL OR start_at <= NOW())
+        ")->fetchColumn();
+        $totalRedemptions = $conn->query("SELECT COUNT(*) FROM promo_code_redemptions WHERE status = 'applied'")->fetchColumn();
+        $totalPointsSaved = $conn->query("SELECT COALESCE(SUM(discount_points), 0) FROM promo_code_redemptions WHERE status = 'applied'")->fetchColumn();
+
         echo json_encode(["status" => "success", "data" => [
-            "total_apartments" => (int)$totalApts,
-            "total_services" => (int)$totalSvcs,
-            "total_students" => (int)$totalStds,
-            "pending_requests" => (int)$pendingReqs,
+            "total_users" => (int)$totalUsers,
+            "total_apartments" => (int)$totalApartments,
+            "total_services" => (int)$totalServices,
+            "total_orders" => (int)$totalOrders,
+            "recent_orders" => $recentOrders,
             "active_promos" => (int)$activePromos,
             "total_redemptions" => (int)$totalRedemptions,
             "total_points_saved" => (int)$totalPointsSaved
@@ -319,9 +333,12 @@ try {
         $roommate_facilities = !empty($data['roommate_facilities']) ? trim($data['roommate_facilities']) : null;
         $owner_phone = !empty($data['owner_phone']) ? trim($data['owner_phone']) : null;
 
+        $is_featured = isset($data['is_featured']) ? (intval($data['is_featured']) ? 1 : 0) : 0;
+        $featured_until = !empty($data['featured_until']) ? trim($data['featured_until']) : null;
+
         if (!empty($title) && !empty($price)) {
-            $stmt = $conn->prepare("INSERT INTO apartments (title, price, location, proximity, universities, capacity, move_in_type, move_in_date, images, features, description, is_available, district_id, rental_type, rooms_count, roommate_reqs, roommate_facilities, owner_phone, title_ar, title_en, description_ar, description_en, location_ar, location_en, proximity_ar, proximity_en, capacity_ar, capacity_en, move_in_type_ar, move_in_type_en, move_in_date_ar, move_in_date_en, features_ar, features_en) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
-            $stmt->execute([$title, $price, $location, $proximity, $universities, $capacity, $move_in_type, $move_in_date, $images, $features, $description, $is_available, $district_id, $rental_type, $rooms_count, $roommate_reqs, $roommate_facilities, $owner_phone, $title_ar, $title_en, $description_ar, $description_en, $location_ar, $location_en, $proximity_ar, $proximity_en, $capacity_ar, $capacity_en, $move_in_type_ar, $move_in_type_en, $move_in_date_ar, $move_in_date_en, $features_ar, $features_en]);
+            $stmt = $conn->prepare("INSERT INTO apartments (title, price, location, proximity, universities, capacity, move_in_type, move_in_date, images, features, description, is_available, is_featured, featured_until, district_id, rental_type, rooms_count, roommate_reqs, roommate_facilities, owner_phone, title_ar, title_en, description_ar, description_en, location_ar, location_en, proximity_ar, proximity_en, capacity_ar, capacity_en, move_in_type_ar, move_in_type_en, move_in_date_ar, move_in_date_en, features_ar, features_en) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+            $stmt->execute([$title, $price, $location, $proximity, $universities, $capacity, $move_in_type, $move_in_date, $images, $features, $description, $is_available, $is_featured, $featured_until, $district_id, $rental_type, $rooms_count, $roommate_reqs, $roommate_facilities, $owner_phone, $title_ar, $title_en, $description_ar, $description_en, $location_ar, $location_en, $proximity_ar, $proximity_en, $capacity_ar, $capacity_en, $move_in_type_ar, $move_in_type_en, $move_in_date_ar, $move_in_date_en, $features_ar, $features_en]);
             
             // إضافة تنبيه تلقائي في الإشعارات
             $stmtNotif = $conn->prepare("INSERT INTO notifications (student_id, title, body, created_at) VALUES (0, ?, ?, NOW())");
@@ -396,13 +413,56 @@ try {
         $roommate_facilities = !empty($data['roommate_facilities']) ? trim($data['roommate_facilities']) : null;
         $owner_phone = !empty($data['owner_phone']) ? trim($data['owner_phone']) : null;
 
+        $is_featured = isset($data['is_featured']) ? (intval($data['is_featured']) ? 1 : 0) : 0;
+        $featured_until = !empty($data['featured_until']) ? trim($data['featured_until']) : null;
+
         if ($id > 0 && !empty($title) && !empty($price)) {
-            $stmt = $conn->prepare("UPDATE apartments SET title=?, price=?, location=?, proximity=?, universities=?, capacity=?, move_in_type=?, move_in_date=?, images=?, features=?, description=?, is_available=?, district_id=?, rental_type=?, rooms_count=?, roommate_reqs=?, roommate_facilities=?, owner_phone=?, title_ar=?, title_en=?, description_ar=?, description_en=?, location_ar=?, location_en=?, proximity_ar=?, proximity_en=?, capacity_ar=?, capacity_en=?, move_in_type_ar=?, move_in_type_en=?, move_in_date_ar=?, move_in_date_en=?, features_ar=?, features_en=? WHERE id=?");
-            $stmt->execute([$title, $price, $location, $proximity, $universities, $capacity, $move_in_type, $move_in_date, $images, $features, $description, $is_available, $district_id, $rental_type, $rooms_count, $roommate_reqs, $roommate_facilities, $owner_phone, $title_ar, $title_en, $description_ar, $description_en, $location_ar, $location_en, $proximity_ar, $proximity_en, $capacity_ar, $capacity_en, $move_in_type_ar, $move_in_type_en, $move_in_date_ar, $move_in_date_en, $features_ar, $features_en, $id]);
+            $stmt = $conn->prepare("UPDATE apartments SET title=?, price=?, location=?, proximity=?, universities=?, capacity=?, move_in_type=?, move_in_date=?, images=?, features=?, description=?, is_available=?, is_featured=?, featured_until=?, district_id=?, rental_type=?, rooms_count=?, roommate_reqs=?, roommate_facilities=?, owner_phone=?, title_ar=?, title_en=?, description_ar=?, description_en=?, location_ar=?, location_en=?, proximity_ar=?, proximity_en=?, capacity_ar=?, capacity_en=?, move_in_type_ar=?, move_in_type_en=?, move_in_date_ar=?, move_in_date_en=?, features_ar=?, features_en=? WHERE id=?");
+            $stmt->execute([$title, $price, $location, $proximity, $universities, $capacity, $move_in_type, $move_in_date, $images, $features, $description, $is_available, $is_featured, $featured_until, $district_id, $rental_type, $rooms_count, $roommate_reqs, $roommate_facilities, $owner_phone, $title_ar, $title_en, $description_ar, $description_en, $location_ar, $location_en, $proximity_ar, $proximity_en, $capacity_ar, $capacity_en, $move_in_type_ar, $move_in_type_en, $move_in_date_ar, $move_in_date_en, $features_ar, $features_en, $id]);
             echo json_encode(["status"=>"success","message"=>"تم تعديل الشقة بنجاح"], JSON_UNESCAPED_UNICODE);
         } else {
             echo json_encode(["status"=>"error","message"=>"معرف الشقة، العنوان، والسعر مطلوبان"], JSON_UNESCAPED_UNICODE);
         }
+        exit();
+    }
+
+    if ($action === 'toggle_apartment_featured') {
+        $id = intval($data['id'] ?? 0);
+        if ($id <= 0) {
+            echo json_encode(["status" => "error", "message" => "معرف الشقة غير صالح"], JSON_UNESCAPED_UNICODE);
+            exit();
+        }
+
+        $is_featured = isset($data['is_featured']) ? (intval($data['is_featured']) ? 1 : 0) : 1;
+        $featured_until = null;
+
+        if ($is_featured === 1) {
+            if (!empty($data['featured_until'])) {
+                $featured_until = date('Y-m-d H:i:s', strtotime($data['featured_until']));
+            } elseif (!empty($data['duration_days'])) {
+                $days = intval($data['duration_days']);
+                $featured_until = date('Y-m-d H:i:s', strtotime("+{$days} days"));
+            } elseif (!empty($data['duration_hours'])) {
+                $hours = intval($data['duration_hours']);
+                $featured_until = date('Y-m-d H:i:s', strtotime("+{$hours} hours"));
+            } else {
+                $featured_until = null; // Permanent pin
+            }
+        }
+
+        $stmt = $conn->prepare("UPDATE apartments SET is_featured = ?, featured_until = ? WHERE id = ?");
+        $stmt->execute([$is_featured, $featured_until, $id]);
+
+        $msg = $is_featured ? "تم تثبيت الشقة وتمييزها كإعلان مميز بنجاح" : "تم إلغاء تثبيت الشقة بنجاح";
+        echo json_encode([
+            "status" => "success",
+            "message" => $msg,
+            "data" => [
+                "id" => $id,
+                "is_featured" => $is_featured,
+                "featured_until" => $featured_until
+            ]
+        ], JSON_UNESCAPED_UNICODE);
         exit();
     }
 

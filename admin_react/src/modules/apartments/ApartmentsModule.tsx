@@ -6,6 +6,7 @@ import { useUniversities } from '../../hooks/useUniversities';
 import { ApartmentCard } from './ApartmentCard';
 import { AddApartmentModal } from './AddApartmentModal';
 import { EditApartmentModal } from './EditApartmentModal';
+import { PinApartmentModal } from './PinApartmentModal';
 import { useI18n } from '../../lib/i18n';
 import { useConfirmDialog } from '../../components/ConfirmDialog';
 import { useToast } from '../../components/Toast';
@@ -22,6 +23,7 @@ export function ApartmentsModule() {
     addApartment,
     updateApartment,
     deleteApartment,
+    toggleFeatured,
     refetch,
   } = useApartments();
 
@@ -36,6 +38,7 @@ export function ApartmentsModule() {
   // Modal State
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [editingApartment, setEditingApartment] = useState<Apartment | null>(null);
+  const [pinningApartment, setPinningApartment] = useState<Apartment | null>(null);
 
   // Filtered Apartments
   const filteredApartments = useMemo(() => {
@@ -109,140 +112,135 @@ export function ApartmentsModule() {
         if (cascadeRes.success) {
           showToast(t('msg.apartment_deleted'), 'success');
         } else {
-          showToast(cascadeRes.error || t('msg.error_delete_apartment'), 'error');
+          showToast(cascadeRes.error || t('msg.delete_failed'), 'error');
         }
       }
     } else {
-      showToast(res.error || t('msg.error_delete_apartment'), 'error');
+      showToast(res.error || t('msg.delete_failed'), 'error');
     }
   };
 
   return (
-    <section className="tab-pane active">
-      {/* Header */}
-      <div className="section-header">
-        <div className="section-title">
-          <h2>
-            <i className="fa-solid fa-building" style={{ color: 'var(--primary)', marginLeft: '8px' }}></i>
-            {t('apartments.title')}
-          </h2>
-          <p>{t('apartments.desc')}</p>
-        </div>
-        <button
-          type="button"
-          className="btn btn-glow"
-          onClick={() => setIsAddOpen(true)}
-        >
-          <i className="fa-solid fa-plus-circle"></i>
-          {t('apartments.add_button')}
-        </button>
-      </div>
+    <section className="dashboard-module active">
+      {/* Header & Controls */}
+      <div className="module-header" style={{ marginBottom: '24px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '16px' }}>
+          <div>
+            <h2 className="module-title" style={{ margin: 0, fontSize: '1.6rem', fontWeight: 800 }}>
+              <i className="fa-solid fa-building" style={{ color: 'var(--primary)', marginInlineEnd: '10px' }} />
+              {t('nav.apartments')}
+            </h2>
+            <p style={{ margin: '4px 0 0', color: 'var(--text-muted)', fontSize: '0.9rem' }}>
+              {t('apartments.count_label', { count: apartments.length })}
+            </p>
+          </div>
 
-      {/* Search and Filters Bar */}
-      <div
-        style={{
-          margin: '0 0 24px 0',
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
-          gap: '12px',
-          alignItems: 'center',
-        }}
-      >
-        <div style={{ position: 'relative' }}>
-          <input
-            type="text"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder={t('apartments.search_placeholder')}
+          <button
+            type="button"
+            className="btn btn-primary"
+            onClick={() => setIsAddOpen(true)}
             style={{
-              width: '100%',
-              padding: '12px 18px',
+              padding: '10px 22px',
               borderRadius: '12px',
-              border: '1px solid var(--border-color)',
-              background: 'var(--bg-card)',
-              color: 'var(--text-main)',
-              fontSize: '0.95rem',
+              fontWeight: 700,
+              boxShadow: '0 4px 14px rgba(99, 102, 241, 0.35)',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
             }}
-          />
-          {searchQuery && (
-            <button
-              type="button"
-              onClick={() => setSearchQuery('')}
+          >
+            <i className="fa-solid fa-plus" />
+            <span>{t('apartments.add_new')}</span>
+          </button>
+        </div>
+
+        {/* Filter Bar */}
+        <div
+          style={{
+            display: 'flex',
+            flexWrap: 'wrap',
+            gap: '12px',
+            marginTop: '20px',
+            background: 'var(--bg-card)',
+            padding: '14px 18px',
+            borderRadius: '14px',
+            border: '1px solid var(--border-color)',
+            alignItems: 'center',
+          }}
+        >
+          {/* Search Box */}
+          <div style={{ flex: '1 1 240px', position: 'relative' }}>
+            <i
+              className="fa-solid fa-magnifying-glass"
               style={{
                 position: 'absolute',
-                left: '12px',
                 top: '50%',
                 transform: 'translateY(-50%)',
-                background: 'none',
-                border: 'none',
+                insetInlineStart: '12px',
                 color: 'var(--text-muted)',
-                cursor: 'pointer',
+                fontSize: '0.9rem',
               }}
+            />
+            <input
+              type="text"
+              className="input-field"
+              placeholder={t('apartments.search_placeholder')}
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              style={{
+                paddingInlineStart: '36px',
+                width: '100%',
+                borderRadius: '10px',
+              }}
+            />
+          </div>
+
+          {/* District Filter */}
+          <div style={{ minWidth: '180px' }}>
+            <select
+              className="input-field"
+              value={districtFilter}
+              onChange={(e) => setDistrictFilter(e.target.value)}
+              style={{ width: '100%', borderRadius: '10px' }}
             >
-              <i className="fa-solid fa-xmark"></i>
-            </button>
-          )}
+              <option value="">{t('apartments.all_districts')}</option>
+              {districts.map((d) => (
+                <option key={d.id} value={d.id}>
+                  {d.name_ar || d.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Rental Type Filter */}
+          <div style={{ minWidth: '160px' }}>
+            <select
+              className="input-field"
+              value={rentalTypeFilter}
+              onChange={(e) => setRentalTypeFilter(e.target.value)}
+              style={{ width: '100%', borderRadius: '10px' }}
+            >
+              <option value="all">{t('apartments.all_types')}</option>
+              <option value="apartment">{t('rental_type.apartment')}</option>
+              <option value="room_shared">{t('rental_type.room_shared')}</option>
+              <option value="studio">{t('rental_type.studio')}</option>
+            </select>
+          </div>
         </div>
-
-        {/* District Filter */}
-        <select
-          value={districtFilter}
-          onChange={(e) => setDistrictFilter(e.target.value)}
-          style={{
-            padding: '12px 16px',
-            borderRadius: '12px',
-            border: '1px solid var(--border-color)',
-            background: 'var(--bg-card)',
-            color: 'var(--text-main)',
-            fontSize: '0.95rem',
-            fontWeight: 600,
-            cursor: 'pointer',
-            outline: 'none',
-          }}
-        >
-          <option value="">{t('filter.all_districts')}</option>
-          {districts.map((d) => (
-            <option key={d.id} value={d.id}>
-              {d.name_ar || d.name}
-            </option>
-          ))}
-        </select>
-
-        {/* Rental Type Filter */}
-        <select
-          value={rentalTypeFilter}
-          onChange={(e) => setRentalTypeFilter(e.target.value)}
-          style={{
-            padding: '12px 16px',
-            borderRadius: '12px',
-            border: '1px solid var(--border-color)',
-            background: 'var(--bg-card)',
-            color: 'var(--text-main)',
-            fontSize: '0.95rem',
-            fontWeight: 600,
-            cursor: 'pointer',
-            outline: 'none',
-          }}
-        >
-          <option value="all">{t('rental_type.all')}</option>
-          <option value="apartment">{t('rental_type.apartment')}</option>
-          <option value="room_shared">{t('rental_type.room_shared')}</option>
-          <option value="studio">{t('rental_type.studio')}</option>
-        </select>
       </div>
 
-      {/* Content State: Loading / Error / Empty / Grid */}
+      {/* Apartment Grid / List */}
       {isLoading ? (
-        <div style={{ textAlign: 'center', padding: '60px 20px', color: 'var(--text-muted)' }}>
-          <i className="fa-solid fa-spinner fa-spin" style={{ fontSize: '2.5rem', color: 'var(--primary)', marginBottom: '16px' }}></i>
-          <p style={{ fontSize: '1.1rem' }}>{t('apartments.loading')}</p>
+        <div style={{ textAlign: 'center', padding: '60px 0' }}>
+          <i className="fa-solid fa-circle-notch fa-spin" style={{ fontSize: '2.5rem', color: 'var(--primary)' }} />
+          <p style={{ marginTop: '12px', color: 'var(--text-muted)' }}>{t('common.loading')}</p>
         </div>
       ) : error ? (
         <div
           style={{
             background: 'rgba(239, 68, 68, 0.1)',
             border: '1px solid #ef4444',
-            borderRadius: '16px',
+            borderRadius: '14px',
             padding: '24px',
             textAlign: 'center',
             color: '#ef4444',
@@ -251,7 +249,7 @@ export function ApartmentsModule() {
           <i className="fa-solid fa-circle-exclamation" style={{ fontSize: '2rem', marginBottom: '10px' }}></i>
           <p style={{ fontSize: '1.1rem', marginBottom: '12px' }}>{error}</p>
           <button type="button" className="btn btn-secondary" onClick={refetch}>
-            <i className="fa-solid fa-rotate-right"></i> إعادة المحاولة
+            <i className="fa-solid fa-rotate-right"></i> {t('common.retry')}
           </button>
         </div>
       ) : filteredApartments.length === 0 ? (
@@ -278,6 +276,7 @@ export function ApartmentsModule() {
               apartment={apt}
               onEdit={(apartment) => setEditingApartment(apartment)}
               onDelete={handleDelete}
+              onPin={(apartment) => setPinningApartment(apartment)}
             />
           ))}
         </div>
@@ -300,6 +299,15 @@ export function ApartmentsModule() {
         onSubmit={updateApartment}
         districts={districts}
         universities={universities}
+      />
+
+      {/* Pin Modal */}
+      <PinApartmentModal
+        isOpen={!!pinningApartment}
+        apartment={pinningApartment}
+        onClose={() => setPinningApartment(null)}
+        onConfirm={toggleFeatured}
+        showToast={showToast}
       />
     </section>
   );

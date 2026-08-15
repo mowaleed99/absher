@@ -22,7 +22,7 @@ try {
     $midCol   = ($lang === 'en') ? "COALESCE(NULLIF(move_in_date_en, ''), NULLIF(move_in_date_ar, ''), move_in_date)" : "COALESCE(NULLIF(move_in_date_ar, ''), move_in_date)";
     $featsCol = ($lang === 'en') ? "COALESCE(NULLIF(features_en, ''), NULLIF(features_ar, ''), features)" : "COALESCE(NULLIF(features_ar, ''), features)";
 
-    $aptQuery = "SELECT id, price, images, district_id, rental_type, rooms_count, is_available, universities,
+    $aptQuery = "SELECT id, price, images, district_id, rental_type, rooms_count, is_available, is_featured, featured_until, universities,
                         $titleCol AS title, $descCol AS description, $locCol AS location, $proxCol AS proximity,
                         $capCol AS capacity, $mitCol AS move_in_type, $midCol AS move_in_date, $featsCol AS features
                  FROM apartments 
@@ -36,6 +36,7 @@ try {
         jsonResponse(false, "Apartment not found", 404);
     }
 
+    $apt['is_featured'] = ($apt['is_featured'] == 1 && (empty($apt['featured_until']) || strtotime($apt['featured_until']) > time()));
     $apt['images'] = json_decode($apt['images'] ?? '[]', true) ?? [$apt['images']];
     $apt['universities'] = json_decode($apt['universities'] ?? '[]', true) ?? [];
     $apt['features'] = json_decode($apt['features'] ?? '[]', true) ?? [];

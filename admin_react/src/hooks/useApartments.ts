@@ -116,6 +116,38 @@ export function useApartments() {
     return { success: false, error: result.error };
   };
 
+  // Toggle Featured / Pin mutation
+  const toggleFeatured = async (
+    id: number,
+    isFeatured: boolean,
+    options?: { durationDays?: number; durationHours?: number; featuredUntil?: string | null }
+  ): Promise<{ success: boolean; message?: string; error?: string }> => {
+    const payload: Record<string, unknown> = {
+      id,
+      is_featured: isFeatured ? 1 : 0,
+    };
+
+    if (isFeatured && options) {
+      if (options.featuredUntil) {
+        payload.featured_until = options.featuredUntil;
+      } else if (options.durationDays) {
+        payload.duration_days = options.durationDays;
+      } else if (options.durationHours) {
+        payload.duration_hours = options.durationHours;
+      }
+    }
+
+    const result = await apiFetch<{ message?: string }>('toggle_apartment_featured', payload, {
+      dedupeKey: `toggle_apartment_featured:${id}`,
+    });
+
+    if (result.success) {
+      await refreshApartments();
+      return { success: true, message: result.data?.message };
+    }
+    return { success: false, error: result.error };
+  };
+
   return {
     apartments,
     isLoading,
@@ -125,5 +157,6 @@ export function useApartments() {
     addApartment,
     updateApartment,
     deleteApartment,
+    toggleFeatured,
   };
 }

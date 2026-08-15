@@ -63,11 +63,11 @@ try {
 
     $sql = "SELECT id, $titleCol AS title, $descCol AS description, price, $locCol AS location, $proxCol AS proximity,
                    universities, $capCol AS capacity, $mitCol AS move_in_type, $midCol AS move_in_date,
-                   images, $featsCol AS features, is_available, district_id,
+                   images, $featsCol AS features, is_available, is_featured, featured_until, district_id,
                    rental_type, rooms_count
             FROM apartments
             WHERE " . implode(" AND ", $where) . "
-            ORDER BY created_at DESC";
+            ORDER BY (is_featured = 1 AND (featured_until IS NULL OR featured_until > NOW())) DESC, created_at DESC, id DESC";
 
     $stmt = $conn->prepare($sql);
     $stmt->execute($params);
@@ -105,6 +105,8 @@ try {
             }
         }
 
+        $isFeaturedActive = ($apt['is_featured'] == 1 && (empty($apt['featured_until']) || strtotime($apt['featured_until']) > time()));
+
         $result[] = [
             'id'            => (int)$apt['id'],
             'title'         => $apt['title'],
@@ -119,6 +121,8 @@ try {
             'move_in_type'  => $apt['move_in_type'],
             'move_in_date'  => $apt['move_in_date'],
             'is_available'  => (bool)$apt['is_available'],
+            'is_featured'   => $isFeaturedActive,
+            'featured_until'=> $apt['featured_until'],
             'images'        => $images,
             'features'      => $features,
             'universities'  => $universities,

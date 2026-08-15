@@ -34,4 +34,6 @@ export interface Apartment {
   description_ar: string;
   description_en: string;
   is_available: number;
+  is_featured?: number | boolean;
+  featured_until?: string | null;
 }

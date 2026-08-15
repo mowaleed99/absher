@@ -124,6 +124,8 @@ export function parseApartment(v: unknown): Apartment | null {
     roommate_facilities: toString(v.roommate_facilities) || null,
     owner_phone: toString(v.owner_phone) || null,
     is_available: toNumber(v.is_available) ?? 1,
+    is_featured: toNumber(v.is_featured) ?? 0,
+    featured_until: toString(v.featured_until) || null,
   };
 }
 

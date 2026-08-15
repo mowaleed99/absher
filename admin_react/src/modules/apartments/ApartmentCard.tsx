@@ -8,11 +8,18 @@ interface ApartmentCardProps {
   apartment: Apartment;
   onEdit: (apt: Apartment) => void;
   onDelete: (id: number) => void;
+  onPin?: (apt: Apartment) => void;
 }
 
-export function ApartmentCard({ apartment: apt, onEdit, onDelete }: ApartmentCardProps) {
+export function ApartmentCard({ apartment: apt, onEdit, onDelete, onPin }: ApartmentCardProps) {
   const { t, lang } = useI18n();
+  const isRtl = lang === 'ar';
   const { showToast } = useToast();
+
+  const isFeaturedActive = Boolean(
+    apt.is_featured &&
+    (!apt.featured_until || new Date(apt.featured_until).getTime() > Date.now())
+  );
 
   const rtLabels: Record<string, string> = {
     apartment: t('rental_type.apartment'),
@@ -54,8 +61,39 @@ export function ApartmentCard({ apartment: apt, onEdit, onDelete }: ApartmentCar
   };
 
   return (
-    <div className="item-card">
-      <div className="card-img-wrap" style={{ background: '#1f2937' }}>
+    <div
+      className="item-card"
+      style={{
+        border: isFeaturedActive ? '1px solid rgba(245, 158, 11, 0.4)' : undefined,
+        boxShadow: isFeaturedActive ? '0 0 16px rgba(245, 158, 11, 0.15)' : undefined,
+      }}
+    >
+      <div className="card-img-wrap" style={{ background: '#1f2937', position: 'relative' }}>
+        {/* Featured Golden Badge */}
+        {isFeaturedActive && (
+          <div
+            style={{
+              position: 'absolute',
+              top: '10px',
+              [isRtl ? 'right' : 'left']: '10px',
+              background: 'linear-gradient(135deg, #f59e0b, #d97706)',
+              color: '#fff',
+              padding: '4px 10px',
+              borderRadius: '8px',
+              fontSize: '0.75rem',
+              fontWeight: 800,
+              display: 'flex',
+              alignItems: 'center',
+              gap: '4px',
+              boxShadow: '0 4px 12px rgba(245, 158, 11, 0.4)',
+              zIndex: 2,
+            }}
+          >
+            <i className="fa-solid fa-star" />
+            <span>{t('apt.featured_badge')}</span>
+          </div>
+        )}
+
         {firstImg ? (
           <img
             src={resolveImageUrl(firstImg)}
@@ -199,6 +237,25 @@ export function ApartmentCard({ apartment: apt, onEdit, onDelete }: ApartmentCar
         <p className="card-desc">{displayDescription}</p>
 
         <div className="card-actions">
+          {onPin && (
+            <button
+              type="button"
+              className="btn"
+              onClick={() => onPin(apt)}
+              style={{
+                background: isFeaturedActive ? 'rgba(245, 158, 11, 0.18)' : 'rgba(255, 255, 255, 0.05)',
+                border: isFeaturedActive ? '1px solid #f59e0b' : '1px solid var(--border-color)',
+                color: isFeaturedActive ? '#fbbf24' : 'var(--text-muted)',
+                fontWeight: 700,
+                padding: '6px 12px',
+                fontSize: '0.8rem',
+              }}
+              title={t('apt.pin_action')}
+            >
+              <i className="fa-solid fa-thumbtack" /> {isFeaturedActive ? t('apt.featured_badge') : t('apt.pin_action')}
+            </button>
+          )}
+
           <button
             type="button"
             className="btn btn-primary"
