@@ -5,6 +5,8 @@ import 'login_screen.dart';
 import 'home_screen.dart';
 import '../services/language_service.dart';
 import '../models/student.dart';
+import '../models/country_code.dart';
+import '../widgets/country_picker_bottom_sheet.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -17,10 +19,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
   final _emailController = TextEditingController();
-  // Local 9-digit part only (user types: 5XXXXXXXX)
   final _localPhoneController = TextEditingController();
   final _passwordController = TextEditingController();
-  static const String _countryCode = '+995';
+
+  CountryCode _selectedCountry = CountryCode.defaultCountry;
 
   final _customUniController = TextEditingController();
 
@@ -57,8 +59,23 @@ class _RegisterScreenState extends State<RegisterScreen> {
   bool _obscurePassword = true;
   String _errorMessage = '';
 
-  /// Returns the full phone number in E.164 format: +995XXXXXXXXX
-  String get _fullPhone => _countryCode + _localPhoneController.text.trim();
+  /// Combines selected country dial code and local phone number
+  String get _fullPhone {
+    final local = _localPhoneController.text.trim().replaceAll(RegExp(r'^0+'), '');
+    return '${_selectedCountry.dialCode}$local';
+  }
+
+  Future<void> _pickCountry() async {
+    final selected = await CountryPickerBottomSheet.show(
+      context,
+      selectedCountry: _selectedCountry,
+    );
+    if (selected != null && mounted) {
+      setState(() {
+        _selectedCountry = selected;
+      });
+    }
+  }
 
   Future<void> _handleRegister() async {
     if (!_formKey.currentState!.validate()) return;
@@ -73,6 +90,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
         fullName: _nameController.text.trim(),
         email: _emailController.text.trim(),
         phone: _fullPhone,
+        nationality: LanguageService.currentLang.value == 'ar'
+            ? _selectedCountry.nameAr
+            : _selectedCountry.nameEn,
         university: _selectedUni == LanguageService.tr('other_uni_manual')
             ? _customUniController.text.trim()
             : _selectedUni,
@@ -200,6 +220,47 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           ),
                           const SizedBox(height: 16),
 
+                          // الدولة / الجنسية
+                          InkWell(
+                            onTap: _pickCountry,
+                            borderRadius: BorderRadius.circular(12),
+                            child: InputDecorator(
+                              decoration: InputDecoration(
+                                labelText: LanguageService.currentLang.value == 'ar'
+                                    ? 'الدولة / الجنسية'
+                                    : 'Country / Nationality',
+                                prefixIcon: Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 12, vertical: 10),
+                                  child: Text(
+                                    _selectedCountry.flag,
+                                    style: const TextStyle(fontSize: 22),
+                                  ),
+                                ),
+                                suffixIcon: const Icon(
+                                  Icons.keyboard_arrow_down,
+                                  color: AppColors.primary,
+                                ),
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                contentPadding: const EdgeInsets.symmetric(
+                                    horizontal: 12, vertical: 12),
+                              ),
+                              child: Text(
+                                LanguageService.currentLang.value == 'ar'
+                                    ? _selectedCountry.nameAr
+                                    : _selectedCountry.nameEn,
+                                style: const TextStyle(
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w600,
+                                  color: AppColors.textDark,
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+
                           // البريد الإلكتروني
                           TextFormField(
                             controller: _emailController,
@@ -218,19 +279,19 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           ),
                           const SizedBox(height: 16),
 
-                          // رقم الهاتف — fixed +995 prefix + local 9-digit input
+                          // رقم الهاتف مع محدد كود الدولة
                           FormField<String>(
                             validator: (_) {
                               final local = _localPhoneController.text.trim();
                               if (local.isEmpty) {
                                 return LanguageService.tr('required_field');
                               }
-                              // Must be exactly 9 digits starting with 5
-                              final reg = RegExp(r'^5[0-9]{8}$');
-                              if (!reg.hasMatch(local)) {
+                              final clean =
+                                  local.replaceAll(RegExp(r'[\s\-]'), '');
+                              if (!RegExp(r'^[0-9]{6,15}$').hasMatch(clean)) {
                                 return LanguageService.currentLang.value == 'ar'
-                                    ? 'رقم الهاتف غير صالح. أدخل 9 أرقام تبدأ بـ 5 (مثال: 555123456)'
-                                    : 'Invalid number. Enter 9 digits starting with 5 (e.g. 555123456)';
+                                    ? 'يرجى إدخال رقم هاتف صحيح'
+                                    : 'Please enter a valid phone number';
                               }
                               return null;
                             },
@@ -240,76 +301,94 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                 children: [
                                   InputDecorator(
                                     decoration: InputDecoration(
-                                      labelText: LanguageService.tr('phone_example'),
-                                      prefixIcon: const Icon(
-                                          Icons.phone_outlined,
-                                          color: AppColors.primary),
+                                      labelText:
+                                          LanguageService.tr('phone_example'),
                                       border: OutlineInputBorder(
-                                          borderRadius:
-                                              BorderRadius.circular(12)),
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
                                       errorBorder: OutlineInputBorder(
-                                        borderRadius:
-                                            BorderRadius.circular(12),
+                                        borderRadius: BorderRadius.circular(12),
                                         borderSide: const BorderSide(
                                             color: AppColors.error),
                                       ),
                                       contentPadding:
                                           const EdgeInsets.symmetric(
-                                              horizontal: 12, vertical: 14),
+                                              horizontal: 12, vertical: 12),
+                                      prefixIcon: InkWell(
+                                        onTap: _pickCountry,
+                                        borderRadius: BorderRadius.circular(12),
+                                        child: Padding(
+                                          padding:
+                                              const EdgeInsetsDirectional.only(
+                                                  start: 12, end: 8),
+                                          child: Row(
+                                            mainAxisSize: MainAxisSize.min,
+                                            children: [
+                                              Text(
+                                                _selectedCountry.flag,
+                                                style: const TextStyle(
+                                                    fontSize: 20),
+                                              ),
+                                              const SizedBox(width: 6),
+                                              Directionality(
+                                                textDirection:
+                                                    TextDirection.ltr,
+                                                child: Text(
+                                                  _selectedCountry.dialCode,
+                                                  style: const TextStyle(
+                                                    color: AppColors.primary,
+                                                    fontWeight: FontWeight.bold,
+                                                    fontSize: 14,
+                                                    letterSpacing: 0.5,
+                                                  ),
+                                                ),
+                                              ),
+                                              const SizedBox(width: 2),
+                                              const Icon(
+                                                Icons.keyboard_arrow_down,
+                                                color: AppColors.primary,
+                                                size: 18,
+                                              ),
+                                              const SizedBox(width: 8),
+                                              Container(
+                                                width: 1.2,
+                                                height: 24,
+                                                color: Colors.grey.shade300,
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      ),
                                     ),
-                                    child: Row(
-                                      children: [
-                                        // ── Fixed non-editable prefix ──
-                                        Container(
-                                          padding: const EdgeInsets.symmetric(
-                                              horizontal: 10, vertical: 6),
-                                          decoration: BoxDecoration(
-                                            color: AppColors.primary
-                                                .withValues(alpha: 0.12),
-                                            borderRadius:
-                                                BorderRadius.circular(8),
+                                    child: Directionality(
+                                      textDirection: TextDirection.ltr,
+                                      child: TextField(
+                                        controller: _localPhoneController,
+                                        keyboardType: TextInputType.phone,
+                                        decoration: InputDecoration(
+                                          hintText: '123456789',
+                                          hintStyle: TextStyle(
+                                            color: Colors.grey.shade400,
+                                            fontSize: 14,
                                           ),
-                                          child: const Text(
-                                            '+995',
-                                            style: TextStyle(
-                                              color: AppColors.primary,
-                                              fontWeight: FontWeight.bold,
-                                              fontSize: 15,
-                                              letterSpacing: 0.5,
-                                            ),
-                                          ),
+                                          border: InputBorder.none,
+                                          isDense: true,
+                                          contentPadding:
+                                              const EdgeInsets.symmetric(
+                                                  vertical: 4),
                                         ),
-                                        const SizedBox(width: 8),
-                                        // ── Editable local number ──
-                                        Expanded(
-                                          child: TextField(
-                                            controller:
-                                                _localPhoneController,
-                                            keyboardType:
-                                                TextInputType.number,
-                                            maxLength: 9,
-                                            decoration:
-                                                const InputDecoration(
-                                              hintText: '5XXXXXXXX',
-                                              border: InputBorder.none,
-                                              counterText: '',
-                                              isDense: true,
-                                            ),
-                                            style: const TextStyle(
-                                                fontSize: 15),
-                                            onChanged: (_) =>
-                                                fieldState.didChange(
-                                                    _localPhoneController
-                                                        .text),
-                                          ),
-                                        ),
-                                      ],
+                                        style: const TextStyle(
+                                            fontSize: 15,
+                                            fontWeight: FontWeight.w500),
+                                        onChanged: (val) =>
+                                            fieldState.didChange(val),
+                                      ),
                                     ),
                                   ),
                                   if (fieldState.hasError)
                                     Padding(
                                       padding: const EdgeInsets.only(
-                                          top: 6, left: 12),
+                                          top: 6, left: 12, right: 12),
                                       child: Text(
                                         fieldState.errorText!,
                                         style: const TextStyle(

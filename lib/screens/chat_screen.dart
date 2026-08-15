@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../theme/app_colors.dart';
 import 'package:image_picker/image_picker.dart';
 import '../services/api_service.dart';
@@ -193,6 +194,15 @@ class _ChatScreenState extends State<ChatScreen> {
           });
         }
 
+        // Save last read admin message ID
+        final adminMsgs = serverMessages.where((m) => m.senderType != 'student').toList();
+        if (adminMsgs.isNotEmpty) {
+          final maxId = adminMsgs.map((m) => m.id).reduce((a, b) => a > b ? a : b);
+          SharedPreferences.getInstance().then((prefs) {
+            prefs.setInt('last_read_chat_msg_id_${widget.user?.id ?? 0}', maxId);
+          });
+        }
+
         // تحديث الواجهة فقط في حالة وجود اختلاف
         if (newMessages.length != _messages.length ||
             _messages.last['text'] != newMessages.last['text'] ||
@@ -357,161 +367,7 @@ class _ChatScreenState extends State<ChatScreen> {
     }
   }
 
-  void _showAttachMediaDialog() {
-    final urlCtrl = TextEditingController();
 
-    showDialog(
-      context: context,
-      builder: (_) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Row(
-          children: [
-            const Icon(Icons.link, color: AppColors.primary, size: 28),
-            const SizedBox(width: 8),
-            Text(LanguageService.tr('attach_link'),
-                style: const TextStyle(
-                    color: AppColors.primary,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 16)),
-          ],
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(LanguageService.tr('enter_or_paste_link'),
-                style: const TextStyle(
-                    fontSize: 13,
-                    color: AppColors.textMuted,
-                    fontFamily: 'Cairo')),
-            const SizedBox(height: 14),
-            TextField(
-              controller: urlCtrl,
-              decoration: InputDecoration(
-                labelText: LanguageService.tr('url_label'),
-                hintText: 'https://example.com',
-                hintStyle: const TextStyle(fontSize: 12, color: Colors.grey),
-                border:
-                    OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                prefixIcon: const Icon(Icons.link, color: AppColors.primary),
-              ),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text(LanguageService.tr('auto_trans_1034'),
-                style: const TextStyle(color: AppColors.textMuted)),
-          ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary),
-            onPressed: () {
-              final url = urlCtrl.text.trim();
-              if (url.isNotEmpty) {
-                String detectedType = 'text';
-                String msgText = url;
-
-                if (_isEmbeddableVideo(url)) {
-                  detectedType = 'video';
-                  msgText = '${LanguageService.tr('attached_video')}: $url';
-                } else if (url.toLowerCase().contains('.mp4') ||
-                    url.toLowerCase().contains('.mov')) {
-                  detectedType = 'video';
-                  msgText = '${LanguageService.tr('attached_video')}: $url';
-                } else if (url.toLowerCase().contains('.png') ||
-                    url.toLowerCase().contains('.jpg') ||
-                    url.toLowerCase().contains('.jpeg')) {
-                  detectedType = 'image';
-                  msgText = '${LanguageService.tr('attached_image')}: $url';
-                }
-
-                Navigator.pop(context);
-                _sendMediaMessage(
-                  detectedType,
-                  url,
-                  msgText,
-                );
-              }
-            },
-            child: Text(LanguageService.tr('send_now'),
-                style: const TextStyle(
-                    color: Colors.white, fontWeight: FontWeight.bold)),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _showAttachVideoLinkDialog() {
-    final urlCtrl = TextEditingController();
-
-    showDialog(
-      context: context,
-      builder: (_) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Row(
-          children: [
-            const Icon(Icons.video_library, color: AppColors.primary, size: 28),
-            const SizedBox(width: 8),
-            Text(LanguageService.tr('attach_youtube_drive'),
-                style: const TextStyle(
-                    color: AppColors.primary,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 16)),
-          ],
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(LanguageService.tr('enter_youtube_drive_link'),
-                style: const TextStyle(
-                    fontSize: 13,
-                    color: AppColors.textMuted,
-                    fontFamily: 'Cairo')),
-            const SizedBox(height: 14),
-            TextField(
-              controller: urlCtrl,
-              decoration: InputDecoration(
-                labelText: LanguageService.tr('video_url_label'),
-                hintText: 'https://youtube.com/watch?v=...',
-                hintStyle: const TextStyle(fontSize: 11, color: Colors.grey),
-                border:
-                    OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                prefixIcon:
-                    const Icon(Icons.videocam, color: AppColors.primary),
-              ),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text(LanguageService.tr('auto_trans_1035'),
-                style: const TextStyle(color: AppColors.textMuted)),
-          ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary),
-            onPressed: () {
-              final url = urlCtrl.text.trim();
-              if (url.isNotEmpty) {
-                Navigator.pop(context);
-                _sendMediaMessage(
-                  'video',
-                  url,
-                  '${LanguageService.tr('attached_video')}: $url',
-                );
-              }
-            },
-            child: Text(LanguageService.tr('send_now'),
-                style: const TextStyle(
-                    color: Colors.white, fontWeight: FontWeight.bold)),
-          ),
-        ],
-      ),
-    );
-  }
 
   Future<void> _pickAndUploadMedia(bool isVideo) async {
     try {
@@ -1026,28 +882,12 @@ class _ChatScreenState extends State<ChatScreen> {
                   Row(
                     children: [
                       IconButton(
-                        padding: const EdgeInsets.symmetric(horizontal: 4),
+                        padding: const EdgeInsets.symmetric(horizontal: 8),
                         constraints: const BoxConstraints(),
-                        icon: const Icon(Icons.image,
-                            color: AppColors.primary, size: 22),
+                        icon: const Icon(Icons.image_outlined,
+                            color: AppColors.primary, size: 24),
                         tooltip: LanguageService.tr('attach_image_tooltip'),
                         onPressed: () => _pickAndUploadMedia(false),
-                      ),
-                      IconButton(
-                        padding: const EdgeInsets.symmetric(horizontal: 4),
-                        constraints: const BoxConstraints(),
-                        icon: const Icon(Icons.videocam,
-                            color: AppColors.primary, size: 22),
-                        tooltip: LanguageService.tr('attach_video_tooltip'),
-                        onPressed: _showAttachVideoLinkDialog,
-                      ),
-                      IconButton(
-                        padding: const EdgeInsets.symmetric(horizontal: 4),
-                        constraints: const BoxConstraints(),
-                        icon: const Icon(Icons.link,
-                            color: AppColors.primary, size: 22),
-                        tooltip: LanguageService.tr('attach_link_tooltip'),
-                        onPressed: _showAttachMediaDialog,
                       ),
                       const SizedBox(width: 4),
                       Expanded(

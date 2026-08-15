@@ -2,7 +2,6 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import '../theme/app_colors.dart';
 import 'home_screen.dart';
-import '../services/language_service.dart';
 import '../services/api_service.dart';
 import '../models/student.dart';
 
@@ -18,6 +17,7 @@ class _SplashScreenState extends State<SplashScreen>
   late AnimationController _controller;
   late Animation<double> _fadeAnimation;
   late Animation<Offset> _slideAnimation;
+  Timer? _timer;
 
   @override
   void initState() {
@@ -38,10 +38,11 @@ class _SplashScreenState extends State<SplashScreen>
 
     _controller.forward();
 
-    Timer(const Duration(seconds: 3), _navigateToHome);
+    _timer = Timer(const Duration(seconds: 3), _navigateToHome);
   }
 
   Future<void> _navigateToHome() async {
+    _timer?.cancel();
     await ApiService.initTokens();
     if (!mounted) return;
 
@@ -73,116 +74,101 @@ class _SplashScreenState extends State<SplashScreen>
 
   @override
   void dispose() {
+    _timer?.cancel();
     _controller.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: Container(
-        width: double.infinity,
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              AppColors.primaryDark,
-              AppColors.primary,
-              Color(0xFF081B28),
-            ],
+    return GestureDetector(
+      onTap: _navigateToHome,
+      child: Scaffold(
+        body: Container(
+          width: double.infinity,
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [
+                AppColors.primaryDark,
+                AppColors.primary,
+                Color(0xFF081B28),
+              ],
+            ),
           ),
-        ),
-        child: FadeTransition(
-          opacity: _fadeAnimation,
-          child: SlideTransition(
-            position: _slideAnimation,
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const Spacer(),
-                // اللوجو الرسمي المرفق
-                Container(
-                  width: 160,
-                  height: 160,
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: AppColors.primaryDark,
-                    shape: BoxShape.circle,
-                    border: Border.all(color: AppColors.accent, width: 3),
-                    boxShadow: [
-                      BoxShadow(
-                        color: AppColors.accent.withValues(alpha: 0.3),
-                        blurRadius: 35,
-                        spreadRadius: 8,
-                      ),
-                    ],
-                  ),
-                  child: ClipOval(
-                    child: Image.asset(
-                      'assets/images/logo.png',
-                      fit: BoxFit.contain,
-                      errorBuilder: (context, error, stackTrace) => Center(
-                        child: Text(
-                          LanguageService.tr('app_title').split(' ')[0],
-                          style: const TextStyle(
-                              fontSize: 38,
-                              fontWeight: FontWeight.w900,
-                              color: AppColors.accent),
+          child: FadeTransition(
+            opacity: _fadeAnimation,
+            child: SlideTransition(
+              position: _slideAnimation,
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Spacer(),
+                  // Official Logo
+                  Container(
+                    width: 160,
+                    height: 160,
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: AppColors.primaryDark,
+                      shape: BoxShape.circle,
+                      border: Border.all(color: AppColors.accent, width: 3),
+                      boxShadow: [
+                        BoxShadow(
+                          color: AppColors.accent.withValues(alpha: 0.3),
+                          blurRadius: 35,
+                          spreadRadius: 8,
+                        ),
+                      ],
+                    ),
+                    child: ClipOval(
+                      child: Image.asset(
+                        'assets/images/logo.png',
+                        fit: BoxFit.contain,
+                        errorBuilder: (context, error, stackTrace) =>
+                            const Center(
+                          child: Text(
+                            'ABSHER',
+                            style: TextStyle(
+                                fontSize: 32,
+                                fontWeight: FontWeight.w900,
+                                color: AppColors.accent),
+                          ),
                         ),
                       ),
                     ),
                   ),
-                ),
-                const SizedBox(height: 24),
-                const Text(
-                  'ABSHER',
-                  style: TextStyle(
-                    fontSize: 32,
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.accent,
-                    letterSpacing: 6,
+                  const SizedBox(height: 24),
+                  const Text(
+                    'ABSHER',
+                    style: TextStyle(
+                      fontSize: 32,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.accent,
+                      letterSpacing: 6,
+                    ),
                   ),
-                ),
-                const SizedBox(height: 12),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 32),
-                  child: Text(
-                    LanguageService.tr('splash_subtitle'),
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(
-                        fontSize: 18,
-                        color: Colors.white,
-                        fontWeight: FontWeight.w500),
-                  ),
-                ),
-                const SizedBox(height: 12),
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(
-                        color: AppColors.accent.withValues(alpha: 0.5)),
-                  ),
-                  child: const Text('@absher_georgia',
+                  const SizedBox(height: 12),
+                  const Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 32),
+                    child: Text(
+                      'Your Companion in Georgia',
+                      textAlign: TextAlign.center,
                       style: TextStyle(
-                          color: AppColors.accentLight, fontSize: 14)),
-                ),
-                const Spacer(),
-                const CircularProgressIndicator(
-                    valueColor:
-                        AlwaysStoppedAnimation<Color>(AppColors.accent)),
-                const SizedBox(height: 20),
-                TextButton(
-                  onPressed: _navigateToHome,
-                  child: Text(LanguageService.tr('skip_to_start'),
-                      style:
-                          const TextStyle(color: Colors.white70, fontSize: 16)),
-                ),
-                const SizedBox(height: 40),
-              ],
+                          fontSize: 18,
+                          color: Colors.white,
+                          fontWeight: FontWeight.w500,
+                          letterSpacing: 0.5),
+                    ),
+                  ),
+                  const Spacer(),
+                  const CircularProgressIndicator(
+                    valueColor: AlwaysStoppedAnimation<Color>(AppColors.accent),
+                  ),
+                  const SizedBox(height: 48),
+                ],
+              ),
             ),
           ),
         ),

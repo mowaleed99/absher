@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import '../models/student.dart';
+import '../models/country_code.dart';
+import '../widgets/country_picker_bottom_sheet.dart';
 import '../services/api_service.dart';
 import '../services/language_service.dart';
 import '../theme/app_colors.dart';
@@ -16,10 +18,10 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   final _formKey = GlobalKey<FormState>();
   late TextEditingController _nameController;
   late TextEditingController _emailController;
-  /// Stores only the 9-digit local part (e.g. "555123456"), NOT the country code.
   late TextEditingController _localPhoneController;
   late TextEditingController _customUniController;
-  static const String _countryCode = '+995';
+
+  late CountryCode _selectedCountry;
 
   String _selectedUni = '';
   List<String> _universities = [];
@@ -33,13 +35,13 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     _nameController = TextEditingController(text: widget.student.fullName);
     _emailController = TextEditingController(text: widget.student.email ?? '');
 
-    // Pre-fill local part: strip +995 prefix if present, otherwise keep raw value
     final rawPhone = widget.student.phone ?? '';
+    _selectedCountry = CountryCode.findCountryByPhone(rawPhone);
     String localPart = rawPhone;
-    if (rawPhone.startsWith('+995')) {
-      localPart = rawPhone.substring(4); // remove +995
-    } else if (rawPhone.startsWith('995')) {
-      localPart = rawPhone.substring(3); // remove 995
+    if (localPart.startsWith(_selectedCountry.dialCode)) {
+      localPart = localPart.substring(_selectedCountry.dialCode.length);
+    } else if (localPart.startsWith('+')) {
+      localPart = localPart.substring(1);
     }
     _localPhoneController = TextEditingController(text: localPart);
 
@@ -54,6 +56,18 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     _localPhoneController.dispose();
     _customUniController.dispose();
     super.dispose();
+  }
+
+  Future<void> _pickCountry() async {
+    final selected = await CountryPickerBottomSheet.show(
+      context,
+      selectedCountry: _selectedCountry,
+    );
+    if (selected != null && mounted) {
+      setState(() {
+        _selectedCountry = selected;
+      });
+    }
   }
 
   Future<void> _loadUniversities() async {
@@ -114,10 +128,13 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     });
 
     try {
+      final local = _localPhoneController.text.trim().replaceAll(RegExp(r'^0+'), '');
+      final fullPhone = '${_selectedCountry.dialCode}$local';
+
       final result = await ApiService.updateProfile(
         fullName: _nameController.text.trim(),
         email: _emailController.text.trim(),
-        phone: _countryCode + _localPhoneController.text.trim(),
+        phone: fullPhone,
         university: uniVal,
       );
 
@@ -245,19 +262,19 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                       ),
                       const SizedBox(height: 18),
 
-                      // Phone Field — fixed +995 prefix + local 9-digit input
+                      // Phone Field مع محدد كود الدولة
                       FormField<String>(
-                        initialValue: _localPhoneController.text,
                         validator: (_) {
                           final local = _localPhoneController.text.trim();
                           if (local.isEmpty) {
                             return LanguageService.tr('required_field');
                           }
-                          // Must be exactly 9 digits starting with 5
-                          if (!RegExp(r'^5[0-9]{8}$').hasMatch(local)) {
+                          final clean =
+                              local.replaceAll(RegExp(r'[\s\-]'), '');
+                          if (!RegExp(r'^[0-9]{6,15}$').hasMatch(clean)) {
                             return LanguageService.currentLang.value == 'ar'
-                                ? 'رقم الهاتف غير صالح. أدخل 9 أرقام تبدأ بـ 5 (مثال: 555123456)'
-                                : 'Invalid number. Enter 9 digits starting with 5 (e.g. 555123456)';
+                                ? 'يرجى إدخال رقم هاتف صحيح'
+                                : 'Please enter a valid phone number';
                           }
                           return null;
                         },
@@ -267,71 +284,99 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                             children: [
                               InputDecorator(
                                 decoration: InputDecoration(
-                                  labelText: LanguageService.tr('phone_example'),
-                                  prefixIcon: const Icon(
-                                      Icons.phone_outlined,
-                                      color: AppColors.primary),
+                                  labelText:
+                                      LanguageService.tr('phone_example'),
                                   border: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(12)),
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
                                   errorBorder: OutlineInputBorder(
                                     borderRadius: BorderRadius.circular(12),
-                                    borderSide:
-                                        const BorderSide(color: AppColors.error),
+                                    borderSide: const BorderSide(
+                                        color: AppColors.error),
                                   ),
                                   contentPadding: const EdgeInsets.symmetric(
-                                      horizontal: 12, vertical: 14),
+                                      horizontal: 12, vertical: 12),
+                                  prefixIcon: InkWell(
+                                    onTap: _isSaving ? null : _pickCountry,
+                                    borderRadius: BorderRadius.circular(12),
+                                    child: Padding(
+                                      padding:
+                                          const EdgeInsetsDirectional.only(
+                                              start: 12, end: 8),
+                                      child: Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          Text(
+                                            _selectedCountry.flag,
+                                            style:
+                                                const TextStyle(fontSize: 20),
+                                          ),
+                                          const SizedBox(width: 6),
+                                          Directionality(
+                                            textDirection: TextDirection.ltr,
+                                            child: Text(
+                                              _selectedCountry.dialCode,
+                                              style: const TextStyle(
+                                                color: AppColors.primary,
+                                                fontWeight: FontWeight.bold,
+                                                fontSize: 14,
+                                                letterSpacing: 0.5,
+                                              ),
+                                            ),
+                                          ),
+                                          const SizedBox(width: 2),
+                                          const Icon(
+                                            Icons.keyboard_arrow_down,
+                                            color: AppColors.primary,
+                                            size: 18,
+                                          ),
+                                          const SizedBox(width: 8),
+                                          Container(
+                                            width: 1.2,
+                                            height: 24,
+                                            color: Colors.grey.shade300,
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
                                 ),
-                                child: Row(
-                                  children: [
-                                    // ── Fixed non-editable prefix ──
-                                    Container(
-                                      padding: const EdgeInsets.symmetric(
-                                          horizontal: 10, vertical: 6),
-                                      decoration: BoxDecoration(
-                                        color: AppColors.primary
-                                            .withValues(alpha: 0.12),
-                                        borderRadius: BorderRadius.circular(8),
+                                child: Directionality(
+                                  textDirection: TextDirection.ltr,
+                                  child: TextField(
+                                    controller: _localPhoneController,
+                                    keyboardType: TextInputType.phone,
+                                    enabled: !_isSaving,
+                                    decoration: InputDecoration(
+                                      hintText: '123456789',
+                                      hintStyle: TextStyle(
+                                        color: Colors.grey.shade400,
+                                        fontSize: 14,
                                       ),
-                                      child: const Text(
-                                        '+995',
-                                        style: TextStyle(
-                                          color: AppColors.primary,
-                                          fontWeight: FontWeight.bold,
-                                          fontSize: 15,
-                                          letterSpacing: 0.5,
-                                        ),
-                                      ),
+                                      border: InputBorder.none,
+                                      isDense: true,
+                                      contentPadding:
+                                          const EdgeInsets.symmetric(
+                                              vertical: 4),
                                     ),
-                                    const SizedBox(width: 8),
-                                    // ── Editable local number (9 digits only) ──
-                                    Expanded(
-                                      child: TextField(
-                                        controller: _localPhoneController,
-                                        keyboardType: TextInputType.number,
-                                        maxLength: 9,
-                                        enabled: !_isSaving,
-                                        decoration: const InputDecoration(
-                                          hintText: '5XXXXXXXX',
-                                          border: InputBorder.none,
-                                          counterText: '',
-                                          isDense: true,
-                                        ),
-                                        style: const TextStyle(fontSize: 15),
-                                        onChanged: (_) => fieldState
-                                            .didChange(_localPhoneController.text),
-                                      ),
-                                    ),
-                                  ],
+                                    style: const TextStyle(
+                                        fontSize: 15,
+                                        fontWeight: FontWeight.w500),
+                                    onChanged: (val) =>
+                                        fieldState.didChange(val),
+                                  ),
                                 ),
                               ),
                               if (fieldState.hasError)
                                 Padding(
-                                  padding:
-                                      const EdgeInsets.only(top: 6, left: 12),
+                                  padding: const EdgeInsets.only(
+                                      top: 6, left: 12, right: 12),
                                   child: Text(
                                     fieldState.errorText!,
                                     style: const TextStyle(
-                                        color: AppColors.error, fontSize: 12),
+                                      color: AppColors.error,
+                                      fontSize: 12,
+                                    ),
                                   ),
                                 ),
                             ],

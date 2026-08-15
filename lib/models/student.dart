@@ -5,6 +5,7 @@ class Student {
   final String? phone;
   final int? universityId;
   final String? university;
+  final String? nationality;
   final String? avatarUrl;
   final int pointsBalance;
   final String? createdAt;
@@ -16,6 +17,7 @@ class Student {
     this.phone,
     this.universityId,
     this.university,
+    this.nationality,
     this.avatarUrl,
     this.pointsBalance = 0,
     this.createdAt,
@@ -33,6 +35,7 @@ class Student {
           ? int.tryParse(json['university_id'].toString())
           : null,
       university: json['university'] ?? json['uni'],
+      nationality: json['nationality'],
       avatarUrl: json['avatar_url'],
       pointsBalance: json['points_balance'] is int
           ? json['points_balance']
@@ -49,6 +52,7 @@ class Student {
       'phone': phone,
       'university_id': universityId,
       'university': university,
+      'nationality': nationality,
       'avatar_url': avatarUrl,
       'points_balance': pointsBalance,
       'created_at': createdAt,
@@ -62,6 +66,7 @@ class Student {
     String? phone,
     int? universityId,
     String? university,
+    String? nationality,
     String? avatarUrl,
     int? pointsBalance,
     String? createdAt,
@@ -73,6 +78,7 @@ class Student {
       phone: phone ?? this.phone,
       universityId: universityId ?? this.universityId,
       university: university ?? this.university,
+      nationality: nationality ?? this.nationality,
       avatarUrl: avatarUrl ?? this.avatarUrl,
       pointsBalance: pointsBalance ?? this.pointsBalance,
       createdAt: createdAt ?? this.createdAt,

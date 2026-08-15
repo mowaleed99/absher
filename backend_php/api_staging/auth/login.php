@@ -26,13 +26,17 @@ try {
     
     $student = $stmt->fetch(PDO::FETCH_ASSOC);
 
-    if ($student && !empty($student['is_blocked']) && (int)$student['is_blocked'] === 1) {
+    if (!$student) {
+        jsonResponse(false, "الحساب غير موجود", 401);
+    }
+
+    if (!empty($student['is_blocked']) && (int)$student['is_blocked'] === 1) {
         jsonResponse(false, "Account is blocked by administration.", 403);
     }
 
     $isValid = false;
     $needsRehash = false;
-    if ($student && !empty($student['password'])) {
+    if (!empty($student['password'])) {
         if (password_verify($password, $student['password'])) {
             $isValid = true;
         } elseif (hash_equals($student['password'], $password)) {
@@ -62,7 +66,7 @@ try {
             "student" => $student
         ]);
     } else {
-        jsonResponse(false, "Invalid credentials.", 401);
+        jsonResponse(false, "كلمة المرور غير صحيحة.", 401);
     }
 
 } catch (PDOException $e) {

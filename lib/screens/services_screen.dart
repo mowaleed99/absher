@@ -1,7 +1,6 @@
 // ignore_for_file: deprecated_member_use
 import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:image_picker/image_picker.dart';
 import '../theme/app_colors.dart';
 import '../services/api_service.dart';
 import 'login_screen.dart';
@@ -191,25 +190,7 @@ class _ServicesScreenState extends State<ServicesScreen> {
     final roomsCtrl = TextEditingController(text: '2');
     final metersCtrl = TextEditingController(text: '60');
     double calcPrice = 60 * 3.5;
-    bool hasAttachedImage = false;
     String selectedPaymentMethod = 'wallet';
-    XFile? attachedImageFile;
-
-    Future<void> pickImage(StateSetter setDialogState) async {
-      try {
-        final ImagePicker picker = ImagePicker();
-        final XFile? image =
-            await picker.pickImage(source: ImageSource.gallery);
-        if (image != null) {
-          setDialogState(() {
-            attachedImageFile = image;
-            hasAttachedImage = true;
-          });
-        }
-      } catch (e) {
-        debugPrint("Error picking image: $e");
-      }
-    }
 
     Future<void> pickDateTime(StateSetter setDialogState) async {
       final date = await showDatePicker(
@@ -305,12 +286,16 @@ class _ServicesScreenState extends State<ServicesScreen> {
           final int originalPrice = currentPrice;
           final int discountPts =
               (appliedPromoInfo != null && selectedPaymentMethod == 'wallet')
-                  ? (appliedPromoInfo!['discount_points'] as num? ?? 0).toInt()
+                  ? (appliedPromoInfo!['discount_points'] as num? ??
+                          appliedPromoInfo!['discount'] as num? ??
+                          0)
+                      .toInt()
                   : 0;
           final int effectivePrice =
               (appliedPromoInfo != null && selectedPaymentMethod == 'wallet')
-                  ? (appliedPromoInfo!['final_price_points'] as num? ??
-                          originalPrice)
+                  ? (appliedPromoInfo!['final_price'] as num? ??
+                          appliedPromoInfo!['final_price_points'] as num? ??
+                          (originalPrice - discountPts))
                       .toInt()
                   : originalPrice;
 
@@ -334,94 +319,82 @@ class _ServicesScreenState extends State<ServicesScreen> {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  DropdownButtonFormField<String?>(
-                    initialValue: _services.any(
-                            (s) => s['id']?.toString() == selectedServiceId)
-                        ? selectedServiceId
-                        : null,
-                    decoration: InputDecoration(
-                      labelText: LanguageService.tr('selected_service'),
-                      prefixIcon:
-                          const Icon(Icons.build, color: AppColors.accent),
-                      border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12)),
-                    ),
-                    items: _services
-                        .map((s) => DropdownMenuItem<String?>(
-                            value: s['id']?.toString(),
-                            child: Text(
-                                "${s['title']} (${LanguageService.formatServiceCost(int.tryParse(s['price_points']?.toString() ?? '0') ?? 0)})",
-                                style: const TextStyle(fontSize: 12))))
-                        .toList(),
-                    onChanged: (val) {
-                      if (val != null) {
-                        setDialogState(() {
-                          selectedServiceId = val;
-                          selectedPaymentMethod = 'wallet';
-                          appliedPromoInfo = null;
-                          promoCtrl.clear();
-                          promoError = null;
-                        });
-                      }
-                    },
-                  ),
-                  const SizedBox(height: 10),
-                  // Prominent price layout under the dropdown
                   Container(
                     width: double.infinity,
                     padding: const EdgeInsets.symmetric(
-                        horizontal: 16, vertical: 10),
+                        horizontal: 14, vertical: 12),
                     decoration: BoxDecoration(
-                      color: originalPrice > 0
-                          ? AppColors.accentLight
-                          : Colors.green.shade50,
-                      borderRadius: BorderRadius.circular(12),
+                      color: AppColors.accentLight.withValues(alpha: 0.6),
+                      borderRadius: BorderRadius.circular(14),
                       border: Border.all(
-                          color: originalPrice > 0
-                              ? AppColors.accent
-                              : Colors.green.shade300),
+                          color: AppColors.accent.withValues(alpha: 0.7)),
                     ),
                     child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        const Text("تكلفة الخدمة:",
-                            style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                fontSize: 13,
-                                color: AppColors.primary)),
-                        if (discountPts > 0)
-                          Row(
+                        Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: AppColors.accent,
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: const Icon(Icons.build,
+                              color: AppColors.primaryDark, size: 20),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                "$originalPrice نقطة",
-                                style: const TextStyle(
-                                  decoration: TextDecoration.lineThrough,
-                                  color: Colors.grey,
-                                  fontSize: 12,
-                                ),
-                              ),
-                              const SizedBox(width: 6),
-                              Text(
-                                "$effectivePrice نقطة",
+                                currentTitle,
                                 style: const TextStyle(
                                   fontWeight: FontWeight.bold,
                                   fontSize: 14,
-                                  color: Colors.green,
+                                  color: AppColors.primaryDark,
                                 ),
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
                               ),
+                              const SizedBox(height: 3),
+                              if (discountPts > 0)
+                                Row(
+                                  children: [
+                                    Text(
+                                      "$originalPrice نقطة",
+                                      style: const TextStyle(
+                                        decoration:
+                                            TextDecoration.lineThrough,
+                                        color: Colors.grey,
+                                        fontSize: 11,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 6),
+                                    Text(
+                                      "$effectivePrice نقطة",
+                                      style: const TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 13,
+                                        color: Colors.green,
+                                      ),
+                                    ),
+                                  ],
+                                )
+                              else
+                                Text(
+                                  originalPrice > 0
+                                      ? "تكلفة الخدمة: $originalPrice نقطة"
+                                      : LanguageService.tr('free_service'),
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.bold,
+                                    color: originalPrice > 0
+                                        ? AppColors.primary
+                                        : Colors.green.shade700,
+                                  ),
+                                ),
                             ],
-                          )
-                        else
-                          Text(
-                              originalPrice > 0
-                                  ? "$originalPrice نقطة"
-                                  : "مجانية (0 نقاط)",
-                              style: TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 14,
-                                  color: originalPrice > 0
-                                      ? AppColors.primary
-                                      : Colors.green.shade700)),
+                          ),
+                        ),
                       ],
                     ),
                   ),
@@ -520,35 +493,7 @@ class _ServicesScreenState extends State<ServicesScreen> {
                     ),
                     const SizedBox(height: 10),
                   ],
-                  InkWell(
-                    onTap: () => pickImage(setDialogState),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                          vertical: 12, horizontal: 16),
-                      decoration: BoxDecoration(
-                          border: Border.all(color: Colors.grey.shade400),
-                          borderRadius: BorderRadius.circular(12)),
-                      child: Row(
-                        children: [
-                          const Icon(Icons.image, color: AppColors.accent),
-                          const SizedBox(width: 10),
-                          Expanded(
-                              child: Text(
-                                  hasAttachedImage
-                                      ? "تم إرفاق صورة بنجاح"
-                                      : "إرفاق صورة للمشكلة (اختياري)",
-                                  style: TextStyle(
-                                      color: hasAttachedImage
-                                          ? Colors.green
-                                          : Colors.grey.shade600,
-                                      fontSize: 13))),
-                          if (hasAttachedImage)
-                            const Icon(Icons.check_circle, color: Colors.green),
-                        ],
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 10),
+
                   TextField(
                     controller: detailsCtrl,
                     maxLines: 2,
@@ -815,6 +760,57 @@ class _ServicesScreenState extends State<ServicesScreen> {
                       ),
                     ),
                   ],
+                  if (originalPrice > 0 &&
+                      selectedPaymentMethod == 'wallet' &&
+                      (_pointsBalance ?? 0) < effectivePrice) ...[
+                    const SizedBox(height: 12),
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 14, vertical: 10),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFFFF1F0),
+                        border: Border.all(
+                            color: const Color(0xFFFFA39E), width: 1.2),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.error_outline_rounded,
+                              color: Color(0xFFCF1322), size: 22),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  LanguageService.currentLang.value == 'ar'
+                                      ? "المحفظة فارغة / الرصيد غير كافٍ"
+                                      : "Wallet Balance Insufficient",
+                                  style: const TextStyle(
+                                    color: Color(0xFFCF1322),
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 13,
+                                  ),
+                                ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  LanguageService.currentLang.value == 'ar'
+                                      ? "تكلفة الخدمة $effectivePrice نقطة ورصيدك الحالي ${_pointsBalance ?? 0} نقطة. يمكنك اختيار 'الدفع نقدًا' لإتمام الطلب."
+                                      : "Service cost is $effectivePrice points and your balance is ${_pointsBalance ?? 0} points. You can select 'Pay in cash'.",
+                                  style: const TextStyle(
+                                    color: Color(0xFFA8071A),
+                                    fontSize: 11,
+                                    height: 1.4,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
                 ],
               ),
             ),
@@ -839,10 +835,18 @@ class _ServicesScreenState extends State<ServicesScreen> {
 
                   final paymentMethod =
                       finalPrice > 0 ? selectedPaymentMethod : 'free';
+                  final int discountPts =
+                      (appliedPromoInfo != null && paymentMethod == 'wallet')
+                          ? (appliedPromoInfo!['discount_points'] as num? ??
+                                  appliedPromoInfo!['discount'] as num? ??
+                                  0)
+                              .toInt()
+                          : 0;
                   final finalChargedPrice =
                       (appliedPromoInfo != null && paymentMethod == 'wallet')
-                          ? (appliedPromoInfo!['final_price_points'] as num? ??
-                                  finalPrice)
+                          ? (appliedPromoInfo!['final_price'] as num? ??
+                                  appliedPromoInfo!['final_price_points'] as num? ??
+                                  (finalPrice - discountPts))
                               .toInt()
                           : finalPrice;
 
@@ -884,7 +888,7 @@ class _ServicesScreenState extends State<ServicesScreen> {
                     phone: phoneCtrl.text,
                     address: resolvedAddress,
                     executionTime: dateCtrl.text,
-                    hasImage: hasAttachedImage,
+                    hasImage: false,
                     details: resolvedDetails,
                     rooms: finalIsCleanHome ? roomsCtrl.text : null,
                     meters: finalIsCleanHome ? metersCtrl.text : null,
@@ -916,14 +920,6 @@ class _ServicesScreenState extends State<ServicesScreen> {
 
                   Future<void> submitData() async {
                     String finalDetails = reqMsg;
-                    if (attachedImageFile != null) {
-                      final uploadedUrl = await ApiService.uploadImage(
-                          attachedImageFile, 'requests');
-                      if (uploadedUrl != null) {
-                        finalDetails +=
-                            '\n\n[رابط الصورة المرفقة: $uploadedUrl]';
-                      }
-                    }
 
                     final requestResult = await ApiService.submitServiceRequest(
                       serviceId: finalServiceId,

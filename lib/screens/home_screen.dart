@@ -27,14 +27,17 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen>
     with WidgetsBindingObserver, RouteAware {
   int _currentIndex = 0;
+  int _unreadChatCount = 0;
   Student? _currentUser;
   List<News> _newsList = [];
   List<Map<String, dynamic>> _notificationsList = [];
+  Set<String> _readNotificationIds = {};
   List<University> _universitiesList = [];
   List<Map<String, dynamic>> _districtsList = [];
   List<Map<String, dynamic>> _myRequests = [];
   bool _myRequestsLoaded = false;
   bool _isRatingPromptShowing = false;
+  Timer? _chatPollTimer;
 
   // Server-side filter state — null means "no filter" (show all)
   List<String> _selectedUniversities = [];
@@ -247,6 +250,11 @@ class _HomeScreenState extends State<HomeScreen>
           curve: Curves.easeInOut,
         );
       }
+    });
+
+    _loadUnreadChatCount();
+    _chatPollTimer = Timer.periodic(const Duration(seconds: 4), (_) {
+      if (mounted) _loadUnreadChatCount();
     });
 
     // إعادة جلب البيانات المترجمة عند تغيير اللغة
@@ -592,11 +600,21 @@ class _HomeScreenState extends State<HomeScreen>
 
   Future<void> _loadNotifications() async {
     final list = await ApiService.getNotifications();
+    final prefs = await SharedPreferences.getInstance();
+    final readList = prefs.getStringList('read_notification_ids') ?? [];
     if (mounted) {
       setState(() {
         _notificationsList = list;
+        _readNotificationIds = readList.toSet();
       });
     }
+  }
+
+  int get _unreadNotificationsCount {
+    return _notificationsList.where((n) {
+      final id = n['id']?.toString() ?? '';
+      return id.isNotEmpty && !_readNotificationIds.contains(id);
+    }).length;
   }
 
   Future<void> _loadUniversities() async {
@@ -635,8 +653,46 @@ class _HomeScreenState extends State<HomeScreen>
     LanguageService.currentLang.removeListener(_onLangChanged);
     WidgetsBinding.instance.removeObserver(this);
     _adTimer?.cancel();
+    _chatPollTimer?.cancel();
     _adController.dispose();
     super.dispose();
+  }
+
+  Future<void> _loadUnreadChatCount() async {
+    final usr = _currentUser ?? widget.user;
+    if (usr == null || usr.id <= 0 || widget.isGuest) {
+      if (_unreadChatCount != 0 && mounted) {
+        setState(() => _unreadChatCount = 0);
+      }
+      return;
+    }
+
+    if (_currentIndex == 2) {
+      if (_unreadChatCount != 0 && mounted) {
+        setState(() => _unreadChatCount = 0);
+      }
+      return;
+    }
+
+    try {
+      final chatId = await ApiService.createChat(usr.id);
+      if (chatId != null && chatId > 0) {
+        final messages = await ApiService.getMessages(chatId);
+        final prefs = await SharedPreferences.getInstance();
+        final lastReadId =
+            prefs.getInt('last_read_chat_msg_id_${usr.id}') ?? 0;
+
+        final unreadAdminMsgs = messages
+            .where((m) => m.senderType != 'student' && m.id > lastReadId)
+            .length;
+
+        if (mounted && _unreadChatCount != unreadAdminMsgs) {
+          setState(() => _unreadChatCount = unreadAdminMsgs);
+        }
+      }
+    } catch (e) {
+      debugPrint('Error loading unread chat count: $e');
+    }
   }
 
   Widget _buildFilterChipDropdown({
@@ -647,22 +703,22 @@ class _HomeScreenState extends State<HomeScreen>
   }) {
     final isSelected =
         value != 'all' && value != 'all_districts' && value != 'all_flats';
-    final bgColor = isSelected ? AppColors.primary : const Color(0xFFF1F5F9);
-    final borderColor = isSelected
-        ? AppColors.primary
-        : AppColors.primary.withValues(alpha: 0.06);
-    final textColor = isSelected ? Colors.white : Colors.black87;
-    final iconColor = isSelected ? Colors.white : Colors.black54;
+    final bgColor = isSelected ? AppColors.primary : const Color(0xFFF8FAFC);
+    final borderColor =
+        isSelected ? AppColors.primary : const Color(0xFFE2E8F0);
+    final textColor = isSelected ? Colors.white : AppColors.textDark;
+    final iconColor = isSelected ? Colors.white : AppColors.textMuted;
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+      height: 48,
+      padding: const EdgeInsets.symmetric(horizontal: 12),
       decoration: BoxDecoration(
         color: bgColor,
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(12),
         border: Border.all(color: borderColor, width: 1.2),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.02),
+            color: Colors.black.withValues(alpha: 0.03),
             blurRadius: 4,
             offset: const Offset(0, 2),
           ),
@@ -673,13 +729,30 @@ class _HomeScreenState extends State<HomeScreen>
           value: value,
           isExpanded: true,
           icon: Icon(Icons.keyboard_arrow_down, size: 18, color: iconColor),
-          style: TextStyle(
-            color: textColor,
-            fontSize: 12,
-            fontWeight: isSelected ? FontWeight.bold : FontWeight.w600,
-            fontFamily: 'Cairo',
-          ),
           dropdownColor: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          selectedItemBuilder: (BuildContext context) {
+            return items.map((item) {
+              final bool isAllItem = item == 'all' ||
+                  item == 'all_flats' ||
+                  item == 'all_districts' ||
+                  item == LanguageService.tr('auto_trans_1139');
+              return Align(
+                alignment: AlignmentDirectional.centerStart,
+                child: Text(
+                  isAllItem ? label : LanguageService.tr(item),
+                  overflow: TextOverflow.ellipsis,
+                  maxLines: 1,
+                  style: TextStyle(
+                    color: textColor,
+                    fontSize: 12,
+                    fontWeight: isSelected ? FontWeight.bold : FontWeight.w600,
+                    fontFamily: 'Cairo',
+                  ),
+                ),
+              );
+            }).toList();
+          },
           items: items.map((item) {
             final bool isAllItem = item == 'all' ||
                 item == 'all_flats' ||
@@ -691,9 +764,11 @@ class _HomeScreenState extends State<HomeScreen>
                 isAllItem ? label : LanguageService.tr(item),
                 overflow: TextOverflow.ellipsis,
                 style: const TextStyle(
-                    fontSize: 12,
-                    color: AppColors.textDark,
-                    fontWeight: FontWeight.normal),
+                  fontSize: 12,
+                  color: AppColors.textDark,
+                  fontWeight: FontWeight.w500,
+                  fontFamily: 'Cairo',
+                ),
               ),
             );
           }).toList(),
@@ -708,25 +783,25 @@ class _HomeScreenState extends State<HomeScreen>
     required bool isSelected,
     required VoidCallback onTap,
   }) {
-    final bgColor = isSelected ? AppColors.primary : const Color(0xFFF1F5F9);
-    final borderColor = isSelected
-        ? AppColors.primary
-        : AppColors.primary.withValues(alpha: 0.06);
-    final textColor = isSelected ? Colors.white : Colors.black87;
-    final iconColor = isSelected ? Colors.white : Colors.black54;
+    final bgColor = isSelected ? AppColors.primary : const Color(0xFFF8FAFC);
+    final borderColor =
+        isSelected ? AppColors.primary : const Color(0xFFE2E8F0);
+    final textColor = isSelected ? Colors.white : AppColors.textDark;
+    final iconColor = isSelected ? Colors.white : AppColors.textMuted;
 
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(14),
+      borderRadius: BorderRadius.circular(12),
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+        height: 48,
+        padding: const EdgeInsets.symmetric(horizontal: 12),
         decoration: BoxDecoration(
           color: bgColor,
-          borderRadius: BorderRadius.circular(14),
+          borderRadius: BorderRadius.circular(12),
           border: Border.all(color: borderColor, width: 1.2),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.02),
+              color: Colors.black.withValues(alpha: 0.03),
               blurRadius: 4,
               offset: const Offset(0, 2),
             ),
@@ -739,6 +814,7 @@ class _HomeScreenState extends State<HomeScreen>
               child: Text(
                 label,
                 overflow: TextOverflow.ellipsis,
+                maxLines: 1,
                 style: TextStyle(
                   color: textColor,
                   fontSize: 12,
@@ -747,7 +823,8 @@ class _HomeScreenState extends State<HomeScreen>
                 ),
               ),
             ),
-            Icon(Icons.arrow_drop_down, size: 18, color: iconColor),
+            const SizedBox(width: 4),
+            Icon(Icons.keyboard_arrow_down, size: 18, color: iconColor),
           ],
         ),
       ),
@@ -756,46 +833,109 @@ class _HomeScreenState extends State<HomeScreen>
 
   void _showUniversitiesDialog() {
     final allUnis = _universitiesList.map((u) => u.name).toList();
-    // If universities haven't loaded yet, trigger a reload and show empty state
     if (allUnis.isEmpty) {
       _loadUniversities();
     }
     List<String> tempSelected = List.from(_selectedUniversities);
+    String searchQuery = '';
 
     showDialog(
       context: context,
       builder: (ctx) {
         return StatefulBuilder(
           builder: (context, setDialogState) {
+            final filteredUnis = allUnis
+                .where((u) =>
+                    u.toLowerCase().contains(searchQuery.toLowerCase().trim()))
+                .toList();
+
             return AlertDialog(
               shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(20)),
-              title: Text(LanguageService.tr('select_universities'),
-                  style: const TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16,
-                      color: AppColors.primary)),
+              title: Row(
+                children: [
+                  const Icon(Icons.school, color: AppColors.primary, size: 22),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      LanguageService.tr('select_universities'),
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                        color: AppColors.primary,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
               content: SizedBox(
                 width: double.maxFinite,
+                height: MediaQuery.of(context).size.height * 0.55,
                 child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: allUnis.map((uni) {
-                    final isChecked = tempSelected.contains(uni);
-                    return CheckboxListTile(
-                      title: Text(uni, style: const TextStyle(fontSize: 13)),
-                      value: isChecked,
-                      activeColor: AppColors.primary,
-                      onChanged: (val) {
-                        setDialogState(() {
-                          if (val == true) {
-                            tempSelected.add(uni);
-                          } else {
-                            tempSelected.remove(uni);
-                          }
-                        });
-                      },
-                    );
-                  }).toList(),
+                  children: [
+                    if (allUnis.length > 5) ...[
+                      TextField(
+                        decoration: InputDecoration(
+                          hintText: LanguageService.currentLang.value == 'ar'
+                              ? 'ابحث عن الجامعة...'
+                              : 'Search university...',
+                          prefixIcon: const Icon(Icons.search, size: 20),
+                          isDense: true,
+                          contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 12, vertical: 10),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(10),
+                            borderSide: BorderSide(color: Colors.grey.shade300),
+                          ),
+                        ),
+                        onChanged: (val) {
+                          setDialogState(() {
+                            searchQuery = val;
+                          });
+                        },
+                      ),
+                      const SizedBox(height: 8),
+                    ],
+                    Expanded(
+                      child: filteredUnis.isEmpty
+                          ? Center(
+                              child: Text(
+                                LanguageService.tr('no_results'),
+                                style: const TextStyle(
+                                    color: AppColors.textMuted, fontSize: 13),
+                              ),
+                            )
+                          : ListView.separated(
+                              shrinkWrap: true,
+                              itemCount: filteredUnis.length,
+                              separatorBuilder: (_, __) =>
+                                  const Divider(height: 1),
+                              itemBuilder: (context, idx) {
+                                final uni = filteredUnis[idx];
+                                final isChecked = tempSelected.contains(uni);
+                                return CheckboxListTile(
+                                  contentPadding: const EdgeInsets.symmetric(
+                                      horizontal: 4),
+                                  title: Text(
+                                    uni,
+                                    style: const TextStyle(fontSize: 13),
+                                  ),
+                                  value: isChecked,
+                                  activeColor: AppColors.primary,
+                                  onChanged: (val) {
+                                    setDialogState(() {
+                                      if (val == true) {
+                                        tempSelected.add(uni);
+                                      } else {
+                                        tempSelected.remove(uni);
+                                      }
+                                    });
+                                  },
+                                );
+                              },
+                            ),
+                    ),
+                  ],
                 ),
               ),
               actions: [
@@ -804,18 +944,26 @@ class _HomeScreenState extends State<HomeScreen>
                     setState(() => _selectedUniversities = []);
                     Navigator.pop(context);
                   },
-                  child: Text(LanguageService.tr('no_results'),
-                      style: const TextStyle(color: AppColors.textMuted)),
+                  child: Text(
+                    LanguageService.tr('clear_filter'),
+                    style: const TextStyle(color: AppColors.textMuted),
+                  ),
                 ),
                 ElevatedButton(
                   style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.primary),
+                    backgroundColor: AppColors.primary,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                  ),
                   onPressed: () {
                     setState(() => _selectedUniversities = tempSelected);
                     Navigator.pop(context);
                   },
-                  child: Text(LanguageService.tr('apply_filter'),
-                      style: const TextStyle(color: Colors.white)),
+                  child: Text(
+                    LanguageService.tr('apply'),
+                    style: const TextStyle(color: Colors.white),
+                  ),
                 ),
               ],
             );
@@ -971,35 +1119,47 @@ class _HomeScreenState extends State<HomeScreen>
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisSize: MainAxisSize.min,
                           children: [
                             Text(
-                              '${LanguageService.tr('welcome')} ${usr?.fullName ?? LanguageService.tr('auto_trans_1160')}',
+                              widget.isGuest || usr == null
+                                  ? (LanguageService.currentLang.value == 'ar'
+                                      ? 'الزائر الكريم'
+                                      : 'Honored Guest')
+                                  : '${LanguageService.tr('welcome')} ${usr.fullName}',
                               style: const TextStyle(
                                   color: Colors.white,
                                   fontSize: 18,
                                   fontWeight: FontWeight.bold),
                             ),
-                            const SizedBox(height: 4),
-                            Text(
-                              (usr?.university != null && usr!.university!.isNotEmpty)
-                                  ? usr.university!
-                                  : LanguageService.tr('auto_trans_1161'),
-                              style: const TextStyle(
-                                  color: AppColors.accentLight, fontSize: 13),
-                            ),
+                            if (!widget.isGuest &&
+                                usr?.university != null &&
+                                usr!.university!.isNotEmpty) ...[
+                              const SizedBox(height: 4),
+                              Text(
+                                usr.university!,
+                                style: const TextStyle(
+                                    color: AppColors.accentLight, fontSize: 13),
+                              ),
+                            ],
                           ],
                         ),
                       ),
                       IconButton(
-                        onPressed: () => Navigator.of(context).push(
+                        onPressed: () async {
+                          await Navigator.of(context).push(
                             MaterialPageRoute(
-                                builder: (_) =>
-                                    NotificationsScreen(user: usr))),
+                              builder: (_) => NotificationsScreen(user: usr),
+                            ),
+                          );
+                          // Refresh unread count immediately upon returning
+                          _loadNotifications();
+                        },
                         icon: Stack(
                           children: [
                             const Icon(Icons.notifications_outlined,
                                 color: Colors.white, size: 28),
-                            if (_notificationsList.isNotEmpty)
+                            if (_unreadNotificationsCount > 0)
                               Positioned(
                                 right: 0,
                                 top: 0,
@@ -1008,12 +1168,18 @@ class _HomeScreenState extends State<HomeScreen>
                                   decoration: const BoxDecoration(
                                       color: Colors.redAccent,
                                       shape: BoxShape.circle),
-                                  child: Text(
-                                    _notificationsList.length.toString(),
-                                    style: const TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 10,
-                                        fontWeight: FontWeight.bold),
+                                  constraints: const BoxConstraints(
+                                      minWidth: 16, minHeight: 16),
+                                  child: Center(
+                                    child: Text(
+                                      _unreadNotificationsCount > 99
+                                          ? '99+'
+                                          : _unreadNotificationsCount.toString(),
+                                      style: const TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 10,
+                                          fontWeight: FontWeight.bold),
+                                    ),
                                   ),
                                 ),
                               ),
@@ -1348,7 +1514,6 @@ class _HomeScreenState extends State<HomeScreen>
                         Row(
                           children: [
                             Expanded(
-                              flex: 6,
                               child: _buildCustomFilterChip(
                                 label: _selectedUniversities.isEmpty
                                     ? LanguageService.tr('auto_trans_1165')
@@ -1359,7 +1524,6 @@ class _HomeScreenState extends State<HomeScreen>
                             ),
                             const SizedBox(width: 8),
                             Expanded(
-                              flex: 5,
                               child: _buildCustomFilterChip(
                                 label: _maxPriceFilter == null
                                     ? LanguageService.tr('auto_trans_1166')
@@ -1448,12 +1612,77 @@ class _HomeScreenState extends State<HomeScreen>
                             ),
                             const SizedBox(width: 8),
                             Expanded(
-                              child: _buildCustomFilterChip(
-                                label: _selectedUniversities.isEmpty
-                                    ? LanguageService.tr('auto_trans_1165')
-                                    : _selectedUniversities.join(" + "),
-                                isSelected: _selectedUniversities.isNotEmpty,
-                                onTap: _showUniversitiesDialog,
+                              child: InkWell(
+                                onTap: () {
+                                  setState(() {
+                                    _selectedUniversities = [];
+                                    _maxPriceFilter = null;
+                                    _rentalTypeFilter = null;
+                                    _districtIdFilter = null;
+                                    _roomsCountFilter = null;
+                                  });
+                                  _loadApartments();
+                                },
+                                borderRadius: BorderRadius.circular(12),
+                                child: Container(
+                                  height: 48,
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 12),
+                                  decoration: BoxDecoration(
+                                    color: (_selectedUniversities.isNotEmpty ||
+                                            _maxPriceFilter != null ||
+                                            _rentalTypeFilter != null ||
+                                            _districtIdFilter != null ||
+                                            _roomsCountFilter != null)
+                                        ? Colors.red.shade50
+                                        : const Color(0xFFF8FAFC),
+                                    borderRadius: BorderRadius.circular(12),
+                                    border: Border.all(
+                                      color: (_selectedUniversities.isNotEmpty ||
+                                              _maxPriceFilter != null ||
+                                              _rentalTypeFilter != null ||
+                                              _districtIdFilter != null ||
+                                              _roomsCountFilter != null)
+                                          ? Colors.red.shade200
+                                          : const Color(0xFFE2E8F0),
+                                      width: 1.2,
+                                    ),
+                                  ),
+                                  child: Row(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Icon(
+                                        Icons.refresh_rounded,
+                                        size: 16,
+                                        color: (_selectedUniversities
+                                                    .isNotEmpty ||
+                                                _maxPriceFilter != null ||
+                                                _rentalTypeFilter != null ||
+                                                _districtIdFilter != null ||
+                                                _roomsCountFilter != null)
+                                            ? Colors.red.shade700
+                                            : AppColors.textMuted,
+                                      ),
+                                      const SizedBox(width: 6),
+                                      Text(
+                                        LanguageService.tr('clear_filter'),
+                                        style: TextStyle(
+                                          color: (_selectedUniversities
+                                                      .isNotEmpty ||
+                                                  _maxPriceFilter != null ||
+                                                  _rentalTypeFilter != null ||
+                                                  _districtIdFilter != null ||
+                                                  _roomsCountFilter != null)
+                                              ? Colors.red.shade700
+                                              : AppColors.textMuted,
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.bold,
+                                          fontFamily: 'Cairo',
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
                               ),
                             ),
                           ],
@@ -1713,9 +1942,37 @@ class _HomeScreenState extends State<HomeScreen>
               child: BottomNavigationBar(
                 currentIndex: _currentIndex,
                 onTap: (idx) {
-                  setState(() => _currentIndex = idx);
+                  setState(() {
+                    _currentIndex = idx;
+                    if (idx == 2) {
+                      _unreadChatCount = 0;
+                    }
+                  });
                   if (idx == 0 && !widget.isGuest) {
                     _loadCurrentUser();
+                  }
+                  if (idx == 2) {
+                    final usr = _currentUser ?? widget.user;
+                    if (usr != null && usr.id > 0) {
+                      ApiService.createChat(usr.id).then((cid) {
+                        if (cid != null && cid > 0) {
+                          ApiService.getMessages(cid).then((msgs) {
+                            final adminMsgs = msgs
+                                .where((m) => m.senderType != 'student')
+                                .toList();
+                            if (adminMsgs.isNotEmpty) {
+                              final maxId = adminMsgs
+                                  .map((m) => m.id)
+                                  .reduce((a, b) => a > b ? a : b);
+                              SharedPreferences.getInstance().then((prefs) {
+                                prefs.setInt(
+                                    'last_read_chat_msg_id_${usr.id}', maxId);
+                              });
+                            }
+                          });
+                        }
+                      });
+                    }
                   }
                 },
                 type: BottomNavigationBarType.fixed,
@@ -1734,8 +1991,36 @@ class _HomeScreenState extends State<HomeScreen>
                       activeIcon: const Icon(Icons.build_circle),
                       label: LanguageService.tr('services')),
                   BottomNavigationBarItem(
-                      icon: const Icon(Icons.chat_bubble_outline),
-                      activeIcon: const Icon(Icons.chat_bubble),
+                      icon: Badge(
+                        isLabelVisible: _unreadChatCount > 0,
+                        backgroundColor: Colors.redAccent,
+                        label: Text(
+                          _unreadChatCount > 99
+                              ? '99+'
+                              : _unreadChatCount.toString(),
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        child: const Icon(Icons.chat_bubble_outline),
+                      ),
+                      activeIcon: Badge(
+                        isLabelVisible: _unreadChatCount > 0,
+                        backgroundColor: Colors.redAccent,
+                        label: Text(
+                          _unreadChatCount > 99
+                              ? '99+'
+                              : _unreadChatCount.toString(),
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        child: const Icon(Icons.chat_bubble),
+                      ),
                       label: LanguageService.tr('chat')),
                   BottomNavigationBarItem(
                       icon: const Icon(Icons.local_offer_outlined),

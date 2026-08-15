@@ -68,17 +68,40 @@ if ($action === 'get_notifications') {
             }
         }
 
-        $stmt = $conn->prepare("SELECT id, student_id, title, body as content,
-                                       COALESCE(NULLIF(title_ar, ''), title) AS title_ar,
-                                       COALESCE(NULLIF(title_en, ''), title) AS title_en,
-                                       COALESCE(NULLIF(body_ar, ''), body) AS body_ar,
-                                       COALESCE(NULLIF(body_en, ''), body) AS body_en,
-                                       created_at as date 
-                                FROM notifications 
-                                WHERE student_id = 0 OR student_id = ? 
-                                ORDER BY created_at DESC 
-                                LIMIT 50");
-        $stmt->execute([$studentId]);
+        $studentCreatedAt = null;
+        if ($studentId > 0) {
+            $sStmt = $conn->prepare("SELECT created_at FROM students WHERE id = ? LIMIT 1");
+            $sStmt->execute([$studentId]);
+            $studentCreatedAt = $sStmt->fetchColumn();
+        }
+
+        if ($studentCreatedAt) {
+            // For registered students: only show direct notifications or broadcasts created AFTER their registration
+            $stmt = $conn->prepare("SELECT id, student_id, title, body as content,
+                                           COALESCE(NULLIF(title_ar, ''), title) AS title_ar,
+                                           COALESCE(NULLIF(title_en, ''), title) AS title_en,
+                                           COALESCE(NULLIF(body_ar, ''), body) AS body_ar,
+                                           COALESCE(NULLIF(body_en, ''), body) AS body_en,
+                                           created_at as date 
+                                    FROM notifications 
+                                    WHERE student_id = ? OR (student_id = 0 AND created_at >= ?)
+                                    ORDER BY created_at DESC 
+                                    LIMIT 50");
+            $stmt->execute([$studentId, $studentCreatedAt]);
+        } else {
+            // For guest users: only recent broadcast notifications within the last 24 hours
+            $stmt = $conn->prepare("SELECT id, student_id, title, body as content,
+                                           COALESCE(NULLIF(title_ar, ''), title) AS title_ar,
+                                           COALESCE(NULLIF(title_en, ''), title) AS title_en,
+                                           COALESCE(NULLIF(body_ar, ''), body) AS body_ar,
+                                           COALESCE(NULLIF(body_en, ''), body) AS body_en,
+                                           created_at as date 
+                                    FROM notifications 
+                                    WHERE student_id = 0 AND created_at >= DATE_SUB(NOW(), INTERVAL 24 HOUR)
+                                    ORDER BY created_at DESC 
+                                    LIMIT 50");
+            $stmt->execute();
+        }
         $notifications = $stmt->fetchAll(PDO::FETCH_ASSOC);
         echo json_encode(["status" => "success", "notifications" => $notifications], JSON_UNESCAPED_UNICODE);
     } catch (PDOException $e) {

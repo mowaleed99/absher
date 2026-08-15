@@ -2,7 +2,7 @@
 require_once __DIR__ . '/../../config/db.php';
 require_once __DIR__ . '/../core/jwt.php';
 
-function performRegistration($conn, $fullName, $email, $phone, $password, $uni) {
+function performRegistration($conn, $fullName, $email, $phone, $password, $uni, $nationality = null) {
     // 1. Validation Rules
     if (empty($fullName) || strlen($fullName) < 3 || strlen($fullName) > 150) {
         return ["success" => false, "message" => "Full name is required (3-150 characters).", "code" => 400];
@@ -13,10 +13,10 @@ function performRegistration($conn, $fullName, $email, $phone, $password, $uni) 
     }
 
     $phone = preg_replace('/[^\+0-9]/', '', $phone);
-    if (empty($phone) || !preg_match('/^\+9955[0-9]{8}$/', $phone)) {
+    if (empty($phone) || !preg_match('/^\+?[0-9]{7,20}$/', $phone)) {
         return [
             "success" => false, 
-            "message" => "رقم الهاتف الجورجي غير صالح. يجب أن يبدأ بـ +995 متبوعاً بـ 9 أرقام تبدأ بـ 5 (مثال: +995555123456) / Invalid Georgian phone number. Must start with +995 followed by 9 digits starting with 5.", 
+            "message" => "رقم الهاتف غير صالح. يرجى إدخال رقم هاتف صحيح مع كود الدولة / Invalid phone number.", 
             "code" => 400
         ];
     }
@@ -45,14 +45,15 @@ function performRegistration($conn, $fullName, $email, $phone, $password, $uni) 
         $passwordHash = password_hash($password, PASSWORD_DEFAULT);
 
         // 4. Insert Student
-        $insertQuery = "INSERT INTO students (full_name, email, phone, password, university, points) VALUES (:full_name, :email, :phone, :password, :university, 0)";
+        $insertQuery = "INSERT INTO students (full_name, email, phone, password, university, nationality, points) VALUES (:full_name, :email, :phone, :password, :university, :nationality, 0)";
         $stmt = $conn->prepare($insertQuery);
         $stmt->execute([
             'full_name' => $fullName,
             'email' => $email,
             'phone' => $phone,
             'password' => $passwordHash,
-            'university' => $uni
+            'university' => $uni,
+            'nationality' => $nationality
         ]);
 
         $studentId = $conn->lastInsertId();
@@ -76,6 +77,7 @@ function performRegistration($conn, $fullName, $email, $phone, $password, $uni) 
                     "email" => $email,
                     "phone" => $phone,
                     "university" => $uni,
+                    "nationality" => $nationality,
                     "avatar_url" => null,
                     "points_balance" => 0
                 ]

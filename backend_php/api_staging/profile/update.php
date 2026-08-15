@@ -24,8 +24,8 @@ if (empty($email) || !filter_var($email, FILTER_VALIDATE_EMAIL) || strlen($email
 }
 
 $phone = preg_replace('/[^\+0-9]/', '', $phone);
-if (empty($phone) || !preg_match('/^\+9955[0-9]{8}$/', $phone)) {
-    jsonResponse(false, "رقم الهاتف الجورجي غير صالح. يجب أن يبدأ بـ +995 متبوعاً بـ 9 أرقام تبدأ بـ 5 (مثال: +995555123456) / Invalid Georgian phone number. Must start with +995 followed by 9 digits starting with 5.", 400);
+if (empty($phone) || !preg_match('/^\+?[0-9]{7,20}$/', $phone)) {
+    jsonResponse(false, "رقم الهاتف غير صالح. يرجى إدخال رقم هاتف صحيح مع كود الدولة / Invalid phone number.", 400);
 }
 
 if (strlen($university) > 150) {

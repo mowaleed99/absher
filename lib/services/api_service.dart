@@ -114,20 +114,36 @@ class ApiService {
         }),
       );
 
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body) as Map<String, dynamic>;
-        final isSuccess =
-            data['success'] == true || data['status'] == 'success';
-        // Save token if login succeeded
+      Map<String, dynamic> data = {};
+      try {
+        if (response.body.isNotEmpty) {
+          final decoded = jsonDecode(response.body);
+          if (decoded is Map<String, dynamic>) {
+            data = decoded;
+          }
+        }
+      } catch (e) {
+        debugPrint('Error parsing login response JSON: $e');
+      }
+
+      final isSuccess = response.statusCode == 200 &&
+          (data['success'] == true || data['status'] == 'success');
+
+      if (isSuccess) {
         final token = data['data']?['token'] ?? data['token'];
-        if (isSuccess && token != null) {
+        if (token != null) {
           await saveAuthToken(token.toString());
         }
         return data;
       } else {
+        final serverMsg = data['message'] ?? data['error'];
+        final String errorMessage =
+            (serverMsg != null && serverMsg.toString().isNotEmpty)
+                ? serverMsg.toString()
+                : 'خطأ في الاتصال بالخادم (${response.statusCode})';
         return {
           'success': false,
-          'message': 'خطأ في الاتصال بالخادم (${response.statusCode})'
+          'message': errorMessage,
         };
       }
     } catch (e) {
@@ -143,6 +159,7 @@ class ApiService {
     required String phone,
     required String university,
     required String password,
+    String? nationality,
   }) async {
     try {
       final response = await http
@@ -155,6 +172,7 @@ class ApiService {
               'phone': phone,
               'university': university,
               'password': password,
+              'nationality': nationality,
             }),
           )
           .timeout(const Duration(seconds: 15));
@@ -1040,8 +1058,8 @@ class ApiService {
         request.files
             .add(http.MultipartFile.fromBytes('file', bytes, filename: name));
       }
-      final streamed = await request.send();
-      final response = await http.Response.fromStream(streamed);
+      final streamed = await request.send().timeout(const Duration(seconds: 25));
+      final response = await http.Response.fromStream(streamed).timeout(const Duration(seconds: 15));
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body) as Map<String, dynamic>;
         final isSuccess =

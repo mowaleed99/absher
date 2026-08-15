@@ -325,33 +325,37 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                   _buildAvatarWidget(),
                                   const SizedBox(height: 16),
                                   Text(
-                                    _student?.fullName ??
-                                        LanguageService.tr(
-                                            'default_student_name'),
+                                    widget.isGuest || _student == null
+                                        ? (LanguageService.currentLang.value == 'ar'
+                                            ? 'الزائر الكريم'
+                                            : 'Honored Guest')
+                                        : _student!.fullName,
                                     style: const TextStyle(
                                         color: Colors.white,
                                         fontSize: 22,
                                         fontWeight: FontWeight.bold),
                                   ),
-                                  const SizedBox(height: 6),
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(
-                                        horizontal: 14, vertical: 4),
-                                    decoration: BoxDecoration(
-                                        color: Colors.white
-                                            .withValues(alpha: 0.15),
-                                        borderRadius:
-                                            BorderRadius.circular(20)),
-                                    child: Text(
-                                      _student?.university ??
-                                          LanguageService.tr(
-                                              'default_student_uni'),
-                                      textAlign: TextAlign.center,
-                                      style: const TextStyle(
-                                          color: AppColors.accentLight,
-                                          fontSize: 13),
+                                  if (!widget.isGuest &&
+                                      _student?.university != null &&
+                                      _student!.university!.isNotEmpty) ...[
+                                    const SizedBox(height: 6),
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(
+                                          horizontal: 14, vertical: 4),
+                                      decoration: BoxDecoration(
+                                          color: Colors.white
+                                              .withValues(alpha: 0.15),
+                                          borderRadius:
+                                              BorderRadius.circular(20)),
+                                      child: Text(
+                                        _student!.university!,
+                                        textAlign: TextAlign.center,
+                                        style: const TextStyle(
+                                            color: AppColors.accentLight,
+                                            fontSize: 13),
+                                      ),
                                     ),
-                                  ),
+                                  ],
                                 ],
                               ),
                             ),

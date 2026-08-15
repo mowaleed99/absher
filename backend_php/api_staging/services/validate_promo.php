@@ -316,6 +316,7 @@ echo json_encode([
         'original_price' => $originalPrice,
         'discount_points' => $discountPoints,
         'final_price' => $finalPrice,
+        'final_price_points' => $finalPrice,
         'message' => ($discountType === 'free') ? 'تم تطبيق كود الخدمة المجانية بنجاح' : "تم تطبيق كود الخصم بنجاح (-$discountPoints نقطة)"
     ]
 ], JSON_UNESCAPED_UNICODE);

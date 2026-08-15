@@ -11,8 +11,9 @@ $password = trim($data['password'] ?? '');
 $email = trim($data['email'] ?? '');
 $phone = trim($data['phone'] ?? '');
 $uni = trim($data['university'] ?? 'جامعة تبليسي الطبية (TSMU)');
+$nationality = trim($data['nationality'] ?? 'GE');
 
-$result = performRegistration($conn, $fullName, $email, $phone, $password, $uni);
+$result = performRegistration($conn, $fullName, $email, $phone, $password, $uni, $nationality);
 
 $message = isset($result['message']) ? $result['message'] : '';
 $dataResponse = isset($result['data']) ? $result['data'] : [];

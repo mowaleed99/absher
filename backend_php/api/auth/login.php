@@ -19,9 +19,13 @@ try {
     
     $student = $stmt->fetch();
 
+    if (!$student) {
+        jsonResponse(false, "الحساب غير موجود", 401);
+    }
+
     $isValid = false;
     $needsRehash = false;
-    if ($student && !empty($student['password'])) {
+    if (!empty($student['password'])) {
         if (password_verify($password, $student['password'])) {
             $isValid = true;
         } elseif (hash_equals($student['password'], $password)) {
@@ -50,7 +54,7 @@ try {
             "student" => $student
         ]);
     } else {
-        jsonResponse(false, "Invalid credentials.", 401);
+        jsonResponse(false, "كلمة المرور غير صحيحة.", 401);
     }
 
 } catch (PDOException $e) {
