@@ -923,7 +923,7 @@ try {
         $audienceScope = in_array($data['audience_scope'] ?? '', ['all', 'selected']) ? $data['audience_scope'] : 'all';
         $studentIds = is_array($data['student_ids'] ?? null) ? $data['student_ids'] : [];
         $totalUsageLimit = !empty($data['total_usage_limit']) ? intval($data['total_usage_limit']) : null;
-        $perStudentLimit = !empty($data['per_student_limit']) ? intval($data['per_student_limit']) : 1;
+        $perStudentLimit = isset($data['per_student_limit']) ? intval($data['per_student_limit']) : 1;
 
         if (empty($campaignName)) {
             echo json_encode(["status" => "error", "message" => "اسم الحملة مطلوب"], JSON_UNESCAPED_UNICODE);
@@ -938,31 +938,49 @@ try {
             exit();
         }
         if ($discountType === 'percentage' && ($discountValue <= 0 || $discountValue > 100)) {
-            echo json_encode(["status" => "error", "message" => "نسبة الخصم يجب أن تكون بين 1 و 100%"], JSON_UNESCAPED_UNICODE);
+            echo json_encode(["status" => "error", "error_code" => "INVALID_DISCOUNT_VALUE", "message" => "نسبة الخصم يجب أن تكون بين 1 و 100%"], JSON_UNESCAPED_UNICODE);
             exit();
         }
         if ($discountType === 'fixed' && $discountValue <= 0) {
-            echo json_encode(["status" => "error", "message" => "قيمة الخصم الثابت يجب أن تكون أكبر من صفر"], JSON_UNESCAPED_UNICODE);
+            echo json_encode(["status" => "error", "error_code" => "INVALID_DISCOUNT_VALUE", "message" => "قيمة الخصم الثابت يجب أن تكون أكبر من صفر"], JSON_UNESCAPED_UNICODE);
             exit();
         }
         if ($startAt && $expiresAt && $startAt >= $expiresAt) {
-            echo json_encode(["status" => "error", "message" => "تاريخ البدء يجب أن يكون قبل تاريخ الانتهاء"], JSON_UNESCAPED_UNICODE);
+            echo json_encode(["status" => "error", "error_code" => "INVALID_DATE_RANGE", "message" => "تاريخ البدء يجب أن يكون قبل تاريخ الانتهاء"], JSON_UNESCAPED_UNICODE);
             exit();
         }
         if ($serviceScope === 'selected' && empty($serviceIds)) {
-            echo json_encode(["status" => "error", "message" => "يرجى تحديد خدمة واحدة على الأقل عند اختيار نطاق خدمات محددة"], JSON_UNESCAPED_UNICODE);
+            echo json_encode(["status" => "error", "error_code" => "EMPTY_SERVICES", "message" => "يرجى تحديد خدمة واحدة على الأقل عند اختيار نطاق خدمات محددة"], JSON_UNESCAPED_UNICODE);
             exit();
         }
         if ($audienceScope === 'selected' && empty($studentIds)) {
-            echo json_encode(["status" => "error", "message" => "يرجى تحديد طالب واحد على الأقل عند اختيار نطاق جمهور محدد"], JSON_UNESCAPED_UNICODE);
+            echo json_encode(["status" => "error", "error_code" => "EMPTY_STUDENTS", "message" => "يرجى تحديد طالب واحد على الأقل عند اختيار نطاق جمهور محدد"], JSON_UNESCAPED_UNICODE);
             exit();
         }
+        if ($serviceScope === 'selected' && !empty($serviceIds)) {
+            $placeholders = implode(',', array_fill(0, count($serviceIds), '?'));
+            $chkSvc = $conn->prepare("SELECT COUNT(*) FROM services WHERE id IN ($placeholders)");
+            $chkSvc->execute(array_map('intval', $serviceIds));
+            if ((int)$chkSvc->fetchColumn() !== count($serviceIds)) {
+                echo json_encode(["status" => "error", "error_code" => "INVALID_SERVICE_IDS", "message" => "بعض الخدمات المحددة غير موجودة في النظام"], JSON_UNESCAPED_UNICODE);
+                exit();
+            }
+        }
+        if ($audienceScope === 'selected' && !empty($studentIds)) {
+            $placeholders = implode(',', array_fill(0, count($studentIds), '?'));
+            $chkStd = $conn->prepare("SELECT COUNT(*) FROM students WHERE id IN ($placeholders)");
+            $chkStd->execute(array_map('intval', $studentIds));
+            if ((int)$chkStd->fetchColumn() !== count($studentIds)) {
+                echo json_encode(["status" => "error", "error_code" => "INVALID_STUDENT_IDS", "message" => "بعض الطلاب المحددون غير موجودين في النظام"], JSON_UNESCAPED_UNICODE);
+                exit();
+            }
+        }
         if ($totalUsageLimit !== null && $totalUsageLimit <= 0) {
-            echo json_encode(["status" => "error", "message" => "الحد الأقصى للاستخدام الكلي يجب أن يكون أكبر من صفر"], JSON_UNESCAPED_UNICODE);
+            echo json_encode(["status" => "error", "error_code" => "INVALID_TOTAL_LIMIT", "message" => "الحد الأقصى للاستخدام الكلي يجب أن يكون أكبر من صفر"], JSON_UNESCAPED_UNICODE);
             exit();
         }
         if ($perStudentLimit <= 0) {
-            echo json_encode(["status" => "error", "message" => "الحد الأقصى لكل طالب يجب أن يكون أكبر من صفر"], JSON_UNESCAPED_UNICODE);
+            echo json_encode(["status" => "error", "error_code" => "INVALID_PER_STUDENT_LIMIT", "message" => "الحد الأقصى لكل طالب يجب أن يكون أكبر من صفر"], JSON_UNESCAPED_UNICODE);
             exit();
         }
 
@@ -970,7 +988,7 @@ try {
         $checkStmt = $conn->prepare("SELECT id FROM promo_codes WHERE code = ?");
         $checkStmt->execute([$code]);
         if ($checkStmt->fetch()) {
-            echo json_encode(["status" => "error", "message" => "كود الخصم مستخدم بالفعل، يرجى اختيار كود آخر"], JSON_UNESCAPED_UNICODE);
+            echo json_encode(["status" => "error", "error_code" => "CODE_EXISTS", "message" => "كود الخصم مستخدم بالفعل، يرجى اختيار كود آخر"], JSON_UNESCAPED_UNICODE);
             exit();
         }
 
@@ -1032,7 +1050,7 @@ try {
         $perStudentLimit = !empty($data['per_student_limit']) ? intval($data['per_student_limit']) : 1;
 
         if ($id <= 0) {
-            echo json_encode(["status" => "error", "message" => "معرف كود الخصم غير صالح"], JSON_UNESCAPED_UNICODE);
+            echo json_encode(["status" => "error", "error_code" => "INVALID_ID", "message" => "معرف كود الخصم غير صالح"], JSON_UNESCAPED_UNICODE);
             exit();
         }
 
@@ -1040,13 +1058,13 @@ try {
         $exStmt->execute([$id]);
         $existing = $exStmt->fetch(PDO::FETCH_ASSOC);
         if (!$existing) {
-            echo json_encode(["status" => "error", "message" => "كود الخصم غير موجود"], JSON_UNESCAPED_UNICODE);
+            echo json_encode(["status" => "error", "error_code" => "PROMO_NOT_FOUND", "message" => "كود الخصم غير موجود"], JSON_UNESCAPED_UNICODE);
             exit();
         }
 
         // Immutability: If code was already used, code string cannot be modified
         if ($existing['used_count'] > 0 && $existing['code'] !== $code) {
-            echo json_encode(["status" => "error", "message" => "لا يمكن تعديل رمز الكود بعد استخدامه من قبل الطلاب للحفاظ على سجلات التدقيق"], JSON_UNESCAPED_UNICODE);
+            echo json_encode(["status" => "error", "error_code" => "CODE_IMMUTABLE", "message" => "لا يمكن تعديل رمز الكود بعد استخدامه من قبل الطلاب للحفاظ على سجلات التدقيق"], JSON_UNESCAPED_UNICODE);
             exit();
         }
 

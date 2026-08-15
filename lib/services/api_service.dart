@@ -66,8 +66,7 @@ class ApiService {
 
   // ─── URL Configuration ──────────────────────────────────────────────────────
   // عنوان سيرفر الباك اند PHP المستضاف على Hostinger (الإنتاج)
-  static const String prodUrl =
-      'http://80.241.218.23/api';
+  static const String prodUrl = 'http://80.241.218.23/api';
 
   // تحديد العنوان ديناميكياً لتسهيل التطوير والافتبار المحلي
   static String get baseUrl {
@@ -77,7 +76,8 @@ class ApiService {
   static String get serverRoot => baseUrl.replaceAll('/api', '');
 
   /// Returns the current language code for API requests ('ar' or 'en').
-  static String get _langParam => LanguageService.currentLang.value == 'en' ? 'en' : 'ar';
+  static String get _langParam =>
+      LanguageService.currentLang.value == 'en' ? 'en' : 'ar';
 
   static String resolveImageUrl(String path) {
     if (path.isEmpty) return 'assets/images/apt1.png';
@@ -530,15 +530,17 @@ class ApiService {
       if (authToken != null && authToken!.isNotEmpty) {
         headers['Authorization'] = 'Bearer $authToken';
       }
-      final response = await http.post(
-        Uri.parse('$baseUrl/services/validate_promo.php'),
-        headers: headers,
-        body: jsonEncode({
-          'code': code.trim().toUpperCase(),
-          'service_id': serviceId,
-          'payment_method': paymentMethod,
-        }),
-      ).timeout(const Duration(seconds: 10));
+      final response = await http
+          .post(
+            Uri.parse('$baseUrl/services/validate_promo.php'),
+            headers: headers,
+            body: jsonEncode({
+              'code': code.trim().toUpperCase(),
+              'service_id': serviceId,
+              'payment_method': paymentMethod,
+            }),
+          )
+          .timeout(const Duration(seconds: 10));
 
       final Map<String, dynamic> data = jsonDecode(response.body);
       return data;
@@ -583,7 +585,9 @@ class ApiService {
         'payment_method': paymentMethod,
         'request_uuid': finalUuid,
       };
-      if (promoCode != null && promoCode.trim().isNotEmpty && paymentMethod == 'wallet') {
+      if (promoCode != null &&
+          promoCode.trim().isNotEmpty &&
+          paymentMethod == 'wallet') {
         bodyMap['promo_code'] = promoCode.trim().toUpperCase();
       }
       final response = await http.post(

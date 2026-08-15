@@ -346,7 +346,17 @@ if ($action === 'submit') {
                 throw new Exception("تسجيل الدخول مطلوب للاستفادة من كود الخصم.");
             }
 
-            // Lock promo code row for update
+            // Lock student row early to serialize concurrent requests by the same student
+            $stdLock = $conn->prepare("SELECT points FROM students WHERE id = ? FOR UPDATE");
+            $stdLock->execute([$studentId]);
+            $stdLockRow = $stdLock->fetch(PDO::FETCH_ASSOC);
+            if (!$stdLockRow) {
+                throw new Exception("لم يتم العثور على حساب الطالب.");
+            }
+            $balanceBefore = (int)$stdLockRow['points'];
+            $balanceAfter = $balanceBefore;
+
+            // Lock promo code row for update to serialize global usage
             $pStmt = $conn->prepare("SELECT * FROM promo_codes WHERE code = ? FOR UPDATE");
             $pStmt->execute([$promoCodeInput]);
             $promoRow = $pStmt->fetch(PDO::FETCH_ASSOC);
@@ -388,15 +398,13 @@ if ($action === 'submit') {
             }
 
             if ($promoRow['total_usage_limit'] !== null) {
-                $cntStmt = $conn->prepare("SELECT COUNT(*) FROM promo_code_redemptions WHERE promo_code_id = ? AND status = 'applied'");
-                $cntStmt->execute([$promoRow['id']]);
-                if (intval($cntStmt->fetchColumn()) >= intval($promoRow['total_usage_limit'])) {
+                if (intval($promoRow['used_count']) >= intval($promoRow['total_usage_limit'])) {
                     throw new Exception("تم استنفاد الحد الأقصى لاستخدام كود الخصم.");
                 }
             }
 
             if (!empty($promoRow['per_student_limit'])) {
-                $stdCntStmt = $conn->prepare("SELECT COUNT(*) FROM promo_code_redemptions WHERE promo_code_id = ? AND student_id = ? AND status = 'applied'");
+                $stdCntStmt = $conn->prepare("SELECT COUNT(*) FROM promo_code_redemptions WHERE promo_code_id = ? AND student_id = ? AND status = 'applied' LOCK IN SHARE MODE");
                 $stdCntStmt->execute([$promoRow['id'], $studentId]);
                 if (intval($stdCntStmt->fetchColumn()) >= intval($promoRow['per_student_limit'])) {
                     throw new Exception("لقد تجاوزت الحد الأقصى المسموح لك لاستخدام هذا الكود.");

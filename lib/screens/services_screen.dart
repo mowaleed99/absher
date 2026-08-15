@@ -240,7 +240,8 @@ class _ServicesScreenState extends State<ServicesScreen> {
     bool isValidatingPromo = false;
     String? promoError;
 
-    Future<void> applyPromoCode(StateSetter setDialogState, int serviceId) async {
+    Future<void> applyPromoCode(
+        StateSetter setDialogState, int serviceId) async {
       final code = promoCtrl.text.trim().toUpperCase();
       if (code.isEmpty) return;
       setDialogState(() {
@@ -301,12 +302,16 @@ class _ServicesScreenState extends State<ServicesScreen> {
           }
 
           final int originalPrice = currentPrice;
-          final int discountPts = (appliedPromoInfo != null && selectedPaymentMethod == 'wallet')
-              ? (appliedPromoInfo!['discount_points'] as num? ?? 0).toInt()
-              : 0;
-          final int effectivePrice = (appliedPromoInfo != null && selectedPaymentMethod == 'wallet')
-              ? (appliedPromoInfo!['final_price_points'] as num? ?? originalPrice).toInt()
-              : originalPrice;
+          final int discountPts =
+              (appliedPromoInfo != null && selectedPaymentMethod == 'wallet')
+                  ? (appliedPromoInfo!['discount_points'] as num? ?? 0).toInt()
+                  : 0;
+          final int effectivePrice =
+              (appliedPromoInfo != null && selectedPaymentMethod == 'wallet')
+                  ? (appliedPromoInfo!['final_price_points'] as num? ??
+                          originalPrice)
+                      .toInt()
+                  : originalPrice;
 
           return AlertDialog(
             shape:
@@ -472,7 +477,7 @@ class _ServicesScreenState extends State<ServicesScreen> {
                   const SizedBox(height: 10),
                   if (currentIsCleanHome) ...[
                     Row(
-                       children: [
+                      children: [
                         Expanded(
                           child: TextField(
                             controller: roomsCtrl,
@@ -657,7 +662,8 @@ class _ServicesScreenState extends State<ServicesScreen> {
                   ],
 
                   // Promo Code Section (Wallet Payment Only)
-                  if (originalPrice > 0 && selectedPaymentMethod == 'wallet') ...[
+                  if (originalPrice > 0 &&
+                      selectedPaymentMethod == 'wallet') ...[
                     const SizedBox(height: 10),
                     Row(
                       children: [
@@ -668,8 +674,8 @@ class _ServicesScreenState extends State<ServicesScreen> {
                             decoration: InputDecoration(
                               labelText: LanguageService.tr('promo_code'),
                               hintText: 'WELCOME20 / FIXED25',
-                              prefixIcon:
-                                  const Icon(Icons.discount, color: AppColors.accent),
+                              prefixIcon: const Icon(Icons.discount,
+                                  color: AppColors.accent),
                               border: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(12)),
                             ),
@@ -679,11 +685,13 @@ class _ServicesScreenState extends State<ServicesScreen> {
                         ElevatedButton(
                           onPressed: isValidatingPromo
                               ? null
-                              : () => applyPromoCode(setDialogState, currentServiceIdInt),
+                              : () => applyPromoCode(
+                                  setDialogState, currentServiceIdInt),
                           style: ElevatedButton.styleFrom(
                             backgroundColor: AppColors.accent,
                             foregroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 16, vertical: 14),
                             shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(12)),
                           ),
@@ -698,7 +706,6 @@ class _ServicesScreenState extends State<ServicesScreen> {
                         ),
                       ],
                     ),
-
                     if (appliedPromoInfo != null) ...[
                       const SizedBox(height: 8),
                       Container(
@@ -710,7 +717,8 @@ class _ServicesScreenState extends State<ServicesScreen> {
                         ),
                         child: Row(
                           children: [
-                            const Icon(Icons.check_circle, color: Colors.green, size: 20),
+                            const Icon(Icons.check_circle,
+                                color: Colors.green, size: 20),
                             const SizedBox(width: 8),
                             Expanded(
                               child: Column(
@@ -726,13 +734,15 @@ class _ServicesScreenState extends State<ServicesScreen> {
                                   Text(
                                     "وفرت $discountPts نقطة — السعر النهائي: $effectivePrice نقطة",
                                     style: TextStyle(
-                                        color: Colors.green.shade800, fontSize: 11),
+                                        color: Colors.green.shade800,
+                                        fontSize: 11),
                                   ),
                                 ],
                               ),
                             ),
                             IconButton(
-                              icon: const Icon(Icons.close, size: 18, color: Colors.red),
+                              icon: const Icon(Icons.close,
+                                  size: 18, color: Colors.red),
                               padding: EdgeInsets.zero,
                               constraints: const BoxConstraints(),
                               onPressed: () {
@@ -747,7 +757,6 @@ class _ServicesScreenState extends State<ServicesScreen> {
                         ),
                       ),
                     ],
-
                     if (promoError != null) ...[
                       const SizedBox(height: 8),
                       Container(
@@ -759,7 +768,8 @@ class _ServicesScreenState extends State<ServicesScreen> {
                         ),
                         child: Row(
                           children: [
-                            const Icon(Icons.error_outline, color: Colors.red, size: 20),
+                            const Icon(Icons.error_outline,
+                                color: Colors.red, size: 20),
                             const SizedBox(width: 8),
                             Expanded(
                               child: Text(
@@ -774,7 +784,8 @@ class _ServicesScreenState extends State<ServicesScreen> {
                         ),
                       ),
                     ],
-                  ] else if (originalPrice > 0 && selectedPaymentMethod == 'cash') ...[
+                  ] else if (originalPrice > 0 &&
+                      selectedPaymentMethod == 'cash') ...[
                     const SizedBox(height: 8),
                     Container(
                       padding: const EdgeInsets.all(8),
@@ -785,7 +796,8 @@ class _ServicesScreenState extends State<ServicesScreen> {
                       ),
                       child: Row(
                         children: [
-                          Icon(Icons.info_outline, color: Colors.blue.shade700, size: 16),
+                          Icon(Icons.info_outline,
+                              color: Colors.blue.shade700, size: 16),
                           const SizedBox(width: 6),
                           Expanded(
                             child: Text(
@@ -826,9 +838,12 @@ class _ServicesScreenState extends State<ServicesScreen> {
 
                   final paymentMethod =
                       finalPrice > 0 ? selectedPaymentMethod : 'free';
-                  final finalChargedPrice = (appliedPromoInfo != null && paymentMethod == 'wallet')
-                      ? (appliedPromoInfo!['final_price_points'] as num? ?? finalPrice).toInt()
-                      : finalPrice;
+                  final finalChargedPrice =
+                      (appliedPromoInfo != null && paymentMethod == 'wallet')
+                          ? (appliedPromoInfo!['final_price_points'] as num? ??
+                                  finalPrice)
+                              .toInt()
+                          : finalPrice;
 
                   if (finalPrice > 0 && paymentMethod == 'wallet') {
                     if ((_pointsBalance ?? 0) < finalChargedPrice) {
@@ -923,7 +938,8 @@ class _ServicesScreenState extends State<ServicesScreen> {
                       details: finalDetails,
                       payWithPoints: paymentMethod == 'wallet',
                       paymentMethod: paymentMethod,
-                      promoCode: (paymentMethod == 'wallet' && appliedPromoInfo != null)
+                      promoCode: (paymentMethod == 'wallet' &&
+                              appliedPromoInfo != null)
                           ? appliedPromoInfo!['code']?.toString()
                           : null,
                       requestUuid: requestUuid,
@@ -1204,8 +1220,7 @@ class _ServicesScreenState extends State<ServicesScreen> {
                             borderRadius: BorderRadius.circular(10),
                             boxShadow: [
                               BoxShadow(
-                                color:
-                                    AppColors.primary.withValues(alpha: 0.2),
+                                color: AppColors.primary.withValues(alpha: 0.2),
                                 blurRadius: 4,
                                 offset: const Offset(0, 2),
                               )
