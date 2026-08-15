@@ -236,6 +236,48 @@ class _ServicesScreenState extends State<ServicesScreen> {
       }
     }
 
+    Map<String, dynamic>? appliedPromoInfo;
+    bool isValidatingPromo = false;
+    String? promoError;
+
+    Future<void> applyPromoCode(StateSetter setDialogState, int serviceId) async {
+      final code = promoCtrl.text.trim().toUpperCase();
+      if (code.isEmpty) return;
+      setDialogState(() {
+        isValidatingPromo = true;
+        promoError = null;
+      });
+      try {
+        final res = await ApiService.validatePromoCode(
+          code: code,
+          serviceId: serviceId,
+          paymentMethod: 'wallet',
+        );
+        if (res['status'] == 'success' && res['data']?['is_valid'] == true) {
+          setDialogState(() {
+            appliedPromoInfo = res['data'];
+            promoError = null;
+            isValidatingPromo = false;
+          });
+        } else {
+          setDialogState(() {
+            appliedPromoInfo = null;
+            promoError = res['message'] ??
+                (LanguageService.currentLang.value == 'en'
+                    ? 'Invalid promo code'
+                    : 'كود الخصم غير صالح');
+            isValidatingPromo = false;
+          });
+        }
+      } catch (e) {
+        setDialogState(() {
+          appliedPromoInfo = null;
+          promoError = e.toString().replaceAll('Exception:', '').trim();
+          isValidatingPromo = false;
+        });
+      }
+    }
+
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -247,6 +289,8 @@ class _ServicesScreenState extends State<ServicesScreen> {
           final currentTitle = currentSvc['title']?.toString() ?? '';
           final currentPrice =
               int.tryParse(currentSvc['price_points']?.toString() ?? '0') ?? 0;
+          final currentServiceIdInt =
+              int.tryParse(currentSvc['id']?.toString() ?? '0') ?? 0;
           final currentIsCleanHome =
               currentTitle.contains("تنظيف") || currentTitle.contains("Clean");
 
@@ -255,6 +299,14 @@ class _ServicesScreenState extends State<ServicesScreen> {
             final double r = double.tryParse(roomsCtrl.text) ?? 0;
             calcPrice = (m2 * 2.5) + (r * 15.0);
           }
+
+          final int originalPrice = currentPrice;
+          final int discountPts = (appliedPromoInfo != null && selectedPaymentMethod == 'wallet')
+              ? (appliedPromoInfo!['discount_points'] as num? ?? 0).toInt()
+              : 0;
+          final int effectivePrice = (appliedPromoInfo != null && selectedPaymentMethod == 'wallet')
+              ? (appliedPromoInfo!['final_price_points'] as num? ?? originalPrice).toInt()
+              : originalPrice;
 
           return AlertDialog(
             shape:
@@ -299,8 +351,10 @@ class _ServicesScreenState extends State<ServicesScreen> {
                       if (val != null) {
                         setDialogState(() {
                           selectedServiceId = val;
-                          selectedPaymentMethod =
-                              'wallet'; // Reset payment method to wallet when service changes
+                          selectedPaymentMethod = 'wallet';
+                          appliedPromoInfo = null;
+                          promoCtrl.clear();
+                          promoError = null;
                         });
                       }
                     },
@@ -312,12 +366,12 @@ class _ServicesScreenState extends State<ServicesScreen> {
                     padding: const EdgeInsets.symmetric(
                         horizontal: 16, vertical: 10),
                     decoration: BoxDecoration(
-                      color: currentPrice > 0
+                      color: originalPrice > 0
                           ? AppColors.accentLight
                           : Colors.green.shade50,
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(
-                          color: currentPrice > 0
+                          color: originalPrice > 0
                               ? AppColors.accent
                               : Colors.green.shade300),
                     ),
@@ -329,16 +383,39 @@ class _ServicesScreenState extends State<ServicesScreen> {
                                 fontWeight: FontWeight.bold,
                                 fontSize: 13,
                                 color: AppColors.primary)),
-                        Text(
-                            currentPrice > 0
-                                ? "$currentPrice نقطة"
-                                : "مجانية (0 نقاط)",
-                            style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                fontSize: 14,
-                                color: currentPrice > 0
-                                    ? AppColors.primary
-                                    : Colors.green.shade700)),
+                        if (discountPts > 0)
+                          Row(
+                            children: [
+                              Text(
+                                "$originalPrice نقطة",
+                                style: const TextStyle(
+                                  decoration: TextDecoration.lineThrough,
+                                  color: Colors.grey,
+                                  fontSize: 12,
+                                ),
+                              ),
+                              const SizedBox(width: 6),
+                              Text(
+                                "$effectivePrice نقطة",
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 14,
+                                  color: Colors.green,
+                                ),
+                              ),
+                            ],
+                          )
+                        else
+                          Text(
+                              originalPrice > 0
+                                  ? "$originalPrice نقطة"
+                                  : "مجانية (0 نقاط)",
+                              style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 14,
+                                  color: originalPrice > 0
+                                      ? AppColors.primary
+                                      : Colors.green.shade700)),
                       ],
                     ),
                   ),
@@ -395,7 +472,7 @@ class _ServicesScreenState extends State<ServicesScreen> {
                   const SizedBox(height: 10),
                   if (currentIsCleanHome) ...[
                     Row(
-                      children: [
+                       children: [
                         Expanded(
                           child: TextField(
                             controller: roomsCtrl,
@@ -478,18 +555,9 @@ class _ServicesScreenState extends State<ServicesScreen> {
                     ),
                   ),
                   const SizedBox(height: 10),
-                  TextField(
-                    controller: promoCtrl,
-                    decoration: InputDecoration(
-                      labelText: LanguageService.tr('promo_code'),
-                      prefixIcon:
-                          const Icon(Icons.discount, color: AppColors.accent),
-                      border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12)),
-                    ),
-                  ),
-                  if (currentPrice > 0) ...[
-                    const SizedBox(height: 10),
+
+                  // Payment Method Section
+                  if (originalPrice > 0) ...[
                     Container(
                       width: double.infinity,
                       padding: const EdgeInsets.all(12),
@@ -511,7 +579,7 @@ class _ServicesScreenState extends State<ServicesScreen> {
                           const SizedBox(height: 6),
                           RadioListTile<String>(
                             title: Text(
-                              "${LanguageService.tr('auto_trans_1286')} ($currentPrice ${LanguageService.tr('points_unit')})",
+                              "${LanguageService.tr('auto_trans_1286')} ($effectivePrice ${LanguageService.tr('points_unit')})",
                               style: const TextStyle(
                                   fontSize: 12, fontWeight: FontWeight.bold),
                             ),
@@ -521,7 +589,7 @@ class _ServicesScreenState extends State<ServicesScreen> {
                               style: TextStyle(
                                 fontSize: 11,
                                 fontWeight: FontWeight.bold,
-                                color: (_pointsBalance ?? 0) >= currentPrice
+                                color: (_pointsBalance ?? 0) >= effectivePrice
                                     ? Colors.green
                                     : Colors.red,
                               ),
@@ -531,8 +599,9 @@ class _ServicesScreenState extends State<ServicesScreen> {
                             activeColor: AppColors.accent,
                             contentPadding: EdgeInsets.zero,
                             onChanged: (val) {
-                              setDialogState(() =>
-                                  selectedPaymentMethod = val ?? 'wallet');
+                              setDialogState(() {
+                                selectedPaymentMethod = val ?? 'wallet';
+                              });
                             },
                           ),
                           RadioListTile<String>(
@@ -556,15 +625,18 @@ class _ServicesScreenState extends State<ServicesScreen> {
                             activeColor: AppColors.accent,
                             contentPadding: EdgeInsets.zero,
                             onChanged: (val) {
-                              setDialogState(
-                                  () => selectedPaymentMethod = val ?? 'cash');
+                              setDialogState(() {
+                                selectedPaymentMethod = val ?? 'cash';
+                                appliedPromoInfo = null;
+                                promoCtrl.clear();
+                                promoError = null;
+                              });
                             },
                           ),
                         ],
                       ),
                     ),
                   ] else ...[
-                    const SizedBox(height: 10),
                     Container(
                       padding: const EdgeInsets.all(10),
                       width: double.infinity,
@@ -580,6 +652,153 @@ class _ServicesScreenState extends State<ServicesScreen> {
                           color: Colors.green,
                           fontWeight: FontWeight.bold,
                         ),
+                      ),
+                    ),
+                  ],
+
+                  // Promo Code Section (Wallet Payment Only)
+                  if (originalPrice > 0 && selectedPaymentMethod == 'wallet') ...[
+                    const SizedBox(height: 10),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: TextField(
+                            controller: promoCtrl,
+                            textCapitalization: TextCapitalization.characters,
+                            decoration: InputDecoration(
+                              labelText: LanguageService.tr('promo_code'),
+                              hintText: 'WELCOME20 / FIXED25',
+                              prefixIcon:
+                                  const Icon(Icons.discount, color: AppColors.accent),
+                              border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12)),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        ElevatedButton(
+                          onPressed: isValidatingPromo
+                              ? null
+                              : () => applyPromoCode(setDialogState, currentServiceIdInt),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppColors.accent,
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                            shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12)),
+                          ),
+                          child: isValidatingPromo
+                              ? const SizedBox(
+                                  width: 18,
+                                  height: 18,
+                                  child: CircularProgressIndicator(
+                                      strokeWidth: 2, color: Colors.white),
+                                )
+                              : const Text('تطبيق'),
+                        ),
+                      ],
+                    ),
+
+                    if (appliedPromoInfo != null) ...[
+                      const SizedBox(height: 8),
+                      Container(
+                        padding: const EdgeInsets.all(10),
+                        decoration: BoxDecoration(
+                          color: Colors.green.shade50,
+                          border: Border.all(color: Colors.green.shade300),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Row(
+                          children: [
+                            const Icon(Icons.check_circle, color: Colors.green, size: 20),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    "تم تطبيق كود (${appliedPromoInfo!['code']}) بنجاح!",
+                                    style: const TextStyle(
+                                        color: Colors.green,
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 12),
+                                  ),
+                                  Text(
+                                    "وفرت $discountPts نقطة — السعر النهائي: $effectivePrice نقطة",
+                                    style: TextStyle(
+                                        color: Colors.green.shade800, fontSize: 11),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            IconButton(
+                              icon: const Icon(Icons.close, size: 18, color: Colors.red),
+                              padding: EdgeInsets.zero,
+                              constraints: const BoxConstraints(),
+                              onPressed: () {
+                                setDialogState(() {
+                                  appliedPromoInfo = null;
+                                  promoCtrl.clear();
+                                  promoError = null;
+                                });
+                              },
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+
+                    if (promoError != null) ...[
+                      const SizedBox(height: 8),
+                      Container(
+                        padding: const EdgeInsets.all(10),
+                        decoration: BoxDecoration(
+                          color: Colors.red.shade50,
+                          border: Border.all(color: Colors.red.shade300),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Row(
+                          children: [
+                            const Icon(Icons.error_outline, color: Colors.red, size: 20),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                promoError!,
+                                style: const TextStyle(
+                                    color: Colors.red,
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.bold),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ] else if (originalPrice > 0 && selectedPaymentMethod == 'cash') ...[
+                    const SizedBox(height: 8),
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: Colors.blue.shade50,
+                        border: Border.all(color: Colors.blue.shade200),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(Icons.info_outline, color: Colors.blue.shade700, size: 16),
+                          const SizedBox(width: 6),
+                          Expanded(
+                            child: Text(
+                              LanguageService.currentLang.value == 'en'
+                                  ? "Promo codes are available for wallet points payments only."
+                                  : "كود الخصم متاح عند الدفع بنقاط المحفظة فقط.",
+                              style: TextStyle(
+                                  color: Colors.blue.shade800,
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w600),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   ],
@@ -607,9 +826,12 @@ class _ServicesScreenState extends State<ServicesScreen> {
 
                   final paymentMethod =
                       finalPrice > 0 ? selectedPaymentMethod : 'free';
+                  final finalChargedPrice = (appliedPromoInfo != null && paymentMethod == 'wallet')
+                      ? (appliedPromoInfo!['final_price_points'] as num? ?? finalPrice).toInt()
+                      : finalPrice;
 
                   if (finalPrice > 0 && paymentMethod == 'wallet') {
-                    if ((_pointsBalance ?? 0) < finalPrice) {
+                    if ((_pointsBalance ?? 0) < finalChargedPrice) {
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
                             content: Text(LanguageService.currentLang.value ==
@@ -701,6 +923,9 @@ class _ServicesScreenState extends State<ServicesScreen> {
                       details: finalDetails,
                       payWithPoints: paymentMethod == 'wallet',
                       paymentMethod: paymentMethod,
+                      promoCode: (paymentMethod == 'wallet' && appliedPromoInfo != null)
+                          ? appliedPromoInfo!['code']?.toString()
+                          : null,
                       requestUuid: requestUuid,
                     );
 

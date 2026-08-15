@@ -2,7 +2,7 @@
 
 *(Authoritative Architecture, Cancellation & Refund State Machine, Concurrency Safeguards & Execution Roadmap)*
 
-> **⛔ Status: PHASE 6A MASTER PLAN CORRECTED AND COMPLETE — NO IMPLEMENTATION STARTED — WAITING FOR EXPLICIT USER GO**
+> **STATUS: PHASE 6A IMPLEMENTED AND AUTOMATED-VERIFIED ON STAGING — PRODUCTION UNTOUCHED — WAITING FOR USER UAT — PHASE 7 NOT STARTED**
 > 
 > | Phase | Description | Status |
 > |---|---|---|
@@ -12,7 +12,7 @@
 > | Phase 4 | Reviews Moderation, Feedback, Students & Points | `COMPLETED / VERIFIED / USER ACCEPTED ✅` |
 > | Phase 5 | News, Notifications, Customer Support Chats | `COMPLETED / VERIFIED / USER ACCEPTED ✅` |
 > | Phase 6 | Executive Dashboard & Cross-Module Analytics | `COMPLETED / VERIFIED / USER ACCEPTED ✅` |
-> | **Phase 6A** | **Promo Codes & Discounts System** | **MASTER PLAN COMPLETE / APPROVED POLICIES** |
+> | **Phase 6A** | **Promo Codes & Discounts System** | `IMPLEMENTED AND AUTOMATED-VERIFIED ON STAGING — WAITING FOR USER UAT ✅` |
 > | Deferred | Housing Offers (Waiting for User Requirements) | `DEFERRED / FROZEN` |
 > | Cutover | Phase 7 / Production Promotion | `NOT STARTED — REQUIRES EXPLICIT USER GO` |
 

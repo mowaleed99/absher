@@ -126,6 +126,13 @@ export function AdminLayout() {
               <span>{t('nav.requests')}</span>
             </NavLink>
             <NavLink
+              to="/promo-codes"
+              className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
+            >
+              <i className="fa-solid fa-tags"></i>
+              <span>{t('nav.promo_codes')}</span>
+            </NavLink>
+            <NavLink
               to="/reviews"
               className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
             >

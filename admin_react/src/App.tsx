@@ -18,6 +18,7 @@ import { StudentsModule } from './modules/students/StudentsModule';
 import { NewsModule } from './modules/news/NewsModule';
 import { NotificationsModule } from './modules/notifications/NotificationsModule';
 import { ChatsModule } from './modules/chats/ChatsModule';
+import { PromoCodesModule } from './modules/promo/PromoCodesModule';
 import { LoginOverlay } from './components/LoginOverlay';
 import './style.css';
 
@@ -73,6 +74,7 @@ function MainRouter() {
           <Route path="news" element={<NewsModule />} />
           <Route path="notifications" element={<NotificationsModule />} />
           <Route path="chats" element={<ChatsModule />} />
+          <Route path="promo-codes" element={<PromoCodesModule />} />
           <Route path="*" element={<Navigate to="/dashboard" replace />} />
         </Route>
       </Routes>

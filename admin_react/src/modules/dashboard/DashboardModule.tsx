@@ -18,6 +18,7 @@ interface DashboardStats {
   students: Student[];
   feedback: ApplicationFeedback[];
   news: NewsItem[];
+  promoCodesCount: number;
   avgRating: number;
   ratingDistribution: Record<string, number>;
 }
@@ -33,6 +34,7 @@ export function DashboardModule() {
     students: [],
     feedback: [],
     news: [],
+    promoCodesCount: 0,
     avgRating: 0,
     ratingDistribution: { '1': 0, '2': 0, '3': 0, '4': 0, '5': 0 },
   });
@@ -62,6 +64,9 @@ export function DashboardModule() {
       const stus = parseStudents(d.students) || [];
       const fdbk = parseFeedbackList(d.application_feedback || d.feedback) || [];
       const nws = parseNewsList(d.news) || [];
+      const promoCount = Array.isArray(d.promo_codes)
+        ? (d.promo_codes as Array<{ status?: string }>).filter((p) => p.status === 'active').length
+        : 0;
 
       let avg = 0;
       let dist: Record<string, number> = { '1': 0, '2': 0, '3': 0, '4': 0, '5': 0 };
@@ -81,6 +86,7 @@ export function DashboardModule() {
         students: stus,
         feedback: fdbk,
         news: nws,
+        promoCodesCount: promoCount,
         avgRating: avg,
         ratingDistribution: dist,
       });
@@ -445,6 +451,51 @@ export function DashboardModule() {
                   </span>
                   <strong style={{ fontSize: '1.25rem', color: pendingChatsCount > 0 ? '#f87171' : 'var(--text-main)', fontWeight: 800 }}>
                     {pendingChatsCount}
+                  </strong>
+                </div>
+              </div>
+            </Link>
+
+            {/* KPI: Promo Codes */}
+            <Link
+              to="/promo-codes"
+              style={{ textDecoration: 'none', color: 'inherit' }}
+            >
+              <div
+                className="item-card"
+                style={{
+                  background: 'var(--bg-card)',
+                  borderRadius: '12px',
+                  border: '1px solid var(--border-color)',
+                  padding: '14px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '12px',
+                  boxShadow: '0 2px 6px rgba(0, 0, 0, 0.06)',
+                }}
+              >
+                <div
+                  style={{
+                    width: '42px',
+                    height: '42px',
+                    borderRadius: '10px',
+                    background: 'rgba(56, 189, 248, 0.15)',
+                    color: '#38bdf8',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontSize: '1.2rem',
+                    flexShrink: 0,
+                  }}
+                >
+                  <i className="fa-solid fa-tags"></i>
+                </div>
+                <div>
+                  <span style={{ fontSize: '0.74rem', color: 'var(--text-muted)', display: 'block' }}>
+                    أكواد الخصم النشطة
+                  </span>
+                  <strong style={{ fontSize: '1.25rem', color: '#38bdf8', fontWeight: 800 }}>
+                    {stats.promoCodesCount}
                   </strong>
                 </div>
               </div>

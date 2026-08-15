@@ -520,6 +520,34 @@ class ApiService {
     return [];
   }
 
+  static Future<Map<String, dynamic>> validatePromoCode({
+    required String code,
+    required int serviceId,
+    String paymentMethod = 'wallet',
+  }) async {
+    try {
+      final headers = {'Content-Type': 'application/json'};
+      if (authToken != null && authToken!.isNotEmpty) {
+        headers['Authorization'] = 'Bearer $authToken';
+      }
+      final response = await http.post(
+        Uri.parse('$baseUrl/services/validate_promo.php'),
+        headers: headers,
+        body: jsonEncode({
+          'code': code.trim().toUpperCase(),
+          'service_id': serviceId,
+          'payment_method': paymentMethod,
+        }),
+      ).timeout(const Duration(seconds: 10));
+
+      final Map<String, dynamic> data = jsonDecode(response.body);
+      return data;
+    } catch (e) {
+      debugPrint('Error validating promo code: $e');
+      rethrow;
+    }
+  }
+
   static Future<Map<String, dynamic>> submitServiceRequest({
     int? serviceId,
     String studentName = '',
@@ -530,6 +558,7 @@ class ApiService {
     required String details,
     bool payWithPoints = false,
     String paymentMethod = 'free',
+    String? promoCode,
     String? requestUuid,
   }) async {
     try {
@@ -541,22 +570,26 @@ class ApiService {
       if (authToken != null && authToken!.isNotEmpty) {
         headers['Authorization'] = 'Bearer $authToken';
       }
+      final bodyMap = <String, dynamic>{
+        'action': 'submit',
+        'service_id': serviceId,
+        'student_name': studentName,
+        'student_phone': studentPhone,
+        'student_uni': studentUni,
+        'university_id': universityId,
+        'service_title': serviceTitle,
+        'details': details,
+        'pay_with_points': payWithPoints,
+        'payment_method': paymentMethod,
+        'request_uuid': finalUuid,
+      };
+      if (promoCode != null && promoCode.trim().isNotEmpty && paymentMethod == 'wallet') {
+        bodyMap['promo_code'] = promoCode.trim().toUpperCase();
+      }
       final response = await http.post(
         Uri.parse('$baseUrl/student_requests.php'),
         headers: headers,
-        body: jsonEncode({
-          'action': 'submit',
-          'service_id': serviceId,
-          'student_name': studentName,
-          'student_phone': studentPhone,
-          'student_uni': studentUni,
-          'university_id': universityId,
-          'service_title': serviceTitle,
-          'details': details,
-          'pay_with_points': payWithPoints,
-          'payment_method': paymentMethod,
-          'request_uuid': finalUuid,
-        }),
+        body: jsonEncode(bodyMap),
       );
       if (response.statusCode == 200) {
         final Map<String, dynamic> data = jsonDecode(response.body);

@@ -217,9 +217,16 @@ export function parseRequest(v: unknown): ServiceRequest | null {
     details: toString(v.details || v.form_data),
     form_data: toString(v.form_data || v.details),
     service_price_points: toNumber(v.service_price_points) ?? undefined,
+    promo_code_id: toNumber(v.promo_code_id),
+    discount_points: toNumber(v.discount_points) ?? undefined,
+    final_price_points: toNumber(v.final_price_points) ?? undefined,
     points_charged: toNumber(v.points_charged) ?? undefined,
     payment_method: toString(v.payment_method) || undefined,
     request_uuid: toString(v.request_uuid) || undefined,
+    cancelled_at: toString(v.cancelled_at) || null,
+    cancelled_by_admin_id: toNumber(v.cancelled_by_admin_id),
+    cancellation_reason: toString(v.cancellation_reason) || null,
+    refund_status: toString(v.refund_status, 'none'),
     created_at: toString(v.created_at),
   };
 }
@@ -465,4 +472,95 @@ export function parseChatList(v: unknown): import('../types/chat').ChatConversat
   const parsed = v.map(parseChatConversation);
   if (parsed.some(p => p === null)) return null;
   return parsed as import('../types/chat').ChatConversation[];
+}
+
+export function parsePromoCode(v: unknown): import('../types/promo').PromoCode | null {
+  if (!isObject(v)) return null;
+  const id = toNumber(v.id);
+  if (id === null) return null;
+
+  const discountType = toString(v.discount_type, 'percentage') as import('../types/promo').DiscountType;
+  const status = toString(v.status, 'active') as import('../types/promo').PromoStatus;
+  const serviceScope = toString(v.service_scope, 'all') as import('../types/promo').ScopeType;
+  const audienceScope = toString(v.audience_scope, 'all') as import('../types/promo').ScopeType;
+
+  const serviceIds = Array.isArray(v.service_ids)
+    ? v.service_ids.map(toNumber).filter((n): n is number => n !== null)
+    : [];
+
+  const studentIds = Array.isArray(v.student_ids)
+    ? v.student_ids.map(toNumber).filter((n): n is number => n !== null)
+    : [];
+
+  return {
+    id,
+    campaign_name: toString(v.campaign_name),
+    code: toString(v.code).toUpperCase(),
+    discount_type: discountType,
+    discount_value: toNumber(v.discount_value) ?? 0,
+    max_discount_points: toNumber(v.max_discount_points),
+    min_service_price_points: toNumber(v.min_service_price_points) ?? 0,
+    start_at: toString(v.start_at) || null,
+    expires_at: toString(v.expires_at) || null,
+    status,
+    service_scope: serviceScope,
+    audience_scope: audienceScope,
+    service_ids: serviceIds,
+    student_ids: studentIds,
+    total_usage_limit: toNumber(v.total_usage_limit),
+    per_student_limit: toNumber(v.per_student_limit) ?? 1,
+    used_count: toNumber(v.used_count) ?? 0,
+    applied_redemptions_count: toNumber(v.applied_redemptions_count) ?? 0,
+    total_redemptions_count: toNumber(v.total_redemptions_count) ?? 0,
+    points_saved: toNumber(v.points_saved) ?? 0,
+    created_at: toString(v.created_at),
+    updated_at: toString(v.updated_at),
+  };
+}
+
+export function parsePromoCodes(v: unknown): import('../types/promo').PromoCode[] | null {
+  if (!Array.isArray(v)) return null;
+  const parsed = v.map(parsePromoCode);
+  if (parsed.some(p => p === null)) return null;
+  return parsed as import('../types/promo').PromoCode[];
+}
+
+export function parsePromoRedemption(v: unknown): import('../types/promo').PromoRedemption | null {
+  if (!isObject(v)) return null;
+  const id = toNumber(v.id);
+  if (id === null) return null;
+
+  return {
+    id,
+    promo_code_id: toNumber(v.promo_code_id) ?? 0,
+    service_request_id: toNumber(v.service_request_id),
+    request_id_snapshot: toNumber(v.request_id_snapshot) ?? 0,
+    student_id: toNumber(v.student_id),
+    student_name_snapshot: toString(v.student_name_snapshot),
+    student_phone_snapshot: toString(v.student_phone_snapshot),
+    student_email_snapshot: toString(v.student_email_snapshot),
+    service_id: toNumber(v.service_id),
+    service_title_snapshot: toString(v.service_title_snapshot),
+    code_snapshot: toString(v.code_snapshot),
+    campaign_snapshot: toString(v.campaign_snapshot),
+    discount_type_snapshot: toString(v.discount_type_snapshot),
+    discount_value_snapshot: toNumber(v.discount_value_snapshot) ?? 0,
+    original_price_points: toNumber(v.original_price_points) ?? 0,
+    discount_points: toNumber(v.discount_points) ?? 0,
+    final_price_points: toNumber(v.final_price_points) ?? 0,
+    payment_method: toString(v.payment_method, 'wallet'),
+    status: toString(v.status) === 'reversed' ? 'reversed' : 'applied',
+    reversed_at: toString(v.reversed_at) || null,
+    reversed_reason: toString(v.reversed_reason) || null,
+    created_at: toString(v.created_at),
+    formatted_date: toString(v.formatted_date || v.created_at),
+    formatted_reversed_date: toString(v.formatted_reversed_date || v.reversed_at),
+  };
+}
+
+export function parsePromoRedemptions(v: unknown): import('../types/promo').PromoRedemption[] | null {
+  if (!Array.isArray(v)) return null;
+  const parsed = v.map(parsePromoRedemption);
+  if (parsed.some(p => p === null)) return null;
+  return parsed as import('../types/promo').PromoRedemption[];
 }

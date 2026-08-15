@@ -1,0 +1,98 @@
+import { useState, useEffect, useCallback } from 'react';
+import { PromoCode, PromoRedemption, PromoFormInput } from '../types/promo';
+import { parsePromoCodes, parsePromoRedemptions } from '../lib/validators';
+import { apiFetch } from '../lib/apiFetch';
+
+export function usePromoCodes() {
+  const [promoCodes, setPromoCodes] = useState<PromoCode[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetchPromoCodes = useCallback(async () => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const res = await apiFetch<Record<string, unknown>>('get_all');
+      if (res.success && res.data && res.data.promo_codes) {
+        const validated = parsePromoCodes(res.data.promo_codes);
+        setPromoCodes(validated || []);
+      } else {
+        setPromoCodes([]);
+      }
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'فشل تحميل قائمة أكواد الخصم';
+      setError(msg);
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchPromoCodes();
+  }, [fetchPromoCodes]);
+
+  const addPromoCode = async (data: PromoFormInput) => {
+    const res = await apiFetch<Record<string, unknown>>('add_promo_code', data as unknown as Record<string, unknown>);
+    if (!res.success) {
+      throw new Error(res.error || 'فشل إنشاء كود الخصم');
+    }
+    await fetchPromoCodes();
+    return res.data;
+  };
+
+  const updatePromoCode = async (id: number, data: PromoFormInput) => {
+    const res = await apiFetch<Record<string, unknown>>('update_promo_code', { id, ...data } as unknown as Record<string, unknown>);
+    if (!res.success) {
+      throw new Error(res.error || 'فشل تحديث كود الخصم');
+    }
+    await fetchPromoCodes();
+    return res.data;
+  };
+
+  const togglePromoStatus = async (id: number) => {
+    const res = await apiFetch<Record<string, unknown>>('toggle_promo_code_status', { id });
+    if (!res.success) {
+      throw new Error(res.error || 'فشل تغيير حالة كود الخصم');
+    }
+    await fetchPromoCodes();
+    return res.data;
+  };
+
+  const archivePromoCode = async (id: number) => {
+    const res = await apiFetch<Record<string, unknown>>('archive_promo_code', { id });
+    if (!res.success) {
+      throw new Error(res.error || 'فشل أرشفة كود الخصم');
+    }
+    await fetchPromoCodes();
+    return res.data;
+  };
+
+  const fetchRedemptions = async (promoId: number, page = 1, limit = 20): Promise<{ redemptions: PromoRedemption[]; total: number; totalPages: number }> => {
+    const res = await apiFetch<Record<string, unknown>>(`get_promo_redemptions&promo_id=${promoId}&page=${page}&limit=${limit}`);
+    if (res.success && res.data) {
+      const dataObj = res.data as { data?: { redemptions?: unknown[]; pagination?: { total: number; total_pages: number } } };
+      if (dataObj.data && dataObj.data.redemptions) {
+        const redemptions = parsePromoRedemptions(dataObj.data.redemptions) || [];
+        const pagination = dataObj.data.pagination || { total: 0, total_pages: 1 };
+        return {
+          redemptions,
+          total: pagination.total,
+          totalPages: pagination.total_pages,
+        };
+      }
+    }
+    return { redemptions: [], total: 0, totalPages: 0 };
+  };
+
+  return {
+    promoCodes,
+    isLoading,
+    error,
+    refresh: fetchPromoCodes,
+    addPromoCode,
+    updatePromoCode,
+    togglePromoStatus,
+    archivePromoCode,
+    fetchRedemptions,
+  };
+}

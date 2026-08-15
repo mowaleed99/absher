@@ -310,6 +310,12 @@ if ($action === 'submit') {
         }
 
         // 3. Paid-service behavior & validations
+        $promoCodeInput = !empty($input['promo_code']) ? strtoupper(trim($input['promo_code'])) : '';
+        $promoRow = null;
+        $promoCodeId = null;
+        $discountPoints = 0;
+        $finalPricePoints = $pricePoints;
+
         if ($pricePoints > 0) {
             if ($serviceId <= 0) {
                 throw new Exception("معرف الخدمة (service_id) مطلوب للخدمات المدفوعة.");
@@ -328,6 +334,101 @@ if ($action === 'submit') {
             $paymentMethod = 'free';
             $payWithPoints = false;
             $pricePoints = 0;
+            $finalPricePoints = 0;
+        }
+
+        // Promo Code is Wallet-Only
+        if (!empty($promoCodeInput)) {
+            if ($paymentMethod !== 'wallet') {
+                throw new Exception("كود الخصم متاح عند الدفع بنقاط المحفظة فقط.");
+            }
+            if (!$studentId) {
+                throw new Exception("تسجيل الدخول مطلوب للاستفادة من كود الخصم.");
+            }
+
+            // Lock promo code row for update
+            $pStmt = $conn->prepare("SELECT * FROM promo_codes WHERE code = ? FOR UPDATE");
+            $pStmt->execute([$promoCodeInput]);
+            $promoRow = $pStmt->fetch(PDO::FETCH_ASSOC);
+
+            if (!$promoRow || $promoRow['status'] === 'archived') {
+                throw new Exception("كود الخصم غير موجود أو غير صحيح.");
+            }
+            if ($promoRow['status'] === 'paused') {
+                throw new Exception("كود الخصم معطل حالياً.");
+            }
+
+            $now = date('Y-m-d H:i:s');
+            if (!empty($promoRow['start_at']) && $now < $promoRow['start_at']) {
+                throw new Exception("كود الخصم لم يبدأ بعد.");
+            }
+            if (!empty($promoRow['expires_at']) && $now > $promoRow['expires_at']) {
+                throw new Exception("كود الخصم منتهي الصلاحية.");
+            }
+
+            if ($promoRow['service_scope'] === 'selected') {
+                $scStmt = $conn->prepare("SELECT 1 FROM promo_code_services WHERE promo_code_id = ? AND service_id = ?");
+                $scStmt->execute([$promoRow['id'], $serviceId]);
+                if (!$scStmt->fetch()) {
+                    throw new Exception("كود الخصم غير متاح للخدمة المحددة.");
+                }
+            }
+
+            if ($promoRow['audience_scope'] === 'selected') {
+                $auStmt = $conn->prepare("SELECT 1 FROM promo_code_students WHERE promo_code_id = ? AND student_id = ?");
+                $auStmt->execute([$promoRow['id'], $studentId]);
+                if (!$auStmt->fetch()) {
+                    throw new Exception("كود الخصم غير صحيح أو غير مخصص لحسابك.");
+                }
+            }
+
+            $minPrice = intval($promoRow['min_service_price_points'] ?? 0);
+            if ($minPrice > 0 && $pricePoints < $minPrice) {
+                throw new Exception("سعر الخدمة أقل من الحد الأدنى لتطبيق كود الخصم.");
+            }
+
+            if ($promoRow['total_usage_limit'] !== null) {
+                $cntStmt = $conn->prepare("SELECT COUNT(*) FROM promo_code_redemptions WHERE promo_code_id = ? AND status = 'applied'");
+                $cntStmt->execute([$promoRow['id']]);
+                if (intval($cntStmt->fetchColumn()) >= intval($promoRow['total_usage_limit'])) {
+                    throw new Exception("تم استنفاد الحد الأقصى لاستخدام كود الخصم.");
+                }
+            }
+
+            if (!empty($promoRow['per_student_limit'])) {
+                $stdCntStmt = $conn->prepare("SELECT COUNT(*) FROM promo_code_redemptions WHERE promo_code_id = ? AND student_id = ? AND status = 'applied'");
+                $stdCntStmt->execute([$promoRow['id'], $studentId]);
+                if (intval($stdCntStmt->fetchColumn()) >= intval($promoRow['per_student_limit'])) {
+                    throw new Exception("لقد تجاوزت الحد الأقصى المسموح لك لاستخدام هذا الكود.");
+                }
+            }
+
+            // Calculate Discount
+            $dType = $promoRow['discount_type'];
+            $dVal = floatval($promoRow['discount_value']);
+            $maxD = !empty($promoRow['max_discount_points']) ? intval($promoRow['max_discount_points']) : null;
+
+            if ($dType === 'percentage') {
+                $rawD = $pricePoints * ($dVal / 100.0);
+                $discountPoints = (int)floor($rawD);
+                if ($discountPoints === 0 && $pricePoints > 0) {
+                    $discountPoints = 1;
+                }
+                if ($maxD !== null && $maxD > 0) {
+                    $discountPoints = min($discountPoints, $maxD);
+                }
+            } else if ($dType === 'fixed') {
+                $discountPoints = min((int)$dVal, $pricePoints);
+            } else if ($dType === 'free') {
+                $discountPoints = $pricePoints;
+            }
+
+            $discountPoints = min($discountPoints, $pricePoints);
+            $finalPricePoints = max(0, $pricePoints - $discountPoints);
+            $promoCodeId = intval($promoRow['id']);
+
+            // Increment usage counter
+            $conn->prepare("UPDATE promo_codes SET used_count = used_count + 1 WHERE id = ?")->execute([$promoCodeId]);
         }
 
         if ($payWithPoints && !$studentId) {
@@ -348,7 +449,7 @@ if ($action === 'submit') {
 
         // 4. Points deduction & wallet lock
         $pointsCharged = 0;
-        if ($payWithPoints && $pricePoints > 0) {
+        if ($payWithPoints && $finalPricePoints > 0) {
             $ptsStmt = $conn->prepare("SELECT points FROM students WHERE id = ? FOR UPDATE");
             $ptsStmt->execute([$studentId]);
             $ptsRow = $ptsStmt->fetch(PDO::FETCH_ASSOC);
@@ -357,36 +458,74 @@ if ($action === 'submit') {
             }
             $currentPoints = (int)$ptsRow['points'];
             $balanceBefore = $currentPoints;
-            if ($currentPoints < $pricePoints) {
+            if ($currentPoints < $finalPricePoints) {
                 throw new Exception("رصيد النقاط غير كافٍ لإكمال هذه العملية.");
             }
 
             $deductStmt = $conn->prepare("UPDATE students SET points = points - ? WHERE id = ? AND points >= ?");
-            $deductStmt->execute([$pricePoints, $studentId, $pricePoints]);
+            $deductStmt->execute([$finalPricePoints, $studentId, $finalPricePoints]);
             if ($deductStmt->rowCount() === 0) {
                 throw new Exception("فشلت عملية خصم النقاط.");
             }
-            $balanceAfter = $balanceBefore - $pricePoints;
-            $pointsCharged = $pricePoints;
+            $balanceAfter = $balanceBefore - $finalPricePoints;
+            $pointsCharged = $finalPricePoints;
         }
 
         // 5. Request insert (using machine status values)
-        $status = ($paymentMethod === 'cash') ? 'pending_cash' : 'under_review';
-        $stmt = $conn->prepare("INSERT INTO service_requests (student_id, service_id, service_price_points, points_charged, payment_method, request_uuid, student_name, student_phone, service_title, details, status, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())");
+        $status = ($paymentMethod === 'cash') ? 'pending_cash' : 'قيد المراجعة';
+        $stmt = $conn->prepare("INSERT INTO service_requests (student_id, service_id, promo_code_id, service_price_points, discount_points, final_price_points, points_charged, payment_method, request_uuid, student_name, student_phone, service_title, details, status, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())");
         $fullDetails = "الجامعة: " . $studentUni . "\nالتفاصيل: " . $details;
-        $stmt->execute([$studentId, $serviceId ?: null, $pricePoints, $pointsCharged, $paymentMethod, $requestUuid ?: null, $studentName, $studentPhone, $serviceTitle, $fullDetails, $status]);
+        $stmt->execute([$studentId, $serviceId ?: null, $promoCodeId ?: null, $pricePoints, $discountPoints, $finalPricePoints, $pointsCharged, $paymentMethod, $requestUuid ?: null, $studentName, $studentPhone, $serviceTitle, $fullDetails, $status]);
         $requestId = $conn->lastInsertId();
 
-        // 6. Wallet transaction insert (with UNIQUE constraint)
-        if ($payWithPoints && $pricePoints > 0) {
+        // 6. Record Promo Redemption Snapshot
+        if ($promoRow && $promoCodeId) {
+            $stdSnapStmt = $conn->prepare("SELECT full_name, phone, email FROM students WHERE id = ?");
+            $stdSnapStmt->execute([$studentId]);
+            $stdSnap = $stdSnapStmt->fetch(PDO::FETCH_ASSOC) ?: [];
+
+            $redempStmt = $conn->prepare("
+                INSERT INTO promo_code_redemptions (
+                    promo_code_id, service_request_id, request_id_snapshot, student_id,
+                    student_name_snapshot, student_phone_snapshot, student_email_snapshot,
+                    service_id, service_title_snapshot, code_snapshot, campaign_snapshot,
+                    discount_type_snapshot, discount_value_snapshot, original_price_points,
+                    discount_points, final_price_points, payment_method, status, created_at
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'wallet', 'applied', NOW())
+            ");
+            $redempStmt->execute([
+                $promoCodeId,
+                $requestId,
+                $requestId,
+                $studentId,
+                $stdSnap['full_name'] ?? $studentName,
+                $stdSnap['phone'] ?? $studentPhone,
+                $stdSnap['email'] ?? '',
+                $serviceId ?: null,
+                $serviceTitle,
+                $promoRow['code'],
+                $promoRow['campaign_name'],
+                $promoRow['discount_type'],
+                $promoRow['discount_value'],
+                $pricePoints,
+                $discountPoints,
+                $finalPricePoints
+            ]);
+        }
+
+        // 7. Wallet transaction insert (with UNIQUE composite constraint)
+        if ($payWithPoints && $pointsCharged > 0) {
             $txDesc = "خصم لطلب خدمة: " . $serviceTitle;
+            if ($discountPoints > 0) {
+                $txDesc .= " (بعد خصم $discountPoints نقطة)";
+            }
             $txStmt = $conn->prepare("INSERT INTO wallet_transactions (student_id, service_request_id, amount, type, description, created_at) VALUES (?, ?, ?, 'خصم', ?, NOW())");
-            $txStmt->execute([$studentId, $requestId, $pricePoints, $txDesc]);
+            $txStmt->execute([$studentId, $requestId, $pointsCharged, $txDesc]);
             $walletTxId = $conn->lastInsertId();
 
-            // 7. Notification insert
+            // Notification insert
             $notifTitle = "سحب نقاط";
-            $notifBody = "تم خصم $pricePoints نقطة من محفظتك لطلب الخدمة: $serviceTitle";
+            $notifBody = "تم خصم $pointsCharged نقطة من محفظتك لطلب الخدمة: $serviceTitle";
             sendStudentNotification($studentId, $notifTitle, $notifBody);
         }
 
@@ -401,15 +540,24 @@ if ($action === 'submit') {
             $chatId = $chatRow ? (int)$chatRow['id'] : null;
 
             if (!$chatId) {
-                $createChat = $conn->prepare("INSERT INTO chats (student_id, student_name, student_uni, phone, last_msg, status, updated_at) VALUES (?, ?, ?, ?, '', 'رسالة جديدة 🔔', NOW())");
-                $createChat->execute([$studentId, $studentName, $studentUni, $studentPhone]);
-                $chatId = (int)$conn->lastInsertId();
+                // Check if chat exists with the same phone
+                $phoneChatStmt = $conn->prepare("SELECT id FROM chats WHERE phone = ? LIMIT 1");
+                $phoneChatStmt->execute([$studentPhone]);
+                $phoneChatRow = $phoneChatStmt->fetch(PDO::FETCH_ASSOC);
+                if ($phoneChatRow) {
+                    $chatId = (int)$phoneChatRow['id'];
+                    $conn->prepare("UPDATE chats SET student_id = ? WHERE id = ?")->execute([$studentId, $chatId]);
+                } else {
+                    $createChat = $conn->prepare("INSERT INTO chats (student_id, student_name, student_uni, phone, last_msg, status, updated_at) VALUES (?, ?, ?, ?, '', 'رسالة جديدة 🔔', NOW())");
+                    $createChat->execute([$studentId, $studentName, $studentUni, $studentPhone]);
+                    $chatId = (int)$conn->lastInsertId();
+                }
             }
 
             if ($chatId) {
                 if ($paymentMethod === 'wallet') {
                     $msgContent = "📋 [طلب مدفوع بالنقاط - #" . $requestId . "]\nالخدمة: " . $serviceTitle . "\n" . $fullDetails;
-                    $msgContent .= "\n[تم خصم $pricePoints نقطة بنجاح]";
+                    $msgContent .= "\n[تم خصم $pointsCharged نقطة بنجاح]";
                 } else if ($paymentMethod === 'cash') {
                     $msgContent = "📋 [طلب خدمة جديد - #" . $requestId . "]\nالخدمة: " . $serviceTitle . "\n" . $fullDetails;
                     $msgContent .= "\nطريقة الدفع: نقدًا عند تنفيذ الخدمة";

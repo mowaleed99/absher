@@ -42,11 +42,20 @@ export function useRequests() {
     fetchRequests();
   }, [fetchRequests]);
 
-  const updateRequestStatus = async (id: number, status: string): Promise<{ success: boolean; error?: string }> => {
+  const updateRequestStatus = async (
+    id: number,
+    status: string,
+    cancellationReason?: string
+  ): Promise<{ success: boolean; error?: string }> => {
     try {
+      const payload: Record<string, unknown> = { id, status };
+      if (status === 'ملغي' && cancellationReason) {
+        payload.cancellation_reason = cancellationReason;
+      }
+
       const result = await apiFetch<Record<string, unknown>>('update_request_status', {
-        id,
-        status,
+        method: 'POST',
+        body: JSON.stringify(payload),
       });
 
       if (!result.success) {
@@ -54,7 +63,15 @@ export function useRequests() {
       }
 
       setRequests((prev) =>
-        prev.map((r) => (r.id === id ? { ...r, status } : r))
+        prev.map((r) =>
+          r.id === id
+            ? {
+                ...r,
+                status,
+                ...(status === 'ملغي' ? { cancellation_reason: cancellationReason, refund_status: 'refunded' } : {}),
+              }
+            : r
+        )
       );
       return { success: true };
     } catch (err) {
