@@ -8,19 +8,21 @@ export function useFeedback() {
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchFeedback = useCallback(async () => {
+  const fetchFeedback = useCallback(async (silent = false) => {
     const token = localStorage.getItem('adminToken');
     if (!token) {
-      setIsLoading(false);
+      if (!silent) setIsLoading(false);
       return;
     }
 
-    setIsLoading(true);
-    setError(null);
+    if (!silent) {
+      setIsLoading(true);
+      setError(null);
+    }
     try {
       const result = await apiFetch<Record<string, unknown>>('get_all');
       if (!result.success) {
-        setError(result.error);
+        if (!silent) setError(result.error);
         return;
       }
 
@@ -29,18 +31,22 @@ export function useFeedback() {
       if (parsed) {
         setFeedback(parsed);
       } else {
-        setError('Failed to parse feedback');
+        if (!silent) setError('Failed to parse feedback');
       }
     } catch (err) {
       console.error('[useFeedback] fetch error:', err);
-      setError('Connection error');
+      if (!silent) setError('Connection error');
     } finally {
-      setIsLoading(false);
+      if (!silent) setIsLoading(false);
     }
   }, []);
 
   useEffect(() => {
-    fetchFeedback();
+    fetchFeedback(false);
+    const timer = setInterval(() => {
+      fetchFeedback(true);
+    }, 3000);
+    return () => clearInterval(timer);
   }, [fetchFeedback]);
 
   const updateStatus = async (id: number, status: FeedbackStatus): Promise<{ success: boolean; error?: string }> => {

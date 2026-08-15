@@ -9,19 +9,21 @@ export function useReviews() {
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchReviews = useCallback(async () => {
+  const fetchReviews = useCallback(async (silent = false) => {
     const token = localStorage.getItem('adminToken');
     if (!token) {
-      setIsLoading(false);
+      if (!silent) setIsLoading(false);
       return;
     }
 
-    setIsLoading(true);
-    setError(null);
+    if (!silent) {
+      setIsLoading(true);
+      setError(null);
+    }
     try {
       const result = await apiFetch<Record<string, unknown>>('get_all');
       if (!result.success) {
-        setError(result.error);
+        if (!silent) setError(result.error);
         return;
       }
 
@@ -40,12 +42,16 @@ export function useReviews() {
       console.error('[useReviews] fetch error:', err);
       setError('Connection error');
     } finally {
-      setIsLoading(false);
+      if (!silent) setIsLoading(false);
     }
   }, []);
 
   useEffect(() => {
-    fetchReviews();
+    fetchReviews(false);
+    const timer = setInterval(() => {
+      fetchReviews(true);
+    }, 3000);
+    return () => clearInterval(timer);
   }, [fetchReviews]);
 
   const moderateReview = async (id: number, status: 'approved' | 'rejected'): Promise<{ success: boolean; error?: string }> => {

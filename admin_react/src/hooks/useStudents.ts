@@ -9,19 +9,21 @@ export function useStudents() {
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchStudents = useCallback(async () => {
+  const fetchStudents = useCallback(async (silent = false) => {
     const token = localStorage.getItem('adminToken');
     if (!token) {
-      setIsLoading(false);
+      if (!silent) setIsLoading(false);
       return;
     }
 
-    setIsLoading(true);
-    setError(null);
+    if (!silent) {
+      setIsLoading(true);
+      setError(null);
+    }
     try {
       const result = await apiFetch<Record<string, unknown>>('get_all');
       if (!result.success) {
-        setError(result.error);
+        if (!silent) setError(result.error);
         return;
       }
 
@@ -29,7 +31,7 @@ export function useStudents() {
       if (parsed) {
         setStudents(parsed);
       } else {
-        setError('Failed to parse students');
+        if (!silent) setError('Failed to parse students');
       }
 
       const parsedBlocked = parseBlockedIdentities(result.data.blocked_identities);
@@ -38,14 +40,18 @@ export function useStudents() {
       }
     } catch (err) {
       console.error('[useStudents] fetch error:', err);
-      setError('Connection error');
+      if (!silent) setError('Connection error');
     } finally {
-      setIsLoading(false);
+      if (!silent) setIsLoading(false);
     }
   }, []);
 
   useEffect(() => {
-    fetchStudents();
+    fetchStudents(false);
+    const timer = setInterval(() => {
+      fetchStudents(true);
+    }, 3000);
+    return () => clearInterval(timer);
   }, [fetchStudents]);
 
   const addStudent = async (data: StudentFormData): Promise<{ success: boolean; error?: string }> => {

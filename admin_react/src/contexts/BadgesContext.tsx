@@ -102,7 +102,7 @@ export function BadgesProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     fetchBadges();
-    const interval = setInterval(fetchBadges, 15000);
+    const interval = setInterval(fetchBadges, 3000);
     return () => clearInterval(interval);
   }, [fetchBadges]);
 

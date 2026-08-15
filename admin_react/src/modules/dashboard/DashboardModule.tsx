@@ -46,18 +46,20 @@ export function DashboardModule() {
   const [error, setError] = useState<string | null>(null);
   const [lastUpdated, setLastUpdated] = useState<string>('');
 
-  const fetchDashboardData = useCallback(async () => {
-    setIsLoading(true);
-    setError(null);
+  const fetchDashboardData = useCallback(async (silent = false) => {
+    if (!silent) {
+      setIsLoading(true);
+      setError(null);
+    }
     try {
       const result = await apiFetch<Record<string, unknown>>('get_all');
       if (!result.success) {
-        setError(result.error || 'Failed to fetch dashboard data');
+        if (!silent) setError(result.error || 'Failed to fetch dashboard data');
         return;
       }
 
       if (!result.data) {
-        setError('Empty dashboard payload');
+        if (!silent) setError('Empty dashboard payload');
         return;
       }
 
@@ -114,14 +116,18 @@ export function DashboardModule() {
       setLastUpdated(now.toLocaleTimeString(isRtl ? 'ar-SA' : 'en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit' }));
     } catch (err) {
       console.error('[DashboardModule] fetch error:', err);
-      setError('Connection error');
+      if (!silent) setError('Connection error');
     } finally {
-      setIsLoading(false);
+      if (!silent) setIsLoading(false);
     }
   }, [isRtl]);
 
   useEffect(() => {
-    fetchDashboardData();
+    fetchDashboardData(false);
+    const timer = setInterval(() => {
+      fetchDashboardData(true);
+    }, 3000);
+    return () => clearInterval(timer);
   }, [fetchDashboardData]);
 
   // Derived metrics
@@ -217,7 +223,7 @@ export function DashboardModule() {
 
           <button
             type="button"
-            onClick={fetchDashboardData}
+            onClick={() => fetchDashboardData(false)}
             disabled={isLoading}
             title="تحديث بيانات لوحة القيادة"
             style={{
@@ -263,7 +269,7 @@ export function DashboardModule() {
           <p style={{ marginTop: '10px', fontSize: '0.9rem' }}>{error}</p>
           <button
             type="button"
-            onClick={fetchDashboardData}
+            onClick={() => fetchDashboardData(false)}
             style={{
               marginTop: '10px',
               padding: '8px 18px',

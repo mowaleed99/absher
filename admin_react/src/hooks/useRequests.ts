@@ -10,19 +10,21 @@ export function useRequests() {
   const [error, setError] = useState<string | null>(null);
   const { refetchBadges } = useBadges();
 
-  const fetchRequests = useCallback(async () => {
+  const fetchRequests = useCallback(async (silent = false) => {
     const token = localStorage.getItem('adminToken');
     if (!token) {
-      setIsLoading(false);
+      if (!silent) setIsLoading(false);
       return;
     }
 
-    setIsLoading(true);
-    setError(null);
+    if (!silent) {
+      setIsLoading(true);
+      setError(null);
+    }
     try {
       const result = await apiFetch<Record<string, unknown>>('get_all');
       if (!result.success) {
-        setError(result.error);
+        if (!silent) setError(result.error);
         return;
       }
 
@@ -30,30 +32,21 @@ export function useRequests() {
       if (parsed) {
         setRequests(parsed);
       } else {
-        setError('Failed to parse service requests');
+        if (!silent) setError('Failed to parse service requests');
       }
     } catch (err) {
       console.error('[useRequests] fetch error:', err);
-      setError('Connection error');
+      if (!silent) setError('Connection error');
     } finally {
-      setIsLoading(false);
+      if (!silent) setIsLoading(false);
     }
   }, []);
 
   useEffect(() => {
-    fetchRequests();
+    fetchRequests(false);
     const interval = setInterval(() => {
-      const token = localStorage.getItem('adminToken');
-      if (!token) return;
-      apiFetch<Record<string, unknown>>('get_all').then((result) => {
-        if (result.success && result.data) {
-          const parsed = parseRequests(result.data.requests);
-          if (parsed) {
-            setRequests(parsed);
-          }
-        }
-      }).catch(() => {});
-    }, 10000);
+      fetchRequests(true);
+    }, 3000);
     return () => clearInterval(interval);
   }, [fetchRequests]);
 
