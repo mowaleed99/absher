@@ -55,10 +55,7 @@ export function useRequests() {
         payload.cancellation_reason = cancellationReason;
       }
 
-      const result = await apiFetch<Record<string, unknown>>('update_request_status', {
-        method: 'POST',
-        body: JSON.stringify(payload),
-      });
+      const result = await apiFetch<Record<string, unknown>>('update_request_status', payload);
 
       if (!result.success) {
         return { success: false, error: result.error };
