@@ -2,7 +2,7 @@
 
 *(Authoritative Architecture, Cancellation & Refund State Machine, Concurrency Safeguards & Execution Roadmap)*
 
-> **⛔ Status: PHASE 6A PLAN COMPLETE — WALLET-ONLY AND CANCELLATION POLICIES APPROVED — NO IMPLEMENTATION STARTED — WAITING FOR EXPLICIT USER GO**
+> **⛔ Status: PHASE 6A MASTER PLAN CORRECTED AND COMPLETE — NO IMPLEMENTATION STARTED — WAITING FOR EXPLICIT USER GO**
 > 
 > | Phase | Description | Status |
 > |---|---|---|
@@ -12,7 +12,7 @@
 > | Phase 4 | Reviews Moderation, Feedback, Students & Points | `COMPLETED / VERIFIED / USER ACCEPTED ✅` |
 > | Phase 5 | News, Notifications, Customer Support Chats | `COMPLETED / VERIFIED / USER ACCEPTED ✅` |
 > | Phase 6 | Executive Dashboard & Cross-Module Analytics | `COMPLETED / VERIFIED / USER ACCEPTED ✅` |
-> | **Phase 6A** | **Promo Codes & Discounts System** | **SPECIFICATION COMPLETE / APPROVED POLICIES** |
+> | **Phase 6A** | **Promo Codes & Discounts System** | **MASTER PLAN COMPLETE / APPROVED POLICIES** |
 > | Deferred | Housing Offers (Waiting for User Requirements) | `DEFERRED / FROZEN` |
 > | Cutover | Phase 7 / Production Promotion | `NOT STARTED — REQUIRES EXPLICIT USER GO` |
 
@@ -33,8 +33,8 @@
 
 ```mermaid
 stateDiagram-v2
-    [*] --> under_review: Student Submits Request
-    under_review --> in_progress: Admin Starts Execution
+    [*] --> under_review: Student Submits Request (قيد المراجعة)
+    under_review --> in_progress: Admin Starts Execution (قيد التنفيذ)
     in_progress --> completed: Admin Marks Completed (مكتمل) [TERMINAL]
     under_review --> cancelled: Admin Cancels (ملغي) [TERMINAL]
     in_progress --> cancelled: Admin Cancels (ملغي) [TERMINAL]
@@ -56,12 +56,12 @@ stateDiagram-v2
 
 ### A. Cancellation Authority & Parameters
 - **Authority:** Authenticated Admin only (`AuthMiddleware::requireAdmin()`).
-- **Identity:** Resolved strictly from Admin JWT session (`AuthMiddleware::$currentUserId`), never from client payload.
+- **Identity:** Resolved strictly from Admin JWT session (`$adminId = intval(AuthMiddleware::$payload['admin_id'] ?? 0)`), never from client payload.
 - **Mandatory Reason:** A non-empty string `cancellation_reason` (min 3 chars, max 255 chars) is mandatory.
 
-### B. Allowed Status Transitions (Authoritative Arabic Database Values)
-- Real Database Statuses: `قيد المراجعة` (Under Review / New), `قيد التنفيذ` (In Progress), `مكتمل` (Completed), `ملغي` (Cancelled).
-- **Valid Transition:** Any non-completed status (`قيد المراجعة`, `قيد التنفيذ`, `pending_cash`) may transition to `ملغي`.
+### B. Allowed Status Transitions (Authoritative Stored Database Values)
+- Real Database Statuses (`SELECT DISTINCT status FROM service_requests`): `قيد المراجعة` (Under Review / Default), `قيد التنفيذ` (In Progress), `مكتمل` (Completed), `ملغي` (Cancelled).
+- **Valid Transition:** Any non-completed status (`قيد المراجعة`, `قيد التنفيذ`) may transition to `ملغي`.
 - **Prohibited Transition:** Completed requests (`مكتمل`) **cannot** be cancelled. Rejected with `HTTP 400 Bad Request` (`CANNOT_CANCEL_COMPLETED_REQUEST`).
 - **Terminal State:** A cancelled request (`ملغي`) cannot be transitioned to any other status.
 - **Idempotency:** Calling cancel on an already cancelled request returns `HTTP 200 OK` without duplicating financial refunds or usage decrements.
@@ -80,7 +80,7 @@ stateDiagram-v2
 3. **Cash Orders:** 0 points charged -> 0 points refunded. No wallet transactions or promo reversals occur.
 
 ### D. Duplicate-Refund Protection (Database Unique Constraint)
-- Audit of `wallet_transactions` showed `uniq_service_request_id` directly on `service_request_id`.
+- Audit of `wallet_transactions` shows `type VARCHAR(50) NOT NULL` and `uniq_service_request_id` directly on `service_request_id`.
 - Staged migration replaces this index with a composite unique index: `UNIQUE KEY uq_request_tx_type (service_request_id, type)`.
 - **Guarantee:** Allows exactly 1 deduction (`type = 'خصم'`) and exactly 1 refund (`type = 'استرجاع'`) per request. Concurrent or repeated cancellation calls are physically blocked at the database engine level from creating duplicate refunds.
 
@@ -96,7 +96,7 @@ Inside a single MySQL transaction (`$conn->beginTransaction()`):
 8. **Reverse Promo Redemption:** `UPDATE promo_code_redemptions SET status = 'reversed', reversed_at = NOW(), reversed_reason = ? WHERE id = ? AND status = 'applied'`
 9. **Decrement Promo Usage:** If redemption updated, `UPDATE promo_codes SET used_count = used_count - 1 WHERE id = ?`
 10. **Record Cancellation Audit on Request:** `UPDATE service_requests SET status = 'ملغي', cancelled_at = NOW(), cancelled_by_admin_id = ?, cancellation_reason = ?, refund_status = ? WHERE id = ?`
-11. **Dispatch Bilingual Push Notification:** Send cancellation notice to student (`cancelled_request_notif`).
+11. **Dispatch Internal Bilingual Push Notification:** Insert record into `notifications` table on Staging DB.
 12. **Commit Transaction.**
 
 ---
@@ -191,11 +191,11 @@ CREATE TABLE IF NOT EXISTS `promo_code_redemptions` (
   `service_request_id` INT NULL,
   `request_id_snapshot` INT NOT NULL,
   `student_id` INT NULL,
-  `student_name_snapshot` VARCHAR(150) NOT NULL,
-  `student_phone_snapshot` VARCHAR(50) NOT NULL,
-  `student_email_snapshot` VARCHAR(150) NOT NULL,
+  `student_name_snapshot` VARCHAR(150) NOT NULL DEFAULT '',
+  `student_phone_snapshot` VARCHAR(50) NOT NULL DEFAULT '',
+  `student_email_snapshot` VARCHAR(150) NOT NULL DEFAULT '',
   `service_id` INT NULL,
-  `service_title_snapshot` VARCHAR(200) NOT NULL,
+  `service_title_snapshot` VARCHAR(200) NOT NULL DEFAULT '',
   `code_snapshot` VARCHAR(50) NOT NULL,
   `campaign_snapshot` VARCHAR(255) NOT NULL,
   `discount_type_snapshot` VARCHAR(20) NOT NULL,
@@ -288,26 +288,28 @@ PREPARE stmt_add FROM @sql_add; EXECUTE stmt_add; DEALLOCATE PREPARE stmt_add;
 
 1. **Normalization:** `trim(strtoupper($code))`, validated against `/^[A-Z0-9_-]{3,50}$/`.
 2. **Percentage Discount (`percentage`):**
-   - Value: `1 <= discount_value <= 100`.
-   - Formula: `$discountPoints = (int)floor($originalPricePoints * ($discountValue / 100.0))`.
+   - Value: `0.01 <= discount_value <= 100.00`.
+   - Raw Calculation: `$rawDiscount = $originalPricePoints * ($discountValue / 100.0)`.
+   - Positive Saving Floor Protection: `$discountPoints = (int)floor($rawDiscount)`. If `$discountPoints === 0 && $originalPricePoints > 0`, clamp to `1` point (provided `1 <= $originalPricePoints`) so that a valid percentage promo always yields at least 1 point of real savings.
    - Max Cap: If `$maxDiscountPoints > 0`, `$discountPoints = min($discountPoints, $maxDiscountPoints)`.
    - Final Price: `$finalPricePoints = max(0, $originalPricePoints - $discountPoints)`.
 3. **Fixed Discount (`fixed`):**
-   - Value: `1 <= discount_value <= 100000`.
+   - Value: Integer `1 <= discount_value <= 100000`.
    - Formula: `$discountPoints = min((int)$discountValue, $originalPricePoints)`.
    - Final Price: `$finalPricePoints = max(0, $originalPricePoints - $discountPoints)`.
 4. **Free Code (`free`):**
+   - Value: `discount_value = 0.00` (ignored during calculation).
    - Formula: `$discountPoints = $originalPricePoints`, `$finalPricePoints = 0`.
-5. **Zero-value discounts are strictly disallowed.**
+5. **Zero-value discounts are prohibited for percentage and fixed types.**
 
 ---
 
-## 6. Strict API Contracts & Error Protocols
+## 6. Complete API Contracts & Error Protocols
 
 ### A. Student Validation: `POST /api_staging/services/validate_promo.php`
-- **Authentication:** **Bearer JWT strictly required**. Unauthenticated -> `HTTP 401 Unauthorized`.
+- **Authentication:** **Bearer JWT strictly required**. Unauthenticated -> `HTTP 401 Unauthorized`. `student_id` extracted exclusively from `$payload['student_id']`.
 - **Payload:** `{ "code": "SUMMER20", "service_id": 3, "payment_method": "wallet" }`
-- **Success (HTTP 200):**
+- **Success (HTTP 200) — Note: Internal `campaign_name` is omitted from public response:**
   ```json
   {
     "status": "success",
@@ -315,7 +317,6 @@ PREPARE stmt_add FROM @sql_add; EXECUTE stmt_add; DEALLOCATE PREPARE stmt_add;
       "is_valid": true,
       "promo_code_id": 4,
       "code": "SUMMER20",
-      "campaign_name": "خصم الصيف للطلاب",
       "discount_type": "percentage",
       "discount_value": 20.0,
       "original_price": 100,
@@ -358,12 +359,60 @@ PREPARE stmt_add FROM @sql_add; EXECUTE stmt_add; DEALLOCATE PREPARE stmt_add;
   }
   ```
 
+### D. Complete Admin Promo CRUD Contracts: `POST /api_staging/admin_api.php`
+1. **Get All Promos (`action=get_all` or `action=get_promo_codes`):**
+   - Returns array of promo codes with aggregated `redemption_count`, `active_status`, and junction lists `service_ids`, `student_ids`.
+2. **Add Promo Code (`action=add_promo_code`):**
+   - Payload: `{ campaign_name, code, discount_type, discount_value, max_discount_points, min_service_price_points, start_at, expires_at, status, service_scope, service_ids, audience_scope, student_ids, total_usage_limit, per_student_limit }`.
+   - Validates: Unique code string, `start_at < expires_at`, non-empty `service_ids` when `service_scope = 'selected'`, non-empty `student_ids` when `audience_scope = 'selected'`.
+3. **Update Promo Code (`action=update_promo_code`):**
+   - Safety rule: If `used_count > 0`, the `code` string is locked/immutable to preserve audit integrity.
+4. **Toggle Status (`action=toggle_promo_code_status`):**
+   - Toggles `active` <-> `paused`.
+5. **Archive Promo Code (`action=archive_promo_code`):**
+   - Sets `status = 'archived'`. Preserves redemption history without hard deletion.
+6. **Get Redemptions (`action=get_promo_redemptions&promo_id=X`):**
+   - Returns paginated list of redemption rows (`id`, `request_id_snapshot`, `student_name_snapshot`, `student_phone_snapshot`, `service_title_snapshot`, `discount_points`, `final_price_points`, `status`, `created_at`, `reversed_at`, `reversed_reason`).
+
 ---
 
-## 7. Executive Dashboard Integration
+## 7. Complete Flutter Mobile Reactive Flow
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor S as Student
+    participant UI as services_screen.dart
+    participant API as api_service.dart
+    participant Backend as validate_promo.php
+
+    S->>UI: Select Service (e.g. Price: 100 pts)
+    S->>UI: Select Payment Method = 'Wallet Points'
+    UI->>UI: Enable Promo Code input field
+    S->>UI: Types "SUMMER20" & Clicks [ تطبيق / Apply ]
+    UI->>UI: Set _isValidatingPromo = true (Lock button)
+    UI->>API: validatePromoCode("SUMMER20", serviceId, "wallet")
+    API->>Backend: POST /services/validate_promo.php (Bearer JWT)
+    Backend-->>API: 200 OK { is_valid: true, original: 100, discount: 20, final: 80 }
+    API-->>UI: Applied Promo Data
+    UI->>UI: Render Pricing Card: Original: 100 | Discount: -20 | Final: 80 pts
+    
+    alt Student changes service dropdown OR switches to Cash
+        UI->>UI: Clear _appliedPromoData immediately
+        UI->>UI: Reset price display to base service price
+    end
+
+    S->>UI: Clicks [ إرسال الطلب / Submit Request ]
+    UI->>API: submitServiceRequest(..., promoCode: "SUMMER20")
+    Note over API: Sends promo_code structurally (No bracketed text in details)
+```
+
+---
+
+## 8. Executive Dashboard Integration
 
 - **Backend API:** [`backend_php/api_staging/admin/dashboard.php`](file:///c:/Users/moham/Desktop/absher/backend_php/api_staging/admin/dashboard.php)
-  - Lightweight summary query:
+  - Summary aggregation query:
     ```sql
     SELECT 
       (SELECT COUNT(*) FROM promo_codes WHERE status = 'active') AS active_promos,
@@ -377,7 +426,7 @@ PREPARE stmt_add FROM @sql_add; EXECUTE stmt_add; DEALLOCATE PREPARE stmt_add;
 
 ---
 
-## 8. Complete List of Files to Create and Modify
+## 9. Complete List of Files to Create and Modify
 
 ### Database:
 - `[NEW]` [`sql/migrations/2026_08_phase6a_promo_codes.sql`](file:///c:/Users/moham/Desktop/absher/sql/migrations/2026_08_phase6a_promo_codes.sql)
@@ -395,7 +444,7 @@ PREPARE stmt_add FROM @sql_add; EXECUTE stmt_add; DEALLOCATE PREPARE stmt_add;
 - `[NEW]` [`admin_react/src/modules/promo/AddPromoCodeModal.tsx`](file:///c:/Users/moham/Desktop/absher/admin_react/src/modules/promo/AddPromoCodeModal.tsx)
 - `[NEW]` [`admin_react/src/modules/promo/EditPromoCodeModal.tsx`](file:///c:/Users/moham/Desktop/absher/admin_react/src/modules/promo/EditPromoCodeModal.tsx)
 - `[NEW]` [`admin_react/src/modules/promo/PromoDetailsModal.tsx`](file:///c:/Users/moham/Desktop/absher/admin_react/src/modules/promo/PromoDetailsModal.tsx)
-- `[MODIFY]` [`admin_react/src/modules/requests/RequestDetailsModal.tsx`](file:///c:/Users/moham/Desktop/absher/admin_react/src/modules/requests/RequestDetailsModal.tsx) (cancellation confirmation modal & reason input)
+- `[MODIFY]` [`admin_react/src/modules/requests/RequestDetailsModal.tsx`](file:///c:/Users/moham/Desktop/absher/admin_react/src/modules/requests/RequestDetailsModal.tsx)
 - `[MODIFY]` [`admin_react/src/types/dashboard.ts`](file:///c:/Users/moham/Desktop/absher/admin_react/src/types/dashboard.ts)
 - `[MODIFY]` [`admin_react/src/hooks/useDashboardStats.ts`](file:///c:/Users/moham/Desktop/absher/admin_react/src/hooks/useDashboardStats.ts)
 - `[MODIFY]` [`admin_react/src/modules/dashboard/DashboardModule.tsx`](file:///c:/Users/moham/Desktop/absher/admin_react/src/modules/dashboard/DashboardModule.tsx)
@@ -411,30 +460,30 @@ PREPARE stmt_add FROM @sql_add; EXECUTE stmt_add; DEALLOCATE PREPARE stmt_add;
 
 ---
 
-## 9. Exact Phase 6A Execution Order
+## 10. Exact Phase 6A Execution Order & Quality Gate Commands
 
 1. **Step 1: Database Migration & Schema Staging**
    - Apply staged migration to `absher_georgia_staging`.
-   - Verify table structure and indexes.
 2. **Step 2: Backend API Implementation**
    - Create `validate_promo.php` with JWT enforcement.
    - Update `student_requests.php` for atomic promo deduction.
    - Update `admin_api.php` for promo CRUD and cancellation/refund state machine.
    - Update `admin/dashboard.php` for promo summary stats.
+   - Syntax validation: `php -l backend_php/api_staging/services/validate_promo.php`
 3. **Step 3: Automated Backend Verification**
    - Run automated verification suite on VPS Staging.
 4. **Step 4: React Admin Implementation**
    - Create types, hooks, and modals in `src/modules/promo/`.
-   - Add cancellation confirmation UI in `RequestDetailsModal.tsx`.
-   - Add `/promo-codes` route and Sidebar entry.
-   - Integrate Promo KPI on Executive Dashboard.
-   - Build production bundle (`npm run build`).
+   - Quality Gate: `npm run typecheck` (`tsc --noEmit`)
+   - Quality Gate: `npm run lint` (`eslint src --max-warnings 0`)
+   - Quality Gate Staging Build: `npm run build:staging` (`tsc && vite build --mode staging`)
 5. **Step 5: Flutter App Integration**
    - Update `api_service.dart` with `validatePromoCode`.
-   - Redesign Promo Code section in `services_screen.dart` with reactive breakdown and wallet-only enforcement.
+   - Redesign Promo Code section in `services_screen.dart`.
+   - Quality Gate: `flutter analyze` & `flutter test`
 6. **Step 6: Deploy & End-to-End Staging Verification**
    - Deploy bundle to `/admin_v2/` on VPS.
-   - Run full automated regression matrix.
+   - Verify SHA-256 asset hashes on Staging web server.
 7. **Step 7: Manual User Acceptance Testing (UAT)**
    - Execute manual test checklist.
 8. **Step 8: Stop Point**
@@ -442,46 +491,38 @@ PREPARE stmt_add FROM @sql_add; EXECUTE stmt_add; DEALLOCATE PREPARE stmt_add;
 
 ---
 
-## 10. Manual User UAT Checklist
+## 11. Staging Fixtures & Two-Mode Rollback Plans
 
-- [ ] **Admin Promo Creation:** Create percentage (20%), fixed (30 pts), and free promo codes. Verify code normalization to uppercase.
-- [ ] **Flutter Live Validation:** Enter code, click Apply, verify instant visual price breakdown (Original -> Discount -> Final).
-- [ ] **Wallet-Only Enforcement:** Switch to Cash payment; verify promo code input is disabled/cleared.
-- [ ] **Student Request Submission:** Submit request with promo code; verify student wallet points deducted by exactly `final_price_points`.
-- [ ] **Admin Request Management:** Open request in Admin Dashboard; verify discount breakdown pill.
-- [ ] **Admin Cancellation & Refund:** Change status to `ملغي`; enter mandatory cancellation reason; verify student wallet points automatically refunded.
-- [ ] **Promo Reversal:** Verify promo `used_count` decrements by 1; verify student can reuse code if eligible.
-- [ ] **Dashboard KPI Verification:** Verify Executive Dashboard promo cards update in real time.
-
----
-
-## 11. Staging Fixtures, Rollback & Backward Compatibility Plans
-
-### A. Staging Seed Fixtures
+### A. Deterministic Staging Fixtures
 ```sql
 -- Fixture 1: 20% Percentage Discount Code
 INSERT INTO promo_codes (campaign_name, code, discount_type, discount_value, max_discount_points, min_service_price_points, status, used_count)
-VALUES ('خصم ترحيبي 20%', 'WELCOME20', 'percentage', 20.00, 50, 0, 'active', 0);
+VALUES ('خصم ترحيبي 20%', 'WELCOME20', 'percentage', 20.00, 50, 0, 'active', 0)
+ON DUPLICATE KEY UPDATE campaign_name=VALUES(campaign_name), discount_value=VALUES(discount_value);
 
 -- Fixture 2: 25 Points Fixed Discount Code
 INSERT INTO promo_codes (campaign_name, code, discount_type, discount_value, min_service_price_points, status, used_count)
-VALUES ('خصم صيانة 25 نقطة', 'FIXED25', 'fixed', 25.00, 50, 'active', 0);
+VALUES ('خصم صيانة 25 نقطة', 'FIXED25', 'fixed', 25.00, 50, 'active', 0)
+ON DUPLICATE KEY UPDATE campaign_name=VALUES(campaign_name), discount_value=VALUES(discount_value);
 
 -- Fixture 3: Free Service Code
 INSERT INTO promo_codes (campaign_name, code, discount_type, discount_value, status, used_count)
-VALUES ('خدمة مجانية للطلاب الجدد', 'FREEPASS', 'free', 0.00, 'active', 0);
+VALUES ('خدمة مجانية للطلاب الجدد', 'FREEPASS', 'free', 0.00, 'active', 0)
+ON DUPLICATE KEY UPDATE campaign_name=VALUES(campaign_name), discount_value=VALUES(discount_value);
 ```
 
-### B. Database Migration Rollback Plan
+### B. Pre-Use Schema Rollback Plan (Allowed only before any redemption/refund data exists)
 ```sql
-DROP TABLE IF EXISTS `promo_code_redemptions`;
-DROP TABLE IF EXISTS `promo_code_students`;
-DROP TABLE IF EXISTS `promo_code_services`;
-DROP TABLE IF EXISTS `promo_codes`;
+-- 1. Drop foreign keys on existing tables
+ALTER TABLE `service_requests` DROP FOREIGN KEY `fk_sr_promo`;
+ALTER TABLE `service_requests` DROP FOREIGN KEY `fk_sr_admin_cancel`;
 
+-- 2. Restore old unique index safely
+ALTER TABLE `wallet_transactions` DROP INDEX `uq_request_tx_type`;
+ALTER TABLE `wallet_transactions` ADD UNIQUE KEY `uniq_service_request_id` (`service_request_id`);
+
+-- 3. Drop added columns on existing tables
 ALTER TABLE `service_requests`
-  DROP FOREIGN KEY `fk_sr_promo`,
-  DROP FOREIGN KEY `fk_sr_admin_cancel`,
   DROP COLUMN `promo_code_id`,
   DROP COLUMN `discount_points`,
   DROP COLUMN `final_price_points`,
@@ -490,10 +531,19 @@ ALTER TABLE `service_requests`
   DROP COLUMN `cancellation_reason`,
   DROP COLUMN `refund_status`;
 
-ALTER TABLE `wallet_transactions`
-  DROP INDEX `uq_request_tx_type`,
-  ADD UNIQUE KEY `uniq_service_request_id` (`service_request_id`);
+-- 4. Drop new tables in dependency order
+DROP TABLE IF EXISTS `promo_code_redemptions`;
+DROP TABLE IF EXISTS `promo_code_students`;
+DROP TABLE IF EXISTS `promo_code_services`;
+DROP TABLE IF EXISTS `promo_codes`;
 ```
+
+### C. Post-Use Feature Rollback Plan (After real redemptions or refunds exist)
+- **Do not drop tables or columns; do not alter indexes.**
+- Disable Promo Code routes in `src/App.tsx` and sidebar link in `src/layouts/AdminLayout.tsx`.
+- Disable promo endpoints on backend by returning `HTTP 404 / 410`.
+- Roll back web build to previous verified commit SHA (`63eb1f4`).
+- **Guarantee:** 100% preservation of all student balances, request statuses, and financial audit logs.
 
 ---
 
@@ -524,48 +574,53 @@ ALTER TABLE `wallet_transactions`
 
 ---
 
-## 13. Automated Verification Matrix (40 Test Cases)
+## 13. Automated Verification Matrix (45 Test Cases)
 
 1. `test_valid_percentage_discount`: 20% on 100 pt service -> 80 pts charged.
 2. `test_percentage_with_max_cap`: 50% capped at 30 pts on 100 pt service -> 70 pts charged.
-3. `test_valid_fixed_discount`: 25 pt discount on 100 pt service -> 75 pts charged.
-4. `test_fixed_discount_exceeds_price`: 150 pt discount on 100 pt service -> 0 pts charged (never negative).
-5. `test_free_service_code`: Free code -> 0 pts charged, 0 wallet deduction, wallet request path.
-6. `test_cash_request_with_promo_rejected`: Cash + promo -> 400 Bad Request `PROMO_WALLET_ONLY`.
-7. `test_cash_request_without_promo_success`: Ordinary cash request -> 200 OK, unchanged behavior.
-8. `test_validate_endpoint_unauthorized`: Validation without JWT token -> 401 Unauthorized.
-9. `test_validate_endpoint_blocked_student`: Validation by blocked student -> 403 Forbidden.
-10. `test_code_trimming_and_uppercase`: Inputs like ` summer20 ` correctly matched as `SUMMER20`.
-11. `test_invalid_code_string`: Non-existent code -> 400 `INVALID_CODE`.
-12. `test_paused_code`: Paused code -> 400 `DISABLED`.
-13. `test_future_scheduled_code`: Code before `start_at` -> 400 `NOT_STARTED`.
-14. `test_expired_code`: Code after `expires_at` -> 400 `EXPIRED`.
-15. `test_service_scope_selected_allowed`: Code for Service A applied to Service A -> 200 OK.
-16. `test_service_scope_selected_rejected`: Code for Service A applied to Service B -> 400 `SERVICE_NOT_ELIGIBLE`.
-17. `test_audience_scope_selected_allowed`: Private code applied by authorized student -> 200 OK.
-18. `test_audience_scope_selected_rejected`: Private code applied by unlisted student -> 400 `INVALID_CODE`.
-19. `test_min_service_price_rule`: Code requiring 150 pts on 100 pt service -> 400 `MIN_PRICE_NOT_MET`.
-20. `test_total_usage_limit_exhausted`: 11th redemption attempt on code with limit 10 -> 400 `TOTAL_LIMIT_REACHED`.
-21. `test_per_student_limit_exhausted`: 2nd redemption attempt by same student on limit 1 -> 400 `STUDENT_LIMIT_REACHED`.
-22. `test_concurrent_final_global_usage`: 2 concurrent requests for last available use -> exactly 1 succeeds, 1 fails.
-23. `test_concurrent_per_student_limit`: 2 concurrent requests for same student -> exactly 1 succeeds.
-24. `test_wallet_exact_deduction`: Student balance deducted by exactly `final_price_points`.
-25. `test_idempotent_request_uuid_replay`: Submitting same `request_uuid` returns identical cached response.
-26. `test_code_immutability_after_use`: Changing `code` string when `used_count > 0` is rejected.
-27. `test_student_deletion_preserves_redemptions`: Hard deleting student sets `student_id = NULL` in redemptions, leaving snapshots intact.
-28. `test_service_deletion_preserves_redemptions`: Hard deleting service sets `service_id = NULL` in redemptions, leaving snapshots intact.
-29. `test_request_deletion_preserves_redemptions`: Deleting request sets `service_request_id = NULL`, leaving redemption snapshot intact.
-30. `test_cancel_normal_wallet_request`: Cancelling normal wallet request refunds exactly `points_charged`.
-31. `test_cancel_discounted_wallet_request`: Cancelling discounted wallet request refunds exactly `points_charged`.
-32. `test_cancel_free_promo_request`: Cancelling free promo request creates no wallet transaction, reverses redemption.
-33. `test_cancel_cash_request`: Cancelling cash request creates no wallet transaction.
-34. `test_cancel_completed_request_rejected`: Attempt to cancel completed request (`مكتمل`) returns 400.
-35. `test_cancel_already_cancelled_idempotent`: Cancelling an already cancelled request returns 200 OK without double refund.
-36. `test_cancel_missing_reason_rejected`: Missing cancellation reason returns 400.
-37. `test_duplicate_cancellation_refund_blocked`: Database unique constraint `uq_request_tx_type` blocks duplicate refund inserts.
-38. `test_dashboard_lightweight_query`: Verifies `dashboard.php` metrics query executes in < 5ms.
-39. `test_transaction_rollback_on_failure`: Simulated failure rolls back all changes cleanly.
-40. `test_production_isolation`: Verifies `absher_georgia_db` is 100% untouched.
+3. `test_percentage_floor_clamping_to_at_least_one`: 1% on 10 pt service -> 1 pt discount (positive saving).
+4. `test_valid_fixed_discount`: 25 pt discount on 100 pt service -> 75 pts charged.
+5. `test_fixed_discount_exceeds_price`: 150 pt discount on 100 pt service -> 0 pts charged (never negative).
+6. `test_free_service_code`: Free code -> 0 pts charged, 0 wallet deduction, wallet request path.
+7. `test_cash_request_with_promo_rejected`: Cash + promo -> 400 Bad Request `PROMO_WALLET_ONLY`.
+8. `test_cash_request_without_promo_success`: Ordinary cash request -> 200 OK, unchanged behavior.
+9. `test_validate_endpoint_unauthorized`: Validation without JWT token -> 401 Unauthorized.
+10. `test_validate_endpoint_blocked_student`: Validation by blocked student -> 403 Forbidden.
+11. `test_validate_endpoint_hides_campaign_name`: Student response does not expose internal campaign name.
+12. `test_code_trimming_and_uppercase`: Inputs like ` summer20 ` correctly matched as `SUMMER20`.
+13. `test_invalid_code_string`: Non-existent code -> 400 `INVALID_CODE`.
+14. `test_paused_code`: Paused code -> 400 `DISABLED`.
+15. `test_future_scheduled_code`: Code before `start_at` -> 400 `NOT_STARTED`.
+16. `test_expired_code`: Code after `expires_at` -> 400 `EXPIRED`.
+17. `test_invalid_dates_validation`: `start_at >= expires_at` is rejected during code creation.
+18. `test_service_scope_selected_allowed`: Code for Service A applied to Service A -> 200 OK.
+19. `test_service_scope_selected_rejected`: Code for Service A applied to Service B -> 400 `SERVICE_NOT_ELIGIBLE`.
+20. `test_empty_selected_services_rejected`: Code with `service_scope = 'selected'` and empty array is rejected.
+21. `test_audience_scope_selected_allowed`: Private code applied by authorized student -> 200 OK.
+22. `test_audience_scope_selected_rejected`: Private code applied by unlisted student -> 400 `INVALID_CODE`.
+23. `test_empty_selected_audience_rejected`: Code with `audience_scope = 'selected'` and empty array is rejected.
+24. `test_min_service_price_rule`: Code requiring 150 pts on 100 pt service -> 400 `MIN_PRICE_NOT_MET`.
+25. `test_total_usage_limit_exhausted`: 11th redemption attempt on code with limit 10 -> 400 `TOTAL_LIMIT_REACHED`.
+26. `test_per_student_limit_exhausted`: 2nd redemption attempt by same student on limit 1 -> 400 `STUDENT_LIMIT_REACHED`.
+27. `test_concurrent_final_global_usage`: 2 concurrent requests for last available use -> exactly 1 succeeds, 1 fails.
+28. `test_concurrent_per_student_limit`: 2 concurrent requests for same student -> exactly 1 succeeds.
+29. `test_wallet_exact_deduction`: Student balance deducted by exactly `final_price_points`.
+30. `test_idempotent_request_uuid_replay`: Submitting same `request_uuid` returns identical cached response.
+31. `test_code_immutability_after_use`: Changing `code` string when `used_count > 0` is rejected.
+32. `test_student_deletion_preserves_redemptions`: Hard deleting student sets `student_id = NULL` in redemptions, leaving snapshots intact.
+33. `test_service_deletion_preserves_redemptions`: Hard deleting service sets `service_id = NULL` in redemptions, leaving snapshots intact.
+34. `test_request_deletion_preserves_redemptions`: Deleting request sets `service_request_id = NULL`, leaving redemption snapshot intact.
+35. `test_cancel_normal_wallet_request`: Cancelling normal wallet request refunds exactly `points_charged`.
+36. `test_cancel_discounted_wallet_request`: Cancelling discounted wallet request refunds exactly `points_charged`.
+37. `test_cancel_free_promo_request`: Cancelling free promo request creates no wallet transaction, reverses redemption.
+38. `test_cancel_cash_request`: Cancelling cash request creates no wallet transaction.
+39. `test_cancel_completed_request_rejected`: Attempt to cancel completed request (`مكتمل`) returns 400.
+40. `test_cancel_already_cancelled_idempotent`: Cancelling an already cancelled request returns 200 OK without double refund.
+41. `test_cancel_missing_reason_rejected`: Missing cancellation reason returns 400.
+42. `test_duplicate_cancellation_refund_blocked`: Database unique constraint `uq_request_tx_type` blocks duplicate refund inserts.
+43. `test_dashboard_summary_payload`: Verifies `dashboard.php` returns lightweight aggregation structure without heavy array lists.
+44. `test_transaction_rollback_on_failure`: Simulated failure rolls back all changes cleanly.
+45. `test_production_isolation`: Verifies `absher_georgia_db` is 100% untouched.
 
 ---
 
