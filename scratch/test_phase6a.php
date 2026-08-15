@@ -785,6 +785,12 @@ assertTest('test_request_deletion_preserves_redemptions', $redSnapshotReq && $re
 $conn->prepare("INSERT INTO promo_codes (campaign_name, code, discount_type, discount_value, status, used_count) VALUES ('Used Promo', 'TEST_USED_IMMUTABLE', 'percentage', 20.00, 'active', 3)")->execute();
 $usedPromoId = (int)$conn->lastInsertId();
 
+// Insert 3 matching applied redemption records to maintain 100% data consistency
+$insRedStmt = $conn->prepare("INSERT INTO promo_code_redemptions (promo_code_id, service_request_id, request_id_snapshot, student_id, student_name_snapshot, student_phone_snapshot, student_email_snapshot, service_id, service_title_snapshot, code_snapshot, campaign_snapshot, discount_type_snapshot, discount_value_snapshot, original_price_points, discount_points, final_price_points, payment_method, status) VALUES (?, NULL, 9999, ?, 'طالب تجريبي', '0500000000', 'test@absher.ge', ?, 'خدمة تجريبية', 'TEST_USED_IMMUTABLE', 'Used Promo', 'percentage', 20.00, 100, 20, 80, 'wallet', 'applied')");
+$insRedStmt->execute([$usedPromoId, $testStudentId1, $testServiceId1]);
+$insRedStmt->execute([$usedPromoId, $testStudentId1, $testServiceId1]);
+$insRedStmt->execute([$usedPromoId, $testStudentId1, $testServiceId1]);
+
 $upPromoRes = (function() use ($adminToken, $usedPromoId) {
     $url = 'http://127.0.0.1/api_staging/admin_api.php?action=update_promo_code';
     $ch = curl_init($url);
@@ -928,6 +934,15 @@ assertTest('test_staging_bundle_api_root_isolation', $bundleHasApiStaging, ['bun
 // 59. Production database absher_georgia_db is untouched
 $prodTables = $conn->query("SELECT table_name FROM information_schema.tables WHERE table_schema = 'absher_georgia_db' AND table_name LIKE '%promo%'")->fetchAll();
 assertTest('test_production_isolation', count($prodTables) === 0);
+
+// 60. Consistency Test: used_count must strictly equal applied redemption records for every promo code
+$inconsistentRows = $conn->query("
+    SELECT p.id, p.code, p.used_count, 
+           (SELECT COUNT(*) FROM promo_code_redemptions r WHERE r.promo_code_id = p.id AND r.status = 'applied') AS applied_cnt
+    FROM promo_codes p
+    HAVING p.used_count != applied_cnt
+")->fetchAll(PDO::FETCH_ASSOC);
+assertTest('test_used_count_equals_applied_redemptions', count($inconsistentRows) === 0, $inconsistentRows);
 
 echo "\n===================================================\n";
 echo "📊 TEST RESULTS SUMMARY:\n";
