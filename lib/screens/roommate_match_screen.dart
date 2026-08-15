@@ -303,7 +303,7 @@ class _RoommateMatchScreenState extends State<RoommateMatchScreen> {
                       ),
                       const SizedBox(height: 16),
                       DropdownButtonFormField<String?>(
-                        value: _unisList.any(
+                        initialValue: _unisList.any(
                                 (u) => u['id']?.toString() == _selectedUniId)
                             ? _selectedUniId
                             : null,

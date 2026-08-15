@@ -1,3 +1,4 @@
+// ignore_for_file: deprecated_member_use
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
@@ -334,7 +335,7 @@ class _ServicesScreenState extends State<ServicesScreen> {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   DropdownButtonFormField<String?>(
-                    value: _services.any(
+                    initialValue: _services.any(
                             (s) => s['id']?.toString() == selectedServiceId)
                         ? selectedServiceId
                         : null,

@@ -524,7 +524,7 @@ class _RentFlatScreenState extends State<RentFlatScreen> {
 
             // 4. Uni
             DropdownButtonFormField<String?>(
-              value: _unisList.any((u) => u['id']?.toString() == _selectedUniId)
+              initialValue: _unisList.any((u) => u['id']?.toString() == _selectedUniId)
                   ? _selectedUniId
                   : null,
               decoration: InputDecoration(

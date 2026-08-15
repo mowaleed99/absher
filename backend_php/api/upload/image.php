@@ -100,8 +100,12 @@ if (function_exists('imagecreatefromstring') && $mime !== 'image/gif') {
                 $saved = @imagewebp($dst_img, $target_file, 85);
             }
             
-            imagedestroy($src_img);
-            imagedestroy($dst_img);
+            if (PHP_VERSION_ID < 80500 && is_resource($src_img)) {
+                @imagedestroy($src_img);
+            }
+            if (PHP_VERSION_ID < 80500 && is_resource($dst_img)) {
+                @imagedestroy($dst_img);
+            }
         }
     }
 }

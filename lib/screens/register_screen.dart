@@ -340,10 +340,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                         child: Text('جاري التحميل...'))
                                   ],
                                   onChanged: null,
-                                  value: '__loading__',
+                                  initialValue: '__loading__',
                                 )
                               : DropdownButtonFormField<String>(
-                                  value: _selectedUni.isEmpty ? null : _selectedUni,
+                                  initialValue: _selectedUni.isEmpty ? null : _selectedUni,
                                   decoration: InputDecoration(
                                     labelText: LanguageService.tr('georgia_uni'),
                                     prefixIcon: const Icon(Icons.school_outlined,

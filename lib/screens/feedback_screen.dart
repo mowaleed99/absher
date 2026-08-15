@@ -172,7 +172,7 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
                       const SizedBox(height: 16),
                       // Dropdown type selector
                       DropdownButtonFormField<String>(
-                        value: _selectedType,
+                        initialValue: _selectedType,
                         decoration: InputDecoration(
                           labelText: LanguageService.tr('feedback_type'),
                           labelStyle:

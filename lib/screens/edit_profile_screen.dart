@@ -342,7 +342,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
                       // University Dropdown
                       DropdownButtonFormField<String>(
-                        value: _selectedUni,
+                        initialValue: _selectedUni,
                         decoration: InputDecoration(
                           labelText: LanguageService.tr('georgia_uni'),
                           prefixIcon: const Icon(Icons.school_outlined,
