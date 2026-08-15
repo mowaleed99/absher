@@ -27,10 +27,14 @@ if ($file['size'] > 50 * 1024 * 1024) {
     jsonResponse(false, "File too large. Maximum 50MB allowed.", 400);
 }
 
-// 2. MIME type validation using finfo_file
-$finfo = finfo_open(FILEINFO_MIME_TYPE);
-$mime = finfo_file($finfo, $file['tmp_name']);
-finfo_close($finfo);
+// 2. MIME type validation
+$mime = '';
+if (function_exists('finfo_open')) {
+    $finfo = finfo_open(FILEINFO_MIME_TYPE);
+    $mime = finfo_file($finfo, $file['tmp_name']);
+} elseif (function_exists('mime_content_type')) {
+    $mime = mime_content_type($file['tmp_name']);
+}
 
 $allowed_mimes = [
     'image/jpeg' => 'jpg',

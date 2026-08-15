@@ -63,7 +63,7 @@ class _RoommateMatchScreenState extends State<RoommateMatchScreen> {
     super.dispose();
   }
 
-  void _submitForm() {
+  Future<void> _submitForm() async {
     final isGuest = widget.user == null ||
         widget.user!.id == 0 ||
         widget.user!.fullName.contains(LanguageService.tr('auto_trans_1249'));
@@ -179,17 +179,18 @@ class _RoommateMatchScreenState extends State<RoommateMatchScreen> {
       ),
     );
 
-    ApiService.submitServiceRequest(
-      studentName: _nameController.text.isNotEmpty
-          ? _nameController.text
-          : (widget.user!.fullName),
-      studentPhone: _phoneController.text,
-      studentUni: selectedUniName,
-      universityId: int.tryParse(_selectedUniId ?? ''),
-      serviceTitle: 'طلب بحث عن شريك سكن',
-      details: matchMsg,
-    ).then((_) {
-      if (!context.mounted) return;
+    try {
+      await ApiService.submitServiceRequest(
+        studentName: _nameController.text.isNotEmpty
+            ? _nameController.text
+            : (widget.user!.fullName),
+        studentPhone: _phoneController.text,
+        studentUni: selectedUniName,
+        universityId: int.tryParse(_selectedUniId ?? ''),
+        serviceTitle: 'طلب بحث عن شريك سكن',
+        details: matchMsg,
+      );
+      if (!mounted) return;
       Navigator.pop(context); // Dismiss loading spinner
       Navigator.pushReplacement(
         context,
@@ -197,15 +198,15 @@ class _RoommateMatchScreenState extends State<RoommateMatchScreen> {
           builder: (_) => ChatScreen(user: widget.user),
         ),
       );
-    }).catchError((e) {
-      if (!context.mounted) return;
+    } catch (e) {
+      if (!mounted) return;
       Navigator.pop(context); // Dismiss loading spinner
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
             content:
                 Text('${LanguageService.tr('error_sending_request')}: $e')),
       );
-    });
+    }
   }
 
   @override

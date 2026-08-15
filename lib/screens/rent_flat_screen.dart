@@ -111,7 +111,7 @@ class _RentFlatScreenState extends State<RentFlatScreen> {
     return false;
   }
 
-  void _submitRoommateForm() {
+  Future<void> _submitRoommateForm() async {
     if (_checkGuest()) return;
     if (!_formKey.currentState!.validate()) return;
 
@@ -158,15 +158,16 @@ class _RentFlatScreenState extends State<RentFlatScreen> {
       ),
     );
 
-    ApiService.submitServiceRequest(
-      studentName: _nameController.text,
-      studentPhone: _wpController.text,
-      studentUni: selectedUniName,
-      universityId: int.tryParse(_selectedUniId ?? ''),
-      serviceTitle: 'طلب بحث عن شريك سكن',
-      details: msg,
-    ).then((_) {
-      if (!context.mounted) return;
+    try {
+      await ApiService.submitServiceRequest(
+        studentName: _nameController.text,
+        studentPhone: _wpController.text,
+        studentUni: selectedUniName,
+        universityId: int.tryParse(_selectedUniId ?? ''),
+        serviceTitle: 'طلب بحث عن شريك سكن',
+        details: msg,
+      );
+      if (!mounted) return;
       Navigator.pop(context); // Dismiss loading spinner
       Navigator.pushReplacement(
         context,
@@ -174,18 +175,18 @@ class _RentFlatScreenState extends State<RentFlatScreen> {
           builder: (_) => ChatScreen(user: widget.user),
         ),
       );
-    }).catchError((e) {
-      if (!context.mounted) return;
+    } catch (e) {
+      if (!mounted) return;
       Navigator.pop(context); // Dismiss loading spinner
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
             content:
                 Text('${LanguageService.tr('error_sending_request')}: $e')),
       );
-    });
+    }
   }
 
-  void _contactCustomerServiceAlone() {
+  Future<void> _contactCustomerServiceAlone() async {
     if (_checkGuest()) return;
 
     // Show loading spinner
@@ -207,15 +208,16 @@ class _RentFlatScreenState extends State<RentFlatScreen> {
 
     final aloneMsg = LanguageService.tr('auto_trans_1223');
 
-    ApiService.submitServiceRequest(
-      studentName: widget.user!.fullName,
-      studentPhone: widget.user!.phone ?? '',
-      studentUni: '', // Let backend resolve it
-      universityId: widget.user?.universityId,
-      serviceTitle: LanguageService.tr('auto_trans_1226'),
-      details: aloneMsg,
-    ).then((_) {
-      if (!context.mounted) return;
+    try {
+      await ApiService.submitServiceRequest(
+        studentName: widget.user!.fullName,
+        studentPhone: widget.user!.phone ?? '',
+        studentUni: '', // Let backend resolve it
+        universityId: widget.user?.universityId,
+        serviceTitle: LanguageService.tr('auto_trans_1226'),
+        details: aloneMsg,
+      );
+      if (!mounted) return;
       Navigator.pop(context); // Dismiss loading spinner
       Navigator.pushReplacement(
         context,
@@ -223,14 +225,14 @@ class _RentFlatScreenState extends State<RentFlatScreen> {
           builder: (_) => ChatScreen(user: widget.user),
         ),
       );
-    }).catchError((e) {
-      if (!context.mounted) return;
+    } catch (e) {
+      if (!mounted) return;
       Navigator.pop(context); // Dismiss loading spinner
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
             content: Text('${LanguageService.tr('connection_error')}: $e')),
       );
-    });
+    }
   }
 
   @override
