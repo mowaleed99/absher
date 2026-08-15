@@ -279,6 +279,10 @@ class ApiService {
               'description': a['description']?.toString() ?? '',
               'is_available':
                   a['is_available'] == true || a['is_available'] == 1,
+              'is_featured': a['is_featured'] == true ||
+                  a['is_featured'] == 1 ||
+                  a['is_featured'] == '1',
+              'featured_until': a['featured_until']?.toString(),
               'images': imagesList,
               'features': featuresList,
               'universities': universitiesList,
