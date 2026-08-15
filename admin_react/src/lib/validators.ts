@@ -458,6 +458,7 @@ export function parseChatConversation(v: unknown): import('../types/chat').ChatC
     id,
     student_id: toNumber(v.student_id),
     student_name: toString(v.student_name, 'طالب'),
+    student_avatar: toString(v.student_avatar || v.avatar_url || v.student_avatar_url) || null,
     student_uni: toString(v.student_uni, 'جامعة في جورجيا'),
     phone: toString(v.phone),
     last_msg: toString(v.last_msg),

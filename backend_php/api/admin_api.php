@@ -138,8 +138,13 @@ try {
             ORDER BY display_order ASC, created_at DESC
         ")->fetchAll();
 
-        // جلب المحادثات ورسائل كل محادثة
-        $chats = $conn->query("SELECT * FROM chats ORDER BY updated_at DESC")->fetchAll();
+        // جلب المحادثات ورسائل كل محادثة مع صورة بروفايل الطالب
+        $chats = $conn->query("
+            SELECT c.*, s.avatar_url AS student_avatar 
+            FROM chats c 
+            LEFT JOIN students s ON (c.student_id = s.id OR (c.phone IS NOT NULL AND c.phone != '' AND c.phone = s.phone))
+            ORDER BY COALESCE(c.updated_at, c.last_activity_at) DESC
+        ")->fetchAll();
         foreach ($chats as &$c) {
             $stmtMsg = $conn->prepare("SELECT id, sender, text, type, image_url AS imageUrl, quote_text AS quoteText, quote_sender AS quoteSender, is_deleted AS deleted, DATE_FORMAT(created_at,'%h:%i %p') AS time FROM chat_messages WHERE chat_id = ? ORDER BY id ASC");
             $stmtMsg->execute([$c['id']]);

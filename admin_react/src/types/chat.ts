@@ -15,6 +15,7 @@ export interface ChatConversation {
   id: number;
   student_id?: number | null;
   student_name: string;
+  student_avatar?: string | null;
   student_uni?: string | null;
   phone: string;
   last_msg: string;

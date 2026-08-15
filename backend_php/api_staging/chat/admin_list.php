@@ -5,7 +5,12 @@ require_once __DIR__ . '/../middleware/auth.php';
 AuthMiddleware::requireAdmin();
 
 try {
-    $chats = $conn->query("SELECT * FROM chats ORDER BY COALESCE(updated_at, last_activity_at) DESC")->fetchAll(PDO::FETCH_ASSOC);
+    $chats = $conn->query("
+        SELECT c.*, s.avatar_url AS student_avatar 
+        FROM chats c 
+        LEFT JOIN students s ON (c.student_id = s.id OR (c.phone IS NOT NULL AND c.phone != '' AND c.phone = s.phone))
+        ORDER BY COALESCE(c.updated_at, c.last_activity_at) DESC
+    ")->fetchAll(PDO::FETCH_ASSOC);
 
     foreach ($chats as &$c) {
         $stmtMsg = $conn->prepare("SELECT sender, text, type, image_url AS imageUrl, quote_text AS quoteText, quote_sender AS quoteSender, is_deleted AS deleted, DATE_FORMAT(created_at,'%h:%i %p') AS time, created_at 

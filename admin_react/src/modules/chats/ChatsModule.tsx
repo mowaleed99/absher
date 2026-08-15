@@ -474,6 +474,26 @@ export function ChatsModule() {
                       gap: '10px',
                     }}
                   >
+                    {c.student_avatar ? (
+                      <img
+                        src={getMediaUrl(c.student_avatar)}
+                        alt={c.student_name}
+                        style={{
+                          width: '36px',
+                          height: '36px',
+                          borderRadius: '50%',
+                          objectFit: 'cover',
+                          flexShrink: 0,
+                          border: isSelected ? '2px solid var(--primary)' : '1px solid rgba(255, 255, 255, 0.1)',
+                        }}
+                        onError={(e) => {
+                          e.currentTarget.style.display = 'none';
+                          if (e.currentTarget.nextElementSibling) {
+                            (e.currentTarget.nextElementSibling as HTMLElement).style.display = 'flex';
+                          }
+                        }}
+                      />
+                    ) : null}
                     <div
                       style={{
                         width: '36px',
@@ -481,7 +501,7 @@ export function ChatsModule() {
                         borderRadius: '50%',
                         background: isSelected ? 'var(--primary)' : 'rgba(255, 255, 255, 0.08)',
                         color: '#fff',
-                        display: 'flex',
+                        display: c.student_avatar ? 'none' : 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
                         fontWeight: 700,
@@ -582,22 +602,48 @@ export function ChatsModule() {
                   <div
                     onClick={() => setIsProfileModalOpen(true)}
                     style={{
-                      width: '38px',
-                      height: '38px',
-                      borderRadius: '50%',
-                      background: 'var(--primary)',
-                      color: '#fff',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      fontWeight: 700,
-                      fontSize: '0.95rem',
-                      flexShrink: 0,
                       cursor: 'pointer',
+                      position: 'relative',
+                      flexShrink: 0,
                     }}
                     title={t('chats.view_profile')}
                   >
-                    {activeChat.student_name ? activeChat.student_name.charAt(0).toUpperCase() : 'ط'}
+                    {activeChat.student_avatar ? (
+                      <img
+                        src={getMediaUrl(activeChat.student_avatar)}
+                        alt={activeChat.student_name}
+                        style={{
+                          width: '40px',
+                          height: '40px',
+                          borderRadius: '50%',
+                          objectFit: 'cover',
+                          display: 'block',
+                          border: '2px solid rgba(99, 102, 241, 0.4)',
+                        }}
+                        onError={(e) => {
+                          e.currentTarget.style.display = 'none';
+                          if (e.currentTarget.nextElementSibling) {
+                            (e.currentTarget.nextElementSibling as HTMLElement).style.display = 'flex';
+                          }
+                        }}
+                      />
+                    ) : null}
+                    <div
+                      style={{
+                        width: '40px',
+                        height: '40px',
+                        borderRadius: '50%',
+                        background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
+                        color: '#fff',
+                        display: activeChat.student_avatar ? 'none' : 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        fontWeight: 700,
+                        fontSize: '0.95rem',
+                      }}
+                    >
+                      {activeChat.student_name ? activeChat.student_name.charAt(0).toUpperCase() : 'ط'}
+                    </div>
                   </div>
                   <div style={{ minWidth: 0 }}>
                     <h4
@@ -798,8 +844,19 @@ export function ChatsModule() {
                         >
                           {/* Sender Label */}
                           {!isDeleted && (
-                            <div style={{ fontSize: '0.72rem', fontWeight: 700, marginBottom: '4px', color: isAdmin ? '#93c5fd' : '#25D366' }}>
-                              {isAdmin ? 'خدمة العملاء (أبشر)' : activeChat.student_name}
+                            <div style={{ fontSize: '0.74rem', fontWeight: 700, marginBottom: '4px', color: isAdmin ? '#93c5fd' : '#25D366', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                              {!isAdmin && activeChat.student_avatar ? (
+                                <img
+                                  src={getMediaUrl(activeChat.student_avatar)}
+                                  alt=""
+                                  style={{ width: '18px', height: '18px', borderRadius: '50%', objectFit: 'cover', display: 'inline-block' }}
+                                />
+                              ) : !isAdmin ? (
+                                <i className="fa-solid fa-user-graduate" style={{ fontSize: '0.72rem' }} />
+                              ) : (
+                                <i className="fa-solid fa-headset" style={{ fontSize: '0.72rem' }} />
+                              )}
+                              <span>{isAdmin ? 'خدمة العملاء (أبشر)' : activeChat.student_name}</span>
                             </div>
                           )}
 
@@ -1215,19 +1272,42 @@ export function ChatsModule() {
             </div>
 
             <div style={{ textAlign: 'center', marginBottom: '16px' }}>
+              {activeChat.student_avatar ? (
+                <img
+                  src={getMediaUrl(activeChat.student_avatar)}
+                  alt={activeChat.student_name}
+                  style={{
+                    width: '72px',
+                    height: '72px',
+                    borderRadius: '50%',
+                    objectFit: 'cover',
+                    margin: '0 auto 10px',
+                    display: 'block',
+                    border: '3px solid var(--primary)',
+                    boxShadow: '0 0 16px rgba(99, 102, 241, 0.3)',
+                  }}
+                  onError={(e) => {
+                    e.currentTarget.style.display = 'none';
+                    if (e.currentTarget.nextElementSibling) {
+                      (e.currentTarget.nextElementSibling as HTMLElement).style.display = 'inline-flex';
+                    }
+                  }}
+                />
+              ) : null}
               <div
                 style={{
-                  width: '64px',
-                  height: '64px',
+                  width: '72px',
+                  height: '72px',
                   borderRadius: '50%',
-                  background: 'var(--primary)',
+                  background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
                   color: '#fff',
-                  display: 'inline-flex',
+                  display: activeChat.student_avatar ? 'none' : 'inline-flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  fontSize: '1.8rem',
+                  fontSize: '2rem',
                   fontWeight: 700,
-                  marginBottom: '10px',
+                  margin: '0 auto 10px',
+                  border: '3px solid var(--primary)',
                 }}
               >
                 {activeChat.student_name ? activeChat.student_name.charAt(0).toUpperCase() : 'ط'}
