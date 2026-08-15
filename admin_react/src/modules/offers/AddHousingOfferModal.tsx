@@ -2,6 +2,7 @@ import React, { useState, useRef, useMemo } from 'react';
 import { HousingOfferFormInput } from '../../types/offer';
 import { useApartments } from '../../hooks/useApartments';
 import { useToast } from '../../components/Toast';
+import { useUpload } from '../../hooks/useUpload';
 import { DateTimePickerField } from '../../components/DateTimePickerField';
 
 interface AddHousingOfferModalProps {
@@ -13,6 +14,7 @@ interface AddHousingOfferModalProps {
 export function AddHousingOfferModal({ isOpen, onClose, onAdd }: AddHousingOfferModalProps) {
   const { showToast } = useToast();
   const { apartments } = useApartments();
+  const { uploadImages, isUploading } = useUpload();
 
   const [apartmentId, setApartmentId] = useState<number>(0);
   const [titleAr, setTitleAr] = useState('');
@@ -24,11 +26,14 @@ export function AddHousingOfferModal({ isOpen, onClose, onAdd }: AddHousingOffer
   const [badgeTextAr, setBadgeTextAr] = useState('');
   const [badgeTextEn, setBadgeTextEn] = useState('');
   const [imageUrl, setImageUrl] = useState('');
+  const [localPreview, setLocalPreview] = useState<string | null>(null);
+  const [showManualUrl, setShowManualUrl] = useState(false);
   const [startsAt, setStartsAt] = useState('');
   const [expiresAt, setExpiresAt] = useState('');
   const [isActive, setIsActive] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const submitLockRef = useRef(false);
 
   // Selected apartment helper
@@ -46,6 +51,46 @@ export function AddHousingOfferModal({ isOpen, onClose, onAdd }: AddHousingOffer
       if (offerPrice === 0 || offerPrice >= apt.price) {
         setOfferPrice(Math.round(apt.price * 0.85)); // 15% discount suggested
       }
+    }
+  };
+
+  // Handle image file selection
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+
+    const file = files[0];
+    if (!file.type.startsWith('image/')) {
+      showToast('يرجى اختيار ملف صورة صالح (JPG, PNG, WebP)', 'error');
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      showToast('حجم الصورة كبير جداً، الحد الأقصى المسموح هو 5 ميجابايت', 'error');
+      return;
+    }
+
+    // Set immediate local preview
+    const previewUrl = URL.createObjectURL(file);
+    setLocalPreview(previewUrl);
+
+    try {
+      const uploadedUrls = await uploadImages([file], 'housing_offers');
+      if (uploadedUrls.length > 0) {
+        setImageUrl(uploadedUrls[0]);
+        showToast('تم رفع صورة العرض بنجاح', 'success');
+      } else {
+        showToast('فشل رفع الصورة إلى الخادم', 'error');
+      }
+    } catch {
+      showToast('حدث خطأ أثناء رفع الصورة', 'error');
+    }
+  };
+
+  const handleRemoveImage = () => {
+    setImageUrl('');
+    setLocalPreview(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
     }
   };
 
@@ -71,7 +116,7 @@ export function AddHousingOfferModal({ isOpen, onClose, onAdd }: AddHousingOffer
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (submitLockRef.current || isSubmitting) return;
+    if (submitLockRef.current || isSubmitting || isUploading) return;
 
     if (apartmentId <= 0) {
       showToast('يرجى اختيار الشقة السكنية المرتبطة بالعرض', 'error');
@@ -133,6 +178,8 @@ export function AddHousingOfferModal({ isOpen, onClose, onAdd }: AddHousingOffer
       submitLockRef.current = false;
     }
   };
+
+  const effectivePreview = localPreview || imageUrl || (selectedApartment?.images && selectedApartment.images.length > 0 ? selectedApartment.images[0] : null);
 
   return (
     <div
@@ -197,7 +244,7 @@ export function AddHousingOfferModal({ isOpen, onClose, onAdd }: AddHousingOffer
                 إضافة عرض سكن حصري جديد
               </h3>
               <p style={{ margin: '2px 0 0', fontSize: '0.8rem', color: '#94a3b8' }}>
-                ربط شقة سكنية بخصم مميز وشريط ترويجي
+                ربط شقة سكنية بخصم مميز وشريط ترويجي وصورة مخصصة
               </p>
             </div>
           </div>
@@ -420,7 +467,7 @@ export function AddHousingOfferModal({ isOpen, onClose, onAdd }: AddHousingOffer
             </div>
           </div>
 
-          {/* Section 4: Badge & Image */}
+          {/* Section 4: Badges */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '14px' }}>
             <div>
               <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 700, color: '#f8fafc', marginBottom: '6px' }}>
@@ -463,30 +510,143 @@ export function AddHousingOfferModal({ isOpen, onClose, onAdd }: AddHousingOffer
                 }}
               />
             </div>
-
-            <div>
-              <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 700, color: '#94a3b8', marginBottom: '6px' }}>
-                رابط صورة العرض (اختياري)
-              </label>
-              <input
-                type="text"
-                value={imageUrl}
-                onChange={(e) => setImageUrl(e.target.value)}
-                placeholder="اتركه فارغاً لاستخدام صورة الشقة التلقائية"
-                style={{
-                  width: '100%',
-                  padding: '9px 12px',
-                  background: '#0d1527',
-                  border: '1px solid #334155',
-                  borderRadius: '8px',
-                  color: '#f8fafc',
-                  fontSize: '0.88rem',
-                }}
-              />
-            </div>
           </div>
 
-          {/* Section 5: Start and Expiration Dates with High-Contrast Pickers */}
+          {/* Section 5: Real Image Upload & Preview Section */}
+          <div style={{ background: '#1e293b', padding: '14px', borderRadius: '10px', border: '1px solid #334155' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
+              <label style={{ fontSize: '0.84rem', fontWeight: 700, color: '#f8fafc', margin: 0 }}>
+                صورة العرض المخصصة (اختياري)
+              </label>
+              <button
+                type="button"
+                onClick={() => setShowManualUrl(!showManualUrl)}
+                style={{
+                  background: 'transparent',
+                  border: 'none',
+                  color: '#38bdf8',
+                  fontSize: '0.74rem',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  textDecoration: 'underline',
+                }}
+              >
+                {showManualUrl ? 'إخفاء الرابط اليدوي' : 'إدخال رابط صورة يدوي'}
+              </button>
+            </div>
+
+            {/* Upload Drag/Drop & Browse Box */}
+            <div
+              style={{
+                border: '2px dashed #334155',
+                borderRadius: '10px',
+                padding: '16px',
+                textAlign: 'center',
+                background: '#0d1527',
+                cursor: 'pointer',
+                transition: 'all 0.15s ease',
+              }}
+              onClick={() => fileInputRef.current?.click()}
+            >
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+                style={{ display: 'none' }}
+                onChange={handleFileChange}
+              />
+
+              {isUploading ? (
+                <div style={{ padding: '12px', color: '#38bdf8' }}>
+                  <i className="fa-solid fa-circle-notch fa-spin fa-2x"></i>
+                  <p style={{ margin: '8px 0 0', fontSize: '0.84rem' }}>جارِ رفع الصورة ومعالجتها...</p>
+                </div>
+              ) : (imageUrl || localPreview) ? (
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '16px', flexWrap: 'wrap' }}>
+                  <img
+                    src={effectivePreview || ''}
+                    alt="Offer Preview"
+                    style={{
+                      width: '140px',
+                      height: '90px',
+                      objectFit: 'cover',
+                      borderRadius: '8px',
+                      border: '1px solid #334155',
+                    }}
+                  />
+                  <div style={{ textAlign: 'right' }}>
+                    <span style={{ fontSize: '0.82rem', color: '#34d399', fontWeight: 700, display: 'block' }}>
+                      <i className="fa-solid fa-circle-check" style={{ marginLeft: '4px' }}></i>
+                      تم اختيار الصورة بنجاح
+                    </span>
+                    <span style={{ fontSize: '0.72rem', color: '#94a3b8', display: 'block', marginTop: '3px' }}>
+                      انقر لتغيير الصورة أو استخدام زر الحذف أدناه
+                    </span>
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleRemoveImage();
+                      }}
+                      style={{
+                        marginTop: '8px',
+                        padding: '4px 10px',
+                        borderRadius: '6px',
+                        background: 'rgba(239, 68, 68, 0.15)',
+                        border: '1px solid rgba(239, 68, 68, 0.3)',
+                        color: '#f87171',
+                        fontSize: '0.74rem',
+                        fontWeight: 700,
+                        cursor: 'pointer',
+                      }}
+                    >
+                      <i className="fa-solid fa-trash-can" style={{ marginLeft: '4px' }}></i>
+                      إزالة الصورة المخصصة
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div style={{ padding: '8px' }}>
+                  <i className="fa-solid fa-cloud-arrow-up fa-2x" style={{ color: '#818cf8', marginBottom: '8px' }}></i>
+                  <p style={{ margin: 0, fontSize: '0.85rem', fontWeight: 700, color: '#f8fafc' }}>
+                    انقر لاختيار صورة من جهازك (JPG, PNG, WebP)
+                  </p>
+                  <span style={{ fontSize: '0.72rem', color: '#94a3b8', display: 'block', marginTop: '4px' }}>
+                    الحد الأقصى 5 ميجابايت • في حال عدم اختيار صورة، سيتم استخدام صورة الشقة الأساسية
+                  </span>
+                </div>
+              )}
+            </div>
+
+            {/* Manual URL Input (Secondary / Advanced) */}
+            {showManualUrl && (
+              <div style={{ marginTop: '12px' }}>
+                <label style={{ display: 'block', fontSize: '0.78rem', color: '#94a3b8', marginBottom: '4px' }}>
+                  رابط الصورة المباشر (URL):
+                </label>
+                <input
+                  type="text"
+                  value={imageUrl}
+                  onChange={(e) => {
+                    setImageUrl(e.target.value);
+                    setLocalPreview(null);
+                  }}
+                  placeholder="https://... أو uploads/housing_offers/..."
+                  style={{
+                    width: '100%',
+                    padding: '8px 12px',
+                    background: '#0d1527',
+                    border: '1px solid #334155',
+                    borderRadius: '8px',
+                    color: '#f8fafc',
+                    fontSize: '0.82rem',
+                  }}
+                />
+              </div>
+            )}
+          </div>
+
+          {/* Section 6: Start and Expiration Dates with High-Contrast Pickers */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '14px' }}>
             <DateTimePickerField
               label="تاريخ ووقت بدء العرض (اختياري)"
@@ -504,7 +664,7 @@ export function AddHousingOfferModal({ isOpen, onClose, onAdd }: AddHousingOffer
             />
           </div>
 
-          {/* Section 6: Active Status */}
+          {/* Section 7: Active Status */}
           <div
             style={{
               display: 'flex',
@@ -543,7 +703,7 @@ export function AddHousingOfferModal({ isOpen, onClose, onAdd }: AddHousingOffer
             <button
               type="button"
               onClick={onClose}
-              disabled={isSubmitting}
+              disabled={isSubmitting || isUploading}
               style={{
                 padding: '9px 18px',
                 borderRadius: '8px',
@@ -552,14 +712,14 @@ export function AddHousingOfferModal({ isOpen, onClose, onAdd }: AddHousingOffer
                 color: '#94a3b8',
                 fontSize: '0.85rem',
                 fontWeight: 700,
-                cursor: isSubmitting ? 'not-allowed' : 'pointer',
+                cursor: (isSubmitting || isUploading) ? 'not-allowed' : 'pointer',
               }}
             >
               إلغاء
             </button>
             <button
               type="submit"
-              disabled={isSubmitting}
+              disabled={isSubmitting || isUploading}
               style={{
                 padding: '9px 24px',
                 borderRadius: '8px',
@@ -568,14 +728,14 @@ export function AddHousingOfferModal({ isOpen, onClose, onAdd }: AddHousingOffer
                 color: '#ffffff',
                 fontSize: '0.85rem',
                 fontWeight: 800,
-                cursor: isSubmitting ? 'not-allowed' : 'pointer',
+                cursor: (isSubmitting || isUploading) ? 'not-allowed' : 'pointer',
                 display: 'inline-flex',
                 alignItems: 'center',
                 gap: '8px',
                 boxShadow: '0 4px 12px rgba(99, 102, 241, 0.3)',
               }}
             >
-              {isSubmitting ? (
+              {isSubmitting || isUploading ? (
                 <>
                   <i className="fa-solid fa-circle-notch fa-spin"></i>
                   <span>جارِ الحفظ...</span>

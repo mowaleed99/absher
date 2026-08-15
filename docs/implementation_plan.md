@@ -13,8 +13,8 @@
 > | Phase 5 | News, Notifications, Customer Support Chats | `COMPLETED / VERIFIED / USER ACCEPTED ✅` |
 > | Phase 6 | Executive Dashboard & Cross-Module Analytics | `COMPLETED / VERIFIED / USER ACCEPTED ✅` |
 > | **Phase 6A** | **Promo Codes & Discounts System** | `COMPLETED / FULLY VERIFIED / USER ACCEPTED ✅` |
-> | Executive UI | Executive Dashboard UI/UX Redesign | `IN PROGRESS (STAGING ONLY) ⏳` |
-> | Deferred | Housing Offers (Waiting for User Requirements) | `DEFERRED / FROZEN` |
+> | Executive UI | Executive Dashboard UI/UX Redesign (8 KPIs Grid) | `COMPLETED / VERIFIED (STAGING) ✅` |
+> | Phase 6B | Housing Offers (Real Image Upload & Active Status) | `COMPLETED / VERIFIED (STAGING) ✅` |
 > | Cutover | Phase 7 / Production Promotion | `NOT STARTED — REQUIRES EXPLICIT USER GO` |
 
 ---

@@ -2,6 +2,7 @@ import React, { useState, useRef, useMemo, useEffect } from 'react';
 import { HousingOffer, HousingOfferFormInput } from '../../types/offer';
 import { useApartments } from '../../hooks/useApartments';
 import { useToast } from '../../components/Toast';
+import { useUpload } from '../../hooks/useUpload';
 import { DateTimePickerField } from '../../components/DateTimePickerField';
 
 interface EditHousingOfferModalProps {
@@ -14,6 +15,7 @@ interface EditHousingOfferModalProps {
 export function EditHousingOfferModal({ isOpen, offer, onClose, onUpdate }: EditHousingOfferModalProps) {
   const { showToast } = useToast();
   const { apartments } = useApartments();
+  const { uploadImages, isUploading } = useUpload();
 
   const [apartmentId, setApartmentId] = useState<number>(0);
   const [titleAr, setTitleAr] = useState('');
@@ -25,11 +27,14 @@ export function EditHousingOfferModal({ isOpen, offer, onClose, onUpdate }: Edit
   const [badgeTextAr, setBadgeTextAr] = useState('');
   const [badgeTextEn, setBadgeTextEn] = useState('');
   const [imageUrl, setImageUrl] = useState('');
+  const [localPreview, setLocalPreview] = useState<string | null>(null);
+  const [showManualUrl, setShowManualUrl] = useState(false);
   const [startsAt, setStartsAt] = useState('');
   const [expiresAt, setExpiresAt] = useState('');
   const [isActive, setIsActive] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const submitLockRef = useRef(false);
 
   // Prepopulate state when offer changes
@@ -45,6 +50,7 @@ export function EditHousingOfferModal({ isOpen, offer, onClose, onUpdate }: Edit
       setBadgeTextAr(offer.badge_text_ar || offer.badge_text || '');
       setBadgeTextEn(offer.badge_text_en || '');
       setImageUrl(offer.image_url || '');
+      setLocalPreview(null);
       setStartsAt(offer.starts_at ? offer.starts_at.replace(' ', 'T').slice(0, 16) : '');
       setExpiresAt(offer.expires_at ? offer.expires_at.replace(' ', 'T').slice(0, 16) : '');
       setIsActive(offer.is_active === 1 || offer.is_active === true);
@@ -54,6 +60,45 @@ export function EditHousingOfferModal({ isOpen, offer, onClose, onUpdate }: Edit
   const selectedApartment = useMemo(() => {
     return apartments.find((a) => a.id === apartmentId);
   }, [apartments, apartmentId]);
+
+  // Handle image file selection
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+
+    const file = files[0];
+    if (!file.type.startsWith('image/')) {
+      showToast('يرجى اختيار ملف صورة صالح (JPG, PNG, WebP)', 'error');
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      showToast('حجم الصورة كبير جداً، الحد الأقصى المسموح هو 5 ميجابايت', 'error');
+      return;
+    }
+
+    const previewUrl = URL.createObjectURL(file);
+    setLocalPreview(previewUrl);
+
+    try {
+      const uploadedUrls = await uploadImages([file], 'housing_offers');
+      if (uploadedUrls.length > 0) {
+        setImageUrl(uploadedUrls[0]);
+        showToast('تم رفع صورة العرض بنجاح', 'success');
+      } else {
+        showToast('فشل رفع الصورة إلى الخادم', 'error');
+      }
+    } catch {
+      showToast('حدث خطأ أثناء رفع الصورة', 'error');
+    }
+  };
+
+  const handleRemoveImage = () => {
+    setImageUrl('');
+    setLocalPreview(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
 
   const discountStats = useMemo(() => {
     if (originalPrice > 0 && offerPrice < originalPrice && offerPrice >= 0) {
@@ -75,7 +120,7 @@ export function EditHousingOfferModal({ isOpen, offer, onClose, onUpdate }: Edit
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (submitLockRef.current || isSubmitting) return;
+    if (submitLockRef.current || isSubmitting || isUploading) return;
 
     if (apartmentId <= 0) {
       showToast('يرجى اختيار الشقة السكنية المرتبطة بالعرض', 'error');
@@ -127,16 +172,18 @@ export function EditHousingOfferModal({ isOpen, offer, onClose, onUpdate }: Edit
       };
 
       await onUpdate(offer.id, payload);
-      showToast('تم تعديل عرض السكن بنجاح', 'success');
+      showToast('تم تحديث عرض السكن بنجاح', 'success');
       onClose();
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'فشل تعديل عرض السكن';
+      const msg = err instanceof Error ? err.message : 'فشل تحديث عرض السكن';
       showToast(msg, 'error');
     } finally {
       setIsSubmitting(false);
       submitLockRef.current = false;
     }
   };
+
+  const effectivePreview = localPreview || imageUrl || (selectedApartment?.images && selectedApartment.images.length > 0 ? selectedApartment.images[0] : null);
 
   return (
     <div
@@ -176,7 +223,7 @@ export function EditHousingOfferModal({ isOpen, offer, onClose, onUpdate }: Edit
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
-            background: 'linear-gradient(to right, rgba(56, 189, 248, 0.1), rgba(99, 102, 241, 0.05))',
+            background: 'linear-gradient(to right, rgba(99, 102, 241, 0.1), rgba(168, 85, 247, 0.05))',
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
@@ -185,9 +232,9 @@ export function EditHousingOfferModal({ isOpen, offer, onClose, onUpdate }: Edit
                 width: '40px',
                 height: '40px',
                 borderRadius: '10px',
-                background: 'rgba(56, 189, 248, 0.2)',
-                border: '1px solid rgba(56, 189, 248, 0.4)',
-                color: '#38bdf8',
+                background: 'rgba(99, 102, 241, 0.2)',
+                border: '1px solid rgba(99, 102, 241, 0.4)',
+                color: '#818cf8',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -201,7 +248,7 @@ export function EditHousingOfferModal({ isOpen, offer, onClose, onUpdate }: Edit
                 تعديل عرض السكن #{offer.id}
               </h3>
               <p style={{ margin: '2px 0 0', fontSize: '0.8rem', color: '#94a3b8' }}>
-                تحديث بيانات العرض، الأسعار، التواريخ وحالة التفعيل
+                تحديث بيانات الخصم والشقة والتواريخ والصورة المخصصة
               </p>
             </div>
           </div>
@@ -242,22 +289,21 @@ export function EditHousingOfferModal({ isOpen, offer, onClose, onUpdate }: Edit
                 fontSize: '0.88rem',
               }}
             >
-              <option value={0}>-- اختر الشقة المراد ربطها بالعرض --</option>
               {apartments.map((apt) => (
                 <option key={apt.id} value={apt.id}>
-                  #{apt.id} - {apt.title} ({apt.price} $ / {apt.location})
+                  #{apt.id} - {apt.title} ({apt.price} $ / {apt.district_id ? 'حي محدد' : apt.location})
                 </option>
               ))}
             </select>
             {selectedApartment && (
               <div style={{ marginTop: '8px', fontSize: '0.78rem', color: '#38bdf8', display: 'flex', gap: '12px' }}>
-                <span>السعر الأصلي الحالي للشقة: <strong>{selectedApartment.price} $</strong></span>
+                <span>السعر الحالي للشقة: <strong>{selectedApartment.price} $</strong></span>
                 <span>الموقع: <strong>{selectedApartment.location}</strong></span>
               </div>
             )}
           </div>
 
-          {/* Section 2: Pricing & Discount Live Preview */}
+          {/* Section 2: Pricing & Discount */}
           <div style={{ background: '#1e293b', padding: '14px', borderRadius: '10px', border: '1px solid #334155' }}>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '14px' }}>
               <div>
@@ -270,7 +316,6 @@ export function EditHousingOfferModal({ isOpen, offer, onClose, onUpdate }: Edit
                   step="0.01"
                   value={originalPrice || ''}
                   onChange={(e) => setOriginalPrice(parseFloat(e.target.value) || 0)}
-                  placeholder="مثال: 500"
                   required
                   style={{
                     width: '100%',
@@ -294,7 +339,6 @@ export function EditHousingOfferModal({ isOpen, offer, onClose, onUpdate }: Edit
                   step="0.01"
                   value={offerPrice || ''}
                   onChange={(e) => setOfferPrice(parseFloat(e.target.value) || 0)}
-                  placeholder="مثال: 420"
                   required
                   style={{
                     width: '100%',
@@ -309,7 +353,7 @@ export function EditHousingOfferModal({ isOpen, offer, onClose, onUpdate }: Edit
               </div>
             </div>
 
-            {/* Live Discount Calculation Pill */}
+            {/* Live Discount Pill */}
             {discountStats.isValid && (
               <div
                 style={{
@@ -341,7 +385,6 @@ export function EditHousingOfferModal({ isOpen, offer, onClose, onUpdate }: Edit
                 type="text"
                 value={titleAr}
                 onChange={(e) => setTitleAr(e.target.value)}
-                placeholder="عنوان العرض..."
                 required
                 style={{
                   width: '100%',
@@ -363,7 +406,6 @@ export function EditHousingOfferModal({ isOpen, offer, onClose, onUpdate }: Edit
                 type="text"
                 value={titleEn}
                 onChange={(e) => setTitleEn(e.target.value)}
-                placeholder="Offer title in English..."
                 style={{
                   width: '100%',
                   padding: '9px 12px',
@@ -386,7 +428,6 @@ export function EditHousingOfferModal({ isOpen, offer, onClose, onUpdate }: Edit
                 rows={3}
                 value={descriptionAr}
                 onChange={(e) => setDescriptionAr(e.target.value)}
-                placeholder="تفاصيل العرض، الشروط..."
                 required
                 style={{
                   width: '100%',
@@ -409,7 +450,6 @@ export function EditHousingOfferModal({ isOpen, offer, onClose, onUpdate }: Edit
                 rows={3}
                 value={descriptionEn}
                 onChange={(e) => setDescriptionEn(e.target.value)}
-                placeholder="Offer details and terms..."
                 style={{
                   width: '100%',
                   padding: '9px 12px',
@@ -424,7 +464,7 @@ export function EditHousingOfferModal({ isOpen, offer, onClose, onUpdate }: Edit
             </div>
           </div>
 
-          {/* Section 4: Badge & Image */}
+          {/* Section 4: Badges */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '14px' }}>
             <div>
               <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 700, color: '#f8fafc', marginBottom: '6px' }}>
@@ -434,7 +474,7 @@ export function EditHousingOfferModal({ isOpen, offer, onClose, onUpdate }: Edit
                 type="text"
                 value={badgeTextAr}
                 onChange={(e) => setBadgeTextAr(e.target.value)}
-                placeholder="مثال: عرض خاص، لفترة محدودة"
+                placeholder="مثال: لفترة محدودة، عرض حصري"
                 style={{
                   width: '100%',
                   padding: '9px 12px',
@@ -455,28 +495,7 @@ export function EditHousingOfferModal({ isOpen, offer, onClose, onUpdate }: Edit
                 type="text"
                 value={badgeTextEn}
                 onChange={(e) => setBadgeTextEn(e.target.value)}
-                placeholder="e.g. Special Offer"
-                style={{
-                  width: '100%',
-                  padding: '9px 12px',
-                  background: '#0d1527',
-                  border: '1px solid #334155',
-                  borderRadius: '8px',
-                  color: '#f8fafc',
-                  fontSize: '0.88rem',
-                }}
-              />
-            </div>
-
-            <div>
-              <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 700, color: '#94a3b8', marginBottom: '6px' }}>
-                رابط صورة العرض (اختياري)
-              </label>
-              <input
-                type="text"
-                value={imageUrl}
-                onChange={(e) => setImageUrl(e.target.value)}
-                placeholder="رابط الصورة..."
+                placeholder="e.g. Limited Offer, Exclusive"
                 style={{
                   width: '100%',
                   padding: '9px 12px',
@@ -490,7 +509,141 @@ export function EditHousingOfferModal({ isOpen, offer, onClose, onUpdate }: Edit
             </div>
           </div>
 
-          {/* Section 5: Start and Expiration Dates with High-Contrast Pickers */}
+          {/* Section 5: Real Image Upload & Preview Section */}
+          <div style={{ background: '#1e293b', padding: '14px', borderRadius: '10px', border: '1px solid #334155' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
+              <label style={{ fontSize: '0.84rem', fontWeight: 700, color: '#f8fafc', margin: 0 }}>
+                صورة العرض المخصصة (اختياري)
+              </label>
+              <button
+                type="button"
+                onClick={() => setShowManualUrl(!showManualUrl)}
+                style={{
+                  background: 'transparent',
+                  border: 'none',
+                  color: '#38bdf8',
+                  fontSize: '0.74rem',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  textDecoration: 'underline',
+                }}
+              >
+                {showManualUrl ? 'إخفاء الرابط اليدوي' : 'إدخال رابط صورة يدوي'}
+              </button>
+            </div>
+
+            {/* Upload Drag/Drop & Browse Box */}
+            <div
+              style={{
+                border: '2px dashed #334155',
+                borderRadius: '10px',
+                padding: '16px',
+                textAlign: 'center',
+                background: '#0d1527',
+                cursor: 'pointer',
+                transition: 'all 0.15s ease',
+              }}
+              onClick={() => fileInputRef.current?.click()}
+            >
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+                style={{ display: 'none' }}
+                onChange={handleFileChange}
+              />
+
+              {isUploading ? (
+                <div style={{ padding: '12px', color: '#38bdf8' }}>
+                  <i className="fa-solid fa-circle-notch fa-spin fa-2x"></i>
+                  <p style={{ margin: '8px 0 0', fontSize: '0.84rem' }}>جارِ رفع الصورة ومعالجتها...</p>
+                </div>
+              ) : (imageUrl || localPreview) ? (
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '16px', flexWrap: 'wrap' }}>
+                  <img
+                    src={effectivePreview || ''}
+                    alt="Offer Preview"
+                    style={{
+                      width: '140px',
+                      height: '90px',
+                      objectFit: 'cover',
+                      borderRadius: '8px',
+                      border: '1px solid #334155',
+                    }}
+                  />
+                  <div style={{ textAlign: 'right' }}>
+                    <span style={{ fontSize: '0.82rem', color: '#34d399', fontWeight: 700, display: 'block' }}>
+                      <i className="fa-solid fa-circle-check" style={{ marginLeft: '4px' }}></i>
+                      {localPreview ? 'تم اختيار صورة جديدة' : 'صورة العرض المخصصة الحالية'}
+                    </span>
+                    <span style={{ fontSize: '0.72rem', color: '#94a3b8', display: 'block', marginTop: '3px' }}>
+                      انقر لاختيار صورة بديلة أو إزالة الصورة المخصصة
+                    </span>
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleRemoveImage();
+                      }}
+                      style={{
+                        marginTop: '8px',
+                        padding: '4px 10px',
+                        borderRadius: '6px',
+                        background: 'rgba(239, 68, 68, 0.15)',
+                        border: '1px solid rgba(239, 68, 68, 0.3)',
+                        color: '#f87171',
+                        fontSize: '0.74rem',
+                        fontWeight: 700,
+                        cursor: 'pointer',
+                      }}
+                    >
+                      <i className="fa-solid fa-trash-can" style={{ marginLeft: '4px' }}></i>
+                      إزالة الصورة المخصصة (استخدام صورة الشقة)
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div style={{ padding: '8px' }}>
+                  <i className="fa-solid fa-cloud-arrow-up fa-2x" style={{ color: '#818cf8', marginBottom: '8px' }}></i>
+                  <p style={{ margin: 0, fontSize: '0.85rem', fontWeight: 700, color: '#f8fafc' }}>
+                    انقر لاختيار صورة من جهازك (JPG, PNG, WebP)
+                  </p>
+                  <span style={{ fontSize: '0.72rem', color: '#94a3b8', display: 'block', marginTop: '4px' }}>
+                    الحد الأقصى 5 ميجابايت • يتم حالياً استخدام صورة الشقة المرتبطة تلقائياً
+                  </span>
+                </div>
+              )}
+            </div>
+
+            {/* Manual URL Input (Secondary / Advanced) */}
+            {showManualUrl && (
+              <div style={{ marginTop: '12px' }}>
+                <label style={{ display: 'block', fontSize: '0.78rem', color: '#94a3b8', marginBottom: '4px' }}>
+                  رابط الصورة المباشر (URL):
+                </label>
+                <input
+                  type="text"
+                  value={imageUrl}
+                  onChange={(e) => {
+                    setImageUrl(e.target.value);
+                    setLocalPreview(null);
+                  }}
+                  placeholder="https://... أو uploads/housing_offers/..."
+                  style={{
+                    width: '100%',
+                    padding: '8px 12px',
+                    background: '#0d1527',
+                    border: '1px solid #334155',
+                    borderRadius: '8px',
+                    color: '#f8fafc',
+                    fontSize: '0.82rem',
+                  }}
+                />
+              </div>
+            )}
+          </div>
+
+          {/* Section 6: Start and Expiration Dates */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '14px' }}>
             <DateTimePickerField
               label="تاريخ ووقت بدء العرض (اختياري)"
@@ -508,7 +661,7 @@ export function EditHousingOfferModal({ isOpen, offer, onClose, onUpdate }: Edit
             />
           </div>
 
-          {/* Section 6: Active Status */}
+          {/* Section 7: Active Status */}
           <div
             style={{
               display: 'flex',
@@ -528,7 +681,7 @@ export function EditHousingOfferModal({ isOpen, offer, onClose, onUpdate }: Edit
               style={{ width: '18px', height: '18px', cursor: 'pointer', accentColor: '#38bdf8' }}
             />
             <label htmlFor="edit_is_active_checkbox" style={{ fontSize: '0.88rem', fontWeight: 600, color: '#f8fafc', cursor: 'pointer' }}>
-              العرض نشط حالياً ومتاح للطلاب في التطبيق
+              العرض نشط ومتاح للطلاب في التطبيق
             </label>
           </div>
 
@@ -547,7 +700,7 @@ export function EditHousingOfferModal({ isOpen, offer, onClose, onUpdate }: Edit
             <button
               type="button"
               onClick={onClose}
-              disabled={isSubmitting}
+              disabled={isSubmitting || isUploading}
               style={{
                 padding: '9px 18px',
                 borderRadius: '8px',
@@ -556,30 +709,30 @@ export function EditHousingOfferModal({ isOpen, offer, onClose, onUpdate }: Edit
                 color: '#94a3b8',
                 fontSize: '0.85rem',
                 fontWeight: 700,
-                cursor: isSubmitting ? 'not-allowed' : 'pointer',
+                cursor: (isSubmitting || isUploading) ? 'not-allowed' : 'pointer',
               }}
             >
               إلغاء
             </button>
             <button
               type="submit"
-              disabled={isSubmitting}
+              disabled={isSubmitting || isUploading}
               style={{
                 padding: '9px 24px',
                 borderRadius: '8px',
-                background: 'linear-gradient(135deg, #38bdf8, #6366f1)',
+                background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
                 border: 'none',
                 color: '#ffffff',
                 fontSize: '0.85rem',
                 fontWeight: 800,
-                cursor: isSubmitting ? 'not-allowed' : 'pointer',
+                cursor: (isSubmitting || isUploading) ? 'not-allowed' : 'pointer',
                 display: 'inline-flex',
                 alignItems: 'center',
                 gap: '8px',
-                boxShadow: '0 4px 12px rgba(56, 189, 248, 0.3)',
+                boxShadow: '0 4px 12px rgba(99, 102, 241, 0.3)',
               }}
             >
-              {isSubmitting ? (
+              {isSubmitting || isUploading ? (
                 <>
                   <i className="fa-solid fa-circle-notch fa-spin"></i>
                   <span>جارِ الحفظ...</span>

@@ -679,13 +679,13 @@ input[type="time"]::-webkit-calendar-picker-indicator {
 }
 
 /* Executive Dashboard Responsive KPI Grid */
-@media (min-width: 1550px) {
+@media (min-width: 1650px) {
     .kpi-grid-container {
-        grid-template-columns: repeat(7, 1fr) !important;
+        grid-template-columns: repeat(8, 1fr) !important;
     }
 }
 
-@media (min-width: 1080px) and (max-width: 1549px) {
+@media (min-width: 1080px) and (max-width: 1649px) {
     .kpi-grid-container {
         grid-template-columns: repeat(4, 1fr) !important;
     }

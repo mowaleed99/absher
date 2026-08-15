@@ -19,6 +19,7 @@ interface DashboardStats {
   feedback: ApplicationFeedback[];
   news: NewsItem[];
   promoCodesCount: number;
+  activeHousingOffersCount: number;
   avgRating: number;
   ratingDistribution: Record<string, number>;
 }
@@ -36,6 +37,7 @@ export function DashboardModule() {
     feedback: [],
     news: [],
     promoCodesCount: 0,
+    activeHousingOffersCount: 0,
     avgRating: 0,
     ratingDistribution: { '1': 0, '2': 0, '3': 0, '4': 0, '5': 0 },
   });
@@ -70,6 +72,20 @@ export function DashboardModule() {
         ? (d.promo_codes as Array<{ status?: string }>).filter((p) => p.status === 'active').length
         : 0;
 
+      const rawStats = d.stats && typeof d.stats === 'object' ? (d.stats as Record<string, unknown>) : null;
+      const activeOffersCount = typeof d.active_housing_offers_count === 'number'
+        ? d.active_housing_offers_count
+        : typeof rawStats?.active_housing_offers_count === 'number'
+        ? Number(rawStats.active_housing_offers_count)
+        : Array.isArray(d.housing_offers)
+        ? (d.housing_offers as Array<{ is_active?: number | boolean; starts_at?: string | null; expires_at?: string | null }>).filter(
+            (o) =>
+              (o.is_active === 1 || o.is_active === true) &&
+              (!o.expires_at || new Date(o.expires_at).getTime() > Date.now()) &&
+              (!o.starts_at || new Date(o.starts_at).getTime() <= Date.now())
+          ).length
+        : 0;
+
       let avg = 0;
       let dist: Record<string, number> = { '1': 0, '2': 0, '3': 0, '4': 0, '5': 0 };
 
@@ -89,6 +105,7 @@ export function DashboardModule() {
         feedback: fdbk,
         news: nws,
         promoCodesCount: promoCount,
+        activeHousingOffersCount: activeOffersCount,
         avgRating: avg,
         ratingDistribution: dist,
       });
@@ -321,7 +338,56 @@ export function DashboardModule() {
               </div>
             </Link>
 
-            {/* KPI 2: Services */}
+            {/* KPI 2: Active Housing Offers */}
+            <Link to="/offers" style={{ textDecoration: 'none', color: 'inherit' }}>
+              <div
+                className="dashboard-kpi-card"
+                style={{
+                  background: 'var(--bg-card)',
+                  borderRadius: '12px',
+                  border: '1px solid var(--border-color)',
+                  padding: '14px 16px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  justifyContent: 'space-between',
+                  minHeight: '120px',
+                  transition: 'all 0.2s ease',
+                  cursor: 'pointer',
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)', fontWeight: 600 }}>
+                    {isRtl ? 'عروض السكن النشطة' : 'Active Housing Offers'}
+                  </span>
+                  <div
+                    style={{
+                      width: '36px',
+                      height: '36px',
+                      borderRadius: '8px',
+                      background: 'rgba(168, 85, 247, 0.15)',
+                      color: '#a855f7',
+                      border: '1px solid rgba(168, 85, 247, 0.25)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontSize: '1rem',
+                    }}
+                  >
+                    <i className="fa-solid fa-house-circle-check"></i>
+                  </div>
+                </div>
+                <div>
+                  <strong style={{ fontSize: '1.45rem', color: '#a855f7', fontWeight: 800, lineHeight: 1.2 }}>
+                    {stats.activeHousingOffersCount}
+                  </strong>
+                  <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', display: 'block', marginTop: '3px' }}>
+                    عرض سكن متاح حالياً
+                  </span>
+                </div>
+              </div>
+            </Link>
+
+            {/* KPI 3: Services */}
             <Link to="/services" style={{ textDecoration: 'none', color: 'inherit' }}>
               <div
                 className="dashboard-kpi-card"
@@ -370,7 +436,7 @@ export function DashboardModule() {
               </div>
             </Link>
 
-            {/* KPI 3: Active Requests */}
+            {/* KPI 4: Active Requests */}
             <Link to="/requests" style={{ textDecoration: 'none', color: 'inherit' }}>
               <div
                 className="dashboard-kpi-card"
@@ -419,7 +485,7 @@ export function DashboardModule() {
               </div>
             </Link>
 
-            {/* KPI 4: Students */}
+            {/* KPI 5: Students */}
             <Link to="/students" style={{ textDecoration: 'none', color: 'inherit' }}>
               <div
                 className="dashboard-kpi-card"
@@ -468,7 +534,56 @@ export function DashboardModule() {
               </div>
             </Link>
 
-            {/* KPI 5: Avg Rating */}
+            {/* KPI 6: Promo Codes */}
+            <Link to="/promo-codes" style={{ textDecoration: 'none', color: 'inherit' }}>
+              <div
+                className="dashboard-kpi-card"
+                style={{
+                  background: 'var(--bg-card)',
+                  borderRadius: '12px',
+                  border: '1px solid var(--border-color)',
+                  padding: '14px 16px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  justifyContent: 'space-between',
+                  minHeight: '120px',
+                  transition: 'all 0.2s ease',
+                  cursor: 'pointer',
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)', fontWeight: 600 }}>
+                    أكواد الخصم
+                  </span>
+                  <div
+                    style={{
+                      width: '36px',
+                      height: '36px',
+                      borderRadius: '8px',
+                      background: 'rgba(56, 189, 248, 0.15)',
+                      color: '#38bdf8',
+                      border: '1px solid rgba(56, 189, 248, 0.25)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontSize: '1rem',
+                    }}
+                  >
+                    <i className="fa-solid fa-tags"></i>
+                  </div>
+                </div>
+                <div>
+                  <strong style={{ fontSize: '1.45rem', color: '#38bdf8', fontWeight: 800, lineHeight: 1.2 }}>
+                    {stats.promoCodesCount}
+                  </strong>
+                  <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', display: 'block', marginTop: '3px' }}>
+                    كود خصم ساري ونشط
+                  </span>
+                </div>
+              </div>
+            </Link>
+
+            {/* KPI 7: Avg Rating */}
             <Link to="/reviews" style={{ textDecoration: 'none', color: 'inherit' }}>
               <div
                 className="dashboard-kpi-card"
@@ -517,7 +632,7 @@ export function DashboardModule() {
               </div>
             </Link>
 
-            {/* KPI 6: Customer Support Chats */}
+            {/* KPI 8: Customer Support Chats */}
             <Link to="/chats" style={{ textDecoration: 'none', color: 'inherit' }}>
               <div
                 className="dashboard-kpi-card"
@@ -561,55 +676,6 @@ export function DashboardModule() {
                   </strong>
                   <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', display: 'block', marginTop: '3px' }}>
                     محادثات بانتظار الرد
-                  </span>
-                </div>
-              </div>
-            </Link>
-
-            {/* KPI 7: Promo Codes */}
-            <Link to="/promo-codes" style={{ textDecoration: 'none', color: 'inherit' }}>
-              <div
-                className="dashboard-kpi-card"
-                style={{
-                  background: 'var(--bg-card)',
-                  borderRadius: '12px',
-                  border: '1px solid var(--border-color)',
-                  padding: '14px 16px',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  justifyContent: 'space-between',
-                  minHeight: '120px',
-                  transition: 'all 0.2s ease',
-                  cursor: 'pointer',
-                }}
-              >
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                  <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)', fontWeight: 600 }}>
-                    أكواد الخصم
-                  </span>
-                  <div
-                    style={{
-                      width: '36px',
-                      height: '36px',
-                      borderRadius: '8px',
-                      background: 'rgba(56, 189, 248, 0.15)',
-                      color: '#38bdf8',
-                      border: '1px solid rgba(56, 189, 248, 0.25)',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      fontSize: '1rem',
-                    }}
-                  >
-                    <i className="fa-solid fa-tags"></i>
-                  </div>
-                </div>
-                <div>
-                  <strong style={{ fontSize: '1.45rem', color: '#38bdf8', fontWeight: 800, lineHeight: 1.2 }}>
-                    {stats.promoCodesCount}
-                  </strong>
-                  <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', display: 'block', marginTop: '3px' }}>
-                    كود خصم ساري ونشط
                   </span>
                 </div>
               </div>

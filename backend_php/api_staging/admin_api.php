@@ -175,10 +175,19 @@ try {
                 $p['student_ids'] = $aStmt->fetchAll(PDO::FETCH_COLUMN);
             }
         }
-        unset($p);
+        $now = date('Y-m-d H:i:s');
+        $active_housing_offers_count = (int)$conn->query("
+            SELECT COUNT(*) 
+            FROM housing_offers ho
+            INNER JOIN apartments apt ON ho.apartment_id = apt.id
+            WHERE ho.is_active = 1
+              AND (ho.starts_at IS NULL OR ho.starts_at <= '$now')
+              AND (ho.expires_at IS NULL OR ho.expires_at > '$now')
+              AND apt.is_available = 1
+        ")->fetchColumn();
 
-        echo json_encode(["status"=>"success","stats"=> ["total_apartments"=> count($apartments),"total_services"=> count($services),"total_students"=> count($students),"total_universities"=> count($universities),"total_districts"=> count($districts),"pending_requests"=> count(array_filter($requests, fn($r) => $r['status'] ==='قيد المراجعة'))
-            ],"apartments"=> $apartments,"services"=> $services,"students"=> $students,"universities"=> $universities,"districts"=> $districts,"requests"=> $requests,"reviews"=> $reviews,"reviews_analytics"=> $reviews_analytics,"application_feedback"=> $application_feedback,"chats"=> $chats,"news"=> $news,"notifications"=> $notifications,"housing_offers"=> $housing_offers,"blocked_identities"=> $blocked_identities,"promo_codes"=> $promo_codes
+        echo json_encode(["status"=>"success","stats"=> ["total_apartments"=> count($apartments),"total_services"=> count($services),"total_students"=> count($students),"total_universities"=> count($universities),"total_districts"=> count($districts),"pending_requests"=> count(array_filter($requests, fn($r) => $r['status'] ==='قيد المراجعة')),"active_housing_offers_count" => $active_housing_offers_count
+            ],"apartments"=> $apartments,"services"=> $services,"students"=> $students,"universities"=> $universities,"districts"=> $districts,"requests"=> $requests,"reviews"=> $reviews,"reviews_analytics"=> $reviews_analytics,"application_feedback"=> $application_feedback,"chats"=> $chats,"news"=> $news,"notifications"=> $notifications,"housing_offers"=> $housing_offers,"active_housing_offers_count" => $active_housing_offers_count,"blocked_identities"=> $blocked_identities,"promo_codes"=> $promo_codes
         ], JSON_UNESCAPED_UNICODE);
         exit();
     }
@@ -1956,6 +1965,25 @@ try {
             $title_ar, $title_en, $description_ar, $description_en, $badge_text_ar, $badge_text_en, $id
         ]);
 
+        // If image_url was explicitly changed/removed, safely clean up old file if stored in managed housing_offers folder
+        if ($image_url !== $existing['image_url'] && !empty($existing['image_url'])) {
+            $oldClean = trim($existing['image_url']);
+            if (strpos($oldClean, 'uploads_staging/housing_offers/') === 0 || strpos($oldClean, 'uploads/housing_offers/') === 0) {
+                $base = basename($oldClean);
+                $paths = [
+                    __DIR__ . '/../uploads_staging/housing_offers/' . $base,
+                    __DIR__ . '/../../uploads_staging/housing_offers/' . $base,
+                    __DIR__ . '/../uploads/housing_offers/' . $base,
+                    __DIR__ . '/../../uploads/housing_offers/' . $base,
+                ];
+                foreach ($paths as $p) {
+                    if (file_exists($p) && is_file($p)) {
+                        @unlink($p);
+                    }
+                }
+            }
+        }
+
         echo json_encode(["status" => "success", "message" => "تم تعديل العرض بنجاح"], JSON_UNESCAPED_UNICODE);
         exit();
     }
@@ -1967,9 +1995,32 @@ try {
             exit();
         }
 
+        // Fetch existing record first for image cleanup
+        $stmtExist = $conn->prepare("SELECT image_url FROM housing_offers WHERE id = ?");
+        $stmtExist->execute([$id]);
+        $existingRow = $stmtExist->fetch(PDO::FETCH_ASSOC);
+
         $stmt = $conn->prepare("DELETE FROM housing_offers WHERE id = ?");
         $stmt->execute([$id]);
         if ($stmt->rowCount() > 0) {
+            // Clean up custom offer image if stored in managed folder
+            if ($existingRow && !empty($existingRow['image_url'])) {
+                $oldClean = trim($existingRow['image_url']);
+                if (strpos($oldClean, 'uploads_staging/housing_offers/') === 0 || strpos($oldClean, 'uploads/housing_offers/') === 0) {
+                    $base = basename($oldClean);
+                    $paths = [
+                        __DIR__ . '/../uploads_staging/housing_offers/' . $base,
+                        __DIR__ . '/../../uploads_staging/housing_offers/' . $base,
+                        __DIR__ . '/../uploads/housing_offers/' . $base,
+                        __DIR__ . '/../../uploads/housing_offers/' . $base,
+                    ];
+                    foreach ($paths as $p) {
+                        if (file_exists($p) && is_file($p)) {
+                            @unlink($p);
+                        }
+                    }
+                }
+            }
             echo json_encode(["status" => "success", "message" => "تم حذف العرض بنجاح"], JSON_UNESCAPED_UNICODE);
         } else {
             echo json_encode(["status" => "error", "message" => "لم يتم العثور على العرض أو فشل الحذف"], JSON_UNESCAPED_UNICODE);
