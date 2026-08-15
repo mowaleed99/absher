@@ -1,0 +1,32 @@
+# Per-directory SPA fallback
+# No hardcoded RewriteBase — works in any subdirectory (/admin_v2/ or /admin/)
+Options -MultiViews
+
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+
+    # Serve existing files/directories directly
+    RewriteCond %{REQUEST_FILENAME} -f [OR]
+    RewriteCond %{REQUEST_FILENAME} -d
+    RewriteRule ^ - [L]
+
+    # All other paths → index.html (SPA fallback, per-directory relative)
+    RewriteRule ^ index.html [L]
+</IfModule>
+
+# index.html — never cache
+<FilesMatch "^index\.html$">
+    <IfModule mod_headers.c>
+        Header set Cache-Control "no-store, no-cache, must-revalidate, max-age=0"
+        Header set Pragma "no-cache"
+        Header set Expires "0"
+    </IfModule>
+</FilesMatch>
+
+# Hashed Vite build assets ONLY (pattern: name-[8+char hash].ext)
+# Excludes non-hashed public images that may be replaced with the same filename
+<FilesMatch "^.+-[a-zA-Z0-9]{8,}\.(js|css|woff2?|ttf|eot)$">
+    <IfModule mod_headers.c>
+        Header set Cache-Control "max-age=31536000, public, immutable"
+    </IfModule>
+</FilesMatch>

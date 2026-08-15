@@ -1,5 +1,5 @@
 import { initDashboardModule } from './modules/dashboard.js';
-import { initApartmentsModule } from './modules/apartments.js';
+import { initApartmentsModule } from './modules/apartments.js?v=1.0.11';
 import { initServicesModule } from './modules/services.js';
 import { initStudentsModule } from './modules/students.js?v=1.0.3';
 import { initRequestsModule } from './modules/requests.js';

@@ -1,0 +1,37 @@
+export interface Apartment {
+  id: number;
+  title: string;
+  title_ar: string;
+  title_en: string;
+  price: number;
+  location: string;
+  location_ar: string;
+  location_en: string;
+  proximity: string;
+  proximity_ar: string;
+  proximity_en: string;
+  district_id: number | null;
+  rental_type: string;
+  rooms_count: number | null;
+  roommate_reqs: string | null;
+  roommate_facilities: string | null;
+  owner_phone: string | null;
+  images: string[];
+  features: string[];
+  features_ar: string[];
+  features_en: string[];
+  universities: (string | number)[];
+  capacity: string;
+  capacity_ar: string;
+  capacity_en: string;
+  move_in_type: string;
+  move_in_type_ar: string;
+  move_in_type_en: string;
+  move_in_date: string;
+  move_in_date_ar: string;
+  move_in_date_en: string;
+  description: string;
+  description_ar: string;
+  description_en: string;
+  is_available: number;
+}

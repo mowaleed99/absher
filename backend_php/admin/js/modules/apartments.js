@@ -188,7 +188,7 @@ export async function handleAddApartment(e) {
     }
 }
 
-export function openEditApartmentModal(aptId) { try {
+export function openEditApartmentModal(aptId) {
     const apt = appData.apartments.find(a => a.id === aptId || a.id === String(aptId));
     if (!apt) {
         showToast(window.t('messages.not_found_apartment'));
@@ -478,7 +478,6 @@ export function initApartmentsModule() {
     }
 
     // Expose globals so inline onclick in rendered HTML can call them
-    } catch(e) { alert('EditApt Error: ' + e.stack); }
     window.deleteApartmentGlobal = deleteApartment;
     window.openEditApartmentModalGlobal = openEditApartmentModal;
 }
