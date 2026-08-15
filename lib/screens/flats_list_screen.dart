@@ -82,6 +82,7 @@ class FlatsListScreen extends StatelessWidget {
         appBar: AppBar(
           backgroundColor: AppColors.primary,
           elevation: 0,
+          centerTitle: true,
           title: Text(LanguageService.tr('auto_trans_1043'),
               style: const TextStyle(
                   color: Colors.white,

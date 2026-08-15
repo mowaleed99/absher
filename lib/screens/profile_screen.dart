@@ -302,16 +302,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
             appBar: AppBar(
               backgroundColor: AppColors.primary,
               elevation: 0,
+              centerTitle: true,
               title: Text(LanguageService.tr('profile'),
                   style: const TextStyle(
                       color: Colors.white, fontWeight: FontWeight.bold)),
-              actions: [
-                if (!widget.isGuest && !_isLoading)
-                  IconButton(
-                    icon: const Icon(Icons.refresh, color: Colors.white),
-                    onPressed: _fetchProfile,
-                  ),
-              ],
             ),
             body: _isLoading
                 ? const LoadingStateWidget(messageKey: 'loading_profile')
@@ -587,7 +581,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
                             _buildProfileItem(
                               context,
-                              Icons.phone_in_talk,
+                              Icons.support_agent_rounded,
                               LanguageService.tr('contact_support'),
                               LanguageService.tr('support_subtitle'),
                               onTap: () {

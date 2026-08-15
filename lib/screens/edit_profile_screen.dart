@@ -171,6 +171,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         appBar: AppBar(
           backgroundColor: AppColors.primary,
           elevation: 0,
+          centerTitle: true,
           leading: const BackButton(color: Colors.white),
           title: Text(title,
               style: const TextStyle(

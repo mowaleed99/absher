@@ -95,6 +95,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
         appBar: AppBar(
           backgroundColor: AppColors.primary,
           elevation: 0,
+          centerTitle: true,
           leading: const BackButton(color: Colors.white),
           title: Text(title,
               style: const TextStyle(

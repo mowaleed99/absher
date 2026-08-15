@@ -155,6 +155,7 @@ class _OffersScreenState extends State<OffersScreen> {
             appBar: AppBar(
               backgroundColor: AppColors.primary,
               elevation: 0,
+              centerTitle: true,
               title: Text(
                 LanguageService.tr('auto_trans_1200'),
                 style: const TextStyle(

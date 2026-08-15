@@ -1023,6 +1023,7 @@ class _ServicesScreenState extends State<ServicesScreen> {
         appBar: AppBar(
           backgroundColor: AppColors.primary,
           elevation: 0,
+          centerTitle: true,
           title: Text(LanguageService.tr('all_student_services'),
               style: const TextStyle(
                   color: Colors.white, fontWeight: FontWeight.bold)),
