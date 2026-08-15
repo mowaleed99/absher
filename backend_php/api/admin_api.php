@@ -244,11 +244,11 @@ try {
         $limit = max(1, intval($_GET['limit'] ?? 20));
         $offset = ($page - 1) * $limit;
         $search = trim($_GET['search'] ?? '');
-        $query = "SELECT id, full_name, email, phone, university, points, created_at FROM students";
+        $query = "SELECT id, full_name, email, phone, university, nationality, points, admin_status, admin_note, is_blocked, created_at FROM students";
         $params = [];
         if (!empty($search)) {
-            $query .= " WHERE full_name LIKE ? OR phone LIKE ? OR email LIKE ?";
-            $params = ["%$search%", "%$search%", "%$search%"];
+            $query .= " WHERE full_name LIKE ? OR phone LIKE ? OR email LIKE ? OR nationality LIKE ?";
+            $params = ["%$search%", "%$search%", "%$search%", "%$search%"];
         }
         $query .= " ORDER BY id DESC LIMIT $limit OFFSET $offset";
         $stmt = $conn->prepare($query);
