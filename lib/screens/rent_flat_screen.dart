@@ -27,6 +27,7 @@ class _RentFlatScreenState extends State<RentFlatScreen> {
 
   String? _selectedUniId;
   List<Map<String, dynamic>> _unisList = [];
+  List<Map<String, dynamic>> _apartments = [];
 
   final _majorController = TextEditingController();
   late TextEditingController _wpController;
@@ -36,6 +37,8 @@ class _RentFlatScreenState extends State<RentFlatScreen> {
   @override
   void initState() {
     super.initState();
+    _apartments = List.from(widget.apartments);
+    _refreshApartments();
     final isGuest = widget.user == null ||
         widget.user!.id == 0 ||
         widget.user!.fullName.contains(LanguageService.tr('auto_trans_1211'));
@@ -44,6 +47,15 @@ class _RentFlatScreenState extends State<RentFlatScreen> {
     _wpController =
         TextEditingController(text: !isGuest ? (widget.user?.phone ?? '') : '');
     _loadUniversities(!isGuest ? widget.user?.universityId : null);
+  }
+
+  Future<void> _refreshApartments() async {
+    final list = await ApiService.getApartments();
+    if (mounted && list.isNotEmpty) {
+      setState(() {
+        _apartments = list;
+      });
+    }
   }
 
   Future<void> _loadUniversities(int? userUniId) async {
@@ -331,7 +343,7 @@ class _RentFlatScreenState extends State<RentFlatScreen> {
             context,
             MaterialPageRoute(
               builder: (_) => FlatsListScreen(
-                apartments: widget.apartments,
+                apartments: _apartments,
                 user: widget.user,
                 title: LanguageService.tr('auto_trans_1228'),
                 subtitle: LanguageService.tr('auto_trans_1229'),
@@ -351,7 +363,7 @@ class _RentFlatScreenState extends State<RentFlatScreen> {
             context,
             MaterialPageRoute(
               builder: (_) => FlatsListScreen(
-                apartments: widget.apartments,
+                apartments: _apartments,
                 user: widget.user,
                 title: LanguageService.tr('auto_trans_1230'),
                 subtitle: LanguageService.tr('auto_trans_1231'),

@@ -25,40 +25,40 @@ class FlatsListScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // تصفية الشقق بناءً على تصنيف نوع السكن (شقة كاملة vs غرفة/ستوديو)
+    // تصفية الشقق بناءً على تصنيف نوع السكن وعدد الغرف (شقة كاملة vs غرفة واحدة / ستوديو / غرفة مشتركة)
     final filteredList = apartments.where((apt) {
       final rType = apt['rental_type']?.toString();
+      final roomsCount = apt['rooms_count'] is int
+          ? apt['rooms_count'] as int
+          : int.tryParse(apt['rooms_count']?.toString() ?? '');
+
       if (filterSingleOnly) {
-        // الخيار الثاني: غرف مشتركة واستوديوهات
-        if (rType == 'room_shared' || rType == 'studio') {
+        // الخيار الثاني (اختار غرفة في شقة): الشقق ذات الغرفة الواحدة، الغرف المشتركة، والاستوديوهات
+        if (roomsCount == 1 || rType == 'room_shared' || rType == 'studio') {
           return true;
         }
-        // دعم رجعي للبيانات القديمة التي لا تحتوي على نوع سكن
-        if (rType == null || rType.isEmpty) {
-          final titleStr = (apt['title'] ?? '').toString();
-          final descStr = (apt['description'] ?? '').toString();
-          final featuresList = (apt['features'] as List?)
-                  ?.map((e) => e.toString())
-                  .join(' ') ??
-              '';
-          final combined = '$titleStr $descStr $featuresList';
-          return combined.contains(LanguageService.tr('auto_trans_1038')) ||
-              combined.contains(LanguageService.tr('auto_trans_1039')) ||
-              combined.contains(LanguageService.tr('auto_trans_1040')) ||
-              combined.contains(LanguageService.tr('auto_trans_1041')) ||
-              !combined.contains(LanguageService.tr('auto_trans_1042'));
-        }
-        return false;
+        // فحص الخصائص والعناوين لدعم البيانات القديمة
+        final titleStr = (apt['title'] ?? '').toString();
+        final descStr = (apt['description'] ?? '').toString();
+        final featuresList = (apt['features'] as List?)
+                ?.map((e) => e.toString())
+                .join(' ') ??
+            '';
+        final combined = '$titleStr $descStr $featuresList'.toLowerCase();
+        return combined.contains(LanguageService.tr('auto_trans_1038').toLowerCase()) ||
+            combined.contains(LanguageService.tr('auto_trans_1039').toLowerCase()) ||
+            combined.contains(LanguageService.tr('auto_trans_1040').toLowerCase()) ||
+            combined.contains(LanguageService.tr('auto_trans_1041').toLowerCase()) ||
+            combined.contains('غرفة واحدة') ||
+            combined.contains('غرفه واحده') ||
+            combined.contains('استوديو') ||
+            combined.contains('إستوديو') ||
+            combined.contains('استديو') ||
+            combined.contains('1 room') ||
+            combined.contains('studio');
       } else {
-        // الخيار الأول: شقق كاملة فقط
-        if (rType == 'apartment') {
-          return true;
-        }
-        // دعم رجعي للبيانات القديمة
-        if (rType == null || rType.isEmpty) {
-          return true;
-        }
-        return false;
+        // الخيار الأول: جميع الشقق
+        return true;
       }
     }).toList();
 
