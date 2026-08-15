@@ -331,7 +331,6 @@ class _HomeScreenState extends State<HomeScreen>
   }
 
   void _showRatingPromptDialog(Map<String, dynamic> request) {
-    final isAr = LanguageService.isRtl;
     final reqId = int.tryParse(request['id']?.toString() ?? '0') ?? 0;
     final serviceTitle =
         request['service_title'] ?? LanguageService.tr('service_requests');
@@ -638,98 +637,6 @@ class _HomeScreenState extends State<HomeScreen>
     _adTimer?.cancel();
     _adController.dispose();
     super.dispose();
-  }
-
-  void _showNotificationsDialog(BuildContext context) {
-    showModalBottomSheet(
-      context: context,
-      shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
-      isScrollControlled: true,
-      builder: (_) => Container(
-        padding: const EdgeInsets.all(20),
-        height: MediaQuery.of(context).size.height * 0.6,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                const Icon(Icons.notifications_active,
-                    color: AppColors.accent, size: 28),
-                const SizedBox(width: 10),
-                Text(LanguageService.tr('auto_trans_1136'),
-                    style: const TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: AppColors.primary)),
-              ],
-            ),
-            const SizedBox(height: 16),
-            Expanded(
-              child: _newsList.isEmpty
-                  ? Center(
-                      child: Text(
-                        LanguageService.tr('auto_trans_1137'),
-                        style: const TextStyle(
-                            fontSize: 14,
-                            color: Colors.grey,
-                            fontWeight: FontWeight.bold),
-                      ),
-                    )
-                  : ListView.builder(
-                      itemCount: _newsList.length,
-                      itemBuilder: (context, index) {
-                        final n = _newsList[index];
-                        return _buildNotificationItem(
-                          n.title,
-                          n.content,
-                          n.date ?? LanguageService.tr('auto_trans_1138'),
-                        );
-                      },
-                    ),
-            ),
-            const SizedBox(height: 10),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildNotificationItem(String title, String desc, String time) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-          color: AppColors.accentLight,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: AppColors.accent.withValues(alpha: 0.3))),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Icon(Icons.info_outline, color: AppColors.primary, size: 22),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(title,
-                    style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 14,
-                        color: AppColors.textDark)),
-                const SizedBox(height: 4),
-                Text(desc,
-                    style: const TextStyle(
-                        fontSize: 12, color: AppColors.textMuted)),
-              ],
-            ),
-          ),
-          Text(time,
-              style:
-                  const TextStyle(fontSize: 10, color: AppColors.primaryDark)),
-        ],
-      ),
-    );
   }
 
   Widget _buildFilterChipDropdown({
@@ -1773,67 +1680,6 @@ class _HomeScreenState extends State<HomeScreen>
           ),
           const SliverPadding(padding: EdgeInsets.only(bottom: 24)),
         ],
-      ),
-    );
-  }
-
-  Widget _buildServicePhotoCard(String title, String imageUrl) {
-    return GestureDetector(
-      onTap: () => setState(() => _currentIndex = 1),
-      child: Container(
-        height: 95,
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(16),
-          boxShadow: [
-            BoxShadow(
-                color: Colors.black.withValues(alpha: 0.08),
-                blurRadius: 8,
-                offset: const Offset(0, 3))
-          ],
-        ),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(16),
-          child: Stack(
-            fit: StackFit.expand,
-            children: [
-              Image.network(
-                imageUrl,
-                fit: BoxFit.cover,
-                errorBuilder: (_, __, ___) => Container(
-                    color: AppColors.primaryDark,
-                    child: const Icon(Icons.build, color: AppColors.accent)),
-              ),
-              Container(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.bottomCenter,
-                    end: Alignment.topCenter,
-                    colors: [
-                      AppColors.primaryDark.withValues(alpha: 0.9),
-                      AppColors.primaryDark.withValues(alpha: 0.3),
-                      Colors.transparent,
-                    ],
-                  ),
-                ),
-              ),
-              Positioned(
-                bottom: 10,
-                left: 8,
-                right: 8,
-                child: Text(
-                  title,
-                  textAlign: TextAlign.center,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white),
-                ),
-              ),
-            ],
-          ),
-        ),
       ),
     );
   }

@@ -112,7 +112,6 @@ class StudentRequest {
       case RequestCategory.serviceRequest:
         return LanguageService.tr('service_request');
       case RequestCategory.generic:
-      default:
         return LanguageService.tr('request');
     }
   }
@@ -126,7 +125,6 @@ class StudentRequest {
       case RequestCategory.serviceRequest:
         return Icons.build;
       case RequestCategory.generic:
-      default:
         return Icons.description;
     }
   }
@@ -173,7 +171,6 @@ class StudentRequest {
       case RequestStatus.cancelled:
         return AppColors.error;
       case RequestStatus.unknown:
-      default:
         return AppColors.textMuted;
     }
   }

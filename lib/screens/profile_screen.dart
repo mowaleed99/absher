@@ -41,14 +41,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
   }
 
-  String get _siteRootUrl {
-    final base = ApiService.baseUrl;
-    if (base.endsWith('/api')) {
-      return base.substring(0, base.length - 4);
-    }
-    return base;
-  }
-
   Future<void> _fetchProfile() async {
     setState(() {
       _isLoading = true;

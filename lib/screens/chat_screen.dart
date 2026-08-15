@@ -540,7 +540,7 @@ class _ChatScreenState extends State<ChatScreen> {
 
       final String? uploadedUrl = await ApiService.uploadImage(file, 'chat');
 
-      if (!context.mounted) return;
+      if (!mounted) return;
       Navigator.pop(context);
 
       if (uploadedUrl != null) {
@@ -561,68 +561,11 @@ class _ChatScreenState extends State<ChatScreen> {
       }
     } catch (e) {
       debugPrint('Error picking/uploading media: $e');
-      if (!context.mounted) return;
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('${LanguageService.tr('error_occurred')}: $e')),
       );
     }
-  }
-
-  void _showAttachMediaOptions() {
-    showModalBottomSheet(
-      context: context,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (BuildContext context) {
-        return Directionality(
-          textDirection: LanguageService.textDirection,
-          child: SafeArea(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: Text(
-                    LanguageService.tr('attach_media_chat'),
-                    style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: AppColors.primary),
-                  ),
-                ),
-                ListTile(
-                  leading: const Icon(Icons.image, color: AppColors.primary),
-                  title: Text(LanguageService.tr('choose_image_gallery')),
-                  onTap: () {
-                    Navigator.pop(context);
-                    _pickAndUploadMedia(false);
-                  },
-                ),
-                ListTile(
-                  leading:
-                      const Icon(Icons.video_library, color: AppColors.primary),
-                  title: Text(LanguageService.tr('choose_video_gallery')),
-                  onTap: () {
-                    Navigator.pop(context);
-                    _pickAndUploadMedia(true);
-                  },
-                ),
-                ListTile(
-                  leading: const Icon(Icons.link, color: AppColors.primary),
-                  title: Text(LanguageService.tr('manual_link_input')),
-                  onTap: () {
-                    Navigator.pop(context);
-                    _showAttachMediaDialog();
-                  },
-                ),
-                const SizedBox(height: 10),
-              ],
-            ),
-          ),
-        );
-      },
-    );
   }
 
   void _showMediaPreview(BuildContext context, String url, String type) {

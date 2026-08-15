@@ -3,8 +3,8 @@ import 'package:flutter_test/flutter_test.dart';
 void main() {
   group('Track 5 ratings & feedback client-side logic tests', () {
     test('Verify Arabic/English status labels formatting', () {
-      final isArAr = true; // Simulating Arabic locale
-      final isArEn = false; // Simulating English locale
+      const isArAr = true; // Simulating Arabic locale
+      const isArEn = false; // Simulating English locale
 
       // Helper function matching the UI status label logic
       String getStatusLabel(String status, bool isAr) {
