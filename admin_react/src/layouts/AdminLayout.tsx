@@ -8,7 +8,7 @@ export function AdminLayout() {
   const { logout } = useAuth();
   const { toggleTheme, theme } = useTheme();
   const { lang, setLang, t } = useI18n();
-  const { pendingReviewsCount, pendingFeedbackCount, pendingChatsCount } = useBadges();
+  const { pendingReviewsCount, pendingFeedbackCount, pendingChatsCount, pendingRequestsCount } = useBadges();
   const location = useLocation();
 
   const isChatsRoute = location.pathname.startsWith('/chats');
@@ -25,6 +25,7 @@ export function AdminLayout() {
   const reviewsBadgeText = formatBadge(pendingReviewsCount);
   const feedbackBadgeText = formatBadge(pendingFeedbackCount);
   const chatsBadgeText = formatBadge(pendingChatsCount);
+  const requestsBadgeText = formatBadge(pendingRequestsCount);
 
   return (
     <div style={{ height: '100vh', maxHeight: '100vh', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
@@ -123,7 +124,30 @@ export function AdminLayout() {
               className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
             >
               <i className="fa-solid fa-bell"></i>
-              <span>{t('nav.requests')}</span>
+              <span style={{ flex: 1 }}>{t('nav.requests')}</span>
+              {requestsBadgeText && (
+                <span
+                  style={{
+                    background: '#ef4444',
+                    color: '#ffffff',
+                    border: '1px solid rgba(255, 255, 255, 0.4)',
+                    minWidth: '20px',
+                    height: '20px',
+                    padding: '0 6px',
+                    borderRadius: '10px',
+                    fontSize: '0.72rem',
+                    fontWeight: 800,
+                    lineHeight: 1,
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    boxShadow: '0 2px 4px rgba(0, 0, 0, 0.25)',
+                    flexShrink: 0,
+                  }}
+                >
+                  {requestsBadgeText}
+                </span>
+              )}
             </NavLink>
             <NavLink
               to="/promo-codes"

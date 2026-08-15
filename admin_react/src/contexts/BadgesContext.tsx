@@ -6,14 +6,18 @@ interface BadgesContextType {
   pendingReviewsCount: number;
   pendingFeedbackCount: number;
   pendingChatsCount: number;
+  pendingRequestsCount: number;
   refetchBadges: () => Promise<void>;
+  decrementRequestsCount: () => void;
 }
 
 const BadgesContext = createContext<BadgesContextType>({
   pendingReviewsCount: 0,
   pendingFeedbackCount: 0,
   pendingChatsCount: 0,
+  pendingRequestsCount: 0,
   refetchBadges: async () => {},
+  decrementRequestsCount: () => {},
 });
 
 export const useBadges = () => useContext(BadgesContext);
@@ -23,12 +27,14 @@ export function BadgesProvider({ children }: { children: React.ReactNode }) {
   const [pendingReviewsCount, setPendingReviewsCount] = useState<number>(0);
   const [pendingFeedbackCount, setPendingFeedbackCount] = useState<number>(0);
   const [pendingChatsCount, setPendingChatsCount] = useState<number>(0);
+  const [pendingRequestsCount, setPendingRequestsCount] = useState<number>(0);
 
   const fetchBadges = useCallback(async () => {
     if (!isAuthenticated) {
       setPendingReviewsCount(0);
       setPendingFeedbackCount(0);
       setPendingChatsCount(0);
+      setPendingRequestsCount(0);
       return;
     }
 
@@ -74,14 +80,30 @@ export function BadgesProvider({ children }: { children: React.ReactNode }) {
         } else {
           setPendingChatsCount(0);
         }
+
+        // 4. Service Requests requiring attention: status === 'قيد المراجعة'
+        if (Array.isArray(result.data.requests)) {
+          const pReqs = result.data.requests.filter(
+            (r: Record<string, unknown>) => String(r.status || '').trim() === 'قيد المراجعة'
+          );
+          setPendingRequestsCount(pReqs.length);
+        } else {
+          setPendingRequestsCount(0);
+        }
       }
     } catch (err) {
       console.error('[BadgesProvider] fetch error:', err);
     }
   }, [isAuthenticated]);
 
+  const decrementRequestsCount = useCallback(() => {
+    setPendingRequestsCount((prev) => Math.max(0, prev - 1));
+  }, []);
+
   useEffect(() => {
     fetchBadges();
+    const interval = setInterval(fetchBadges, 15000);
+    return () => clearInterval(interval);
   }, [fetchBadges]);
 
   return (
@@ -90,7 +112,9 @@ export function BadgesProvider({ children }: { children: React.ReactNode }) {
         pendingReviewsCount,
         pendingFeedbackCount,
         pendingChatsCount,
+        pendingRequestsCount,
         refetchBadges: fetchBadges,
+        decrementRequestsCount,
       }}
     >
       {children}

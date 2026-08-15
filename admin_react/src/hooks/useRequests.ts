@@ -2,11 +2,13 @@ import { useState, useEffect, useCallback } from 'react';
 import { ServiceRequest } from '../types/request';
 import { apiFetch } from '../lib/apiFetch';
 import { parseRequests } from '../lib/validators';
+import { useBadges } from '../contexts/BadgesContext';
 
 export function useRequests() {
   const [requests, setRequests] = useState<ServiceRequest[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+  const { refetchBadges } = useBadges();
 
   const fetchRequests = useCallback(async () => {
     const token = localStorage.getItem('adminToken');
@@ -73,6 +75,7 @@ export function useRequests() {
             : r
         )
       );
+      refetchBadges();
       return { success: true };
     } catch (err) {
       console.error('[useRequests] update error:', err);
@@ -89,6 +92,7 @@ export function useRequests() {
       }
 
       setRequests((prev) => prev.filter((r) => r.id !== id));
+      refetchBadges();
       return { success: true };
     } catch (err) {
       console.error('[useRequests] delete error:', err);
