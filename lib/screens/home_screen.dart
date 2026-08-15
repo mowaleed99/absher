@@ -1325,7 +1325,12 @@ class _HomeScreenState extends State<HomeScreen>
                                   children: [
                                     // صورة الإعلان الحقيقية
                                     Image.network(
-                                      imgUrl.isNotEmpty ? imgUrl : fallbackImg,
+                                      imgUrl.isNotEmpty
+                                          ? (imgUrl.startsWith('http')
+                                              ? imgUrl
+                                              : ApiService.resolveImageUrl(
+                                                  imgUrl))
+                                          : fallbackImg,
                                       cacheWidth: 800,
                                       fit: BoxFit.cover,
                                       errorBuilder: (_, __, ___) => Container(
@@ -2212,7 +2217,11 @@ class _HomeScreenState extends State<HomeScreen>
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Image.network(
-                        imgUrl.isNotEmpty ? imgUrl : fallbackImg,
+                        imgUrl.isNotEmpty
+                            ? (imgUrl.startsWith('http')
+                                ? imgUrl
+                                : ApiService.resolveImageUrl(imgUrl))
+                            : fallbackImg,
                         cacheWidth: 800,
                         height: 220,
                         width: double.infinity,
