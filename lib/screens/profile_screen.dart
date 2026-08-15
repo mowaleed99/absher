@@ -372,6 +372,69 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                       ),
                                     ),
                                   ],
+                                  if (!widget.isGuest && _student != null) ...[
+                                    const SizedBox(height: 10),
+                                    InkWell(
+                                      onTap: () async {
+                                        await Navigator.of(context).push(
+                                          MaterialPageRoute(
+                                            builder: (_) =>
+                                                WalletScreen(user: _student),
+                                          ),
+                                        );
+                                        _fetchProfile();
+                                      },
+                                      borderRadius: BorderRadius.circular(20),
+                                      child: Container(
+                                        padding: const EdgeInsets.symmetric(
+                                            horizontal: 14, vertical: 6),
+                                        decoration: BoxDecoration(
+                                          gradient: LinearGradient(
+                                            colors: [
+                                              AppColors.accent
+                                                  .withValues(alpha: 0.25),
+                                              Colors.white
+                                                  .withValues(alpha: 0.1),
+                                            ],
+                                          ),
+                                          borderRadius:
+                                              BorderRadius.circular(20),
+                                          border: Border.all(
+                                            color: AppColors.accent,
+                                            width: 1.2,
+                                          ),
+                                        ),
+                                        child: Row(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            const Icon(
+                                              Icons.stars_rounded,
+                                              color: AppColors.accent,
+                                              size: 18,
+                                            ),
+                                            const SizedBox(width: 6),
+                                            Text(
+                                              LanguageService.currentLang.value ==
+                                                      'ar'
+                                                  ? 'رصيد النقاط: ${_student!.pointsBalance} نقطة'
+                                                  : 'Points: ${_student!.pointsBalance} pts',
+                                              style: const TextStyle(
+                                                color: Colors.white,
+                                                fontSize: 13,
+                                                fontWeight: FontWeight.bold,
+                                              ),
+                                            ),
+                                            const SizedBox(width: 4),
+                                            const Icon(
+                                              Icons.arrow_forward_ios,
+                                              color: AppColors.accent,
+                                              size: 10,
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                  ],
                                 ],
                               ),
                             ),
