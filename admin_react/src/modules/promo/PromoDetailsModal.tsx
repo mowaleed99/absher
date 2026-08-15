@@ -10,7 +10,8 @@ interface PromoDetailsModalProps {
 }
 
 export function PromoDetailsModal({ isOpen, onClose, promo, fetchRedemptions }: PromoDetailsModalProps) {
-  const { t, lang } = useI18n();
+  const { lang } = useI18n();
+  const isRtl = lang === 'ar';
   const [redemptions, setRedemptions] = useState<PromoRedemption[]>([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
@@ -22,12 +23,12 @@ export function PromoDetailsModal({ isOpen, onClose, promo, fetchRedemptions }: 
     setIsLoading(true);
     try {
       const res = await fetchRedemptions(promo.id, p, 10);
-      setRedemptions(res.redemptions);
-      setTotal(res.total);
-      setTotalPages(res.totalPages);
+      setRedemptions(res.redemptions || []);
+      setTotal(res.total || 0);
+      setTotalPages(Math.max(1, res.totalPages || 1));
       setPage(p);
     } catch {
-      // ignore
+      setRedemptions([]);
     } finally {
       setIsLoading(false);
     }
@@ -42,160 +43,426 @@ export function PromoDetailsModal({ isOpen, onClose, promo, fetchRedemptions }: 
   if (!isOpen || !promo) return null;
 
   return (
-    <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-container" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '850px', maxHeight: '90vh', overflowY: 'auto' }}>
-        <div className="modal-header">
-          <h3>
-            <i className="fa-solid fa-receipt" style={{ color: '#38bdf8', marginLeft: lang === 'ar' ? '8px' : 0, marginRight: lang === 'en' ? '8px' : 0 }}></i>
-            {t('promo.redemptions_title')} — {promo.code}
-          </h3>
-          <button type="button" className="close-btn" onClick={onClose}>
-            <i className="fa-solid fa-xmark"></i>
+    <div
+      className="modal-overlay active"
+      style={{
+        position: 'fixed',
+        inset: 0,
+        backgroundColor: 'rgba(15, 23, 42, 0.8)',
+        backdropFilter: 'blur(6px)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        zIndex: 9999,
+        padding: '16px',
+      }}
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+    >
+      <div
+        className="modal-box custom-scrollbar"
+        style={{
+          background: 'var(--bg-card)',
+          border: '1px solid var(--border-color)',
+          borderRadius: '16px',
+          width: '100%',
+          maxWidth: '820px',
+          maxHeight: '90vh',
+          display: 'flex',
+          flexDirection: 'column',
+          boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)',
+          overflow: 'hidden',
+        }}
+      >
+        {/* Header */}
+        <div
+          style={{
+            padding: '16px 20px',
+            borderBottom: '1px solid var(--border-color)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            background: 'rgba(255, 255, 255, 0.02)',
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <div
+              style={{
+                width: '36px',
+                height: '36px',
+                borderRadius: '8px',
+                background: 'rgba(56, 189, 248, 0.15)',
+                color: '#38bdf8',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: '1rem',
+              }}
+            >
+              <i className="fa-solid fa-receipt"></i>
+            </div>
+            <div>
+              <h3 style={{ margin: 0, fontSize: '1.1rem', color: 'var(--text-main)', fontWeight: 800 }}>
+                تفاصيل وسجل استخدام كود الخصم ({promo.code})
+              </h3>
+              <p style={{ margin: '2px 0 0', fontSize: '0.78rem', color: 'var(--text-muted)' }}>
+                {promo.campaign_name}
+              </p>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            style={{
+              background: 'transparent',
+              border: 'none',
+              color: 'var(--text-muted)',
+              fontSize: '1.3rem',
+              cursor: 'pointer',
+              lineHeight: 1,
+            }}
+          >
+            &times;
           </button>
         </div>
 
-        <div style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-          {/* Summary KPI Strip */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '1rem' }}>
-            <div style={{ background: 'var(--bg-secondary)', padding: '12px', borderRadius: '10px', border: '1px solid var(--border-color)', textAlign: 'center' }}>
-              <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>رمز الكود</div>
-              <div style={{ fontSize: '1.2rem', fontWeight: 'bold', fontFamily: 'monospace', color: '#38bdf8' }}>{promo.code}</div>
-            </div>
-            <div style={{ background: 'var(--bg-secondary)', padding: '12px', borderRadius: '10px', border: '1px solid var(--border-color)', textAlign: 'center' }}>
-              <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>قيمة الخصم</div>
-              <div style={{ fontSize: '1.2rem', fontWeight: 'bold', color: '#10b981' }}>
-                {promo.discount_type === 'percentage' ? `${promo.discount_value}%` : promo.discount_type === 'free' ? 'مجاني 100%' : `${promo.discount_value} نقطة`}
+        {/* Modal Body */}
+        <div
+          className="custom-scrollbar"
+          style={{
+            padding: '20px',
+            overflowY: 'auto',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '16px',
+          }}
+        >
+          {/* Summary Strip */}
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))',
+              gap: '10px',
+            }}
+          >
+            <div
+              style={{
+                background: '#0d1527',
+                border: '1px solid var(--border-color)',
+                borderRadius: '10px',
+                padding: '10px 14px',
+                textAlign: 'center',
+              }}
+            >
+              <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>رمز الكود</div>
+              <div style={{ fontSize: '1.15rem', fontWeight: 800, fontFamily: 'monospace', color: '#38bdf8', marginTop: '2px' }}>
+                {promo.code}
               </div>
             </div>
-            <div style={{ background: 'var(--bg-secondary)', padding: '12px', borderRadius: '10px', border: '1px solid var(--border-color)', textAlign: 'center' }}>
-              <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>مرات الاستخدام</div>
-              <div style={{ fontSize: '1.2rem', fontWeight: 'bold', color: '#fbbf24' }}>
-                {promo.used_count} {promo.total_usage_limit ? `/ ${promo.total_usage_limit}` : ''}
+
+            <div
+              style={{
+                background: '#0d1527',
+                border: '1px solid var(--border-color)',
+                borderRadius: '10px',
+                padding: '10px 14px',
+                textAlign: 'center',
+              }}
+            >
+              <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>قيمة الخصم</div>
+              <div style={{ fontSize: '1.15rem', fontWeight: 800, color: '#10b981', marginTop: '2px' }}>
+                {promo.discount_type === 'percentage'
+                  ? `خصم ${promo.discount_value}%`
+                  : promo.discount_type === 'free'
+                  ? 'مجاني 100%'
+                  : `${promo.discount_value} نقطة`}
               </div>
             </div>
-            <div style={{ background: 'var(--bg-secondary)', padding: '12px', borderRadius: '10px', border: '1px solid var(--border-color)', textAlign: 'center' }}>
-              <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>إجمالي النقاط المخصومة</div>
-              <div style={{ fontSize: '1.2rem', fontWeight: 'bold', color: '#a855f7' }}>
-                {promo.points_saved || 0} نقطة
+
+            <div
+              style={{
+                background: '#0d1527',
+                border: '1px solid var(--border-color)',
+                borderRadius: '10px',
+                padding: '10px 14px',
+                textAlign: 'center',
+              }}
+            >
+              <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>مرات الاستخدام</div>
+              <div style={{ fontSize: '1.15rem', fontWeight: 800, color: '#fbbf24', marginTop: '2px' }}>
+                {promo.used_count || 0} {promo.total_usage_limit ? `/ ${promo.total_usage_limit}` : ''}
+              </div>
+            </div>
+
+            <div
+              style={{
+                background: '#0d1527',
+                border: '1px solid var(--border-color)',
+                borderRadius: '10px',
+                padding: '10px 14px',
+                textAlign: 'center',
+              }}
+            >
+              <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>النقاط الموفرة</div>
+              <div style={{ fontSize: '1.15rem', fontWeight: 800, color: '#c084fc', marginTop: '2px' }}>
+                {(promo.points_saved || 0).toLocaleString()} نقطة
               </div>
             </div>
           </div>
 
-          {/* Redemptions Table */}
+          {/* Redemptions Table Header & Refresh */}
           <div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-              <h4 style={{ margin: 0, fontSize: '1.05rem', fontWeight: 700 }}>
-                سجل الاستخدامات ({total})
-              </h4>
+            <div
+              style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                marginBottom: '10px',
+              }}
+            >
+              <div style={{ fontSize: '0.9rem', fontWeight: 700, color: 'var(--text-main)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <i className="fa-solid fa-list-check" style={{ color: '#38bdf8' }}></i>
+                <span>سجل الاستخدامات ({total})</span>
+              </div>
               <button
                 type="button"
-                className="btn-secondary"
-                style={{ padding: '4px 10px', fontSize: '0.82rem' }}
                 onClick={() => loadData(page)}
                 disabled={isLoading}
+                style={{
+                  height: '30px',
+                  padding: '0 10px',
+                  borderRadius: '6px',
+                  background: '#0d1527',
+                  border: '1px solid var(--border-color)',
+                  color: 'var(--text-muted)',
+                  fontSize: '0.78rem',
+                  cursor: 'pointer',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                }}
               >
-                <i className={`fa-solid fa-arrows-rotate ${isLoading ? 'fa-spin' : ''}`}></i> تحديث
+                <i className={`fa-solid fa-rotate ${isLoading ? 'fa-spin' : ''}`}></i>
+                <span>تحديث</span>
               </button>
             </div>
 
+            {/* Redemptions Table */}
             {isLoading ? (
-              <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-secondary)' }}>
-                <i className="fa-solid fa-spinner fa-spin" style={{ fontSize: '1.5rem', marginBottom: '8px' }}></i>
-                <p>جارِ تحميل سجل الاستخدامات...</p>
+              <div style={{ textAlign: 'center', padding: '30px 10px', color: 'var(--text-muted)' }}>
+                <i className="fa-solid fa-circle-notch fa-spin fa-xl"></i>
+                <p style={{ marginTop: '8px', fontSize: '0.82rem' }}>جارِ تحميل سجل الاستخدامات...</p>
               </div>
             ) : redemptions.length === 0 ? (
-              <div style={{ textAlign: 'center', padding: '2rem', background: 'var(--bg-secondary)', borderRadius: '10px', color: 'var(--text-secondary)' }}>
-                <i className="fa-solid fa-receipt" style={{ fontSize: '2rem', marginBottom: '8px', opacity: 0.5 }}></i>
-                <p>{t('promo.no_redemptions')}</p>
+              <div
+                style={{
+                  textAlign: 'center',
+                  padding: '30px 10px',
+                  background: '#0d1527',
+                  border: '1px solid var(--border-color)',
+                  borderRadius: '10px',
+                  color: 'var(--text-muted)',
+                }}
+              >
+                <i className="fa-solid fa-ticket" style={{ fontSize: '1.8rem', marginBottom: '8px', opacity: 0.4 }}></i>
+                <p style={{ margin: 0, fontSize: '0.85rem' }}>لم يتم استخدام هذا الكود في أي طلب حتى الآن.</p>
               </div>
             ) : (
-              <div style={{ overflowX: 'auto', border: '1px solid var(--border-color)', borderRadius: '10px' }}>
-                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.88rem' }}>
-                  <thead>
-                    <tr style={{ background: 'var(--bg-secondary)', borderBottom: '1px solid var(--border-color)', textAlign: lang === 'ar' ? 'right' : 'left' }}>
-                      <th style={{ padding: '10px 12px' }}>رقم الطلب</th>
-                      <th style={{ padding: '10px 12px' }}>اسم الطالب</th>
-                      <th style={{ padding: '10px 12px' }}>الخدمة</th>
-                      <th style={{ padding: '10px 12px' }}>السعر الأصلي</th>
-                      <th style={{ padding: '10px 12px' }}>الخصم</th>
-                      <th style={{ padding: '10px 12px' }}>المبلغ المدفوع</th>
-                      <th style={{ padding: '10px 12px' }}>الحالة</th>
-                      <th style={{ padding: '10px 12px' }}>التاريخ</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {redemptions.map((r) => (
-                      <tr key={r.id} style={{ borderBottom: '1px solid var(--border-color)' }}>
-                        <td style={{ padding: '10px 12px', fontWeight: 'bold' }}>#{r.request_id_snapshot}</td>
-                        <td style={{ padding: '10px 12px' }}>
-                          <div>{r.student_name_snapshot || 'طالب'}</div>
-                          <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{r.student_phone_snapshot}</div>
-                        </td>
-                        <td style={{ padding: '10px 12px' }}>{r.service_title_snapshot}</td>
-                        <td style={{ padding: '10px 12px' }}>{r.original_price_points} نقطة</td>
-                        <td style={{ padding: '10px 12px', color: '#10b981', fontWeight: 'bold' }}>-{r.discount_points} نقطة</td>
-                        <td style={{ padding: '10px 12px', fontWeight: 'bold' }}>{r.final_price_points} نقطة</td>
-                        <td style={{ padding: '10px 12px' }}>
-                          {r.status === 'applied' ? (
-                            <span style={{ background: 'rgba(16, 185, 129, 0.15)', color: '#10b981', padding: '3px 8px', borderRadius: '6px', fontSize: '0.78rem', fontWeight: 600 }}>
-                              تم الاستخدام
-                            </span>
-                          ) : (
-                            <div>
-                              <span style={{ background: 'rgba(239, 68, 68, 0.15)', color: '#ef4444', padding: '3px 8px', borderRadius: '6px', fontSize: '0.78rem', fontWeight: 600 }}>
-                                مسترجع (ملغي)
-                              </span>
-                              {r.reversed_reason && (
-                                <div style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', marginTop: '4px' }}>
-                                  السبب: {r.reversed_reason}
-                                </div>
-                              )}
-                            </div>
-                          )}
-                        </td>
-                        <td style={{ padding: '10px 12px', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
-                          {r.formatted_date || r.created_at}
-                        </td>
+              <div
+                style={{
+                  background: '#0d1527',
+                  border: '1px solid var(--border-color)',
+                  borderRadius: '10px',
+                  overflow: 'hidden',
+                }}
+              >
+                <div style={{ overflowX: 'auto' }}>
+                  <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.82rem' }}>
+                    <thead>
+                      <tr
+                        style={{
+                          background: 'rgba(255, 255, 255, 0.03)',
+                          borderBottom: '1px solid var(--border-color)',
+                          textAlign: isRtl ? 'right' : 'left',
+                          color: 'var(--text-muted)',
+                          fontSize: '0.76rem',
+                          fontWeight: 700,
+                        }}
+                      >
+                        <th style={{ padding: '10px 12px' }}>#</th>
+                        <th style={{ padding: '10px 12px' }}>الطالب</th>
+                        <th style={{ padding: '10px 12px' }}>رقم الطلب</th>
+                        <th style={{ padding: '10px 12px' }}>قيمة الخصم</th>
+                        <th style={{ padding: '10px 12px' }}>الحالة</th>
+                        <th style={{ padding: '10px 12px' }}>تاريخ الاستخدام</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
+                    </thead>
+                    <tbody>
+                      {redemptions.map((r, idx) => (
+                        <tr
+                          key={r.id || idx}
+                          style={{
+                            borderBottom: '1px solid var(--border-color)',
+                            transition: 'background 0.1s ease',
+                          }}
+                        >
+                          <td style={{ padding: '10px 12px', color: 'var(--text-muted)' }}>{r.id}</td>
+                          <td style={{ padding: '10px 12px' }}>
+                            <div style={{ fontWeight: 600, color: 'var(--text-main)' }}>
+                              {r.student_name_snapshot || (r.student_id ? `طالب #${r.student_id}` : 'طالب')}
+                            </div>
+                            {r.student_phone_snapshot && (
+                              <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>{r.student_phone_snapshot}</div>
+                            )}
+                          </td>
+                          <td style={{ padding: '10px 12px' }}>
+                            <span
+                              style={{
+                                background: 'rgba(56, 189, 248, 0.1)',
+                                color: '#38bdf8',
+                                padding: '2px 6px',
+                                borderRadius: '4px',
+                                fontSize: '0.75rem',
+                                fontWeight: 700,
+                              }}
+                            >
+                              #{r.service_request_id || r.request_id_snapshot}
+                            </span>
+                          </td>
+                          <td style={{ padding: '10px 12px', color: '#10b981', fontWeight: 700 }}>
+                            -{r.discount_points} نقطة
+                          </td>
+                          <td style={{ padding: '10px 12px' }}>
+                            {r.status === 'reversed' ? (
+                              <span
+                                style={{
+                                  background: 'rgba(239, 68, 68, 0.15)',
+                                  color: '#f87171',
+                                  padding: '2px 6px',
+                                  borderRadius: '4px',
+                                  fontSize: '0.72rem',
+                                  fontWeight: 700,
+                                }}
+                              >
+                                ملغي (مسترجع)
+                              </span>
+                            ) : (
+                              <span
+                                style={{
+                                  background: 'rgba(16, 185, 129, 0.15)',
+                                  color: '#10b981',
+                                  padding: '2px 6px',
+                                  borderRadius: '4px',
+                                  fontSize: '0.72rem',
+                                  fontWeight: 700,
+                                }}
+                              >
+                                مطبق
+                              </span>
+                            )}
+                          </td>
+                          <td style={{ padding: '10px 12px', color: 'var(--text-muted)', fontSize: '0.75rem' }}>
+                            {r.formatted_date || r.created_at}
+                            {r.status === 'reversed' && r.formatted_reversed_date && (
+                              <div style={{ fontSize: '0.7rem', color: '#f87171' }}>
+                                استرجاع: {r.formatted_reversed_date}
+                              </div>
+                            )}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
 
-            {/* Pagination Controls */}
-            {totalPages > 1 && (
-              <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px', marginTop: '1rem' }}>
-                <button
-                  type="button"
-                  className="btn-secondary"
-                  style={{ padding: '4px 10px', fontSize: '0.82rem' }}
-                  disabled={page <= 1 || isLoading}
-                  onClick={() => loadData(page - 1)}
-                >
-                  السابق
-                </button>
-                <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
-                  صفحة {page} من {totalPages}
-                </span>
-                <button
-                  type="button"
-                  className="btn-secondary"
-                  style={{ padding: '4px 10px', fontSize: '0.82rem' }}
-                  disabled={page >= totalPages || isLoading}
-                  onClick={() => loadData(page + 1)}
-                >
-                  التالي
-                </button>
+                {/* Pagination */}
+                {totalPages > 1 && (
+                  <div
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      padding: '10px 14px',
+                      borderTop: '1px solid var(--border-color)',
+                      background: 'rgba(255, 255, 255, 0.01)',
+                      fontSize: '0.8rem',
+                    }}
+                  >
+                    <span style={{ color: 'var(--text-muted)' }}>
+                      صفحة {page} من {totalPages}
+                    </span>
+                    <div style={{ display: 'flex', gap: '6px' }}>
+                      <button
+                        type="button"
+                        onClick={() => loadData(page - 1)}
+                        disabled={page <= 1 || isLoading}
+                        style={{
+                          height: '28px',
+                          padding: '0 10px',
+                          borderRadius: '6px',
+                          background: 'var(--bg-card)',
+                          border: '1px solid var(--border-color)',
+                          color: page <= 1 ? 'var(--text-muted)' : 'var(--text-main)',
+                          cursor: page <= 1 ? 'not-allowed' : 'pointer',
+                          fontSize: '0.78rem',
+                        }}
+                      >
+                        السابق
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => loadData(page + 1)}
+                        disabled={page >= totalPages || isLoading}
+                        style={{
+                          height: '28px',
+                          padding: '0 10px',
+                          borderRadius: '6px',
+                          background: 'var(--bg-card)',
+                          border: '1px solid var(--border-color)',
+                          color: page >= totalPages ? 'var(--text-muted)' : 'var(--text-main)',
+                          cursor: page >= totalPages ? 'not-allowed' : 'pointer',
+                          fontSize: '0.78rem',
+                        }}
+                      >
+                        التالي
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
           </div>
+        </div>
 
-          <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '0.5rem' }}>
-            <button type="button" className="btn-primary" onClick={onClose}>
-              إغلاق
-            </button>
-          </div>
+        {/* Footer */}
+        <div
+          style={{
+            padding: '12px 20px',
+            borderTop: '1px solid var(--border-color)',
+            background: 'rgba(255, 255, 255, 0.02)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'flex-end',
+          }}
+        >
+          <button
+            type="button"
+            onClick={onClose}
+            style={{
+              height: '36px',
+              padding: '0 18px',
+              borderRadius: '8px',
+              background: '#0d1527',
+              border: '1px solid var(--border-color)',
+              color: 'var(--text-main)',
+              fontSize: '0.85rem',
+              fontWeight: 600,
+              cursor: 'pointer',
+            }}
+          >
+            إغلاق
+          </button>
         </div>
       </div>
     </div>
