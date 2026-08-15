@@ -13,8 +13,9 @@ export interface NewsItem {
 
 export interface NewsFormData {
   title_ar: string;
-  title_en: string;
+  title_en?: string;
   content_ar: string;
-  content_en: string;
-  image_url: string;
+  content_en?: string;
+  image_url?: string;
+  remove_image?: boolean;
 }

@@ -1,6 +1,6 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { NotificationFormData } from '../../types/notification';
+import React, { useState, useRef } from 'react';
 import { useI18n } from '../../lib/i18n';
+import { NotificationFormData } from '../../types/notification';
 
 interface SendNotificationModalProps {
   isOpen: boolean;
@@ -10,61 +10,56 @@ interface SendNotificationModalProps {
 }
 
 export function SendNotificationModal({ isOpen, onClose, onSubmit, showToast }: SendNotificationModalProps) {
-  const { t } = useI18n();
-  const submittingRef = useRef(false);
+  const { t, lang } = useI18n();
+  const isRtl = lang === 'ar';
+
+  const [titleAr, setTitleAr] = useState('');
+  const [titleEn, setTitleEn] = useState('');
+  const [bodyAr, setBodyAr] = useState('');
+  const [bodyEn, setBodyEn] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const [title, setTitle] = useState('');
-  const [body, setBody] = useState('');
-
-  useEffect(() => {
-    if (isOpen) {
-      setTitle('');
-      setBody('');
-    }
-  }, [isOpen]);
-
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && isOpen && !isSubmitting) {
-        onClose();
-      }
-    };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isOpen, isSubmitting, onClose]);
+  const submitLockRef = useRef(false);
 
   if (!isOpen) return null;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (submittingRef.current) return;
+    if (submitLockRef.current || isSubmitting) return;
 
-    const trimmedTitle = title.trim();
-    const trimmedBody = body.trim();
-
-    if (!trimmedTitle || !trimmedBody) {
-      showToast(t('msg.validation_required'), 'error');
+    if (!titleAr.trim() && !titleEn.trim()) {
+      showToast(isRtl ? 'يرجى إدخال عنوان التنبيه' : 'Please enter notification title', 'error');
       return;
     }
 
-    submittingRef.current = true;
+    if (!bodyAr.trim() && !bodyEn.trim()) {
+      showToast(isRtl ? 'يرجى إدخال نص التنبيه' : 'Please enter notification content', 'error');
+      return;
+    }
+
+    submitLockRef.current = true;
     setIsSubmitting(true);
 
     try {
       const res = await onSubmit({
-        title: trimmedTitle,
-        body: trimmedBody,
+        title_ar: titleAr.trim() || titleEn.trim(),
+        title_en: titleEn.trim() || titleAr.trim(),
+        body_ar: bodyAr.trim() || bodyEn.trim(),
+        body_en: bodyEn.trim() || bodyAr.trim(),
       });
 
       if (res.success) {
-        showToast(t('msg.notif_sent'), 'success');
+        showToast(isRtl ? 'تم إرسال التنبيه العام بنجاح' : 'Notification broadcasted successfully', 'success');
         onClose();
+        setTitleAr('');
+        setTitleEn('');
+        setBodyAr('');
+        setBodyEn('');
       } else {
-        showToast(res.error || t('msg.error_send_notif'), 'error');
+        showToast(res.error || (isRtl ? 'فشل إرسال التنبيه' : 'Failed to send notification'), 'error');
       }
     } finally {
-      submittingRef.current = false;
+      submitLockRef.current = false;
       setIsSubmitting(false);
     }
   };
@@ -72,66 +67,65 @@ export function SendNotificationModal({ isOpen, onClose, onSubmit, showToast }: 
   return (
     <div
       className="modal-overlay active"
-      onClick={(e) => {
-        if (e.target === e.currentTarget && !isSubmitting) onClose();
-      }}
       style={{
         position: 'fixed',
         inset: 0,
         backgroundColor: 'rgba(15, 23, 42, 0.75)',
-        backdropFilter: 'blur(4px)',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
         zIndex: 9999,
         padding: '16px',
       }}
+      onClick={(e) => {
+        if (e.target === e.currentTarget && !isSubmitting) onClose();
+      }}
     >
       <div
-        className="modal-box"
+        className="modal-box custom-scrollbar"
         style={{
           background: 'var(--bg-card)',
           border: '1px solid var(--border-color)',
-          borderRadius: '16px',
+          borderRadius: '14px',
           width: '100%',
-          maxWidth: '520px',
-          boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)',
+          maxWidth: '560px',
+          maxHeight: '90vh',
           display: 'flex',
           flexDirection: 'column',
-          animation: 'fadeIn 0.2s ease-out',
+          boxShadow: '0 20px 40px rgba(0,0,0,0.4)',
+          overflow: 'hidden',
         }}
       >
         {/* Header */}
         <div
           style={{
-            padding: '18px 22px',
+            padding: '16px 20px',
             borderBottom: '1px solid var(--border-color)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
+            background: 'rgba(255, 255, 255, 0.02)',
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
             <div
               style={{
-                width: '38px',
-                height: '38px',
-                borderRadius: '10px',
+                width: '36px',
+                height: '36px',
+                borderRadius: '8px',
                 background: 'rgba(245, 158, 11, 0.15)',
                 color: '#fbbf24',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                fontSize: '1.1rem',
+                fontSize: '1rem',
               }}
             >
               <i className="fa-solid fa-bullhorn"></i>
             </div>
-            <div>
-              <h3 style={{ margin: 0, fontSize: '1.15rem', fontWeight: 700, color: 'var(--text-main)' }}>
-                {t('notifications.send_notification')}
-              </h3>
-            </div>
+            <h3 style={{ margin: 0, fontSize: '1.1rem', color: 'var(--text-main)', fontWeight: 700 }}>
+              {t('notifications.send_notification')}
+            </h3>
           </div>
           <button
             type="button"
@@ -141,11 +135,8 @@ export function SendNotificationModal({ isOpen, onClose, onSubmit, showToast }: 
               background: 'transparent',
               border: 'none',
               color: 'var(--text-muted)',
-              fontSize: '1.4rem',
-              cursor: isSubmitting ? 'not-allowed' : 'pointer',
-              lineHeight: 1,
-              padding: '4px',
-              borderRadius: '6px',
+              fontSize: '1.2rem',
+              cursor: 'pointer',
             }}
           >
             &times;
@@ -153,51 +144,159 @@ export function SendNotificationModal({ isOpen, onClose, onSubmit, showToast }: 
         </div>
 
         {/* Form Body */}
-        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column' }}>
-          <div style={{ padding: '20px 22px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
-            {/* Title */}
-            <div className="form-group" style={{ margin: 0 }}>
-              <label style={{ display: 'block', marginBottom: '6px', fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-main)' }}>
-                {t('notifications.notif_title')} <span style={{ color: '#ef4444' }}>*</span>
-              </label>
-              <input
-                type="text"
-                className="form-control"
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                placeholder="عنوان التنبيه أو البث..."
-                required
-                disabled={isSubmitting}
-                style={{ width: '100%', height: '40px', borderRadius: '8px', padding: '0 12px' }}
-              />
+        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', flex: 1, overflow: 'hidden' }}>
+          <div
+            className="custom-scrollbar"
+            style={{
+              padding: '20px',
+              overflowY: 'auto',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '16px',
+            }}
+          >
+            {/* Arabic Section */}
+            <div
+              style={{
+                background: 'rgba(0, 0, 0, 0.18)',
+                border: '1px solid rgba(255, 255, 255, 0.06)',
+                borderRadius: '10px',
+                padding: '12px 14px',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '10px',
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#fbbf24', fontSize: '0.78rem', fontWeight: 700 }}>
+                <i className="fa-solid fa-language"></i>
+                <span>عنوان ونص التنبيه بالعربية (Arabic)</span>
+              </div>
+
+              <div>
+                <label style={{ display: 'block', marginBottom: '4px', fontSize: '0.78rem', color: 'var(--text-muted)' }}>
+                  {t('notifications.title_ar')} <span style={{ color: '#ef4444' }}>*</span>
+                </label>
+                <input
+                  type="text"
+                  className="form-control"
+                  value={titleAr}
+                  onChange={(e) => setTitleAr(e.target.value)}
+                  placeholder="عنوان التنبيه بالعربية..."
+                  dir="rtl"
+                  style={{
+                    width: '100%',
+                    height: '36px',
+                    borderRadius: '8px',
+                    background: '#0d1527',
+                    border: '1px solid #1e293b',
+                    color: '#f8fafc',
+                    padding: '0 10px',
+                    fontSize: '0.85rem',
+                  }}
+                />
+              </div>
+
+              <div>
+                <label style={{ display: 'block', marginBottom: '4px', fontSize: '0.78rem', color: 'var(--text-muted)' }}>
+                  {t('notifications.body_ar')} <span style={{ color: '#ef4444' }}>*</span>
+                </label>
+                <textarea
+                  className="form-control"
+                  value={bodyAr}
+                  onChange={(e) => setBodyAr(e.target.value)}
+                  placeholder="نص ومحتوى التنبيه بالعربية..."
+                  rows={3}
+                  dir="rtl"
+                  style={{
+                    width: '100%',
+                    borderRadius: '8px',
+                    background: '#0d1527',
+                    border: '1px solid #1e293b',
+                    color: '#f8fafc',
+                    padding: '8px 10px',
+                    fontSize: '0.82rem',
+                    resize: 'vertical',
+                  }}
+                />
+              </div>
             </div>
 
-            {/* Body */}
-            <div className="form-group" style={{ margin: 0 }}>
-              <label style={{ display: 'block', marginBottom: '6px', fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-main)' }}>
-                {t('notifications.notif_body')} <span style={{ color: '#ef4444' }}>*</span>
-              </label>
-              <textarea
-                className="form-control"
-                value={body}
-                onChange={(e) => setBody(e.target.value)}
-                placeholder="نص التنبيه والمحتوى العام..."
-                rows={4}
-                required
-                disabled={isSubmitting}
-                style={{ width: '100%', borderRadius: '8px', padding: '10px 12px', resize: 'vertical' }}
-              />
+            {/* English Section */}
+            <div
+              style={{
+                background: 'rgba(0, 0, 0, 0.18)',
+                border: '1px solid rgba(255, 255, 255, 0.06)',
+                borderRadius: '10px',
+                padding: '12px 14px',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '10px',
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#a78bfa', fontSize: '0.78rem', fontWeight: 700 }}>
+                <i className="fa-solid fa-globe"></i>
+                <span>Notification Title & Body in English (Optional)</span>
+              </div>
+
+              <div>
+                <label style={{ display: 'block', marginBottom: '4px', fontSize: '0.78rem', color: 'var(--text-muted)' }}>
+                  {t('notifications.title_en')}
+                </label>
+                <input
+                  type="text"
+                  className="form-control"
+                  value={titleEn}
+                  onChange={(e) => setTitleEn(e.target.value)}
+                  placeholder="Enter notification title in English..."
+                  dir="ltr"
+                  style={{
+                    width: '100%',
+                    height: '36px',
+                    borderRadius: '8px',
+                    background: '#0d1527',
+                    border: '1px solid #1e293b',
+                    color: '#f8fafc',
+                    padding: '0 10px',
+                    fontSize: '0.85rem',
+                  }}
+                />
+              </div>
+
+              <div>
+                <label style={{ display: 'block', marginBottom: '4px', fontSize: '0.78rem', color: 'var(--text-muted)' }}>
+                  {t('notifications.body_en')}
+                </label>
+                <textarea
+                  className="form-control"
+                  value={bodyEn}
+                  onChange={(e) => setBodyEn(e.target.value)}
+                  placeholder="Enter notification body in English..."
+                  rows={3}
+                  dir="ltr"
+                  style={{
+                    width: '100%',
+                    borderRadius: '8px',
+                    background: '#0d1527',
+                    border: '1px solid #1e293b',
+                    color: '#f8fafc',
+                    padding: '8px 10px',
+                    fontSize: '0.82rem',
+                    resize: 'vertical',
+                  }}
+                />
+              </div>
             </div>
           </div>
 
-          {/* Footer */}
+          {/* Footer Actions */}
           <div
             style={{
-              padding: '14px 22px',
+              padding: '14px 20px',
               borderTop: '1px solid var(--border-color)',
               display: 'flex',
               justifyContent: 'flex-end',
               gap: '10px',
+              background: 'rgba(255, 255, 255, 0.02)',
             }}
           >
             <button
@@ -205,7 +304,7 @@ export function SendNotificationModal({ isOpen, onClose, onSubmit, showToast }: 
               className="btn btn-secondary"
               onClick={onClose}
               disabled={isSubmitting}
-              style={{ padding: '8px 16px', borderRadius: '8px', fontSize: '0.85rem' }}
+              style={{ padding: '8px 18px', borderRadius: '8px', fontSize: '0.85rem' }}
             >
               {t('btn.cancel')}
             </button>
@@ -214,7 +313,7 @@ export function SendNotificationModal({ isOpen, onClose, onSubmit, showToast }: 
               className="btn btn-primary"
               disabled={isSubmitting}
               style={{
-                padding: '8px 20px',
+                padding: '8px 22px',
                 borderRadius: '8px',
                 fontSize: '0.85rem',
                 fontWeight: 600,
@@ -224,12 +323,12 @@ export function SendNotificationModal({ isOpen, onClose, onSubmit, showToast }: 
               }}
             >
               {isSubmitting ? (
-                <>
-                  <i className="fa-solid fa-circle-notch fa-spin"></i>
-                  <span>{t('btn.send')}...</span>
-                </>
+                <i className="fa-solid fa-circle-notch fa-spin"></i>
               ) : (
-                <span>{t('btn.send')}</span>
+                <>
+                  <i className="fa-solid fa-paper-plane"></i>
+                  <span>{t('btn.send')}</span>
+                </>
               )}
             </button>
           </div>

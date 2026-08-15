@@ -6,19 +6,33 @@ import { useI18n } from '../../lib/i18n';
 import { getMediaUrl, hasMedia } from '../../lib/media';
 import { useConfirmDialog } from '../../components/ConfirmDialog';
 import { useToast } from '../../components/Toast';
+import { useBadges } from '../../contexts/BadgesContext';
+import { apiFetch } from '../../lib/apiFetch';
 
 export function ChatsModule() {
   const { t, lang } = useI18n();
   const isRtl = lang === 'ar';
   const { confirm } = useConfirmDialog();
   const { showToast } = useToast();
+  const { refetchBadges } = useBadges();
   const [searchParams] = useSearchParams();
   const studentIdParam = searchParams.get('student_id');
 
-  const { chats, isLoading, error, sendReply, editMessage, deleteMessage, deleteConversation } = useChats();
+  const {
+    chats,
+    isLoading,
+    error,
+    sendReply,
+    editMessage,
+    deleteMessage,
+    deleteConversation,
+    ensureSupportChat,
+    refetch,
+  } = useChats();
 
   const [selectedChatId, setSelectedChatId] = useState<number | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
+  const [isEnsuringChat, setIsEnsuringChat] = useState(false);
 
   // Reply Composer State
   const [inputText, setInputText] = useState('');
@@ -30,24 +44,77 @@ export function ChatsModule() {
   const [editingMsg, setEditingMsg] = useState<ChatMessage | null>(null);
   const [editMsgText, setEditMsgText] = useState('');
 
-  const messagesEndRef = useRef<HTMLDivElement>(null);
+  // Student Profile Modal State
+  const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
 
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  // Lightbox Image Preview
+  const [lightboxImageUrl, setLightboxImageUrl] = useState<string | null>(null);
+
+  const threadRef = useRef<HTMLDivElement>(null);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const isNearBottomRef = useRef<boolean>(true);
+  const prevChatIdRef = useRef<number | null>(null);
+  const prevLatestMsgIdRef = useRef<number | null>(null);
+  const [hasUnreadBelow, setHasUnreadBelow] = useState(false);
+
+  const scrollToBottom = (behavior: ScrollBehavior = 'smooth') => {
+    messagesEndRef.current?.scrollIntoView({ behavior });
+    isNearBottomRef.current = true;
+    setHasUnreadBelow(false);
   };
 
-  // Handle Deep-Link /chats?student_id=X
+  const handleThreadScroll = () => {
+    if (!threadRef.current) return;
+    const { scrollTop, scrollHeight, clientHeight } = threadRef.current;
+    const isNear = scrollHeight - scrollTop - clientHeight < 100;
+    isNearBottomRef.current = isNear;
+    if (isNear) {
+      setHasUnreadBelow(false);
+    }
+  };
+
+  // Auto-expanding textarea height (starts at 48px, max 120px)
   useEffect(() => {
-    if (studentIdParam && chats.length > 0) {
+    if (textareaRef.current) {
+      textareaRef.current.style.height = 'auto';
+      const scrollHeight = textareaRef.current.scrollHeight;
+      textareaRef.current.style.height = `${Math.min(Math.max(scrollHeight, 48), 120)}px`;
+    }
+  }, [inputText]);
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      if (!isSending && (inputText.trim() || attachedImageUrl)) {
+        handleSendReply(e as unknown as React.FormEvent);
+      }
+    }
+  };
+
+  // Addendum A: Deep-Link /chats?student_id=X never dead-ends
+  useEffect(() => {
+    if (studentIdParam) {
       const targetStudentId = parseInt(studentIdParam, 10);
-      if (!isNaN(targetStudentId)) {
+      if (!isNaN(targetStudentId) && targetStudentId > 0) {
         const found = chats.find((c) => c.student_id === targetStudentId);
         if (found) {
           setSelectedChatId(found.id);
+        } else if (!isEnsuringChat && !isLoading) {
+          setIsEnsuringChat(true);
+          ensureSupportChat(targetStudentId).then((res) => {
+            setIsEnsuringChat(false);
+            if (res.success && res.chatId) {
+              setSelectedChatId(res.chatId);
+              setTimeout(() => textareaRef.current?.focus(), 200);
+            }
+          });
         }
       }
     }
-  }, [studentIdParam, chats]);
+  }, [studentIdParam, chats, isLoading, isEnsuringChat, ensureSupportChat]);
 
   // Set default selection if none selected and chats exist
   useEffect(() => {
@@ -60,9 +127,34 @@ export function ChatsModule() {
     return chats.find((c) => c.id === selectedChatId) || null;
   }, [chats, selectedChatId]);
 
+  // Smart Auto-Scroll: Only auto-scrolls on conversation change or when already near bottom
   useEffect(() => {
-    if (activeChat) {
-      scrollToBottom();
+    if (!activeChat) return;
+
+    const activeMessages = activeChat.messages ? activeChat.messages.filter((m) => !m.deleted) : [];
+    const latestMsg = activeMessages.length > 0 ? activeMessages[activeMessages.length - 1] : null;
+    const latestMsgId = latestMsg ? latestMsg.id : null;
+
+    // Case 1: Switched to a different conversation
+    if (prevChatIdRef.current !== activeChat.id) {
+      prevChatIdRef.current = activeChat.id;
+      prevLatestMsgIdRef.current = latestMsgId;
+      isNearBottomRef.current = true;
+      setHasUnreadBelow(false);
+      setTimeout(() => scrollToBottom('auto'), 50);
+      return;
+    }
+
+    // Case 2: Same conversation, new message arrived from polling
+    if (latestMsgId !== null && latestMsgId !== prevLatestMsgIdRef.current) {
+      prevLatestMsgIdRef.current = latestMsgId;
+      if (isNearBottomRef.current) {
+        // Admin is at the bottom -> follow new message smoothly
+        setTimeout(() => scrollToBottom('smooth'), 50);
+      } else {
+        // Admin is reading older messages -> preserve reading position, show indicator
+        setHasUnreadBelow(true);
+      }
     }
   }, [activeChat]);
 
@@ -73,31 +165,71 @@ export function ChatsModule() {
       const matchName = (c.student_name || '').toLowerCase().includes(q);
       const matchPhone = (c.phone || '').toLowerCase().includes(q);
       const matchMsg = (c.last_msg || '').toLowerCase().includes(q);
-      return matchName || matchPhone || matchMsg;
+      const matchUni = (c.student_uni || '').toLowerCase().includes(q);
+      const matchId = c.student_id ? String(c.student_id).includes(q) : false;
+      return matchName || matchPhone || matchMsg || matchUni || matchId;
     });
   }, [chats, searchTerm]);
 
+  // Authoritative attention state: ONLY latest active non-deleted message sender === 'student'
   const isAttentionRequired = (c: ChatConversation) => {
-    const st = (c.status || '').trim();
-    if (st === 'رسالة جديدة' || st === 'قيد الانتظار' || st === 'جديد') return true;
-    if (c.messages.length > 0) {
-      const lastMsg = c.messages[c.messages.length - 1];
-      return lastMsg && (lastMsg.sender === 'student');
-    }
-    return false;
+    if (!Array.isArray(c.messages) || c.messages.length === 0) return false;
+    const activeMessages = c.messages.filter((m) => !m.deleted);
+    if (activeMessages.length === 0) return false;
+    const lastMsg = activeMessages[activeMessages.length - 1];
+    return lastMsg && lastMsg.sender === 'student';
   };
 
-  const handleImageFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  // Safe reset of file input so the EXACT same file can be chosen repeatedly
+  const resetFileInput = () => {
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
+  const handleImageFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      showToast(isRtl ? 'يرجى اختيار ملف صورة صالح' : 'Please select a valid image file', 'error');
+      resetFileInput();
+      return;
+    }
+
+    // Try direct multipart upload to /api_staging/upload/image.php?folder=chat
+    try {
+      const formData = new FormData();
+      formData.append('image', file);
+      const token = localStorage.getItem('adminToken');
+      const uploadRes = await fetch('/api_staging/upload/image.php?folder=chat', {
+        method: 'POST',
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+        body: formData,
+      });
+      const uploadData = await uploadRes.json();
+      if (uploadRes.ok && uploadData.success && uploadData.data?.url) {
+        setAttachedImageUrl(uploadData.data.url);
+        resetFileInput();
+        return;
+      }
+    } catch {
+      // Fallback to FileReader base64
+    }
 
     const reader = new FileReader();
     reader.onload = () => {
       if (typeof reader.result === 'string') {
         setAttachedImageUrl(reader.result);
+        resetFileInput();
       }
     };
     reader.readAsDataURL(file);
+  };
+
+  const handleRemoveAttachedImage = () => {
+    setAttachedImageUrl('');
+    resetFileInput();
   };
 
   const handleSendReply = async (e: React.FormEvent) => {
@@ -115,16 +247,23 @@ export function ChatsModule() {
         message_type: attachedImageUrl ? 'image' : 'text',
         image_url: attachedImageUrl || undefined,
         quote_text: replyingToMessage ? replyingToMessage.text : undefined,
-        quote_sender: replyingToMessage ? (replyingToMessage.sender === 'admin' ? 'الإدارة' : activeChat.student_name) : undefined,
+        quote_sender: replyingToMessage
+          ? replyingToMessage.sender === 'admin'
+            ? 'الإدارة'
+            : activeChat.student_name
+          : undefined,
       });
 
       if (res.success) {
         setInputText('');
         setAttachedImageUrl('');
         setReplyingToMessage(null);
-        scrollToBottom();
+        resetFileInput();
+        setTimeout(() => scrollToBottom('smooth'), 50);
+        // Immediate attention badge invalidation
+        refetchBadges();
       } else {
-        showToast(res.error || t('msg.error_send_msg'), 'error');
+        showToast(res.error || (isRtl ? 'فشل إرسال الرسالة' : 'Failed to send message'), 'error');
       }
     } finally {
       setIsSending(false);
@@ -138,11 +277,12 @@ export function ChatsModule() {
 
     const res = await editMessage(editingMsg.id, trimmed);
     if (res.success) {
-      showToast(t('msg.msg_edited'), 'success');
+      showToast(isRtl ? 'تم تعديل الرسالة بنجاح' : 'Message edited successfully', 'success');
       setEditingMsg(null);
       setEditMsgText('');
+      refetchBadges();
     } else {
-      showToast(res.error || t('msg.error_edit_msg'), 'error');
+      showToast(res.error || (isRtl ? 'فشل تعديل الرسالة' : 'Failed to edit message'), 'error');
     }
   };
 
@@ -156,9 +296,10 @@ export function ChatsModule() {
 
     const res = await deleteMessage(m.id);
     if (res.success) {
-      showToast(t('msg.msg_deleted'), 'success');
+      showToast(isRtl ? 'تم حذف الرسالة بنجاح' : 'Message deleted successfully', 'success');
+      refetchBadges();
     } else {
-      showToast(res.error || t('msg.error_delete_msg'), 'error');
+      showToast(res.error || (isRtl ? 'فشل حذف الرسالة' : 'Failed to delete message'), 'error');
     }
   };
 
@@ -172,55 +313,83 @@ export function ChatsModule() {
 
     const res = await deleteConversation(c.id);
     if (res.success) {
-      showToast(t('msg.chat_deleted'), 'success');
+      showToast(isRtl ? 'تم حذف المحادثة بالكامل بنجاح' : 'Conversation deleted successfully', 'success');
       if (selectedChatId === c.id) {
         setSelectedChatId(null);
       }
+      refetchBadges();
     } else {
-      showToast(res.error || t('msg.error_delete_chat'), 'error');
+      showToast(res.error || (isRtl ? 'فشل حذف المحادثة' : 'Failed to delete conversation'), 'error');
     }
   };
 
+  // Block / Unblock student directly from chat header using Phase 4 architecture
+  const handleToggleBlockStudent = async (c: ChatConversation) => {
+    if (!c.student_id) {
+      showToast(isRtl ? 'لا يوجد معرف طالب مسجل لهذه المحادثة' : 'No student ID registered for this chat', 'error');
+      return;
+    }
+
+    const ok = await confirm({
+      title: t('dialog.block_student_title'),
+      message: t('dialog.block_student_msg'),
+      variant: 'danger',
+    });
+    if (!ok) return;
+
+    const res = await apiFetch<Record<string, unknown>>('block_student', {
+      student_id: c.student_id,
+      reason: 'حظر من نافذة المحادثة المباشرة',
+    });
+
+    if (res.success) {
+      showToast(isRtl ? 'تم حظر الطالب بنجاح' : 'Student blocked successfully', 'success');
+      refetch();
+    } else {
+      showToast(res.error || (isRtl ? 'فشل حظر الطالب' : 'Failed to block student'), 'error');
+    }
+  };
+
+  // Clean WhatsApp Link Generator with Pre-filled Template
+  const getWhatsAppLink = (c: ChatConversation) => {
+    let phoneClean = (c.phone || '').replace(/[^\d+]/g, '');
+    if (phoneClean.startsWith('+')) {
+      phoneClean = phoneClean.substring(1);
+    }
+    const template = `مرحباً ${c.student_name || 'طالبنا العزيز'}، بخصوص استفسارك عبر تطبيق أبشر جورجيا...`;
+    return `https://wa.me/${phoneClean}?text=${encodeURIComponent(template)}`;
+  };
+
   return (
-    <section className="section active" style={{ height: 'calc(100vh - 110px)', display: 'flex', flexDirection: 'column' }}>
+    <section
+      className="section active"
+      style={{
+        flex: 1,
+        minHeight: 0,
+        height: '100%',
+        display: 'flex',
+        flexDirection: 'column',
+        overflow: 'hidden',
+      }}
+    >
       {/* Module Header */}
-      <div className="section-header" style={{ marginBottom: '12px', flexShrink: 0 }}>
+      <div className="section-header" style={{ marginBottom: '8px', flexShrink: 0 }}>
         <div>
           <h2>{t('chats.title')}</h2>
           <p>{t('chats.desc')}</p>
         </div>
       </div>
 
-      {/* Deep Link Not Found Warning */}
-      {studentIdParam && !activeChat && !isLoading && (
-        <div
-          style={{
-            background: 'rgba(245, 158, 11, 0.12)',
-            border: '1px solid rgba(245, 158, 11, 0.3)',
-            borderRadius: '10px',
-            padding: '10px 16px',
-            marginBottom: '12px',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '10px',
-            color: '#fbbf24',
-            fontSize: '0.85rem',
-            flexShrink: 0,
-          }}
-        >
-          <i className="fa-solid fa-triangle-exclamation"></i>
-          <span>لم يتم العثور على محادثة سابقة للطالب رقم #{studentIdParam}. يمكنك اختيار محادثة أخرى من القائمة.</span>
-        </div>
-      )}
-
-      {/* Two Column Layout */}
+      {/* Two Column Layout: Fill Remaining Viewport Height */}
       <div
         style={{
           display: 'grid',
-          gridTemplateColumns: '320px 1fr',
+          gridTemplateColumns: '320px minmax(0, 1fr)',
           gap: '14px',
           flex: 1,
           minHeight: 0,
+          height: '100%',
+          overflow: 'hidden',
         }}
       >
         {/* LEFT COLUMN: Conversations List */}
@@ -232,10 +401,11 @@ export function ChatsModule() {
             display: 'flex',
             flexDirection: 'column',
             overflow: 'hidden',
+            height: '100%',
           }}
         >
           {/* Search Header */}
-          <div style={{ padding: '12px', borderBottom: '1px solid var(--border-color)' }}>
+          <div style={{ padding: '12px', borderBottom: '1px solid var(--border-color)', flexShrink: 0 }}>
             <div style={{ position: 'relative' }}>
               <input
                 type="text"
@@ -269,7 +439,7 @@ export function ChatsModule() {
           </div>
 
           {/* Conversations Scrollable List */}
-          <div style={{ flex: 1, overflowY: 'auto', padding: '6px' }}>
+          <div className="custom-scrollbar" style={{ flex: 1, overflowY: 'auto', padding: '6px' }}>
             {isLoading ? (
               <div style={{ textAlign: 'center', padding: '30px 10px', color: 'var(--text-muted)' }}>
                 <i className="fa-solid fa-circle-notch fa-spin fa-lg"></i>
@@ -360,7 +530,7 @@ export function ChatsModule() {
                             style={{
                               background: '#f59e0b',
                               color: '#0f172a',
-                              padding: '1px 5px',
+                              padding: '1px 6px',
                               borderRadius: '8px',
                               fontSize: '0.65rem',
                               fontWeight: 800,
@@ -388,6 +558,8 @@ export function ChatsModule() {
             display: 'flex',
             flexDirection: 'column',
             overflow: 'hidden',
+            height: '100%',
+            position: 'relative',
           }}
         >
           {activeChat ? (
@@ -395,17 +567,20 @@ export function ChatsModule() {
               {/* Active Chat Header */}
               <div
                 style={{
-                  padding: '12px 18px',
+                  padding: '10px 16px',
                   borderBottom: '1px solid var(--border-color)',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'space-between',
                   background: 'rgba(255, 255, 255, 0.02)',
                   flexShrink: 0,
+                  gap: '10px',
                 }}
               >
-                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                {/* Student Info */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', minWidth: 0, flex: 1 }}>
                   <div
+                    onClick={() => setIsProfileModalOpen(true)}
                     style={{
                       width: '38px',
                       height: '38px',
@@ -417,48 +592,160 @@ export function ChatsModule() {
                       justifyContent: 'center',
                       fontWeight: 700,
                       fontSize: '0.95rem',
+                      flexShrink: 0,
+                      cursor: 'pointer',
                     }}
+                    title={t('chats.view_profile')}
                   >
                     {activeChat.student_name ? activeChat.student_name.charAt(0).toUpperCase() : 'ط'}
                   </div>
-                  <div>
-                    <h4 style={{ margin: 0, fontSize: '0.95rem', fontWeight: 700, color: 'var(--text-main)' }}>
+                  <div style={{ minWidth: 0 }}>
+                    <h4
+                      style={{
+                        margin: 0,
+                        fontSize: '0.92rem',
+                        fontWeight: 700,
+                        color: 'var(--text-main)',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        whiteSpace: 'nowrap',
+                      }}
+                    >
                       {activeChat.student_name}
-                      {activeChat.student_id ? ` (#${activeChat.student_id})` : ''}
+                      {activeChat.student_id ? (
+                        <span style={{ fontSize: '0.75rem', color: '#818cf8', margin: '0 4px' }}>
+                          (#{activeChat.student_id})
+                        </span>
+                      ) : null}
                     </h4>
-                    <span style={{ fontSize: '0.74rem', color: 'var(--text-muted)' }}>
+                    <span
+                      style={{
+                        fontSize: '0.74rem',
+                        color: 'var(--text-muted)',
+                        display: 'block',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        whiteSpace: 'nowrap',
+                      }}
+                    >
                       {activeChat.phone} {activeChat.student_uni ? `• ${activeChat.student_uni}` : ''}
                     </span>
                   </div>
                 </div>
 
-                <button
-                  type="button"
-                  className="btn"
-                  onClick={() => handleDeleteChat(activeChat)}
-                  style={{
-                    height: '30px',
-                    padding: '0 10px',
-                    borderRadius: '6px',
-                    background: 'rgba(239, 68, 68, 0.12)',
-                    color: '#ef4444',
-                    border: '1px solid rgba(239, 68, 68, 0.25)',
-                    cursor: 'pointer',
-                    fontSize: '0.75rem',
-                    fontWeight: 600,
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: '4px',
-                  }}
-                  title={t('chats.delete_chat')}
-                >
-                  <i className="fa-solid fa-trash" style={{ fontSize: '0.7rem' }}></i>
-                  <span>{t('chats.delete_chat')}</span>
-                </button>
+                {/* Header Action Buttons */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexShrink: 0 }}>
+                  {/* View Profile Button */}
+                  <button
+                    type="button"
+                    className="btn"
+                    onClick={() => setIsProfileModalOpen(true)}
+                    style={{
+                      height: '30px',
+                      padding: '0 10px',
+                      borderRadius: '6px',
+                      background: 'rgba(99, 102, 241, 0.12)',
+                      color: '#818cf8',
+                      border: '1px solid rgba(99, 102, 241, 0.25)',
+                      fontSize: '0.75rem',
+                      fontWeight: 600,
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '5px',
+                    }}
+                    title={t('chats.student_profile')}
+                  >
+                    <i className="fa-solid fa-user-graduate"></i>
+                    <span>{t('chats.student_profile')}</span>
+                  </button>
+
+                  {/* WhatsApp Direct Link */}
+                  {activeChat.phone && (
+                    <a
+                      href={getWhatsAppLink(activeChat)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="btn"
+                      style={{
+                        height: '30px',
+                        padding: '0 10px',
+                        borderRadius: '6px',
+                        background: 'rgba(37, 211, 102, 0.12)',
+                        color: '#25d366',
+                        border: '1px solid rgba(37, 211, 102, 0.25)',
+                        fontSize: '0.75rem',
+                        fontWeight: 600,
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '5px',
+                        textDecoration: 'none',
+                      }}
+                      title={t('btn.whatsapp')}
+                    >
+                      <i className="fa-brands fa-whatsapp"></i>
+                      <span>{t('btn.whatsapp')}</span>
+                    </a>
+                  )}
+
+                  {/* Block Student */}
+                  {activeChat.student_id && (
+                    <button
+                      type="button"
+                      className="btn"
+                      onClick={() => handleToggleBlockStudent(activeChat)}
+                      style={{
+                        height: '30px',
+                        padding: '0 10px',
+                        borderRadius: '6px',
+                        background: 'rgba(239, 68, 68, 0.12)',
+                        color: '#f87171',
+                        border: '1px solid rgba(239, 68, 68, 0.25)',
+                        cursor: 'pointer',
+                        fontSize: '0.75rem',
+                        fontWeight: 600,
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '5px',
+                      }}
+                      title={t('btn.block')}
+                    >
+                      <i className="fa-solid fa-ban"></i>
+                      <span>{t('btn.block')}</span>
+                    </button>
+                  )}
+
+                  {/* Delete Conversation */}
+                  <button
+                    type="button"
+                    className="btn"
+                    onClick={() => handleDeleteChat(activeChat)}
+                    style={{
+                      height: '30px',
+                      padding: '0 10px',
+                      borderRadius: '6px',
+                      background: 'rgba(239, 68, 68, 0.12)',
+                      color: '#ef4444',
+                      border: '1px solid rgba(239, 68, 68, 0.25)',
+                      cursor: 'pointer',
+                      fontSize: '0.75rem',
+                      fontWeight: 600,
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '5px',
+                    }}
+                    title={t('chats.delete_chat')}
+                  >
+                    <i className="fa-solid fa-trash"></i>
+                    <span>{t('chats.delete_chat')}</span>
+                  </button>
+                </div>
               </div>
 
-              {/* Messages Area */}
+              {/* Messages Stream */}
               <div
+                ref={threadRef}
+                onScroll={handleThreadScroll}
+                className="custom-scrollbar"
                 style={{
                   flex: 1,
                   overflowY: 'auto',
@@ -476,6 +763,8 @@ export function ChatsModule() {
                 ) : (
                   activeChat.messages.map((m) => {
                     const isAdmin = m.sender === 'admin';
+                    const isDeleted = !!m.deleted;
+
                     return (
                       <div
                         key={m.id}
@@ -490,25 +779,32 @@ export function ChatsModule() {
                         {/* Bubble */}
                         <div
                           style={{
-                            background: m.deleted
-                              ? 'rgba(239, 68, 68, 0.08)'
+                            background: isDeleted
+                              ? 'rgba(255, 255, 255, 0.04)'
                               : isAdmin
                               ? 'linear-gradient(135deg, #4f46e5, #4338ca)'
                               : 'var(--bg-card)',
-                            color: m.deleted ? '#f87171' : '#f8fafc',
-                            border: m.deleted
-                              ? '1px dashed rgba(239, 68, 68, 0.3)'
+                            color: isDeleted ? 'var(--text-muted)' : '#f8fafc',
+                            border: isDeleted
+                              ? '1px dashed rgba(255, 255, 255, 0.15)'
                               : isAdmin
                               ? '1px solid #4338ca'
                               : '1px solid var(--border-color)',
                             borderRadius: isAdmin ? '14px 14px 2px 14px' : '14px 14px 14px 2px',
                             padding: '10px 14px',
-                            boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)',
+                            boxShadow: isDeleted ? 'none' : '0 2px 4px rgba(0, 0, 0, 0.1)',
                             position: 'relative',
                           }}
                         >
-                          {/* Quote Context Preview if any */}
-                          {m.quoteText && !m.deleted && (
+                          {/* Sender Label */}
+                          {!isDeleted && (
+                            <div style={{ fontSize: '0.72rem', fontWeight: 700, marginBottom: '4px', color: isAdmin ? '#93c5fd' : '#25D366' }}>
+                              {isAdmin ? 'خدمة العملاء (أبشر)' : activeChat.student_name}
+                            </div>
+                          )}
+
+                          {/* Quote Context Preview */}
+                          {!isDeleted && m.quoteText && (
                             <div
                               style={{
                                 background: 'rgba(0, 0, 0, 0.2)',
@@ -518,7 +814,7 @@ export function ChatsModule() {
                                 borderRadius: '4px',
                                 marginBottom: '6px',
                                 fontSize: '0.72rem',
-                                opacity: 0.85,
+                                opacity: 0.9,
                               }}
                             >
                               <strong style={{ display: 'block', color: '#fbbf24', fontSize: '0.7rem' }}>
@@ -528,24 +824,45 @@ export function ChatsModule() {
                             </div>
                           )}
 
-                          {/* Image Attachment if any */}
-                          {m.type === 'image' && hasMedia(m.imageUrl) && !m.deleted && (
-                            <div style={{ marginBottom: '6px', borderRadius: '8px', overflow: 'hidden' }}>
+                          {/* Image Attachment (Click to open lightbox) */}
+                          {!isDeleted && m.type === 'image' && hasMedia(m.imageUrl) && (
+                            <div
+                              onClick={() => setLightboxImageUrl(getMediaUrl(m.imageUrl!))}
+                              style={{
+                                marginBottom: '6px',
+                                borderRadius: '8px',
+                                overflow: 'hidden',
+                                cursor: 'pointer',
+                              }}
+                            >
                               <img
                                 src={getMediaUrl(m.imageUrl)}
                                 alt="Chat Attachment"
-                                style={{ maxWidth: '240px', maxHeight: '180px', objectFit: 'cover', display: 'block', borderRadius: '6px' }}
+                                style={{
+                                  maxWidth: '240px',
+                                  maxHeight: '180px',
+                                  objectFit: 'cover',
+                                  display: 'block',
+                                  borderRadius: '6px',
+                                }}
                               />
                             </div>
                           )}
 
-                          {/* Message Text */}
-                          <p style={{ margin: 0, fontSize: '0.84rem', lineHeight: 1.45, fontStyle: m.deleted ? 'italic' : 'normal' }}>
-                            {m.text}
-                          </p>
+                          {/* Message Text or Localized Deleted Tombstone */}
+                          {isDeleted ? (
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontStyle: 'italic', fontSize: '0.8rem', color: '#94a3b8' }}>
+                              <i className="fa-solid fa-ban" style={{ fontSize: '0.75rem', opacity: 0.7 }}></i>
+                              <span>{t('chats.deleted_message')}</span>
+                            </div>
+                          ) : (
+                            <p style={{ margin: 0, fontSize: '0.84rem', lineHeight: 1.45 }}>
+                              {m.text}
+                            </p>
+                          )}
 
-                          {/* Action icons on hover / inline */}
-                          {!m.deleted && (
+                          {/* Action icons (hidden when deleted) */}
+                          {!isDeleted && (
                             <div
                               style={{
                                 display: 'flex',
@@ -559,7 +876,14 @@ export function ChatsModule() {
                               <button
                                 type="button"
                                 onClick={() => setReplyingToMessage(m)}
-                                style={{ background: 'transparent', border: 'none', color: 'rgba(255, 255, 255, 0.7)', fontSize: '0.7rem', cursor: 'pointer', padding: 0 }}
+                                style={{
+                                  background: 'transparent',
+                                  border: 'none',
+                                  color: 'rgba(255, 255, 255, 0.7)',
+                                  fontSize: '0.7rem',
+                                  cursor: 'pointer',
+                                  padding: 0,
+                                }}
                                 title={t('chats.reply_to')}
                               >
                                 <i className="fa-solid fa-reply"></i>
@@ -573,7 +897,14 @@ export function ChatsModule() {
                                       setEditingMsg(m);
                                       setEditMsgText(m.text);
                                     }}
-                                    style={{ background: 'transparent', border: 'none', color: 'rgba(255, 255, 255, 0.7)', fontSize: '0.7rem', cursor: 'pointer', padding: 0 }}
+                                    style={{
+                                      background: 'transparent',
+                                      border: 'none',
+                                      color: 'rgba(255, 255, 255, 0.7)',
+                                      fontSize: '0.7rem',
+                                      cursor: 'pointer',
+                                      padding: 0,
+                                    }}
                                     title={t('chats.edit_msg')}
                                   >
                                     <i className="fa-solid fa-pen"></i>
@@ -581,7 +912,14 @@ export function ChatsModule() {
                                   <button
                                     type="button"
                                     onClick={() => handleDeleteMsg(m)}
-                                    style={{ background: 'transparent', border: 'none', color: 'rgba(239, 68, 68, 0.8)', fontSize: '0.7rem', cursor: 'pointer', padding: 0 }}
+                                    style={{
+                                      background: 'transparent',
+                                      border: 'none',
+                                      color: 'rgba(239, 68, 68, 0.8)',
+                                      fontSize: '0.7rem',
+                                      cursor: 'pointer',
+                                      padding: 0,
+                                    }}
                                     title={t('chats.delete_msg')}
                                   >
                                     <i className="fa-solid fa-trash"></i>
@@ -592,10 +930,13 @@ export function ChatsModule() {
                           )}
                         </div>
 
-                        {/* Timestamp */}
-                        <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)', marginTop: '2px', padding: '0 4px' }}>
-                          {m.time || ''}
-                        </span>
+                        {/* Timestamp & Double Check */}
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '4px', marginTop: '2px', padding: '0 4px', fontSize: '0.65rem', color: 'var(--text-muted)' }}>
+                          <span>{m.time || ''}</span>
+                          {isAdmin && !isDeleted && (
+                            <i className="fa-solid fa-check-double" style={{ color: '#53bdeb', fontSize: '0.65rem' }}></i>
+                          )}
+                        </div>
                       </div>
                     );
                   })
@@ -603,7 +944,41 @@ export function ChatsModule() {
                 <div ref={messagesEndRef} />
               </div>
 
-              {/* Replying Banner Preview */}
+              {/* Floating New Messages Indicator */}
+              {hasUnreadBelow && (
+                <div
+                  style={{
+                    position: 'absolute',
+                    bottom: '82px',
+                    [isRtl ? 'left' : 'right']: '24px',
+                    zIndex: 50,
+                  }}
+                >
+                  <button
+                    type="button"
+                    onClick={() => scrollToBottom('smooth')}
+                    style={{
+                      background: 'linear-gradient(135deg, var(--primary), #4338ca)',
+                      color: '#ffffff',
+                      border: '1px solid rgba(255, 255, 255, 0.3)',
+                      borderRadius: '20px',
+                      padding: '6px 14px',
+                      fontSize: '0.78rem',
+                      fontWeight: 700,
+                      boxShadow: '0 4px 14px rgba(0, 0, 0, 0.4)',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '6px',
+                    }}
+                  >
+                    <i className="fa-solid fa-arrow-down" style={{ fontSize: '0.75rem' }}></i>
+                    <span>{t('chats.new_messages_below')}</span>
+                  </button>
+                </div>
+              )}
+
+              {/* Replying Banner */}
               {replyingToMessage && (
                 <div
                   style={{
@@ -656,7 +1031,7 @@ export function ChatsModule() {
                   <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>صورة مرفقة مع الرد</span>
                   <button
                     type="button"
-                    onClick={() => setAttachedImageUrl('')}
+                    onClick={handleRemoveAttachedImage}
                     style={{ background: 'transparent', border: 'none', color: '#f87171', cursor: 'pointer', fontSize: '0.9rem', marginRight: 'auto' }}
                   >
                     &times;
@@ -664,77 +1039,46 @@ export function ChatsModule() {
                 </div>
               )}
 
-              {/* Reply Input Box */}
-              <form
-                onSubmit={handleSendReply}
-                style={{
-                  padding: '12px 16px',
-                  borderTop: '1px solid var(--border-color)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '8px',
-                  background: 'var(--bg-card)',
-                  flexShrink: 0,
-                }}
-              >
-                <label
-                  style={{
-                    width: '36px',
-                    height: '36px',
-                    borderRadius: '8px',
-                    background: 'rgba(255, 255, 255, 0.06)',
-                    color: 'var(--text-muted)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    cursor: 'pointer',
-                    flexShrink: 0,
+              {/* Reply Input Box (Scoped WhatsApp / Telegram style bar) */}
+              <form className="chat-composer" onSubmit={handleSendReply}>
+                <button
+                  type="button"
+                  className="chat-composer-btn-attach"
+                  onClick={() => {
+                    resetFileInput();
+                    fileInputRef.current?.click();
                   }}
                   title="إرفاق صورة"
                 >
-                  <i className="fa-solid fa-image"></i>
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={handleImageFileChange}
-                    style={{ display: 'none' }}
-                  />
-                </label>
-
+                  <i className="fa-solid fa-paperclip" style={{ fontSize: '1.05rem' }}></i>
+                </button>
                 <input
-                  type="text"
-                  className="form-control"
+                  type="file"
+                  ref={fileInputRef}
+                  accept="image/*"
+                  onChange={handleImageFileChange}
+                  onClick={(e) => {
+                    (e.target as HTMLInputElement).value = '';
+                  }}
+                  style={{ display: 'none' }}
+                />
+
+                <textarea
+                  ref={textareaRef}
+                  className="chat-composer-textarea custom-scrollbar"
                   value={inputText}
                   onChange={(e) => setInputText(e.target.value)}
+                  onKeyDown={handleKeyDown}
                   placeholder={t('chats.type_message')}
                   disabled={isSending}
-                  style={{
-                    flex: 1,
-                    height: '38px',
-                    borderRadius: '8px',
-                    background: '#0d1527',
-                    border: '1px solid #1e293b',
-                    color: '#f8fafc',
-                    padding: '0 12px',
-                    fontSize: '0.85rem',
-                  }}
+                  rows={1}
+                  dir={isRtl ? 'rtl' : 'ltr'}
                 />
 
                 <button
                   type="submit"
-                  className="btn btn-primary"
+                  className="chat-composer-btn-send"
                   disabled={isSending || (!inputText.trim() && !attachedImageUrl)}
-                  style={{
-                    height: '38px',
-                    padding: '0 16px',
-                    borderRadius: '8px',
-                    fontWeight: 600,
-                    fontSize: '0.85rem',
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: '6px',
-                    flexShrink: 0,
-                  }}
                 >
                   {isSending ? (
                     <i className="fa-solid fa-circle-notch fa-spin"></i>
@@ -770,6 +1114,9 @@ export function ChatsModule() {
             zIndex: 9999,
             padding: '16px',
           }}
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setEditingMsg(null);
+          }}
         >
           <div
             className="modal-box"
@@ -782,13 +1129,25 @@ export function ChatsModule() {
               padding: '18px',
             }}
           >
-            <h4 style={{ margin: '0 0 12px', color: 'var(--text-main)' }}>{t('chats.edit_msg')}</h4>
+            <h4 style={{ margin: '0 0 12px', color: 'var(--text-main)', fontSize: '1rem', fontWeight: 700 }}>
+              {t('chats.edit_msg')}
+            </h4>
             <textarea
               className="form-control"
               value={editMsgText}
               onChange={(e) => setEditMsgText(e.target.value)}
               rows={3}
-              style={{ width: '100%', borderRadius: '8px', padding: '10px', resize: 'vertical', marginBottom: '14px' }}
+              dir={isRtl ? 'rtl' : 'ltr'}
+              style={{
+                width: '100%',
+                borderRadius: '8px',
+                padding: '10px',
+                resize: 'vertical',
+                marginBottom: '14px',
+                background: '#0d1527',
+                border: '1px solid #1e293b',
+                color: '#f8fafc',
+              }}
             />
             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
               <button
@@ -808,6 +1167,148 @@ export function ChatsModule() {
                 {t('btn.save')}
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Student Profile Modal */}
+      {isProfileModalOpen && activeChat && (
+        <div
+          className="modal-overlay active"
+          style={{
+            position: 'fixed',
+            inset: 0,
+            backgroundColor: 'rgba(15, 23, 42, 0.75)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 9999,
+            padding: '16px',
+          }}
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setIsProfileModalOpen(false);
+          }}
+        >
+          <div
+            className="modal-box"
+            style={{
+              background: 'var(--bg-card)',
+              border: '1px solid var(--border-color)',
+              borderRadius: '14px',
+              width: '100%',
+              maxWidth: '440px',
+              padding: '20px',
+              boxShadow: '0 20px 40px rgba(0,0,0,0.4)',
+            }}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+              <h3 style={{ margin: 0, fontSize: '1.05rem', color: 'var(--text-main)', fontWeight: 700 }}>
+                {t('chats.student_profile')}
+              </h3>
+              <button
+                type="button"
+                onClick={() => setIsProfileModalOpen(false)}
+                style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', fontSize: '1.2rem', cursor: 'pointer' }}
+              >
+                &times;
+              </button>
+            </div>
+
+            <div style={{ textAlign: 'center', marginBottom: '16px' }}>
+              <div
+                style={{
+                  width: '64px',
+                  height: '64px',
+                  borderRadius: '50%',
+                  background: 'var(--primary)',
+                  color: '#fff',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: '1.8rem',
+                  fontWeight: 700,
+                  marginBottom: '10px',
+                }}
+              >
+                {activeChat.student_name ? activeChat.student_name.charAt(0).toUpperCase() : 'ط'}
+              </div>
+              <h4 style={{ margin: '0 0 4px', fontSize: '1.1rem', color: 'var(--text-main)', fontWeight: 700 }}>
+                {activeChat.student_name}
+              </h4>
+              {activeChat.student_id && (
+                <span style={{ fontSize: '0.78rem', color: '#818cf8', fontWeight: 600 }}>
+                  معرف الطالب: #{activeChat.student_id}
+                </span>
+              )}
+            </div>
+
+            <div style={{ background: 'rgba(0,0,0,0.2)', padding: '14px', borderRadius: '10px', display: 'flex', flexDirection: 'column', gap: '8px', fontSize: '0.84rem' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                <span style={{ color: 'var(--text-muted)' }}>الجامعة:</span>
+                <strong style={{ color: 'var(--text-main)' }}>{activeChat.student_uni || 'غير محدد'}</strong>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                <span style={{ color: 'var(--text-muted)' }}>رقم الهاتف:</span>
+                <strong style={{ color: 'var(--text-main)', direction: 'ltr' }}>{activeChat.phone || '—'}</strong>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                <span style={{ color: 'var(--text-muted)' }}>آخر تحديث:</span>
+                <strong style={{ color: 'var(--text-main)' }}>{activeChat.time || '—'}</strong>
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '16px' }}>
+              <button
+                type="button"
+                className="btn btn-secondary"
+                onClick={() => setIsProfileModalOpen(false)}
+                style={{ padding: '6px 16px', borderRadius: '6px', fontSize: '0.82rem' }}
+              >
+                {t('btn.close')}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Lightbox Image Preview Modal */}
+      {lightboxImageUrl && (
+        <div
+          className="modal-overlay active"
+          style={{
+            position: 'fixed',
+            inset: 0,
+            backgroundColor: 'rgba(0, 0, 0, 0.9)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 99999,
+            padding: '20px',
+          }}
+          onClick={() => setLightboxImageUrl(null)}
+        >
+          <div style={{ position: 'relative', maxWidth: '90vw', maxHeight: '90vh' }}>
+            <img
+              src={lightboxImageUrl}
+              alt="Full view"
+              style={{ maxWidth: '100%', maxHeight: '90vh', objectFit: 'contain', borderRadius: '8px' }}
+            />
+            <button
+              type="button"
+              onClick={() => setLightboxImageUrl(null)}
+              style={{
+                position: 'absolute',
+                top: '-36px',
+                right: '0',
+                background: 'transparent',
+                border: 'none',
+                color: '#fff',
+                fontSize: '1.8rem',
+                cursor: 'pointer',
+              }}
+            >
+              &times;
+            </button>
           </div>
         </div>
       )}

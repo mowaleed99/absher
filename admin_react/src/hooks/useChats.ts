@@ -143,6 +143,24 @@ export function useChats() {
     }
   };
 
+  const ensureSupportChat = async (studentId: number): Promise<{ success: boolean; chatId?: number; error?: string }> => {
+    try {
+      const result = await apiFetch<{ chat_id: number }>('ensure_support_chat', {
+        student_id: studentId,
+      });
+
+      if (!result.success) {
+        return { success: false, error: result.error };
+      }
+
+      await fetchChats(true);
+      return { success: true, chatId: result.data.chat_id };
+    } catch (err) {
+      console.error('[useChats] ensureSupportChat error:', err);
+      return { success: false, error: 'Connection error' };
+    }
+  };
+
   return {
     chats,
     isLoading,
@@ -152,5 +170,6 @@ export function useChats() {
     editMessage,
     deleteMessage,
     deleteConversation,
+    ensureSupportChat,
   };
 }

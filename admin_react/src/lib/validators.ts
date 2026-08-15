@@ -397,11 +397,19 @@ export function parseNotificationItem(v: unknown): import('../types/notification
   if (!isObject(v)) return null;
   const id = toNumber(v.id);
   if (id === null) return null;
+  const title_ar = toString(v.title_ar);
+  const title_en = toString(v.title_en);
+  const body_ar = toString(v.body_ar);
+  const body_en = toString(v.body_en);
   return {
     id,
     student_id: toNumber(v.student_id) ?? 0,
-    title: toString(v.title),
-    body: toString(v.body || v.content),
+    title: toString(v.title || title_ar || title_en),
+    body: toString(v.body || v.content || body_ar || body_en),
+    title_ar: title_ar || undefined,
+    title_en: title_en || undefined,
+    body_ar: body_ar || undefined,
+    body_en: body_en || undefined,
     date: toString(v.date || v.created_at),
     created_at: toString(v.created_at),
   };

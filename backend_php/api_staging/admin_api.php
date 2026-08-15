@@ -118,7 +118,17 @@ try {
             FROM news 
             ORDER BY created_at DESC
         ")->fetchAll();
-        $notifications = $conn->query("SELECT *, DATE_FORMAT(created_at,'%Y-%m-%d %h:%i %p') AS date FROM notifications WHERE student_id = 0 ORDER BY created_at DESC")->fetchAll();
+        $notifications = $conn->query("
+            SELECT id, student_id, title, body,
+                   COALESCE(NULLIF(title_ar, ''), title) AS title_ar,
+                   COALESCE(NULLIF(title_en, ''), title) AS title_en,
+                   COALESCE(NULLIF(body_ar, ''), body) AS body_ar,
+                   COALESCE(NULLIF(body_en, ''), body) AS body_en,
+                   DATE_FORMAT(created_at,'%Y-%m-%d %h:%i %p') AS date
+            FROM notifications 
+            WHERE student_id = 0 
+            ORDER BY created_at DESC
+        ")->fetchAll();
         $housing_offers = $conn->query("
             SELECT *, 
                    COALESCE(NULLIF(title_ar, ''), title) AS display_title,
@@ -553,14 +563,15 @@ try {
         $content_ar = trim($data['content_ar'] ?? '');
         $content_en = trim($data['content_en'] ?? '');
 
-        $title = $title_ar;
-        $content = $content_ar;
-        $image_url = trim($data['image_url'] ??'');
+        $title = !empty($title_ar) ? $title_ar : $title_en;
+        $content = !empty($content_ar) ? $content_ar : $content_en;
+        $image_url = trim($data['image_url'] ?? $data['image'] ?? '');
+        $image_url = saveBase64IfPresent($image_url);
 
         if (!empty($title) && !empty($content)) {
             $stmt = $conn->prepare("INSERT INTO news (title, content, image_url, title_ar, title_en, content_ar, content_en) VALUES (?, ?, ?, ?, ?, ?, ?)");
             $stmt->execute([$title, $content, $image_url, $title_ar, $title_en, $content_ar, $content_en]);
-            echo json_encode(["status"=>"success","message"=>"تم نشر الخبر والتنبيه بنجاح"], JSON_UNESCAPED_UNICODE);
+            echo json_encode(["status"=>"success","message"=>"تم نشر الخبر بنجاح"], JSON_UNESCAPED_UNICODE);
         } else {
             echo json_encode(["status"=>"error","message"=>"عنوان الخبر والتفاصيل مطلوبان"], JSON_UNESCAPED_UNICODE);
         }
@@ -574,11 +585,21 @@ try {
         $content_ar = trim($data['content_ar'] ?? '');
         $content_en = trim($data['content_en'] ?? '');
 
-        $title = $title_ar;
-        $content = $content_ar;
-        $image_url = trim($data['image'] ??'');
+        $title = !empty($title_ar) ? $title_ar : $title_en;
+        $content = !empty($content_ar) ? $content_ar : $content_en;
+        $image_url = trim($data['image_url'] ?? $data['image'] ?? '');
 
         if ($id > 0 && !empty($title) && !empty($content)) {
+            // Check existing image to preserve if no new image uploaded
+            $curr = $conn->prepare("SELECT image_url FROM news WHERE id = ?");
+            $curr->execute([$id]);
+            $currRow = $curr->fetch();
+            if (empty($image_url) && $currRow && !empty($currRow['image_url']) && empty($data['remove_image'])) {
+                $image_url = $currRow['image_url'];
+            } else {
+                $image_url = saveBase64IfPresent($image_url);
+            }
+
             $stmt = $conn->prepare("UPDATE news SET title=?, content=?, image_url=?, title_ar=?, title_en=?, content_ar=?, content_en=? WHERE id=?");
             $stmt->execute([$title, $content, $image_url, $title_ar, $title_en, $content_ar, $content_en, $id]);
             echo json_encode(["status"=>"success","message"=>"تم تعديل الخبر بنجاح"], JSON_UNESCAPED_UNICODE);
@@ -605,12 +626,17 @@ try {
     }
 
     if ($action ==='add_notification') {
-        $title = trim($data['title'] ??'');
-        $body = trim($data['body'] ?? ($data['content'] ?? ''));
+        $title_ar = trim($data['title_ar'] ?? ($data['title'] ?? ''));
+        $title_en = trim($data['title_en'] ?? '');
+        $body_ar = trim($data['body_ar'] ?? ($data['body'] ?? ($data['content'] ?? '')));
+        $body_en = trim($data['body_en'] ?? '');
+
+        $title = !empty($title_ar) ? $title_ar : $title_en;
+        $body = !empty($body_ar) ? $body_ar : $body_en;
 
         if (!empty($title) && !empty($body)) {
-            $stmt = $conn->prepare("INSERT INTO notifications (student_id, title, body) VALUES (0, ?, ?)");
-            $stmt->execute([$title, $body]);
+            $stmt = $conn->prepare("INSERT INTO notifications (student_id, title, body, title_ar, title_en, body_ar, body_en) VALUES (0, ?, ?, ?, ?, ?, ?)");
+            $stmt->execute([$title, $body, $title_ar, $title_en, $body_ar, $body_en]);
             echo json_encode(["status"=>"success","message"=>"تم نشر التنبيه والإشعار بنجاح"], JSON_UNESCAPED_UNICODE);
         } else {
             echo json_encode(["status"=>"error","message"=>"عنوان التنبيه والمحتوى مطلوبان"], JSON_UNESCAPED_UNICODE);
@@ -638,43 +664,81 @@ try {
         $id = intval($data['id'] ?? 0);
         $status = trim($data['status'] ??'مكتمل');
         if ($id > 0) {
-            // 1. Get the current details of this request to find the student phone and student_id
-            $stmtReq = $conn->prepare("SELECT student_id, student_name, student_phone, service_title FROM service_requests WHERE id = ?");
+            // 1. Get the current details of this request with service titles
+            $stmtReq = $conn->prepare("
+                SELECT sr.student_id, sr.student_name, sr.student_phone, sr.service_title,
+                       s.title_ar, s.title_en
+                FROM service_requests sr
+                LEFT JOIN services s ON sr.service_id = s.id
+                WHERE sr.id = ?
+            ");
             $stmtReq->execute([$id]);
             $reqData = $stmtReq->fetch();
 
             $conn->prepare("UPDATE service_requests SET status = ? WHERE id = ?")->execute([$status, $id]);
 
-            // Send targeted notification to the specific student
+            // Status translation mapping
+            $statusMapAr = [
+                'جديد' => 'جديد',
+                'قيد المراجعة' => 'قيد المراجعة',
+                'قيد التنفيذ' => 'قيد التنفيذ',
+                'مكتمل' => 'مكتمل',
+                'ملغي' => 'ملغي'
+            ];
+            $statusMapEn = [
+                'جديد' => 'New',
+                'قيد المراجعة' => 'Under Review',
+                'قيد التنفيذ' => 'In Progress',
+                'مكتمل' => 'Completed',
+                'ملغي' => 'Cancelled'
+            ];
+            $statusAr = $statusMapAr[$status] ?? $status;
+            $statusEn = $statusMapEn[$status] ?? $status;
+
+            $svcTitleAr = (!empty($reqData['title_ar'])) ? $reqData['title_ar'] : ($reqData['service_title'] ?? '');
+            $svcTitleEn = (!empty($reqData['title_en'])) ? $reqData['title_en'] : ($reqData['service_title'] ?? '');
+
+            // Send targeted bilingual notification to the specific student
             if ($reqData && !empty($reqData['student_id'])) {
                 $studentId = intval($reqData['student_id']);
-                $notifTitle = "تحديث حالة الطلب";
-                $notifBody = "تم تغيير حالة طلبك الخاص بـ (" . $reqData['service_title'] . ") إلى: " . $status;
-                sendStudentNotification($studentId, $notifTitle, $notifBody);
+                $notifTitleAr = "تحديث حالة الطلب (#$id)";
+                $notifBodyAr = "تم تغيير حالة طلبك الخاص بـ ($svcTitleAr) إلى: $statusAr";
+                $notifTitleEn = "Request Update (#$id)";
+                $notifBodyEn = "The status of your request for ($svcTitleEn) has been changed to: $statusEn";
+                sendStudentNotification($studentId, $notifTitleAr, $notifBodyAr, $notifTitleEn, $notifBodyEn);
             }
 
             // 2. Insert status update notification message in the chat
-            if ($reqData && !empty($reqData['student_phone'])) {
-                $phone = $reqData['student_phone'];
-                $serviceTitle = $reqData['service_title'];
+            if ($reqData && (!empty($reqData['student_id']) || !empty($reqData['student_phone']))) {
+                $studentId = intval($reqData['student_id'] ?? 0);
+                $phone = $reqData['student_phone'] ?? '';
 
-                // Find or create chat
-                $stmtChat = $conn->prepare("SELECT id FROM chats WHERE phone = ?");
-                $stmtChat->execute([$phone]);
-                $chat = $stmtChat->fetch();
+                // Find or create chat by student_id or phone
+                $chat = null;
+                if ($studentId > 0) {
+                    $stmtChat = $conn->prepare("SELECT id FROM chats WHERE student_id = ?");
+                    $stmtChat->execute([$studentId]);
+                    $chat = $stmtChat->fetch();
+                }
+                if (!$chat && !empty($phone)) {
+                    $stmtChat = $conn->prepare("SELECT id FROM chats WHERE phone = ?");
+                    $stmtChat->execute([$phone]);
+                    $chat = $stmtChat->fetch();
+                }
 
-                $msgText ="تحديث الطلب (#$id): تم تغيير حالة طلبك الخاص بـ ($serviceTitle) إلى: * $status *";
+                $msgText = "تحديث الطلب (#$id): تم تغيير حالة طلبك الخاص بـ ($svcTitleAr) إلى: * $statusAr *";
 
                 if ($chat) {
                     $chatId = $chat['id'];
-                    $conn->prepare("UPDATE chats SET last_msg = ?, status ='تحديث الطلب'WHERE id = ?")->execute([$msgText, $chatId]);
+                    $conn->prepare("UPDATE chats SET last_msg = ?, status = 'تحديث الطلب', updated_at = NOW() WHERE id = ?")->execute([$msgText, $chatId]);
                 } else {
-                    $conn->prepare("INSERT INTO chats (student_name, phone, last_msg, status) VALUES (?, ?, ?,'تحديث الطلب')")->execute([$reqData['student_name'] ??'طالب', $phone, $msgText]);
+                    $conn->prepare("INSERT INTO chats (student_id, student_name, phone, last_msg, status, updated_at) VALUES (?, ?, ?, ?, 'تحديث الطلب', NOW())")
+                         ->execute([$studentId, $reqData['student_name'] ?? 'طالب', $phone, $msgText]);
                     $chatId = $conn->lastInsertId();
                 }
 
                 // Insert the system notification message in chat_messages as admin
-                $stmtMsg = $conn->prepare("INSERT INTO chat_messages (chat_id, sender, text) VALUES (?,'admin', ?)");
+                $stmtMsg = $conn->prepare("INSERT INTO chat_messages (chat_id, sender, text) VALUES (?, 'admin', ?)");
                 $stmtMsg->execute([$chatId, $msgText]);
             }
 
@@ -682,6 +746,56 @@ try {
         } else {
             echo json_encode(["status"=>"error","message"=>"معرف الطلب غير صالح"], JSON_UNESCAPED_UNICODE);
         }
+        exit();
+    }
+
+    if ($action === 'ensure_support_chat') {
+        $studentId = intval($data['student_id'] ?? 0);
+        if ($studentId <= 0) {
+            echo json_encode(["status" => "error", "message" => "معرف الطالب غير صالح"], JSON_UNESCAPED_UNICODE);
+            exit();
+        }
+
+        // Check student exists
+        $stuStmt = $conn->prepare("SELECT id, full_name, university, phone FROM students WHERE id = ?");
+        $stuStmt->execute([$studentId]);
+        $student = $stuStmt->fetch(PDO::FETCH_ASSOC);
+
+        if (!$student) {
+            echo json_encode(["status" => "error", "message" => "الطالب غير موجود"], JSON_UNESCAPED_UNICODE);
+            exit();
+        }
+
+        // Search by student_id first, then by phone if orphaned
+        $chatStmt = $conn->prepare("SELECT id FROM chats WHERE student_id = ?");
+        $chatStmt->execute([$studentId]);
+        $chat = $chatStmt->fetch(PDO::FETCH_ASSOC);
+
+        if (!$chat && !empty($student['phone'])) {
+            $chatPhoneStmt = $conn->prepare("SELECT id FROM chats WHERE phone = ?");
+            $chatPhoneStmt->execute([$student['phone']]);
+            $chatPhone = $chatPhoneStmt->fetch(PDO::FETCH_ASSOC);
+            if ($chatPhone) {
+                // Link existing chat to this student_id
+                $conn->prepare("UPDATE chats SET student_id = ? WHERE id = ?")->execute([$studentId, $chatPhone['id']]);
+                $chat = $chatPhone;
+            }
+        }
+
+        if (!$chat) {
+            $ins = $conn->prepare("INSERT INTO chats (student_id, student_name, student_uni, phone, last_msg, status, updated_at) VALUES (?, ?, ?, ?, '', 'جديد', NOW())");
+            $ins->execute([
+                $studentId,
+                $student['full_name'],
+                $student['university'] ?? 'جامعة في جورجيا',
+                $student['phone'] ?? ''
+            ]);
+            $chatId = intval($conn->lastInsertId());
+        } else {
+            $chatId = intval($chat['id']);
+        }
+
+        echo json_encode(["status" => "success", "data" => ["chat_id" => $chatId]], JSON_UNESCAPED_UNICODE);
         exit();
     }
 

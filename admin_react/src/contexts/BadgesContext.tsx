@@ -56,18 +56,19 @@ export function BadgesProvider({ children }: { children: React.ReactNode }) {
           setPendingFeedbackCount(0);
         }
 
-        // 3. Customer Support Chats requiring admin attention
+        // 3. Customer Support Chats requiring admin attention:
+        // SOLE SOURCE OF TRUTH: Latest active non-deleted message sender === 'student'
         if (Array.isArray(result.data.chats)) {
           const pChats = result.data.chats.filter((c: Record<string, unknown>) => {
-            const st = String(c.status || '').trim();
-            if (st === 'رسالة جديدة' || st === 'قيد الانتظار' || st === 'جديد') {
-              return true;
+            if (!Array.isArray(c.messages) || c.messages.length === 0) {
+              return false;
             }
-            if (Array.isArray(c.messages) && c.messages.length > 0) {
-              const lastMsg = c.messages[c.messages.length - 1];
-              return lastMsg && (lastMsg.sender === 'student' || lastMsg.sender === 'user');
-            }
-            return false;
+            const activeMsgs = c.messages.filter(
+              (m: Record<string, unknown>) => !m.deleted && !m.is_deleted
+            );
+            if (activeMsgs.length === 0) return false;
+            const lastMsg = activeMsgs[activeMsgs.length - 1];
+            return lastMsg && (lastMsg.sender === 'student' || lastMsg.sender === 'user');
           });
           setPendingChatsCount(pChats.length);
         } else {

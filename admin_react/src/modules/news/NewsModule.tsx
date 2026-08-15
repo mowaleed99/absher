@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useNews } from '../../hooks/useNews';
 import { NewsItem } from '../../types/news';
 import { useI18n } from '../../lib/i18n';
@@ -8,6 +8,8 @@ import { EditNewsModal } from './EditNewsModal';
 import { useConfirmDialog } from '../../components/ConfirmDialog';
 import { useToast } from '../../components/Toast';
 
+const PAGE_SIZE = 12;
+
 export function NewsModule() {
   const { t, lang } = useI18n();
   const isRtl = lang === 'ar';
@@ -16,6 +18,7 @@ export function NewsModule() {
   const { news, isLoading, error, refetch, addNews, updateNews, deleteNews } = useNews();
 
   const [searchTerm, setSearchTerm] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [editingNews, setEditingNews] = useState<NewsItem | null>(null);
 
@@ -27,9 +30,21 @@ export function NewsModule() {
       const matchTitleEn = (n.title_en || '').toLowerCase().includes(q);
       const matchContentAr = (n.content_ar || n.content || '').toLowerCase().includes(q);
       const matchContentEn = (n.content_en || '').toLowerCase().includes(q);
-      return matchTitleAr || matchTitleEn || matchContentAr || matchContentEn;
+      const matchId = String(n.id).includes(q);
+      return matchTitleAr || matchTitleEn || matchContentAr || matchContentEn || matchId;
     });
   }, [news, searchTerm]);
+
+  // Reset page when filter changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm]);
+
+  const totalPages = Math.max(1, Math.ceil(filteredNews.length / PAGE_SIZE));
+  const paginatedNews = useMemo(() => {
+    const start = (currentPage - 1) * PAGE_SIZE;
+    return filteredNews.slice(start, start + PAGE_SIZE);
+  }, [filteredNews, currentPage]);
 
   const handleDelete = async (item: NewsItem) => {
     const ok = await confirm({
@@ -41,9 +56,9 @@ export function NewsModule() {
 
     const res = await deleteNews(item.id);
     if (res.success) {
-      showToast(t('msg.news_deleted'), 'success');
+      showToast(isRtl ? 'تم حذف الخبر بنجاح' : 'News deleted successfully', 'success');
     } else {
-      showToast(res.error || t('msg.error_delete_news'), 'error');
+      showToast(res.error || (isRtl ? 'فشل حذف الخبر' : 'Failed to delete news'), 'error');
     }
   };
 
@@ -188,22 +203,62 @@ export function NewsModule() {
           <p style={{ margin: 0, fontSize: '0.95rem' }}>{t('news.empty_state')}</p>
         </div>
       ) : (
-        <div
-          style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fill, minmax(290px, 1fr))',
-            gap: '14px',
-          }}
-        >
-          {filteredNews.map((n) => (
-            <NewsCard
-              key={n.id}
-              news={n}
-              onEdit={(item) => setEditingNews(item)}
-              onDelete={handleDelete}
-            />
-          ))}
-        </div>
+        <>
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
+              gap: '14px',
+            }}
+          >
+            {paginatedNews.map((n) => (
+              <NewsCard
+                key={n.id}
+                news={n}
+                onEdit={(item) => setEditingNews(item)}
+                onDelete={handleDelete}
+              />
+            ))}
+          </div>
+
+          {/* Pagination Bar */}
+          {totalPages > 1 && (
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '8px',
+                marginTop: '20px',
+                padding: '12px 0',
+              }}
+            >
+              <button
+                type="button"
+                className="btn btn-secondary"
+                disabled={currentPage === 1}
+                onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                style={{ height: '32px', padding: '0 12px', borderRadius: '6px', fontSize: '0.8rem' }}
+              >
+                {t('pagination.prev')}
+              </button>
+
+              <div style={{ color: 'var(--text-muted)', fontSize: '0.82rem', padding: '0 8px' }}>
+                {t('pagination.page', { current: currentPage, total: totalPages })}
+              </div>
+
+              <button
+                type="button"
+                className="btn btn-secondary"
+                disabled={currentPage === totalPages}
+                onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                style={{ height: '32px', padding: '0 12px', borderRadius: '6px', fontSize: '0.8rem' }}
+              >
+                {t('pagination.next')}
+              </button>
+            </div>
+          )}
+        </>
       )}
 
       {/* Modals */}

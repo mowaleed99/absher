@@ -9,10 +9,10 @@
 > | Phase 2 | Districts & Universities | `COMPLETED / VERIFIED / USER ACCEPTED ✅` |
 > | Phase 3 | Services & Service Requests | `COMPLETED / VERIFIED / USER ACCEPTED ✅` |
 > | Phase 4 | Reviews Moderation, Feedback, Students & Points | `COMPLETED / VERIFIED / USER ACCEPTED ✅` |
-> | Phase 5 | News, Notifications, Customer Support Chats | `IMPLEMENTED / STAGING VERIFIED — AWAITING USER UAT` |
-> | Phase 6 | Executive Dashboard & Cross-Module Analytics | `IMPLEMENTED / STAGING VERIFIED — AWAITING USER UAT` |
+> | Phase 5 | News, Notifications, Customer Support Chats | `COMPLETED / VERIFIED / USER ACCEPTED ✅` |
+> | Phase 6 | Executive Dashboard & Cross-Module Analytics | `COMPLETED / VERIFIED / USER ACCEPTED ✅` |
 > | Deferred | Housing Offers (Waiting for User Requirements) | `DEFERRED / FROZEN` |
-> | Cutover | Phase 7 / Production Promotion | `NOT STARTED / REQUIRES EXPLICIT FINAL GO` |
+> | Cutover | Phase 7 / Production Promotion | `NOT STARTED — REQUIRES EXPLICIT USER GO` |
 > 
 > **Execution Rule:** Each phase is executed sequentially (GO → Implement → Verify → Accept → STOP) without reopening architecture or redesigning interfaces.
 
@@ -277,7 +277,8 @@ Because all staging endpoints load `config/db_staging.php`, all notification ins
 ---
 
 ### Phase 5: Content, Broadcasting & Live Communications
-- **Goal:** Manage news publishing, broadcast push notifications, and live customer support chats.
+- **Goal:** Manage news publishing, bilingual broadcast push notifications, and live customer support console with complete Vanilla feature parity and bounded viewport isolation.
+- **Status:** `COMPLETED / VERIFIED / USER ACCEPTED ✅`
 - **Modules Included:**
   1. **Georgia News Module (`/news`)**:
      - **Exact Endpoint:** `ADMIN_API_URL` (`/api_staging/admin_api.php`)
@@ -285,73 +286,73 @@ Because all staging endpoints load `config/db_staging.php`, all notification ins
      - **Add News:** `POST /api_staging/admin_api.php?action=add_news` -> Payload: `{ title_ar: string, title_en: string, content_ar: string, content_en: string, image_url: string }` -> Response: `{ status: "success", message: "تم نشر الخبر والتنبيه بنجاح" }`
      - **Update News:** `POST /api_staging/admin_api.php?action=update_news` -> Payload: `{ id: number, title_ar: string, title_en: string, content_ar: string, content_en: string, image: string }` -> Response: `{ status: "success", message: "تم تعديل الخبر بنجاح" }`
      - **Delete News:** `POST /api_staging/admin_api.php?action=delete_news` -> Payload: `{ id: number }` -> Response: `{ status: "success", message: "تم حذف الخبر بنجاح" }`
-     - **Upload Mechanism:** Image upload via `upload/image.php?folder=news`.
-     - **UI / Behavior:** News article cards, Add News Modal with image upload, Edit News Modal, Delete confirmation dialog.
+     - **Upload Mechanism:** Image upload via `upload/image.php?folder=news` with base64 safety handler `saveBase64IfPresent` preserving existing images on edit when no new file is uploaded.
+     - **UI / Behavior:** Responsive 3–4 card grid layout with 140px media banners, date pills, ID badges, real-time search, counter badge, client-side pagination (12 items/page), compact bilingual Add/Edit modals with dark scrollbars, custom image picker with live preview/replace/remove, zero untranslated button keys.
   2. **Alerts & Notifications Module (`/notifications`)**:
      - **Exact Endpoint:** `ADMIN_API_URL` (`/api_staging/admin_api.php`)
-     - **Get All:** `GET /api_staging/admin_api.php?action=get_all` -> Response: `res.notifications` (Array of `{ id: number, student_id: number, title: string, body: string, created_at: string }`)
-     - **Add Notification:** `POST /api_staging/admin_api.php?action=add_notification` -> Payload: `{ title: string, body: string }` -> Response: `{ status: "success", message: "تم نشر التنبيه والإشعار بنجاح" }`
+     - **Database Schema:** `notifications` table (`id`, `student_id`, `title`, `body`, `title_ar`, `title_en`, `body_ar`, `body_en`, `created_at`).
+     - **Get All:** `GET /api_staging/admin_api.php?action=get_all` -> Response: `res.notifications` (Array of `{ id: number, student_id: number, title: string, body: string, title_ar: string, title_en: string, body_ar: string, body_en: string, date: string, created_at: string }`)
+     - **Add Notification:** `POST /api_staging/admin_api.php?action=add_notification` -> Payload: `{ title_ar: string, title_en: string, body_ar: string, body_en: string }` -> Response: `{ status: "success", message: "تم نشر التنبيه والإشعار بنجاح" }`
      - **Delete Notification:** `POST /api_staging/admin_api.php?action=delete_notification` -> Payload: `{ id: number }` -> Response: `{ status: "success", message: "تم حذف التنبيه بنجاح" }`
-     - **UI / Behavior:** Broadcast history table, Send Push Notification Modal, Delete broadcast record.
+     - **High-Density Table Contract:** Professional high-density data table (`#`, Arabic Title with bell icon, English Title, 2-line clamped preview, Date/Time, Status badge `Active for Students` vs `Archive >48h`, and isolated Delete button with `e.stopPropagation()`).
+     - **Table Controls & Interactivity:** Primary "Send Broadcast Notification" button, live count badge, search filter across all bilingual columns, client-side pagination (15 items/page), click-to-view details modal with dedicated Arabic and English text boxes.
+     - **Mobile Localization Invariant:** Flutter `notifications_screen.dart` dynamically selects `title_en`/`body_en` when app language is English, and `title_ar`/`body_ar` when Arabic.
+     - **System-Generated Notifications Invariant:** `update_request_status` joins `services` for bilingual title and maps request status translations (`New` -> `جديد`, `In Progress` -> `قيد التنفيذ`, `Completed` -> `مكتمل`, `Cancelled` -> `ملغي`). `chat/admin_reply.php` dispatches bilingual push notifications.
   3. **Customer Support Chats Module (`/chats`)**:
-     - **Get All Conversations:** `GET /api_staging/admin_api.php?action=get_all` -> Response: `res.chats` (Array of `{ id: number, student_name: string, phone: string, student_id: number|null, last_msg: string, status: string, time: string, messages: Array<{ id: number, sender: 'student'|'admin', text: string, type: 'text'|'image', imageUrl: string|null, quoteText: string|null, quoteSender: string|null, deleted: boolean, time: string }> }`)
-     - **Send Reply Endpoint:** `POST /api_staging/chat/admin_reply.php` -> Payload: `{ chat_id: number, content: string, message_type: 'text' | 'image', image_url?: string, quote_text?: string, quote_sender?: string }` -> Response: `{ success: true, message: "Message sent", data: { message_id: number } }`
-     - **Edit Message:** `POST /api_staging/admin_api.php?action=edit_chat_message` -> Payload: `{ message_id: number, text: string }` -> Response: `{ status: "success", message: "تم تعديل الرسالة بنجاح" }`
-     - **Delete Message:** `POST /api_staging/admin_api.php?action=delete_chat_message` -> Payload: `{ message_id: number }` -> Response: `{ status: "تم حذف الرسالة بنجاح" }`
-     - **Delete Conversation:** `POST /api_staging/admin_api.php?action=delete_chat` -> Payload: `{ chat_id: number }` -> Response: `{ status: "success", message: "تم حذف المحادثة بنجاح" }`
-     - **Upload Mechanism:** Chat media upload via `upload/image.php?folder=chat`.
-     - **UI / Behavior & Cross-Module Deep-Linking:**
-       - Two-column chat interface (left: conversations list with unread counter, right: message thread), real-time polling (3s interval), text message input, image attachment picker, message quote/reply banner, inline edit/delete popup, student info panel.
-       - **Deep-linking Invariant:** When navigated to via `/chats?student_id=<ID>`:
-         1. Reads `student_id` directly from URL query parameters.
-         2. Auto-locates and opens the corresponding student conversation if it exists.
-         3. If no conversation exists for that `student_id`, opens customer support view in a clean empty state without crashing.
-         4. Links strictly via `student_id` (not student name or phone number).
-- **Files to Create:**
+     - **Get All Conversations:** `GET /api_staging/admin_api.php?action=get_all` -> Response: `res.chats` (Array of `{ id: number, student_name: string, phone: string, student_uni: string|null, student_id: number|null, last_msg: string, status: string, time: string, messages: Array<{ id: number, sender: 'student'|'admin', text: string, type: 'text'|'image', imageUrl: string|null, quoteText: string|null, quoteSender: string|null, deleted: boolean, time: string }> }`)
+     - **Ensure Support Chat Endpoint (Addendum A):** `POST /api_staging/admin_api.php?action=ensure_support_chat` -> Payload: `{ student_id: number }` -> Response: `{ status: "success", data: { chat_id: number } }`. Deep-link `/chats?student_id=X` auto-creates or retrieves chat and auto-focuses composer without dead-ends.
+     - **Send Reply Endpoint:** `POST /api_staging/chat/admin_reply.php` -> Payload: `{ chat_id: number, content: string, message_type: 'text' | 'image', image_url?: string, quote_text?: string, quote_sender?: string }` -> Response: `{ success: true, message: "Message sent", data: { message_id: number } }`.
+     - **Edit Message:** `POST /api_staging/admin_api.php?action=edit_chat_message` -> Payload: `{ message_id: number, text: string }` -> Response: `{ status: "success", message: "تم تعديل الرسالة بنجاح" }`. Centered dark modal with textarea.
+     - **Delete Message:** `POST /api_staging/admin_api.php?action=delete_chat_message` -> Payload: `{ message_id: number }` -> Response: `{ status: "success", message: "تم حذف الرسالة بنجاح" }`.
+     - **Delete Conversation:** `POST /api_staging/admin_api.php?action=delete_chat` -> Payload: `{ chat_id: number }` -> Response: `{ status: "success", message: "تم حذف المحادثة بنجاح" }`.
+     - **Upload Mechanism:** Authenticated upload via `/api_staging/upload/image.php?folder=chat` saving to `uploads_staging/chat/<filename>`.
+     - **Consecutive Identical Image Sending Invariant:** File input value is reset immediately after selection, removal, and send, allowing consecutive identical images to be chosen and sent as distinct message rows without deduplication suppression.
+     - **Authoritative Attention State & Immediate Invalidation:** Sole source of truth for chat attention is `latest active non-deleted message sender === 'student'`. Admin reply, edit, or delete immediately calls `refetchBadges()`.
+     - **Localized Deleted Message Tombstone Invariant:** Controlled strictly by `deleted: true`. Renders localized `t('chats.deleted_message')` (`'تم حذف هذه الرسالة'` / `'This message was deleted'`) in a subtle tombstone bubble with a ban icon. Original media, quotes, and edit/delete actions are completely hidden.
+     - **Vanilla Parity Console:** Student avatar initial, name, `#id`, university, phone, WhatsApp direct link with pre-filled message template, Student Profile modal, Block Student button linking to Phase 4 blocking API.
+     - **Chat Composer Invariant:** Scoped WhatsApp/Telegram-style horizontal row (`.chat-composer`) with approximately 68–76px total composer height, comfortable 46–50px minimum textarea height occupying most of the available Chat width (`flex: 1`), auto-expanding smoothly up to 4 lines (max 120px) before internal scrolling, `Enter` to send, `Shift+Enter` for newline, 44px attachment button, 44px send button, compact reply and image preview strips, zero global form CSS leakage.
+     - **Smart Non-Intrusive Auto-Scroll Invariant:** Auto-scroll to bottom occurs strictly on: (1) opening or switching conversation, (2) local Admin send completion, (3) new message arriving while Admin is already near bottom (<=100px threshold). When Admin scrolls up to read history, 3s polling never forces the scrollbar down; incoming messages trigger a floating non-intrusive "New messages ↓" pill indicator that scrolls to bottom only when clicked.
+     - **Bounded Viewport Isolation Invariant:** Browser document/window never scrolls because of chat content. `AdminLayout` applies `height: 100vh; overflow: hidden;` and `content-area-no-scroll` on `/chats`. Top header and sidebar remain fixed; internal scrolling is bounded strictly to conversations list and message stream.
+- **Files Created / Modified:**
   - `src/types/news.ts`, `src/types/notification.ts`, `src/types/chat.ts`
   - `src/hooks/useNews.ts`, `src/hooks/useNotifications.ts`, `src/hooks/useChats.ts`
   - `src/modules/news/NewsModule.tsx`, `NewsCard.tsx`, `AddNewsModal.tsx`, `EditNewsModal.tsx`
   - `src/modules/notifications/NotificationsModule.tsx`, `SendNotificationModal.tsx`
-  - `src/modules/chats/ChatsModule.tsx`, `ChatConversationList.tsx`, `ChatMessageThread.tsx`, `ChatInputBar.tsx`
-- **Files to Modify:**
-  - `src/App.tsx` (register routes: `/news`, `/notifications`, `/chats`)
-  - `src/layouts/AdminLayout.tsx` (activate sidebar items for News, Notifications, Chats)
-- **Staging Fixtures (Phase 5):**
-  - 3 deterministic news articles with images.
-  - 3 past broadcast notification rows.
-  - 3 active student chat threads with historical message exchanges.
+  - `src/modules/chats/ChatsModule.tsx`
+  - `src/layouts/AdminLayout.tsx`, `src/style.css`, `src/lib/i18n.tsx`, `src/lib/media.ts`
+  - `backend_php/api_staging/admin_api.php`, `backend_php/api_staging/core/notification.php`, `backend_php/api_staging/chat/admin_reply.php`
 - **Acceptance Checklist (Phase 5):**
-  - `[ ]` News: Create, edit, delete news articles with images.
-  - `[ ]` Notifications: Compose and broadcast notification, view broadcast history.
-  - `[ ]` Chats: Select conversation, send text reply, send image attachment, edit message, delete message, poll updates cleanly.
-  - `[ ]` Quality Gates: `npx tsc --noEmit` (0 errors), `npm run lint` (0 errors), `npm run build:staging` (succeeds).
-- **STOP Condition:** Deploy Phase 5 to staging `/admin_v2/` and wait for user acceptance before Phase 6.
+  - `[x]` News: Grid renders, Add bilingual news, Edit with image preservation, Delete news.
+  - `[x]` Notifications: High-density data table, bilingual broadcast modal, row details modal, mobile language selection.
+  - `[x]` Chats: Viewport isolation (zero document scroll), conversation list with attention badge, WhatsApp link, block student, send reply, consecutive identical images, edit message, localized deleted tombstone.
+  - `[x]` Quality Gates: `npx tsc --noEmit` (0 errors), `npm run lint` (0 errors), `npm run build:staging` (succeeds).
+- **Status:** COMPLETED / VERIFIED / USER ACCEPTED ✅
 
 ---
 
 ### Phase 6: Executive Dashboard & Cross-Module Analytics
 - **Goal:** Complete the top-level Overview Dashboard aggregating metrics across all modules.
+- **Status:** `COMPLETED / VERIFIED / USER ACCEPTED ✅`
 - **Modules Included:**
   1. **Dashboard Overview (`/` and `/dashboard`)**:
      - **Exact Endpoint:** `ADMIN_API_URL` (`/api_staging/admin_api.php`)
      - **Get All:** `GET /api_staging/admin_api.php?action=get_all`
      - **Metrics Aggregated:** Total Apartments, Total Services, Active Requests, Total Students, Average Review Rating, Pending Feedback, Active Support Chats.
      - **UI / Behavior:** 6 top KPI summary cards, Service bookings breakdown widget, Reviews rating distribution widget, Quick Action shortcuts to each module, Latest 5 requests feed, Latest 5 student registrations feed.
-- **Files to Create:**
+- **Files Created / Modified:**
   - `src/types/dashboard.ts`
   - `src/hooks/useDashboardStats.ts`
   - `src/modules/dashboard/DashboardModule.tsx`, `StatCard.tsx`, `RecentActivityWidget.tsx`, `RatingDistributionWidget.tsx`
-- **Files to Modify:**
-  - `src/App.tsx` (configure `/` and `/dashboard` to render `DashboardModule`)
-  - `src/layouts/AdminLayout.tsx` (activate sidebar navigation for Dashboard Overview)
+  - `src/App.tsx` (configured `/` and `/dashboard` to render `DashboardModule`)
+  - `src/layouts/AdminLayout.tsx` (activated sidebar navigation for Dashboard Overview)
 - **Acceptance Checklist (Phase 6):**
-  - `[ ]` Dashboard KPIs match real database counts in Staging.
-  - `[ ]` Rating distribution and service analytics widgets render correctly.
-  - `[ ]` Quick action links navigate directly to respective modules.
-  - `[ ]` All 12 Sidebar navigation items are active, functional, and fully migrated.
-  - `[ ]` Zero remaining Vanilla JS files needed for dashboard functionality.
-  - `[ ]` Quality Gates: `npx tsc --noEmit` (0 errors), `npm run lint` (0 errors), `npm run build:staging` (succeeds).
-- **STOP Condition:** Deploy complete React Dashboard to staging `/admin_v2/` and conduct full End-to-End system acceptance before Phase 7.
+  - `[x]` Dashboard KPIs match real database counts in Staging.
+  - `[x]` Rating distribution and service analytics widgets render correctly.
+  - `[x]` Quick action links navigate directly to respective modules.
+  - `[x]` All 12 Sidebar navigation items are active, functional, and fully migrated.
+  - `[x]` Zero remaining Vanilla JS files needed for dashboard functionality.
+  - `[x]` Quality Gates: `npx tsc --noEmit` (0 errors), `npm run lint` (0 errors), `npm run build:staging` (succeeds).
+- **Status:** COMPLETED / VERIFIED / USER ACCEPTED ✅
 
 ---
 

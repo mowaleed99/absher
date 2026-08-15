@@ -146,12 +146,17 @@ body {
 /* Layout */
 .main-layout {
     display: flex;
-    min-height: calc(100vh - 75px);
+    flex: 1;
+    min-height: 0;
+    height: calc(100vh - 75px);
+    overflow: hidden;
 }
 
 .sidebar {
     width: 310px;
     flex-shrink: 0;
+    height: 100%;
+    overflow-y: auto;
     background: var(--bg-sidebar);
     border-left: 1px solid var(--border-color);
     display: flex;
@@ -216,9 +221,19 @@ body {
 /* Content Area */
 .content-area {
     flex: 1;
+    min-height: 0;
+    min-width: 0;
+    height: 100%;
     padding: 2.5rem 3.5rem;
     overflow-y: auto;
     max-width: 1600px;
+    display: flex;
+    flex-direction: column;
+}
+
+.content-area-no-scroll {
+    overflow: hidden !important;
+    padding: 1.5rem 2rem !important;
 }
 
 .tab-pane {
@@ -529,3 +544,117 @@ form {
     z-index: 2000;
     transition: var(--transition);
 }
+
+/* Custom Scrollbars */
+::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+::-webkit-scrollbar-track {
+    background: rgba(15, 23, 42, 0.6);
+}
+::-webkit-scrollbar-thumb {
+    background: #334155;
+    border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+    background: #475569;
+}
+
+.custom-scrollbar {
+    scrollbar-width: thin;
+    scrollbar-color: #334155 rgba(15, 23, 42, 0.6);
+}
+
+/* Scoped Chat Composer (WhatsApp / Telegram style input bar) */
+.chat-composer {
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    gap: 10px !important;
+    padding: 10px 14px !important;
+    background: var(--bg-card) !important;
+    border-top: 1px solid var(--border-color) !important;
+    min-height: 68px !important;
+    max-height: 140px !important;
+    width: 100% !important;
+    flex-shrink: 0 !important;
+    box-sizing: border-box !important;
+    margin: 0 !important;
+}
+
+.chat-composer-btn-attach {
+    width: 44px !important;
+    height: 44px !important;
+    border-radius: 10px !important;
+    background: rgba(255, 255, 255, 0.06) !important;
+    color: var(--text-muted) !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    cursor: pointer !important;
+    flex-shrink: 0 !important;
+    border: 1px solid var(--border-color) !important;
+    transition: all 0.2s ease !important;
+    padding: 0 !important;
+}
+
+.chat-composer-btn-attach:hover {
+    background: rgba(99, 102, 241, 0.15) !important;
+    color: var(--primary) !important;
+    border-color: rgba(99, 102, 241, 0.4) !important;
+}
+
+.chat-composer-textarea {
+    flex: 1 !important;
+    min-height: 48px !important;
+    max-height: 120px !important;
+    border-radius: 10px !important;
+    background: #0d1527 !important;
+    border: 1px solid #1e293b !important;
+    color: #f8fafc !important;
+    padding: 12px 14px !important;
+    font-size: 0.92rem !important;
+    line-height: 1.4 !important;
+    resize: none !important;
+    outline: none !important;
+    box-sizing: border-box !important;
+    font-family: inherit !important;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease !important;
+}
+
+.chat-composer-textarea:focus {
+    border-color: var(--primary) !important;
+    box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.25) !important;
+}
+
+.chat-composer-btn-send {
+    height: 44px !important;
+    padding: 0 18px !important;
+    border-radius: 10px !important;
+    font-weight: 700 !important;
+    font-size: 0.88rem !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 8px !important;
+    flex-shrink: 0 !important;
+    cursor: pointer !important;
+    border: none !important;
+    background: var(--primary) !important;
+    color: #ffffff !important;
+    transition: all 0.2s ease !important;
+}
+
+.chat-composer-btn-send:disabled {
+    opacity: 0.5 !important;
+    cursor: not-allowed !important;
+}
+
+.chat-composer-btn-send:not(:disabled):hover {
+    background: #4f46e5 !important;
+    transform: translateY(-1px) !important;
+    box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3) !important;
+}
+
+

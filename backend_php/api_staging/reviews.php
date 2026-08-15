@@ -1,0 +1,50 @@
+<?php
+// ملف التقييمات والآراء (Reviews API) - Legacy compatibility
+require_once __DIR__ . '/../config/db_staging.php';
+
+$input = json_decode(file_get_contents("php://input"), true) ?? $_POST;
+$action = $_GET['action'] ?? ($input['action'] ?? 'get');
+
+try {
+    if ($action === 'get') {
+        // Fetch approved service reviews
+        $reviews = $conn->query("
+            SELECT r.id, 
+                   COALESCE(s.full_name, r.student_name, 'طالب كريم') AS student_name,
+                   COALESCE(s.university, r.uni, 'جامعة في جورجيا') AS uni,
+                   r.rating, r.comment, DATE_FORMAT(r.created_at, '%Y-%m-%d') AS date 
+            FROM service_reviews r
+            LEFT JOIN students s ON r.student_id = s.id
+            WHERE r.status = 'approved'
+            ORDER BY r.id DESC
+        ")->fetchAll(PDO::FETCH_ASSOC);
+        
+        echo json_encode(["status" => "success", "reviews" => $reviews], JSON_UNESCAPED_UNICODE);
+        exit();
+    }
+
+    if ($action === 'add') {
+        $studentName = trim($input['student_name'] ?? 'طالب');
+        $uni = trim($input['uni'] ?? 'جامعة في جورجيا');
+        $rating = intval($input['rating'] ?? 5);
+        $comment = trim($input['comment'] ?? '');
+
+        if (empty($comment)) {
+            echo json_encode(["status" => "error", "message" => "نص التقييم مفقود"], JSON_UNESCAPED_UNICODE);
+            exit();
+        }
+
+        // Insert as an approved review for backward compatibility
+        $stmt = $conn->prepare("INSERT INTO service_reviews (student_name, uni, rating, comment, status) VALUES (?, ?, ?, ?, 'approved')");
+        $stmt->execute([$studentName, $uni, $rating, $comment]);
+
+        echo json_encode(["status" => "success", "message" => "تم إضافة تقييمك بنجاح"], JSON_UNESCAPED_UNICODE);
+        exit();
+    }
+
+    echo json_encode(["status" => "error", "message" => "إجراء غير معروف"], JSON_UNESCAPED_UNICODE);
+
+} catch (Exception $e) {
+    echo json_encode(["status" => "error", "message" => "خطأ في الخادم: " . $e->getMessage()], JSON_UNESCAPED_UNICODE);
+}
+?>

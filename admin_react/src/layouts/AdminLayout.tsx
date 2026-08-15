@@ -1,4 +1,4 @@
-import { NavLink, Outlet } from 'react-router-dom';
+import { NavLink, Outlet, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
 import { useBadges } from '../contexts/BadgesContext';
@@ -9,6 +9,9 @@ export function AdminLayout() {
   const { toggleTheme, theme } = useTheme();
   const { lang, setLang, t } = useI18n();
   const { pendingReviewsCount, pendingFeedbackCount, pendingChatsCount } = useBadges();
+  const location = useLocation();
+
+  const isChatsRoute = location.pathname.startsWith('/chats');
 
   const handleLanguageToggle = () => {
     setLang(lang === 'ar' ? 'en' : 'ar');
@@ -24,7 +27,7 @@ export function AdminLayout() {
   const chatsBadgeText = formatBadge(pendingChatsCount);
 
   return (
-    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
+    <div style={{ height: '100vh', maxHeight: '100vh', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
       {/* Header */}
       <header className="admin-header">
         <div className="logo-area">
@@ -252,7 +255,7 @@ export function AdminLayout() {
         </aside>
 
         {/* Content Area */}
-        <main className="content-area">
+        <main className={`content-area custom-scrollbar ${isChatsRoute ? 'content-area-no-scroll' : ''}`}>
           <Outlet />
         </main>
       </div>

@@ -57,6 +57,34 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     }
   }
 
+  String _getNotifTitle(Map<String, dynamic> notif) {
+    final isEn = LanguageService.currentLang.value == 'en';
+    if (isEn && notif['title_en'] != null && notif['title_en'].toString().trim().isNotEmpty) {
+      return notif['title_en'].toString();
+    }
+    if (!isEn && notif['title_ar'] != null && notif['title_ar'].toString().trim().isNotEmpty) {
+      return notif['title_ar'].toString();
+    }
+    return notif['title']?.toString() ?? notif['title_ar']?.toString() ?? notif['title_en']?.toString() ?? '';
+  }
+
+  String _getNotifBody(Map<String, dynamic> notif) {
+    final isEn = LanguageService.currentLang.value == 'en';
+    if (isEn && notif['body_en'] != null && notif['body_en'].toString().trim().isNotEmpty) {
+      return notif['body_en'].toString();
+    }
+    if (isEn && notif['content_en'] != null && notif['content_en'].toString().trim().isNotEmpty) {
+      return notif['content_en'].toString();
+    }
+    if (!isEn && notif['body_ar'] != null && notif['body_ar'].toString().trim().isNotEmpty) {
+      return notif['body_ar'].toString();
+    }
+    if (!isEn && notif['content_ar'] != null && notif['content_ar'].toString().trim().isNotEmpty) {
+      return notif['content_ar'].toString();
+    }
+    return notif['content']?.toString() ?? notif['body']?.toString() ?? notif['body_ar']?.toString() ?? notif['body_en']?.toString() ?? '';
+  }
+
   void _showNotificationDetail(
       BuildContext context, Map<String, dynamic> notif) {
     showDialog(
@@ -64,7 +92,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
       builder: (context) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
         title: Text(
-          notif['title']?.toString() ?? '',
+          _getNotifTitle(notif),
           style: const TextStyle(
               fontWeight: FontWeight.bold,
               color: AppColors.primaryDark,
@@ -76,7 +104,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              notif['content']?.toString() ?? '',
+              _getNotifBody(notif),
               style: const TextStyle(
                   fontSize: 14, color: AppColors.textDark, height: 1.6),
             ),
@@ -219,9 +247,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                                               children: [
                                                 Expanded(
                                                   child: Text(
-                                                    notif['title']
-                                                            ?.toString() ??
-                                                        '',
+                                                    _getNotifTitle(notif),
                                                     style: TextStyle(
                                                       fontSize: 15,
                                                       fontWeight:
@@ -256,8 +282,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                                             ),
                                             const SizedBox(height: 8),
                                             Text(
-                                              notif['content']?.toString() ??
-                                                  '',
+                                              _getNotifBody(notif),
                                               style: TextStyle(
                                                 fontSize: 13,
                                                 color: isRead
