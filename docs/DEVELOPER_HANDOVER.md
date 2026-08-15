@@ -56,6 +56,50 @@
 
 ---
 
+## 🚀 الطريقة الصح للشغل على الإنتاج مباشرة (Safe Production Workflow)
+
+> [!TIP]
+> **هذا القسم هو أول حاجة تقراها قبل أي تعديل.** اتبعه خطوة بخطوة وما هيحصلش أي مشكلة.
+
+### الخطوات الإلزامية لأي تعديل — مهما كان صغيراً
+
+```
+1. عدّل الملف اللي محتاجه بس (API أو Dashboard)
+         ↓
+2. اشتغل على جهازك وتأكد الكود شغال
+         ↓
+3. لو عدّلت React Admin:
+   cd admin_react
+   npm run typecheck      ← لازم يطلع 0 errors
+   npm run lint           ← لازم يطلع 0 errors
+   npm run build:production ← هيعمل dist/ جديد
+         ↓
+4. ارفع على السيرفر:
+   scp -r admin_react/dist/* root@80.241.218.23:/var/www/absher/backend_php/admin/
+   scp admin_react/public/.htaccess root@80.241.218.23:/var/www/absher/backend_php/admin/.htaccess
+         ↓
+5. لو عدّلت PHP API بس:
+   scp backend_php/api/admin_api.php root@80.241.218.23:/var/www/absher/backend_php/api/admin_api.php
+         ↓
+6. افتح http://80.241.218.23/admin/ وتأكد كل حاجة شغالة
+         ↓
+7. git add . && git commit -m "..." && git push origin main
+```
+
+---
+
+### ⚡ لو حصل أي مشكلة — الرجوع فوري في دقيقة واحدة
+
+```bash
+# على السيرفر مباشرة — يرجع آخر نسخة سليمة
+ssh root@80.241.218.23
+git -C /var/www/absher pull origin main
+# أو لو عندك backup:
+ls /var/backups/absher_production/
+cp -r /var/backups/absher_production/[اسم الـ backup]/* /var/www/absher/backend_php/
+```
+
+---
 
 ## 1. نظرة عامة على المشروع وهندسة النظام (Architecture Overview)
 
