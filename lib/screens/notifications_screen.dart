@@ -10,6 +10,7 @@ import '../core/loading_state_widget.dart';
 import '../core/empty_state_widget.dart';
 import 'chat_screen.dart';
 import 'flats_list_screen.dart';
+import 'apartment_detail_screen.dart';
 import 'services_screen.dart';
 import 'offers_screen.dart';
 
@@ -185,6 +186,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
   }
 
   bool _isChatNotification(Map<String, dynamic> notif) {
+    if (notif['is_grouped_chat'] == true) return true;
     final type = notif['type']?.toString().toLowerCase() ?? '';
     if (type == 'chat' || type == 'support_reply' || type == 'chat_reply') {
       return true;
@@ -192,13 +194,26 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     final title = _getNotifTitle(notif).toLowerCase();
     final body = _getNotifBody(notif).toLowerCase();
     final combined = '$title $body';
+
+    // Must NOT be an apartment, service, or offer notification
+    if (combined.contains('شقة') ||
+        combined.contains('شقق') ||
+        combined.contains('سكن') ||
+        combined.contains('عقار') ||
+        combined.contains('طلب') ||
+        combined.contains('خدمة') ||
+        combined.contains('خصم') ||
+        combined.contains('apartment') ||
+        combined.contains('service')) {
+      return false;
+    }
+
     return combined.contains('رد جديد من الدعم') ||
         combined.contains('ردود جديدة من الدعم') ||
         combined.contains('رد الدعم') ||
         combined.contains('الشات المباشر') ||
         combined.contains('support reply') ||
-        combined.contains('live chat') ||
-        combined.contains('chat message');
+        combined.contains('live chat');
   }
 
   List<Map<String, dynamic>> _getVisibleNotifications() {
@@ -328,36 +343,88 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
   }
 
   Map<String, dynamic>? _getNavigationTarget(Map<String, dynamic> notif) {
-    final text =
-        ('${_getNotifTitle(notif)} ${_getNotifBody(notif)}').toLowerCase();
+    final title = _getNotifTitle(notif).toLowerCase();
+    final body = _getNotifBody(notif).toLowerCase();
+    final text = '$title $body';
     final isAr = LanguageService.currentLang.value == 'ar';
 
-    if (notif['is_grouped_chat'] == true ||
-        text.contains('شات') ||
-        text.contains('محادثة') ||
-        text.contains('رسالة') ||
-        text.contains('رد الدعم') ||
-        text.contains('chat') ||
-        text.contains('message') ||
-        text.contains('support')) {
+    // 1. Apartment / Housing Notifications (FIRST PRIORITY)
+    if (text.contains('شقة') ||
+        text.contains('شقق') ||
+        text.contains('سكن') ||
+        text.contains('عقار') ||
+        text.contains('ايجار') ||
+        text.contains('إيجار') ||
+        text.contains('استوديو') ||
+        text.contains('غرفة') ||
+        text.contains('apartment') ||
+        text.contains('flat') ||
+        text.contains('housing') ||
+        text.contains('studio')) {
       return {
-        'label': isAr ? 'الانتقال إلى المحادثة' : 'Open Live Chat',
-        'icon': Icons.chat_bubble_outline,
-        'action': (BuildContext ctx) {
-          Navigator.of(ctx).push(
-            MaterialPageRoute(
-              builder: (_) => ChatScreen(user: widget.user),
-            ),
-          ).then((_) {
-            if (mounted) {
-              _loadStoredStatus();
-              _fetchNotifications(silent: true);
+        'label': isAr ? 'عرض تفاصيل الشقة' : 'View Apartment Details',
+        'icon': Icons.apartment_rounded,
+        'action': (BuildContext ctx) async {
+          final apts = await ApiService.getApartments();
+          if (!ctx.mounted) return;
+
+          // Try to match the specific apartment mentioned in the notification
+          Map<String, dynamic>? targetApt;
+          for (final apt in apts) {
+            final aptTitle = (apt['title']?.toString() ?? '').toLowerCase();
+            final aptDistrict = (apt['district']?.toString() ?? '').toLowerCase();
+            final aptPrice = (apt['price']?.toString() ?? '').toLowerCase();
+
+            if (aptTitle.isNotEmpty && text.contains(aptTitle)) {
+              targetApt = apt;
+              break;
             }
-          });
-        }
+            if (aptDistrict.isNotEmpty &&
+                aptPrice.isNotEmpty &&
+                text.contains(aptDistrict) &&
+                text.contains(aptPrice)) {
+              targetApt = apt;
+              break;
+            }
+          }
+
+          if (targetApt != null) {
+            Navigator.of(ctx).push(
+              MaterialPageRoute(
+                builder: (_) => ApartmentDetailScreen(
+                  apartment: targetApt!,
+                  user: widget.user,
+                ),
+              ),
+            );
+          } else if (apts.isNotEmpty) {
+            Navigator.of(ctx).push(
+              MaterialPageRoute(
+                builder: (_) => ApartmentDetailScreen(
+                  apartment: apts.first,
+                  user: widget.user,
+                ),
+              ),
+            );
+          } else {
+            Navigator.of(ctx).push(
+              MaterialPageRoute(
+                builder: (_) => FlatsListScreen(
+                  apartments: apts,
+                  user: widget.user,
+                  title: isAr ? 'الشقق المتاحة للإيجار' : 'Available Flats',
+                  subtitle: isAr
+                      ? 'تصفح قائمة الشقق والعقارات المتاحة'
+                      : 'Browse available flats and studios',
+                ),
+              ),
+            );
+          }
+        },
       };
     }
 
+    // 2. Service Requests Notifications
     if (text.contains('طلب') ||
         text.contains('خدمة') ||
         text.contains('خدمات') ||
@@ -376,45 +443,11 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
               builder: (_) => ServicesScreen(user: widget.user),
             ),
           );
-        }
+        },
       };
     }
 
-    if (text.contains('شقة') ||
-        text.contains('شقق') ||
-        text.contains('سكن') ||
-        text.contains('عقار') ||
-        text.contains('ايجار') ||
-        text.contains('إيجار') ||
-        text.contains('استوديو') ||
-        text.contains('غرفة') ||
-        text.contains('apartment') ||
-        text.contains('flat') ||
-        text.contains('housing') ||
-        text.contains('studio') ||
-        text.contains('room')) {
-      return {
-        'label': isAr ? 'عرض الشقق السكنية' : 'View Available Flats',
-        'icon': Icons.apartment,
-        'action': (BuildContext ctx) async {
-          final apts = await ApiService.getApartments();
-          if (!ctx.mounted) return;
-          Navigator.of(ctx).push(
-            MaterialPageRoute(
-              builder: (_) => FlatsListScreen(
-                apartments: apts,
-                user: widget.user,
-                title: isAr ? 'الشقق المتاحة للإيجار' : 'Available Flats',
-                subtitle: isAr
-                    ? 'تصفح قائمة الشقق والعقارات المتاحة'
-                    : 'Browse available flats and studios',
-              ),
-            ),
-          );
-        }
-      };
-    }
-
+    // 3. Offers Notifications
     if (text.contains('خصم') ||
         text.contains('عروض') ||
         text.contains('كوبون') ||
@@ -432,7 +465,33 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
               builder: (_) => OffersScreen(user: widget.user, apartments: apts),
             ),
           );
-        }
+        },
+      };
+    }
+
+    // 4. Live Chat Notifications
+    if (notif['is_grouped_chat'] == true ||
+        text.contains('رد جديد من الدعم') ||
+        text.contains('ردود جديدة من الدعم') ||
+        text.contains('الشات المباشر') ||
+        text.contains('محادثة الدعم') ||
+        text.contains('support reply') ||
+        text.contains('live chat')) {
+      return {
+        'label': isAr ? 'الانتقال إلى المحادثة' : 'Open Live Chat',
+        'icon': Icons.chat_bubble_outline,
+        'action': (BuildContext ctx) {
+          Navigator.of(ctx).push(
+            MaterialPageRoute(
+              builder: (_) => ChatScreen(user: widget.user),
+            ),
+          ).then((_) {
+            if (mounted) {
+              _loadStoredStatus();
+              _fetchNotifications(silent: true);
+            }
+          });
+        },
       };
     }
 
