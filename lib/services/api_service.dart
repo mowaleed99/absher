@@ -331,27 +331,6 @@ class ApiService {
     }
   }
 
-  // جلب الأخبار والإعلانات (News & Announcements)
-  static Future<List<Map<String, dynamic>>> getNews() async {
-    try {
-      final url =
-          '$baseUrl/news/list.php?lang=$_langParam&t=${DateTime.now().millisecondsSinceEpoch}';
-      final response =
-          await http.get(Uri.parse(url)).timeout(const Duration(seconds: 10));
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        final isSuccess =
-            data['success'] == true || data['status'] == 'success';
-        if (isSuccess && data['data'] is List) {
-          return List<Map<String, dynamic>>.from(data['data']);
-        }
-      }
-    } catch (e) {
-      debugPrint('Error fetching news: $e');
-    }
-    return [];
-  }
-
   // جلب كافة الجامعات
   static Future<List<Map<String, dynamic>>> getUniversities() async {
     try {
