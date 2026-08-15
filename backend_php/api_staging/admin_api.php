@@ -194,7 +194,12 @@ try {
         $status_reply_templates = $conn->query("SELECT * FROM status_reply_templates ORDER BY id ASC")->fetchAll(PDO::FETCH_ASSOC);
 
         echo json_encode(["status"=>"success","stats"=> ["total_apartments"=> count($apartments),"total_services"=> count($services),"total_students"=> count($students),"total_universities"=> count($universities),"total_districts"=> count($districts),"pending_requests"=> count(array_filter($requests, fn($r) => $r['status'] ==='قيد المراجعة')),"active_housing_offers_count" => $active_housing_offers_count,"promo_codes_count" => count($promo_codes)
-            ],"apartments"=> $apartments,"services"=> $services,"students"=> $students,"universities"=> $universities,"districts"=> $districts,"requests"=> $requests,"reviews"=> $reviews,"reviews_analytics"=> $reviews_analytics,"application_feedback"=> $application_feedback,"chats"=> $chats,"news"=> $news,"notifications"=> $notifications,"housing_offers"=> $housing_offers,"active_housing_offers_count" => $active_housing_offers_count,"blocked_identities"=> $blocked_identitie    if ($action === 'get_apartments') {
+            ],"apartments"=> $apartments,"services"=> $services,"students"=> $students,"universities"=> $universities,"districts"=> $districts,"requests"=> $requests,"reviews"=> $reviews,"reviews_analytics"=> $reviews_analytics,"application_feedback"=> $application_feedback,"chats"=> $chats,"news"=> $news,"notifications"=> $notifications,"housing_offers"=> $housing_offers,"active_housing_offers_count" => $active_housing_offers_count,"blocked_identities"=> $blocked_identities,"promo_codes"=> $promo_codes,"status_reply_templates"=> $status_reply_templates
+        ], JSON_UNESCAPED_UNICODE);
+        exit();
+    }
+
+    if ($action === 'get_apartments') {
         $apartments = $conn->query("
             SELECT *, 
                    COALESCE(NULLIF(title_ar, ''), title) AS display_title,
