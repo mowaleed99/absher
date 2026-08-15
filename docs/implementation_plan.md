@@ -567,11 +567,11 @@ DROP TABLE IF EXISTS `promo_codes`;
 | 13 | `notifications` | Push broadcast notifications | Phase 5 ✅ |
 | 14 | `chats` | Student support conversations | Phase 5 ✅ |
 | 15 | `chat_messages` | Chat messages & media | Phase 5 ✅ |
-| 16 | `housing_offers` | Exclusive housing discounts | **`DEFERRED / FROZEN`** |
-| 17 | **`promo_codes`** | **Promo campaigns & discount rules** | **Phase 6A** |
-| 18 | **`promo_code_services`** | **Service-specific promo eligibility** | **Phase 6A** |
-| 19 | **`promo_code_students`** | **Student audience promo eligibility** | **Phase 6A** |
-| 20 | **`promo_code_redemptions`**| **Immutable redemption snapshot & audit** | **Phase 6A** |
+| 16 | `housing_offers` | Exclusive housing discounts | **Phase 6B COMPLETED ✅ (Staging)** |
+| 17 | **`promo_codes`** | **Promo campaigns & discount rules** | **Phase 6A COMPLETED ✅** |
+| 18 | **`promo_code_services`** | **Service-specific promo eligibility** | **Phase 6A COMPLETED ✅** |
+| 19 | **`promo_code_students`** | **Student audience promo eligibility** | **Phase 6A COMPLETED ✅** |
+| 20 | **`promo_code_redemptions`**| **Immutable redemption snapshot & audit** | **Phase 6A COMPLETED ✅** |
 
 ---
 

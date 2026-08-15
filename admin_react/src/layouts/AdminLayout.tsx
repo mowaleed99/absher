@@ -99,6 +99,13 @@ export function AdminLayout() {
               <span>{t('nav.apartments')}</span>
             </NavLink>
             <NavLink
+              to="/offers"
+              className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
+            >
+              <i className="fa-solid fa-house-circle-check"></i>
+              <span>{t('nav.offers')}</span>
+            </NavLink>
+            <NavLink
               to="/districts"
               className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
             >
@@ -267,29 +274,6 @@ export function AdminLayout() {
               <i className="fa-solid fa-bullhorn"></i>
               <span>{t('nav.notifications')}</span>
             </NavLink>
-            <div
-              className="nav-item"
-              style={{ opacity: 0.45, cursor: 'not-allowed', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}
-              title="مؤجل — بانتظار متطلبات المستخدم (Phase 6B)"
-            >
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem' }}>
-                <i className="fa-solid fa-house-circle-check"></i>
-                <span>{t('nav.offers')}</span>
-              </div>
-              <span
-                style={{
-                  background: 'rgba(255, 255, 255, 0.08)',
-                  color: 'var(--text-muted)',
-                  border: '1px solid rgba(255, 255, 255, 0.15)',
-                  padding: '1px 6px',
-                  borderRadius: '4px',
-                  fontSize: '0.66rem',
-                  fontWeight: 700,
-                }}
-              >
-                قريباً
-              </span>
-            </div>
           </nav>
 
           <div className="sidebar-footer">

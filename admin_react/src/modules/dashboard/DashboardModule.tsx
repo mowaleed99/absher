@@ -730,6 +730,30 @@ export function DashboardModule() {
               </Link>
 
               <Link
+                to="/offers"
+                style={{
+                  height: '36px',
+                  padding: '0 14px',
+                  borderRadius: '8px',
+                  background: '#0d1527',
+                  border: '1px solid var(--border-color)',
+                  color: 'var(--text-main)',
+                  fontSize: '0.8rem',
+                  fontWeight: 700,
+                  textDecoration: 'none',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  transition: 'all 0.15s ease',
+                }}
+                onMouseEnter={(e) => (e.currentTarget.style.background = '#1e293b')}
+                onMouseLeave={(e) => (e.currentTarget.style.background = '#0d1527')}
+              >
+                <i className="fa-solid fa-house-circle-check" style={{ color: '#a855f7' }}></i>
+                <span>عروض السكن</span>
+              </Link>
+
+              <Link
                 to="/notifications"
                 style={{
                   height: '36px',

@@ -6,6 +6,7 @@ import { ServiceRequest } from '../types/request';
 import { ServiceReview, ReviewsAnalytics, ReviewStatus } from '../types/review';
 import { ApplicationFeedback, FeedbackStatus } from '../types/feedback';
 import { Student } from '../types/student';
+import { HousingOffer } from '../types/offer';
 
 function isObject(v: unknown): v is Record<string, unknown> {
   return typeof v === 'object' && v !== null && !Array.isArray(v);
@@ -564,3 +565,64 @@ export function parsePromoRedemptions(v: unknown): import('../types/promo').Prom
   if (parsed.some(p => p === null)) return null;
   return parsed as import('../types/promo').PromoRedemption[];
 }
+
+export function parseHousingOffer(v: unknown): HousingOffer | null {
+  if (!isObject(v)) return null;
+  const id = toNumber(v.id);
+  const apartment_id = toNumber(v.apartment_id);
+  if (id === null || apartment_id === null) return null;
+
+  const origPrice = toNumber(v.original_price) ?? 0;
+  const offerPrice = toNumber(v.offer_price) ?? 0;
+  let discountPercent = toNumber(v.discount_percent);
+  if (discountPercent === null && origPrice > 0 && offerPrice < origPrice) {
+    discountPercent = Math.round(((origPrice - offerPrice) / origPrice) * 100);
+  }
+
+  const titleAr = toString(v.title_ar || v.title);
+  const titleEn = toString(v.title_en);
+  const title = titleAr || titleEn || `Offer #${id}`;
+
+  const descAr = toString(v.description_ar || v.description);
+  const descEn = toString(v.description_en);
+  const description = descAr || descEn;
+
+  const badgeAr = toString(v.badge_text_ar || v.badge_text);
+  const badgeEn = toString(v.badge_text_en);
+
+  return {
+    id,
+    apartment_id,
+    title,
+    description,
+    original_price: origPrice,
+    offer_price: offerPrice,
+    discount_percent: discountPercent ?? 0,
+    badge_text: badgeAr || badgeEn || null,
+    image_url: toString(v.image_url) || null,
+    starts_at: toString(v.starts_at) || null,
+    expires_at: toString(v.expires_at) || null,
+    is_active: toNumber(v.is_active) ?? 1,
+    display_order: toNumber(v.display_order) ?? 0,
+    title_ar: titleAr,
+    title_en: titleEn,
+    description_ar: descAr,
+    description_en: descEn,
+    badge_text_ar: badgeAr || null,
+    badge_text_en: badgeEn || null,
+    display_title: toString(v.display_title || titleAr || title),
+    display_desc: toString(v.display_desc || descAr || description),
+    display_badge_text: toString(v.display_badge_text || badgeAr || null) || undefined,
+    created_at: toString(v.created_at),
+    updated_at: toString(v.updated_at),
+    apartment_title: toString(v.apartment_title),
+  };
+}
+
+export function parseHousingOffers(v: unknown): HousingOffer[] | null {
+  if (!Array.isArray(v)) return null;
+  const parsed = v.map(parseHousingOffer);
+  if (parsed.some(p => p === null)) return null;
+  return parsed as HousingOffer[];
+}
+
