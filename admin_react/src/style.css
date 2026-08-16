@@ -38,6 +38,59 @@ body {
     overflow-x: hidden;
 }
 
+/* Global Form Controls & Select/Option Theming */
+select,
+input,
+textarea {
+    font-family: inherit;
+    color: var(--text-main);
+}
+
+select {
+    background-color: var(--bg-card);
+    color: var(--text-main);
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    padding: 0.7rem 1rem;
+    outline: none;
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+select:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 2px var(--primary-glow);
+}
+
+select option {
+    background-color: #1e293b !important;
+    color: #f8fafc !important;
+    padding: 10px 14px !important;
+    font-size: 0.95rem !important;
+}
+
+select option:checked,
+select option:hover {
+    background-color: #6366f1 !important;
+    color: #ffffff !important;
+}
+
+body.light-mode select {
+    background-color: #ffffff;
+    color: #0f172a;
+    border-color: #cbd5e1;
+}
+
+body.light-mode select option {
+    background-color: #ffffff !important;
+    color: #0f172a !important;
+}
+
+body.light-mode select option:checked {
+    background-color: #6366f1 !important;
+    color: #ffffff !important;
+}
+
 /* Header */
 .admin-header {
     background: var(--bg-sidebar);

@@ -259,7 +259,7 @@ export function EditApartmentModal({
                   padding: '0.8rem 1rem',
                   borderRadius: '12px',
                   border: '1px solid var(--border-color)',
-                  background: 'rgba(0,0,0,0.2)',
+                  background: 'var(--bg-card)',
                   color: 'var(--text-main)',
                   fontSize: '0.95rem',
                 }}
@@ -282,7 +282,7 @@ export function EditApartmentModal({
                   padding: '0.8rem 1rem',
                   borderRadius: '12px',
                   border: '1px solid var(--border-color)',
-                  background: 'rgba(0,0,0,0.2)',
+                  background: 'var(--bg-card)',
                   color: 'var(--text-main)',
                   fontSize: '0.95rem',
                 }}
@@ -424,7 +424,7 @@ export function EditApartmentModal({
                   padding: '0.8rem 1rem',
                   borderRadius: '12px',
                   border: '1px solid var(--border-color)',
-                  background: 'rgba(0,0,0,0.2)',
+                  background: 'var(--bg-card)',
                   color: 'var(--text-main)',
                   fontSize: '0.95rem',
                 }}
