@@ -35,13 +35,17 @@ export function RequestCard({ request, onViewDetails, onDelete }: RequestCardPro
 
   const statusStyle = getStatusBadgeStyle(request.status);
 
+  const isRoommateReq =
+    (request.service_title || '').includes('شريك') ||
+    (request.service_title || '').toLowerCase().includes('roommate');
+
   return (
     <div
       className="item-card"
       style={{
         background: 'var(--bg-card)',
         borderRadius: '14px',
-        border: '1px solid var(--border-color)',
+        border: isRoommateReq ? '1px solid rgba(245, 158, 11, 0.35)' : '1px solid var(--border-color)',
         padding: '14px 16px',
         display: 'flex',
         flexDirection: 'column',
@@ -51,8 +55,8 @@ export function RequestCard({ request, onViewDetails, onDelete }: RequestCardPro
       }}
     >
       {/* Top Header Row: ID + Service Title + Status */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0, flex: 1 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0, flex: 1, flexWrap: 'wrap' }}>
           <span
             style={{
               background: 'rgba(99, 102, 241, 0.12)',
@@ -66,6 +70,25 @@ export function RequestCard({ request, onViewDetails, onDelete }: RequestCardPro
           >
             #{request.id}
           </span>
+          {isRoommateReq && (
+            <span
+              style={{
+                background: 'rgba(245, 158, 11, 0.15)',
+                color: '#fbbf24',
+                border: '1px solid rgba(245, 158, 11, 0.3)',
+                padding: '2px 8px',
+                borderRadius: '6px',
+                fontSize: '0.72rem',
+                fontWeight: 700,
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '4px',
+              }}
+            >
+              <i className="fa-solid fa-users" />
+              طلب شريك سكن
+            </span>
+          )}
           <h3
             style={{
               margin: 0,

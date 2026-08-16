@@ -19,6 +19,7 @@ export function RequestsModule() {
 
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [categoryFilter, setCategoryFilter] = useState<'all' | 'roommate' | 'services'>('all');
   const [isFocused, setIsFocused] = useState(false);
   const [selectedRequest, setSelectedRequest] = useState<ServiceRequest | null>(null);
   const [isTemplatesOpen, setIsTemplatesOpen] = useState(false);
@@ -34,6 +35,14 @@ export function RequestsModule() {
 
   const filteredRequests = useMemo(() => {
     return requests.filter((r) => {
+      // 0. Category Filter (Roommate vs Services)
+      const isRoommate =
+        (r.service_title || '').includes('شريك') ||
+        (r.service_title || '').toLowerCase().includes('roommate');
+
+      if (categoryFilter === 'roommate' && !isRoommate) return false;
+      if (categoryFilter === 'services' && isRoommate) return false;
+
       // 1. Status Filter
       if (statusFilter !== 'all') {
         if (r.status !== statusFilter) return false;
@@ -53,7 +62,7 @@ export function RequestsModule() {
 
       return true;
     });
-  }, [requests, statusFilter, searchQuery]);
+  }, [requests, categoryFilter, statusFilter, searchQuery]);
 
   const handleDelete = async (request: ServiceRequest) => {
     const confirmed = await confirm({
@@ -111,6 +120,77 @@ export function RequestsModule() {
         >
           <i className="fa-solid fa-wand-magic-sparkles" style={{ color: 'var(--primary)' }} />
           <span>{t('req.manage_templates')}</span>
+        </button>
+      </div>
+
+      {/* Category Filter Pills (All / Roommate Match / Student Services) */}
+      <div
+        style={{
+          display: 'flex',
+          gap: '8px',
+          marginBottom: '16px',
+          padding: '6px',
+          background: 'rgba(0, 0, 0, 0.25)',
+          borderRadius: '14px',
+          width: 'fit-content',
+          flexWrap: 'wrap',
+        }}
+      >
+        <button
+          type="button"
+          onClick={() => setCategoryFilter('all')}
+          style={{
+            padding: '8px 16px',
+            borderRadius: '10px',
+            border: 'none',
+            fontSize: '0.88rem',
+            fontWeight: 700,
+            cursor: 'pointer',
+            background: categoryFilter === 'all' ? 'var(--primary)' : 'transparent',
+            color: categoryFilter === 'all' ? '#fff' : 'var(--text-muted)',
+            transition: 'all 0.2s',
+          }}
+        >
+          <i className="fa-solid fa-layer-group" style={{ marginLeft: isRtl ? '6px' : 0, marginRight: isRtl ? 0 : '6px' }} />
+          جميع الطلبات ({requests.length})
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setCategoryFilter('roommate')}
+          style={{
+            padding: '8px 16px',
+            borderRadius: '10px',
+            border: 'none',
+            fontSize: '0.88rem',
+            fontWeight: 700,
+            cursor: 'pointer',
+            background: categoryFilter === 'roommate' ? '#f59e0b' : 'transparent',
+            color: categoryFilter === 'roommate' ? '#000' : 'var(--text-muted)',
+            transition: 'all 0.2s',
+          }}
+        >
+          <i className="fa-solid fa-users" style={{ marginLeft: isRtl ? '6px' : 0, marginRight: isRtl ? 0 : '6px' }} />
+          طلبات البحث عن شريك ({requests.filter(r => (r.service_title || '').includes('شريك') || (r.service_title || '').toLowerCase().includes('roommate')).length})
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setCategoryFilter('services')}
+          style={{
+            padding: '8px 16px',
+            borderRadius: '10px',
+            border: 'none',
+            fontSize: '0.88rem',
+            fontWeight: 700,
+            cursor: 'pointer',
+            background: categoryFilter === 'services' ? 'var(--primary)' : 'transparent',
+            color: categoryFilter === 'services' ? '#fff' : 'var(--text-muted)',
+            transition: 'all 0.2s',
+          }}
+        >
+          <i className="fa-solid fa-graduation-cap" style={{ marginLeft: isRtl ? '6px' : 0, marginRight: isRtl ? 0 : '6px' }} />
+          خدمات الطلاب العامة ({requests.filter(r => !(r.service_title || '').includes('شريك') && !(r.service_title || '').toLowerCase().includes('roommate')).length})
         </button>
       </div>
 
