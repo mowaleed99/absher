@@ -82,23 +82,23 @@ try {
             ORDER BY af.id DESC
         ")->fetchAll();
 
-        // Expanded Analytics for Service Reviews (APPROVED ONLY, RELATIONAL REVIEWS ONLY)
-        $totalReviews = $conn->query("SELECT COUNT(*) FROM service_reviews WHERE status = 'approved' AND service_request_id IS NOT NULL")->fetchColumn();
-        $avgRating = $conn->query("SELECT ROUND(AVG(rating), 2) FROM service_reviews WHERE status = 'approved' AND service_request_id IS NOT NULL")->fetchColumn();
+        // Expanded Analytics for Service Reviews (ALL APPROVED REVIEWS)
+        $totalReviews = $conn->query("SELECT COUNT(*) FROM service_reviews WHERE status = 'approved'")->fetchColumn();
+        $avgRating = $conn->query("SELECT ROUND(AVG(rating), 2) FROM service_reviews WHERE status = 'approved'")->fetchColumn();
         
-        $distributionStmt = $conn->query("SELECT rating, COUNT(*) AS count FROM service_reviews WHERE status = 'approved' AND service_request_id IS NOT NULL GROUP BY rating");
+        $distributionStmt = $conn->query("SELECT rating, COUNT(*) AS count FROM service_reviews WHERE status = 'approved' GROUP BY rating");
         $ratingDistribution = ["1" => 0, "2" => 0, "3" => 0, "4" => 0, "5" => 0];
         while ($distRow = $distributionStmt->fetch()) {
             $ratingDistribution[strval($distRow['rating'])] = (int)$distRow['count'];
         }
 
         $serviceAnalytics = $conn->query("
-            SELECT COALESCE(sr.service_title, 'General / Testimonial') AS service_type,
+            SELECT COALESCE(sr.service_title, 'تقييم عام للخدمات') AS service_type,
                    COUNT(r.id) AS review_count,
                    ROUND(AVG(r.rating), 2) AS average_rating
             FROM service_reviews r
             LEFT JOIN service_requests sr ON r.service_request_id = sr.id
-            WHERE r.status = 'approved' AND r.service_request_id IS NOT NULL
+            WHERE r.status = 'approved'
             GROUP BY service_type
             ORDER BY review_count DESC
         ")->fetchAll();

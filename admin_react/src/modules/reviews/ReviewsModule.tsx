@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react';
 import { useReviews } from '../../hooks/useReviews';
 import { useBadges } from '../../contexts/BadgesContext';
-import { ServiceReview } from '../../types/review';
+import { ServiceReview, ReviewsAnalytics } from '../../types/review';
 import { ReviewCard } from './ReviewCard';
 import { ReviewsAnalyticsWidgets } from './ReviewsAnalyticsWidgets';
 import { useConfirmDialog } from '../../components/ConfirmDialog';
@@ -50,6 +50,25 @@ export function ReviewsModule() {
     });
   }, [reviews, statusFilter, searchQuery]);
 
+  const liveAnalytics = useMemo<ReviewsAnalytics>(() => {
+    const approvedReviews = reviews.filter((r) => r.status === 'approved');
+    const total = approvedReviews.length;
+    const sum = approvedReviews.reduce((acc, r) => acc + (r.rating || 0), 0);
+    const avg = total > 0 ? Number((sum / total).toFixed(2)) : 0;
+    const dist: Record<string, number> = { '1': 0, '2': 0, '3': 0, '4': 0, '5': 0 };
+    approvedReviews.forEach((r) => {
+      const star = String(Math.min(5, Math.max(1, Math.round(r.rating || 0))));
+      dist[star] = (dist[star] || 0) + 1;
+    });
+
+    return {
+      total_reviews: total,
+      average_rating: avg,
+      rating_distribution: dist,
+      service_analytics: analytics?.service_analytics || [],
+    };
+  }, [reviews, analytics]);
+
   const handleModerate = async (id: number, status: 'approved' | 'rejected') => {
     const res = await moderateReview(id, status);
     if (res.success) {
@@ -96,7 +115,7 @@ export function ReviewsModule() {
       </div>
 
       {/* Analytics Overview Strip */}
-      <ReviewsAnalyticsWidgets analytics={analytics} />
+      <ReviewsAnalyticsWidgets analytics={liveAnalytics} />
 
       {/* Unified Compact Toolbar: Status Filter Pills + Search + Count */}
       <div
