@@ -532,82 +532,84 @@ class _ServicesScreenState extends State<ServicesScreen> {
 
                   // Payment Method Section
                   if (originalPrice > 0) ...[
-                    Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: Colors.grey.shade50,
-                        border: Border.all(color: Colors.grey.shade300),
+                    Material(
+                      color: Colors.grey.shade50,
+                      borderRadius: BorderRadius.circular(12),
+                      shape: RoundedRectangleBorder(
+                        side: BorderSide(color: Colors.grey.shade300),
                         borderRadius: BorderRadius.circular(12),
                       ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            LanguageService.tr('payment_method'),
-                            style: const TextStyle(
-                                fontWeight: FontWeight.bold,
-                                fontSize: 13,
-                                color: AppColors.primary),
-                          ),
-                          const SizedBox(height: 6),
-                          RadioListTile<String>(
-                            title: Text(
-                              "${LanguageService.tr('auto_trans_1286')} ($effectivePrice ${LanguageService.tr('points_unit')})",
+                      child: Padding(
+                        padding: const EdgeInsets.all(12),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              LanguageService.tr('payment_method'),
                               style: const TextStyle(
-                                  fontSize: 12, fontWeight: FontWeight.bold),
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 13,
+                                  color: AppColors.primary),
                             ),
-                            subtitle: Text(
-                              LanguageService.formatCurrentBalance(
-                                  _pointsBalance ?? 0),
-                              style: TextStyle(
-                                fontSize: 11,
-                                fontWeight: FontWeight.bold,
-                                color: (_pointsBalance ?? 0) >= effectivePrice
-                                    ? Colors.green
-                                    : Colors.red,
+                            const SizedBox(height: 6),
+                            RadioListTile<String>(
+                              title: Text(
+                                "${LanguageService.tr('auto_trans_1286')} ($effectivePrice ${LanguageService.tr('points_unit')})",
+                                style: const TextStyle(
+                                    fontSize: 12, fontWeight: FontWeight.bold),
                               ),
-                            ),
-                            value: 'wallet',
-                            groupValue: selectedPaymentMethod,
-                            activeColor: AppColors.accent,
-                            contentPadding: EdgeInsets.zero,
-                            onChanged: (val) {
-                              setDialogState(() {
-                                selectedPaymentMethod = val ?? 'wallet';
-                              });
-                            },
-                          ),
-                          RadioListTile<String>(
-                            title: Text(
-                              LanguageService.tr('auto_trans_1287'),
-                              style: const TextStyle(
-                                  fontSize: 12, fontWeight: FontWeight.bold),
-                            ),
-                            subtitle: Text(
-                              LanguageService.currentLang.value == 'ar'
-                                  ? "يتم تحديد التكلفة النقدية مع خدمة العملاء"
-                                  : "Cash cost is determined with customer service",
-                              style: const TextStyle(
-                                fontSize: 11,
-                                color: Colors.blue,
-                                fontWeight: FontWeight.bold,
+                              subtitle: Text(
+                                LanguageService.formatCurrentBalance(
+                                    _pointsBalance ?? 0),
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.bold,
+                                  color: (_pointsBalance ?? 0) >= effectivePrice
+                                      ? Colors.green
+                                      : Colors.red,
+                                ),
                               ),
+                              value: 'wallet',
+                              groupValue: selectedPaymentMethod,
+                              activeColor: AppColors.accent,
+                              contentPadding: EdgeInsets.zero,
+                              onChanged: (val) {
+                                setDialogState(() {
+                                  selectedPaymentMethod = val ?? 'wallet';
+                                });
+                              },
                             ),
-                            value: 'cash',
-                            groupValue: selectedPaymentMethod,
-                            activeColor: AppColors.accent,
-                            contentPadding: EdgeInsets.zero,
-                            onChanged: (val) {
-                              setDialogState(() {
-                                selectedPaymentMethod = val ?? 'cash';
-                                appliedPromoInfo = null;
-                                promoCtrl.clear();
-                                promoError = null;
-                              });
-                            },
-                          ),
-                        ],
+                            RadioListTile<String>(
+                              title: Text(
+                                LanguageService.tr('auto_trans_1287'),
+                                style: const TextStyle(
+                                    fontSize: 12, fontWeight: FontWeight.bold),
+                              ),
+                              subtitle: Text(
+                                LanguageService.currentLang.value == 'ar'
+                                    ? "يتم تحديد التكلفة النقدية مع خدمة العملاء"
+                                    : "Cash cost is determined with customer service",
+                                style: const TextStyle(
+                                  fontSize: 11,
+                                  color: Colors.blue,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              value: 'cash',
+                              groupValue: selectedPaymentMethod,
+                              activeColor: AppColors.accent,
+                              contentPadding: EdgeInsets.zero,
+                              onChanged: (val) {
+                                setDialogState(() {
+                                  selectedPaymentMethod = val ?? 'cash';
+                                  appliedPromoInfo = null;
+                                  promoCtrl.clear();
+                                  promoError = null;
+                                });
+                              },
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                   ] else ...[

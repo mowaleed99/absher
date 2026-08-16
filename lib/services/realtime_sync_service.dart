@@ -110,7 +110,7 @@ class RealtimeSyncService with WidgetsBindingObserver {
       );
 
       final response =
-          await http.get(uri).timeout(const Duration(seconds: 4));
+          await http.get(uri).timeout(const Duration(seconds: 10));
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
@@ -176,7 +176,9 @@ class RealtimeSyncService with WidgetsBindingObserver {
         }
       }
     } catch (e) {
-      debugPrint('[RealtimeSyncService] error: $e');
+      if (e is! TimeoutException) {
+        debugPrint('[RealtimeSyncService] error: $e');
+      }
     } finally {
       _isPolling = false;
     }
