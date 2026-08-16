@@ -292,8 +292,27 @@ export function PinApartmentModal({
 
           {/* Custom Date Input (if selected) */}
           {selectedDuration === 'custom' && (
-            <div style={{ marginBottom: '16px' }}>
-              <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 600, marginBottom: '6px' }}>
+            <div
+              style={{
+                marginBottom: '16px',
+                background: 'rgba(245, 158, 11, 0.08)',
+                border: '1px solid rgba(245, 158, 11, 0.3)',
+                padding: '14px',
+                borderRadius: '12px',
+              }}
+            >
+              <label
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  fontSize: '0.86rem',
+                  fontWeight: 700,
+                  marginBottom: '8px',
+                  color: '#fbbf24',
+                }}
+              >
+                <i className="fa-solid fa-calendar-days" style={{ fontSize: '1rem' }} />
                 {t('apt.custom_expiry_date')} *
               </label>
               <input
@@ -301,8 +320,23 @@ export function PinApartmentModal({
                 className="input-field"
                 value={customDate}
                 onChange={(e) => setCustomDate(e.target.value)}
+                onClick={(e) => {
+                  try {
+                    (e.target as HTMLInputElement).showPicker?.();
+                  } catch {}
+                }}
                 required
-                style={{ width: '100%', borderRadius: '8px', padding: '10px', fontSize: '0.9rem' }}
+                style={{
+                  width: '100%',
+                  borderRadius: '10px',
+                  padding: '10px 14px',
+                  fontSize: '0.95rem',
+                  background: 'var(--bg-card)',
+                  color: 'var(--text-main)',
+                  border: '1px solid #f59e0b',
+                  colorScheme: 'dark',
+                  cursor: 'pointer',
+                }}
               />
             </div>
           )}

@@ -43,6 +43,7 @@ export function AddApartmentModal({
   const [featuresAr, setFeaturesAr] = useState('تكييف ، تدفئة مركزية ، غسالة');
   const [featuresEn, setFeaturesEn] = useState('AC, Central Heating, Washing Machine');
   const [moveInType, setMoveInType] = useState('immediate');
+  const [calendarDate, setCalendarDate] = useState('');
   const [moveInDateAr, setMoveInDateAr] = useState('');
   const [moveInDateEn, setMoveInDateEn] = useState('');
   const [roommateReqs, setRoommateReqs] = useState('');
@@ -61,6 +62,34 @@ export function AddApartmentModal({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const submittingRef = useRef(false);
 
+  const ARABIC_MONTHS = [
+    'يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو',
+    'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر'
+  ];
+
+  const ENGLISH_MONTHS = [
+    'January', 'February', 'March', 'April', 'May', 'June',
+    'July', 'August', 'September', 'October', 'November', 'December'
+  ];
+
+  const handleCalendarChange = (val: string) => {
+    setCalendarDate(val);
+    if (!val) return;
+    const parts = val.split('-');
+    if (parts.length === 3) {
+      const y = parseInt(parts[0], 10);
+      const m = parseInt(parts[1], 10) - 1;
+      const d = parseInt(parts[2], 10);
+      if (m >= 0 && m < 12) {
+        setMoveInDateAr(`${d} ${ARABIC_MONTHS[m]} ${y}`);
+        setMoveInDateEn(`${d} ${ENGLISH_MONTHS[m]} ${y}`);
+      } else {
+        setMoveInDateAr(val);
+        setMoveInDateEn(val);
+      }
+    }
+  };
+
   const resetForm = () => {
     setTitleAr('');
     setTitleEn('');
@@ -73,6 +102,7 @@ export function AddApartmentModal({
     setLocationEn('');
     setOwnerPhone('');
     setMoveInType('immediate');
+    setCalendarDate('');
     setMoveInDateAr('انتقال فوري');
     setMoveInDateEn('Immediate Move-in');
     setCapacityAr('');
@@ -477,29 +507,68 @@ export function AddApartmentModal({
                 <option value="scheduled">{t('move_in.scheduled')}</option>
               </select>
             </div>
-            {moveInType === 'scheduled' && (
-              <div className="form-row">
-                <div className="form-group">
-                  <label>{t('form.move_in_date_ar')}</label>
+          </div>
+
+          {moveInType === 'scheduled' && (
+            <div
+              style={{
+                background: 'rgba(99, 102, 241, 0.08)',
+                border: '1px solid rgba(99, 102, 241, 0.25)',
+                padding: '16px',
+                borderRadius: '14px',
+                marginBottom: '1rem',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '12px',
+              }}
+            >
+              <div className="form-group" style={{ margin: 0 }}>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#818cf8', fontWeight: 'bold' }}>
+                  <i className="fa-solid fa-calendar-days" style={{ fontSize: '1.1rem' }}></i>
+                  {t('form.move_in_date_picker')}
+                </label>
+                <input
+                  type="date"
+                  value={calendarDate}
+                  onChange={(e) => handleCalendarChange(e.target.value)}
+                  style={{
+                    width: '100%',
+                    padding: '0.8rem 1rem',
+                    borderRadius: '10px',
+                    border: '1px solid var(--primary)',
+                    background: 'var(--bg-card)',
+                    color: 'var(--text-main)',
+                    fontSize: '1rem',
+                    cursor: 'pointer',
+                    colorScheme: 'dark',
+                  }}
+                />
+              </div>
+
+              <div className="form-row" style={{ margin: 0 }}>
+                <div className="form-group" style={{ margin: 0 }}>
+                  <label style={{ fontSize: '0.85rem' }}>{t('form.move_in_date_ar')}</label>
                   <input
                     type="text"
                     value={moveInDateAr}
                     onChange={(e) => setMoveInDateAr(e.target.value)}
                     placeholder="مثال: 1 سبتمبر 2026"
+                    style={{ fontSize: '0.9rem' }}
                   />
                 </div>
-                <div className="form-group">
-                  <label>{t('form.move_in_date_en')}</label>
+                <div className="form-group" style={{ margin: 0 }}>
+                  <label style={{ fontSize: '0.85rem' }}>{t('form.move_in_date_en')}</label>
                   <input
                     type="text"
                     value={moveInDateEn}
                     onChange={(e) => setMoveInDateEn(e.target.value)}
                     placeholder="e.g. 1 September 2026"
+                    style={{ fontSize: '0.9rem' }}
                   />
                 </div>
               </div>
-            )}
-          </div>
+            </div>
+          )}
 
           {/* Features AR & EN */}
           <div className="form-row">
