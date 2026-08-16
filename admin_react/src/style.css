@@ -38,12 +38,37 @@ body {
     overflow-x: hidden;
 }
 
-/* Global Form Controls & Select/Option Theming */
+/* Global Form Controls & Input/Textarea Theming */
 select,
 input,
-textarea {
+textarea,
+.input-field {
     font-family: inherit;
     color: var(--text-main);
+}
+
+textarea,
+.input-field {
+    background-color: #0f172a !important;
+    color: #f8fafc !important;
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    padding: 0.75rem 1rem;
+    outline: none;
+    transition: var(--transition);
+}
+
+textarea:focus,
+.input-field:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 2px var(--primary-glow);
+}
+
+body.light-mode textarea,
+body.light-mode .input-field {
+    background-color: #ffffff !important;
+    color: #0f172a !important;
+    border-color: #cbd5e1;
 }
 
 select {

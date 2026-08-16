@@ -380,7 +380,16 @@ export function StatusTemplatesModal({
                 value={current.template_ar || ''}
                 onChange={(e) => handleArChange(e.target.value)}
                 required
-                style={{ width: '100%', borderRadius: '8px', padding: '10px', fontSize: '0.85rem', lineHeight: '1.5' }}
+                style={{
+                  width: '100%',
+                  borderRadius: '10px',
+                  padding: '12px 14px',
+                  fontSize: '0.92rem',
+                  lineHeight: '1.6',
+                  backgroundColor: '#0f172a',
+                  color: '#f8fafc',
+                  border: '1px solid var(--border-color)',
+                }}
               />
             </div>
 
@@ -426,7 +435,16 @@ export function StatusTemplatesModal({
                 value={current.template_en || ''}
                 onChange={(e) => handleEnChange(e.target.value)}
                 dir="ltr"
-                style={{ width: '100%', borderRadius: '8px', padding: '10px', fontSize: '0.85rem', lineHeight: '1.5' }}
+                style={{
+                  width: '100%',
+                  borderRadius: '10px',
+                  padding: '12px 14px',
+                  fontSize: '0.92rem',
+                  lineHeight: '1.6',
+                  backgroundColor: '#0f172a',
+                  color: '#f8fafc',
+                  border: '1px solid var(--border-color)',
+                }}
               />
             </div>
 
