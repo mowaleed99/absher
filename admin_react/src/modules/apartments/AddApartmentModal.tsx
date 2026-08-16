@@ -61,6 +61,15 @@ export function AddApartmentModal({
   // Double-submit protection
   const [isSubmitting, setIsSubmitting] = useState(false);
   const submittingRef = useRef(false);
+  const dateInputRef = useRef<HTMLInputElement>(null);
+
+  const handleOpenCalendar = () => {
+    try {
+      dateInputRef.current?.showPicker?.();
+    } catch {
+      dateInputRef.current?.focus();
+    }
+  };
 
   const ARABIC_MONTHS = [
     'يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو',
@@ -513,7 +522,7 @@ export function AddApartmentModal({
             <div
               style={{
                 background: 'rgba(99, 102, 241, 0.08)',
-                border: '1px solid rgba(99, 102, 241, 0.25)',
+                border: '1px solid rgba(99, 102, 241, 0.3)',
                 padding: '16px',
                 borderRadius: '14px',
                 marginBottom: '1rem',
@@ -523,17 +532,42 @@ export function AddApartmentModal({
               }}
             >
               <div className="form-group" style={{ margin: 0 }}>
-                <label style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#818cf8', fontWeight: 'bold' }}>
-                  <i className="fa-solid fa-calendar-days" style={{ fontSize: '1.1rem' }}></i>
-                  {t('form.move_in_date_picker')}
-                </label>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px', flexWrap: 'wrap', gap: '8px' }}>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#818cf8', fontWeight: 'bold', margin: 0, fontSize: '0.92rem' }}>
+                    <i className="fa-solid fa-calendar-days" style={{ fontSize: '1.1rem' }}></i>
+                    {t('form.move_in_date_picker')}
+                  </label>
+                  <button
+                    type="button"
+                    onClick={handleOpenCalendar}
+                    style={{
+                      background: 'var(--primary)',
+                      color: '#fff',
+                      border: 'none',
+                      padding: '5px 14px',
+                      borderRadius: '8px',
+                      fontSize: '0.82rem',
+                      fontWeight: 700,
+                      cursor: 'pointer',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '6px',
+                      boxShadow: '0 2px 8px var(--primary-glow)',
+                    }}
+                  >
+                    <i className="fa-solid fa-arrow-pointer"></i>
+                    {t('form.click_to_pick_date')}
+                  </button>
+                </div>
                 <input
+                  ref={dateInputRef}
                   type="date"
                   value={calendarDate}
                   onChange={(e) => handleCalendarChange(e.target.value)}
+                  onClick={handleOpenCalendar}
                   style={{
                     width: '100%',
-                    padding: '0.8rem 1rem',
+                    padding: '0.85rem 1rem',
                     borderRadius: '10px',
                     border: '1px solid var(--primary)',
                     background: 'var(--bg-card)',
