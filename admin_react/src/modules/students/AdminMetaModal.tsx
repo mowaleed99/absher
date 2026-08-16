@@ -139,7 +139,7 @@ export function AdminMetaModal({ isOpen, student, onClose, onSubmit, showToast }
                 {t('students.admin_meta')}
               </h3>
               <p style={{ margin: '2px 0 0', fontSize: '0.78rem', color: 'var(--text-muted)' }}>
-                {student.full_name} (#{student.id})
+                {student.full_name}
               </p>
             </div>
           </div>

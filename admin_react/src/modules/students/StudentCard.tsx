@@ -37,22 +37,25 @@ export function StudentCard({
         position: 'relative',
       }}
     >
-      {/* Top Header Row: ID + Full Name + Badges */}
+      {/* Top Header Row: Avatar + Full Name + Badges */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '8px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0, flex: 1 }}>
-          <span
+          <div
             style={{
+              width: '28px',
+              height: '28px',
+              borderRadius: '8px',
               background: 'rgba(99, 102, 241, 0.12)',
               color: 'var(--primary)',
-              padding: '2px 7px',
-              borderRadius: '6px',
-              fontSize: '0.75rem',
-              fontWeight: 700,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontSize: '0.85rem',
               flexShrink: 0,
             }}
           >
-            #{student.id}
-          </span>
+            <i className="fa-solid fa-user-graduate"></i>
+          </div>
           <h3
             style={{
               margin: 0,
