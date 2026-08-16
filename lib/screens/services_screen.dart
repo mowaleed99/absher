@@ -1118,13 +1118,19 @@ class _ServicesScreenState extends State<ServicesScreen> {
       );
     }
 
+    final screenWidth = MediaQuery.of(context).size.width;
+    final int crossAxisCount = screenWidth > 600 ? 3 : 2;
+    final double childAspectRatio = screenWidth > 600
+        ? 0.72
+        : (screenWidth < 360 ? 0.54 : 0.58);
+
     return GridView.builder(
       padding: const EdgeInsets.all(16),
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 2,
+      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: crossAxisCount,
         crossAxisSpacing: 14,
         mainAxisSpacing: 14,
-        childAspectRatio: 0.58,
+        childAspectRatio: childAspectRatio,
       ),
       itemCount: _services.length,
       itemBuilder: (context, index) {

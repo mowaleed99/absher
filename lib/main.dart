@@ -36,9 +36,19 @@ class AbsherApp extends StatelessWidget {
             useMaterial3: true,
           ),
           builder: (context, child) {
-            return Directionality(
-              textDirection: LanguageService.textDirection,
-              child: child!,
+            final mediaQuery = MediaQuery.of(context);
+            final clampedTextScale = mediaQuery.textScaler.clamp(
+              minScaleFactor: 0.85,
+              maxScaleFactor: 1.25,
+            );
+            return MediaQuery(
+              data: mediaQuery.copyWith(
+                textScaler: clampedTextScale,
+              ),
+              child: Directionality(
+                textDirection: LanguageService.textDirection,
+                child: child!,
+              ),
             );
           },
           home: const SplashScreen(),

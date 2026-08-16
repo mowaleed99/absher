@@ -922,39 +922,42 @@ class _ApartmentDetailScreenState extends State<ApartmentDetailScreen> {
               ),
             ),
 
-            // شريط الحجز السفلي
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                boxShadow: [
-                  BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.08),
-                      blurRadius: 15,
-                      offset: const Offset(0, -4))
-                ],
-              ),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: ElevatedButton.icon(
-                      onPressed: _showBookingDialog,
-                      icon: const Icon(Icons.bookmark_add,
-                          color: AppColors.textDark),
-                      label: Text(LanguageService.tr('book_now_cash'),
-                          style: const TextStyle(
-                              color: AppColors.textDark,
-                              fontSize: 15,
-                              fontWeight: FontWeight.bold)),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.accent,
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12)),
+            // شريط الحجز السفلي المتجاوب مع جميع الشاشات
+            SafeArea(
+              top: false,
+              child: Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  boxShadow: [
+                    BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.08),
+                        blurRadius: 15,
+                        offset: const Offset(0, -4))
+                  ],
+                ),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: ElevatedButton.icon(
+                        onPressed: _showBookingDialog,
+                        icon: const Icon(Icons.bookmark_add,
+                            color: AppColors.textDark),
+                        label: Text(LanguageService.tr('book_now_cash'),
+                            style: const TextStyle(
+                                color: AppColors.textDark,
+                                fontSize: 15,
+                                fontWeight: FontWeight.bold)),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.accent,
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12)),
+                        ),
                       ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
           ],

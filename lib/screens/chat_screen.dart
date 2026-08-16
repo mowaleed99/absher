@@ -850,121 +850,124 @@ class _ChatScreenState extends State<ChatScreen> {
               ),
             ),
 
-            // مربع كتابة الرسالة والإرفاق
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                boxShadow: [
-                  BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.05),
-                      blurRadius: 10,
-                      offset: const Offset(0, -2))
-                ],
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  if (_replyingToMsg != null)
-                    Container(
-                      margin: const EdgeInsets.only(bottom: 8),
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 12, vertical: 6),
-                      decoration: BoxDecoration(
-                        color: Colors.grey.shade100,
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border(
-                          left: LanguageService.isRtl
-                              ? BorderSide.none
-                              : const BorderSide(
-                                  color: AppColors.primary, width: 4),
-                          right: LanguageService.isRtl
-                              ? const BorderSide(
-                                  color: AppColors.primary, width: 4)
-                              : BorderSide.none,
+            // مربع كتابة الرسالة والإرفاق المتجاوب مع جميع الشاشات
+            SafeArea(
+              top: false,
+              child: Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  boxShadow: [
+                    BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.05),
+                        blurRadius: 10,
+                        offset: const Offset(0, -2))
+                  ],
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    if (_replyingToMsg != null)
+                      Container(
+                        margin: const EdgeInsets.only(bottom: 8),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 12, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: Colors.grey.shade100,
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border(
+                            left: LanguageService.isRtl
+                                ? BorderSide.none
+                                : const BorderSide(
+                                    color: AppColors.primary, width: 4),
+                            right: LanguageService.isRtl
+                                ? const BorderSide(
+                                    color: AppColors.primary, width: 4)
+                                : BorderSide.none,
+                          ),
+                        ),
+                        child: Row(
+                          children: [
+                            const Icon(Icons.reply,
+                                size: 16, color: AppColors.primary),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    _replyingToMsg!['sender'] == 'student'
+                                        ? LanguageService.tr('reply_to_yourself')
+                                        : LanguageService.tr('reply_to_support'),
+                                    style: const TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 11,
+                                        color: AppColors.primary),
+                                  ),
+                                  Text(
+                                    _replyingToMsg!['text'] as String,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: const TextStyle(
+                                        fontSize: 11, color: AppColors.textDark),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            IconButton(
+                              icon: const Icon(Icons.close,
+                                  size: 16, color: Colors.grey),
+                              padding: EdgeInsets.zero,
+                              constraints: const BoxConstraints(),
+                              onPressed: () {
+                                setState(() {
+                                  _replyingToMsg = null;
+                                });
+                              },
+                            ),
+                          ],
                         ),
                       ),
-                      child: Row(
-                        children: [
-                          const Icon(Icons.reply,
-                              size: 16, color: AppColors.primary),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  _replyingToMsg!['sender'] == 'student'
-                                      ? LanguageService.tr('reply_to_yourself')
-                                      : LanguageService.tr('reply_to_support'),
-                                  style: const TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 11,
-                                      color: AppColors.primary),
-                                ),
-                                Text(
-                                  _replyingToMsg!['text'] as String,
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: const TextStyle(
-                                      fontSize: 11, color: AppColors.textDark),
-                                ),
-                              ],
+                    Row(
+                      children: [
+                        IconButton(
+                          padding: const EdgeInsets.symmetric(horizontal: 8),
+                          constraints: const BoxConstraints(),
+                          icon: const Icon(Icons.image_outlined,
+                              color: AppColors.primary, size: 24),
+                          tooltip: LanguageService.tr('attach_image_tooltip'),
+                          onPressed: () => _pickAndUploadMedia(false),
+                        ),
+                        const SizedBox(width: 4),
+                        Expanded(
+                          child: TextField(
+                            controller: _messageController,
+                            decoration: InputDecoration(
+                              hintText: LanguageService.tr('type_message_hint'),
+                              border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(24),
+                                  borderSide: BorderSide.none),
+                              filled: true,
+                              fillColor: AppColors.background,
+                              contentPadding: const EdgeInsets.symmetric(
+                                  horizontal: 16, vertical: 10),
                             ),
                           ),
-                          IconButton(
-                            icon: const Icon(Icons.close,
-                                size: 16, color: Colors.grey),
-                            padding: EdgeInsets.zero,
-                            constraints: const BoxConstraints(),
-                            onPressed: () {
-                              setState(() {
-                                _replyingToMsg = null;
-                              });
-                            },
+                        ),
+                        const SizedBox(width: 8),
+                        CircleAvatar(
+                          backgroundColor: AppColors.accent,
+                          radius: 22,
+                          child: IconButton(
+                            icon: const Icon(Icons.send,
+                                color: AppColors.textDark, size: 20),
+                            onPressed: _sendMessage,
                           ),
-                        ],
-                      ),
+                        ),
+                      ],
                     ),
-                  Row(
-                    children: [
-                      IconButton(
-                        padding: const EdgeInsets.symmetric(horizontal: 8),
-                        constraints: const BoxConstraints(),
-                        icon: const Icon(Icons.image_outlined,
-                            color: AppColors.primary, size: 24),
-                        tooltip: LanguageService.tr('attach_image_tooltip'),
-                        onPressed: () => _pickAndUploadMedia(false),
-                      ),
-                      const SizedBox(width: 4),
-                      Expanded(
-                        child: TextField(
-                          controller: _messageController,
-                          decoration: InputDecoration(
-                            hintText: LanguageService.tr('type_message_hint'),
-                            border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(24),
-                                borderSide: BorderSide.none),
-                            filled: true,
-                            fillColor: AppColors.background,
-                            contentPadding: const EdgeInsets.symmetric(
-                                horizontal: 16, vertical: 10),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      CircleAvatar(
-                        backgroundColor: AppColors.accent,
-                        radius: 22,
-                        child: IconButton(
-                          icon: const Icon(Icons.send,
-                              color: AppColors.textDark, size: 20),
-                          onPressed: _sendMessage,
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
           ],
