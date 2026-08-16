@@ -61,6 +61,40 @@ export function AddApartmentModal({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const submittingRef = useRef(false);
 
+  const resetForm = () => {
+    setTitleAr('');
+    setTitleEn('');
+    setPrice('');
+    setDistrictId('');
+    setRentalType('apartment');
+    setRoomsCount('');
+    setBathrooms('1 حمام');
+    setLocationAr('');
+    setLocationEn('');
+    setOwnerPhone('');
+    setMoveInType('immediate');
+    setMoveInDateAr('انتقال فوري');
+    setMoveInDateEn('Immediate Move-in');
+    setCapacityAr('');
+    setCapacityEn('');
+    setProximityAr('');
+    setProximityEn('');
+    setFeaturesAr('تكييف، تدفئة مركزية، غسالة، مصعد، أمن وحراسة');
+    setFeaturesEn('Air Conditioning, Central Heating, Washing Machine, Elevator, Security');
+    setRoommateReqs('غير مدخن، طالب، ملتزم بالهدوء');
+    setRoommateFacilities('غرفة نوم خاصة، صالة مشتركة، حمام ومطبخ مجهزان بالكامل');
+    setDescAr('');
+    setDescEn('');
+    setSelectedUnis([]);
+    setUniTimes({});
+    setImages([]);
+  };
+
+  const handleClose = () => {
+    resetForm();
+    onClose();
+  };
+
   if (!isOpen) return null;
 
   const handleUniToggle = (uniName: string) => {
@@ -167,6 +201,7 @@ export function AddApartmentModal({
       const result = await onSubmit(payload);
       if (result.success) {
         showToast(t('msg.apartment_added'), 'success');
+        resetForm();
         onClose();
       } else {
         showToast(result.error || t('msg.error_add_apartment'), 'error');
@@ -185,7 +220,7 @@ export function AddApartmentModal({
             <i className="fa-solid fa-plus-circle" style={{ color: 'var(--primary)', marginLeft: '8px' }}></i>
             {t('apartments.add_button')}
           </h3>
-          <button type="button" className="close-btn" onClick={onClose}>
+          <button type="button" className="close-btn" onClick={handleClose}>
             <i className="fa-solid fa-xmark"></i>
           </button>
         </div>
@@ -626,7 +661,7 @@ export function AddApartmentModal({
 
           {/* Modal Actions */}
           <div className="modal-actions">
-            <button type="button" className="btn btn-secondary" onClick={onClose}>
+            <button type="button" className="btn btn-secondary" onClick={handleClose}>
               {t('btn.cancel')}
             </button>
             <button

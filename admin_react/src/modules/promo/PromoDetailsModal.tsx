@@ -39,17 +39,13 @@ export function PromoDetailsModal({ isOpen, onClose, promo, fetchRedemptions }: 
     } finally {
       if (!silent) setIsLoading(false);
     }
-  }, [promo, fetchRedemptions]);
+  }, [promo?.id, fetchRedemptions]);
 
   useEffect(() => {
     if (isOpen && promo) {
-      loadData(page, false);
-      const timer = setInterval(() => {
-        loadData(page, true);
-      }, 3000);
-      return () => clearInterval(timer);
+      loadData(1, false);
     }
-  }, [isOpen, promo, page, loadData]);
+  }, [isOpen, promo?.id, loadData]);
 
   if (!isOpen || !promo) return null;
 

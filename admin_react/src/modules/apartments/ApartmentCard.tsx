@@ -113,20 +113,6 @@ export function ApartmentCard({ apartment: apt, onEdit, onDelete, onPin }: Apart
 
       <div className="card-body">
         <div style={{ marginBottom: '8px', display: 'flex', flexWrap: 'wrap', gap: '6px', alignItems: 'center' }}>
-          <span
-            style={{
-              background: 'rgba(37, 211, 102, 0.18)',
-              color: '#25D366',
-              border: '1px solid #25D366',
-              padding: '4px 12px',
-              borderRadius: '12px',
-              fontWeight: 'bold',
-              fontSize: '0.85rem',
-            }}
-          >
-            {t('apartments.apartment_number')}: #{apt.id}
-          </span>
-
           {apt.owner_phone && (
             <span
               onClick={handleCopyPhone}

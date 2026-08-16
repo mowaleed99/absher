@@ -73,27 +73,38 @@ export function usePromoCodes() {
     return res.data;
   };
 
-  const fetchRedemptions = async (promoId: number, page = 1, limit = 20): Promise<{ redemptions: PromoRedemption[]; total: number; totalPages: number }> => {
-    const res = await apiFetch<Record<string, unknown>>('get_promo_redemptions', {
-      promo_id: promoId,
-      page,
-      limit,
-    });
-    if (res.success && res.data) {
-      const dataObj = res.data as { data?: { redemptions?: unknown[]; pagination?: { total: number; total_pages: number } }; redemptions?: unknown[]; pagination?: { total: number; total_pages: number } };
-      const rawList = dataObj.data?.redemptions || dataObj.redemptions;
-      const pagination = dataObj.data?.pagination || dataObj.pagination || { total: 0, total_pages: 1 };
-      if (rawList && Array.isArray(rawList)) {
-        const redemptions = parsePromoRedemptions(rawList) || [];
-        return {
-          redemptions,
-          total: pagination.total || redemptions.length,
-          totalPages: pagination.total_pages || 1,
+  const fetchRedemptions = useCallback(
+    async (
+      promoId: number,
+      page = 1,
+      limit = 20
+    ): Promise<{ redemptions: PromoRedemption[]; total: number; totalPages: number }> => {
+      const res = await apiFetch<Record<string, unknown>>('get_promo_redemptions', {
+        promo_id: promoId,
+        page,
+        limit,
+      });
+      if (res.success && res.data) {
+        const dataObj = res.data as {
+          data?: { redemptions?: unknown[]; pagination?: { total: number; total_pages: number } };
+          redemptions?: unknown[];
+          pagination?: { total: number; total_pages: number };
         };
+        const rawList = dataObj.data?.redemptions || dataObj.redemptions;
+        const pagination = dataObj.data?.pagination || dataObj.pagination || { total: 0, total_pages: 1 };
+        if (rawList && Array.isArray(rawList)) {
+          const redemptions = parsePromoRedemptions(rawList) || [];
+          return {
+            redemptions,
+            total: pagination.total || redemptions.length,
+            totalPages: pagination.total_pages || 1,
+          };
+        }
       }
-    }
-    return { redemptions: [], total: 0, totalPages: 0 };
-  };
+      return { redemptions: [], total: 0, totalPages: 0 };
+    },
+    []
+  );
 
   return {
     promoCodes,
