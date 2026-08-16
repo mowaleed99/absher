@@ -54,6 +54,24 @@ export function StudentsModule() {
     );
   }, [students, searchQuery]);
 
+  const uniqueBlockedCount = useMemo(() => {
+    const studentIds = new Set<number>();
+    let orphanCount = 0;
+    blockedIdentities.forEach((item) => {
+      if (item.source_student_id && item.source_student_id > 0) {
+        studentIds.add(item.source_student_id);
+      } else {
+        orphanCount++;
+      }
+    });
+    students.forEach((s) => {
+      if (s.is_blocked) {
+        studentIds.add(s.id);
+      }
+    });
+    return studentIds.size + orphanCount;
+  }, [blockedIdentities, students]);
+
   const handleToggleBlock = async (student: Student) => {
     const isCurrentlyBlocked = !!student.is_blocked;
 
@@ -146,7 +164,7 @@ export function StudentsModule() {
           >
             <i className="fa-solid fa-shield-halved" style={{ color: '#ef4444' }}></i>
             <span>{t('students.blocked_list_btn')}</span>
-            {blockedIdentities.length > 0 && (
+            {uniqueBlockedCount > 0 && (
               <span
                 style={{
                   background: 'rgba(239, 68, 68, 0.2)',
@@ -157,7 +175,7 @@ export function StudentsModule() {
                   fontWeight: 700,
                 }}
               >
-                {blockedIdentities.length}
+                {uniqueBlockedCount}
               </span>
             )}
           </button>
