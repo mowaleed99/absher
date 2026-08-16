@@ -212,7 +212,7 @@ export function StatusChangeModal({
                 {t('req.change_status_modal_title')}
               </h3>
               <p style={{ margin: 0, fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-                #{request.id} • {request.service_title} • {request.student_name}
+                {request.service_title} • {request.student_name || 'طالب كريم'}
               </p>
             </div>
           </div>

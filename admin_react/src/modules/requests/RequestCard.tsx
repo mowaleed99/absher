@@ -54,22 +54,9 @@ export function RequestCard({ request, onViewDetails, onDelete }: RequestCardPro
         transition: 'all 0.2s ease',
       }}
     >
-      {/* Top Header Row: ID + Service Title + Status */}
+      {/* Top Header Row: Service Title + Status */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0, flex: 1, flexWrap: 'wrap' }}>
-          <span
-            style={{
-              background: 'rgba(99, 102, 241, 0.12)',
-              color: 'var(--primary)',
-              padding: '2px 7px',
-              borderRadius: '6px',
-              fontSize: '0.75rem',
-              fontWeight: 700,
-              flexShrink: 0,
-            }}
-          >
-            #{request.id}
-          </span>
           {isRoommateReq && (
             <span
               style={{
@@ -83,6 +70,7 @@ export function RequestCard({ request, onViewDetails, onDelete }: RequestCardPro
                 display: 'inline-flex',
                 alignItems: 'center',
                 gap: '4px',
+                flexShrink: 0,
               }}
             >
               <i className="fa-solid fa-users" />
@@ -92,7 +80,7 @@ export function RequestCard({ request, onViewDetails, onDelete }: RequestCardPro
           <h3
             style={{
               margin: 0,
-              fontSize: '0.98rem',
+              fontSize: '1rem',
               fontWeight: 700,
               color: 'var(--text-main)',
               whiteSpace: 'nowrap',

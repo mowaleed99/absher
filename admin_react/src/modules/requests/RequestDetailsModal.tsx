@@ -160,11 +160,11 @@ export function RequestDetailsModal({
               <i className="fa-solid fa-file-invoice"></i>
             </div>
             <div>
-              <h3 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 700, color: 'var(--text-main)' }}>
-                {t('requests.request_id', { id: request.id })}
+              <h3 style={{ margin: 0, fontSize: '1.2rem', fontWeight: 700, color: 'var(--text-main)' }}>
+                {request.service_title}
               </h3>
               <p style={{ margin: '2px 0 0', fontSize: '0.85rem', color: 'var(--text-muted)' }}>
-                {request.service_title}
+                {t('requests.student_name')}: {request.student_name || 'طالب كريم'}
               </p>
             </div>
           </div>
@@ -283,11 +283,20 @@ export function RequestDetailsModal({
             <div>
               <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>
                 <i className="fa-solid fa-coins" style={{ marginLeft: '6px' }}></i>
-                النقاط المحسومة
+                تكلفة الطلب / النقاط
               </span>
-              <span style={{ fontSize: '0.9rem', color: 'var(--accent-amber)', fontWeight: 600 }}>
-                {request.points_charged !== undefined ? `${request.points_charged} نقطة` : 'مجانية'}
-                {request.discount_points ? ` (خصم ${request.discount_points} نقطة)` : ''}
+              <span style={{ fontSize: '0.9rem', fontWeight: 600 }}>
+                {(request.points_charged || 0) > 0 ? (
+                  <span style={{ color: 'var(--accent-amber)' }}>
+                    {request.points_charged} نقطة
+                    {request.discount_points ? ` (خصم ${request.discount_points} نقطة)` : ''}
+                  </span>
+                ) : (
+                  <span style={{ color: '#34d399', display: 'inline-flex', alignItems: 'center', gap: '5px' }}>
+                    <i className="fa-solid fa-gift"></i>
+                    خدمة مجانية (بدون نقاط)
+                  </span>
+                )}
               </span>
             </div>
           </div>
@@ -363,7 +372,7 @@ export function RequestDetailsModal({
                     }}
                   >
                     <i className="fa-solid fa-ban" style={{ marginLeft: '4px' }}></i>
-                    {t('promo.cancel_request_title')}
+                    {(request.points_charged || 0) > 0 ? t('promo.cancel_request_title') : 'إلغاء الطلب'}
                   </button>
                 )}
               </div>
