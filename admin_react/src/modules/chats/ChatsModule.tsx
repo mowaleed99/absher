@@ -15,8 +15,9 @@ export function ChatsModule() {
   const { confirm } = useConfirmDialog();
   const { showToast } = useToast();
   const { refetchBadges } = useBadges();
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const studentIdParam = searchParams.get('student_id');
+  const handledDeepLinkRef = useRef<string | null>(null);
 
   const {
     chats,
@@ -94,34 +95,70 @@ export function ChatsModule() {
     }
   };
 
-  // Addendum A: Deep-Link /chats?student_id=X never dead-ends
+  // Addendum A: Deep-Link /chats?student_id=X handled once on navigation without re-locking
   useEffect(() => {
-    if (studentIdParam) {
-      const targetStudentId = parseInt(studentIdParam, 10);
-      if (!isNaN(targetStudentId) && targetStudentId > 0) {
-        const found = chats.find((c) => c.student_id === targetStudentId);
-        if (found) {
-          setSelectedChatId(found.id);
-        } else if (!isEnsuringChat && !isLoading) {
-          setIsEnsuringChat(true);
-          ensureSupportChat(targetStudentId).then((res) => {
-            setIsEnsuringChat(false);
-            if (res.success && res.chatId) {
-              setSelectedChatId(res.chatId);
-              setTimeout(() => textareaRef.current?.focus(), 200);
-            }
-          });
+    if (!studentIdParam) {
+      handledDeepLinkRef.current = null;
+      return;
+    }
+
+    if (handledDeepLinkRef.current === studentIdParam) return;
+
+    const targetStudentId = parseInt(studentIdParam, 10);
+    if (isNaN(targetStudentId) || targetStudentId <= 0) return;
+
+    const found = chats.find((c) => c.student_id === targetStudentId);
+    if (found) {
+      setSelectedChatId(found.id);
+      handledDeepLinkRef.current = studentIdParam;
+      setTimeout(() => textareaRef.current?.focus(), 200);
+    } else if (!isEnsuringChat && !isLoading) {
+      setIsEnsuringChat(true);
+      ensureSupportChat(targetStudentId).then((res) => {
+        setIsEnsuringChat(false);
+        handledDeepLinkRef.current = studentIdParam;
+        if (res.success && res.chatId) {
+          setSelectedChatId(res.chatId);
+          setTimeout(() => textareaRef.current?.focus(), 200);
+        } else {
+          showToast(
+            res.error || (isRtl ? 'لم يتم العثور على حساب الطالب أو قد تم حذفه' : 'Student account not found or deleted'),
+            'error'
+          );
+          // Clear query param so user is not stuck on dead deep link
+          setSearchParams({}, { replace: true });
+          if (chats.length > 0) {
+            setSelectedChatId(chats[0].id);
+          }
+        }
+      });
+    }
+  }, [studentIdParam, chats, isLoading, isEnsuringChat, ensureSupportChat, isRtl, showToast, setSearchParams]);
+
+  // Handle manual selection from conversations list
+  const handleSelectChat = (chatId: number) => {
+    setSelectedChatId(chatId);
+    if (searchParams.has('student_id')) {
+      setSearchParams({}, { replace: true });
+      handledDeepLinkRef.current = null;
+    }
+  };
+
+  // Set default selection or fallback if selectedChatId does not exist
+  useEffect(() => {
+    if (chats.length > 0) {
+      if (selectedChatId === null) {
+        if (!studentIdParam) {
+          setSelectedChatId(chats[0].id);
+        }
+      } else {
+        const exists = chats.some((c) => c.id === selectedChatId);
+        if (!exists && !studentIdParam && !isEnsuringChat) {
+          setSelectedChatId(chats[0].id);
         }
       }
     }
-  }, [studentIdParam, chats, isLoading, isEnsuringChat, ensureSupportChat]);
-
-  // Set default selection if none selected and chats exist
-  useEffect(() => {
-    if (selectedChatId === null && chats.length > 0 && !studentIdParam) {
-      setSelectedChatId(chats[0].id);
-    }
-  }, [chats, selectedChatId, studentIdParam]);
+  }, [chats, selectedChatId, studentIdParam, isEnsuringChat]);
 
   const activeChat = useMemo(() => {
     return chats.find((c) => c.id === selectedChatId) || null;
@@ -460,7 +497,7 @@ export function ChatsModule() {
                 return (
                   <div
                     key={c.id}
-                    onClick={() => setSelectedChatId(c.id)}
+                    onClick={() => handleSelectChat(c.id)}
                     style={{
                       padding: '10px 12px',
                       borderRadius: '10px',
