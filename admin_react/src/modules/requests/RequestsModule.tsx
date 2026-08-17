@@ -223,7 +223,19 @@ export function RequestsModule() {
           const isActive = statusFilter === opt.key;
           const count = opt.key === 'all'
             ? requests.length
-            : requests.filter((r) => r.status === opt.key).length;
+            : requests.filter((r) => {
+                const norm = (r.status || '').trim().toLowerCase().replace(/[\s_-]+/g, '_');
+                if (opt.key === 'جديد') {
+                  return ['جديد', 'new', 'قيد_المراجعة', 'under_review', 'pending', 'pending_cash', 'pending_payment'].includes(norm);
+                } else if (opt.key === 'قيد التنفيذ') {
+                  return ['قيد_التنفيذ', 'in_progress'].includes(norm);
+                } else if (opt.key === 'مكتمل') {
+                  return ['مكتمل', 'completed'].includes(norm);
+                } else if (opt.key === 'ملغي') {
+                  return ['ملغي', 'cancelled', 'canceled'].includes(norm);
+                }
+                return r.status === opt.key;
+              }).length;
 
           return (
             <button
