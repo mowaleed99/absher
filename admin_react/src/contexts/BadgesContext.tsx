@@ -81,11 +81,12 @@ export function BadgesProvider({ children }: { children: React.ReactNode }) {
           setPendingChatsCount(0);
         }
 
-        // 4. Service Requests requiring attention: status === 'قيد المراجعة'
+        // 4. Service Requests requiring attention: New, Under Review, Pending Cash
         if (Array.isArray(result.data.requests)) {
-          const pReqs = result.data.requests.filter(
-            (r: Record<string, unknown>) => String(r.status || '').trim() === 'قيد المراجعة'
-          );
+          const pReqs = result.data.requests.filter((r: Record<string, unknown>) => {
+            const norm = String(r.status || '').trim().toLowerCase().replace(/[\s_-]+/g, '_');
+            return ['قيد_المراجعة', 'under_review', 'جديد', 'new', 'pending', 'pending_cash', 'pending_payment'].includes(norm);
+          });
           setPendingRequestsCount(pReqs.length);
         } else {
           setPendingRequestsCount(0);

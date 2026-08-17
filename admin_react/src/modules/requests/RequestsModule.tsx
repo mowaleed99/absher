@@ -45,7 +45,22 @@ export function RequestsModule() {
 
       // 1. Status Filter
       if (statusFilter !== 'all') {
-        if (r.status !== statusFilter) return false;
+        const norm = (r.status || '').trim().toLowerCase().replace(/[\s_-]+/g, '_');
+        if (statusFilter === 'جديد') {
+          const isNewOrReview = ['جديد', 'new', 'قيد_المراجعة', 'under_review', 'pending', 'pending_cash', 'pending_payment'].includes(norm);
+          if (!isNewOrReview) return false;
+        } else if (statusFilter === 'قيد التنفيذ') {
+          const isInProgress = ['قيد_التنفيذ', 'in_progress'].includes(norm);
+          if (!isInProgress) return false;
+        } else if (statusFilter === 'مكتمل') {
+          const isCompleted = ['مكتمل', 'completed'].includes(norm);
+          if (!isCompleted) return false;
+        } else if (statusFilter === 'ملغي') {
+          const isCancelled = ['ملغي', 'cancelled', 'canceled'].includes(norm);
+          if (!isCancelled) return false;
+        } else {
+          if (r.status !== statusFilter) return false;
+        }
       }
 
       // 2. Search Query
