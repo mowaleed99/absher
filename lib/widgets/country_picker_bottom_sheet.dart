@@ -205,6 +205,7 @@ class _CountryPickerBottomSheetState extends State<CountryPickerBottomSheet> {
           ),
         ],
       ),
+    ),
     );
   }
 }
