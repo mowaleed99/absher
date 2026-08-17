@@ -587,13 +587,6 @@ class _ChatScreenState extends State<ChatScreen> {
                   style: const TextStyle(
                       color: AppColors.accent, fontWeight: FontWeight.bold)),
             ),
-            IconButton(
-              icon: const Icon(Icons.phone, color: AppColors.accent),
-              onPressed: () => ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                      content:
-                          Text(LanguageService.tr('direct_call_snackbar')))),
-            ),
           ],
         ),
         body: Column(
