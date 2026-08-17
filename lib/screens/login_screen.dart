@@ -98,6 +98,52 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
+  Widget _buildLanguageSwitcher() {
+    final isAr = LanguageService.currentLang.value == 'ar';
+    return Align(
+      alignment: AlignmentDirectional.topEnd,
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: () {
+            LanguageService.currentLang.value = isAr ? 'en' : 'ar';
+          },
+          borderRadius: BorderRadius.circular(20),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: AppColors.primary.withValues(alpha: 0.18)),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.04),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(Icons.language, size: 16, color: AppColors.primary),
+                const SizedBox(width: 6),
+                Text(
+                  isAr ? 'English' : 'العربية',
+                  style: const TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.primary,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Directionality(
@@ -107,10 +153,14 @@ class _LoginScreenState extends State<LoginScreen> {
         body: SafeArea(
           child: Center(
             child: SingleChildScrollView(
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
+                  // زر تغيير اللغة في الأعلى
+                  _buildLanguageSwitcher(),
+                  const SizedBox(height: 12),
+
                   // اللوجو الرسمي في أعلى الدخول
                   Container(
                     width: 96,

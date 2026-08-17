@@ -140,6 +140,65 @@ class _RegisterScreenState extends State<RegisterScreen> {
     );
   }
 
+  Widget _buildTopBar() {
+    final isAr = LanguageService.currentLang.value == 'ar';
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        IconButton(
+          onPressed: () => Navigator.of(context).pop(),
+          icon: Icon(
+            isAr ? Icons.arrow_forward_ios : Icons.arrow_back_ios,
+            size: 18,
+            color: AppColors.textDark,
+          ),
+          tooltip: LanguageService.tr('go_back'),
+        ),
+        Material(
+          color: Colors.transparent,
+          child: InkWell(
+            onTap: () {
+              LanguageService.currentLang.value = isAr ? 'en' : 'ar';
+            },
+            borderRadius: BorderRadius.circular(20),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(
+                    color: AppColors.primary.withValues(alpha: 0.18)),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.04),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(Icons.language,
+                      size: 16, color: AppColors.primary),
+                  const SizedBox(width: 6),
+                  Text(
+                    isAr ? 'English' : 'العربية',
+                    style: const TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.primary,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Directionality(
@@ -149,10 +208,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
         body: SafeArea(
           child: Center(
             child: SingleChildScrollView(
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
+                  // شريط علوي مع زر الرجوع وتغيير اللغة
+                  _buildTopBar(),
+                  const SizedBox(height: 12),
+
                   Text(
                     LanguageService.tr('create_account_title'),
                     style: const TextStyle(
