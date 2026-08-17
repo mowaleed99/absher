@@ -33,7 +33,26 @@ class _RegisterScreenState extends State<RegisterScreen> {
   @override
   void initState() {
     super.initState();
+    LanguageService.currentLang.addListener(_onLangChanged);
     _loadUniversities();
+  }
+
+  @override
+  void dispose() {
+    LanguageService.currentLang.removeListener(_onLangChanged);
+    _nameController.dispose();
+    _emailController.dispose();
+    _localPhoneController.dispose();
+    _passwordController.dispose();
+    _customUniController.dispose();
+    super.dispose();
+  }
+
+  void _onLangChanged() {
+    if (mounted) {
+      _loadUniversities();
+      setState(() {});
+    }
   }
 
   Future<void> _loadUniversities() async {
@@ -158,7 +177,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
           color: Colors.transparent,
           child: InkWell(
             onTap: () {
-              LanguageService.currentLang.value = isAr ? 'en' : 'ar';
+              final nextLang = isAr ? 'en' : 'ar';
+              LanguageService.currentLang.value = nextLang;
+              if (mounted) setState(() {});
             },
             borderRadius: BorderRadius.circular(20),
             child: Container(
@@ -201,17 +222,21 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Directionality(
-      textDirection: LanguageService.textDirection,
-      child: Scaffold(
-        backgroundColor: AppColors.background,
-        body: SafeArea(
-          child: Center(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
+    return ValueListenableBuilder<String>(
+      valueListenable: LanguageService.currentLang,
+      builder: (context, currentLangVal, _) {
+        final textDir = currentLangVal == 'ar' ? TextDirection.rtl : TextDirection.ltr;
+        return Directionality(
+          textDirection: textDir,
+          child: Scaffold(
+            backgroundColor: AppColors.background,
+            body: SafeArea(
+              child: Center(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
                   // شريط علوي مع زر الرجوع وتغيير اللغة
                   _buildTopBar(),
                   const SizedBox(height: 12),
@@ -629,6 +654,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
           ),
         ),
       ),
+    );
+      },
     );
   }
 }

@@ -22,6 +22,26 @@ class _LoginScreenState extends State<LoginScreen> {
   bool _obscurePassword = true;
   String _errorMessage = '';
 
+  @override
+  void initState() {
+    super.initState();
+    LanguageService.currentLang.addListener(_onLangChanged);
+  }
+
+  @override
+  void dispose() {
+    LanguageService.currentLang.removeListener(_onLangChanged);
+    _identifierController.dispose();
+    _passwordController.dispose();
+    super.dispose();
+  }
+
+  void _onLangChanged() {
+    if (mounted) {
+      setState(() {});
+    }
+  }
+
   Future<void> _handleForgotPassword() async {
     final isAr = LanguageService.currentLang.value == 'ar';
     final message = isAr
@@ -106,7 +126,9 @@ class _LoginScreenState extends State<LoginScreen> {
         color: Colors.transparent,
         child: InkWell(
           onTap: () {
-            LanguageService.currentLang.value = isAr ? 'en' : 'ar';
+            final nextLang = isAr ? 'en' : 'ar';
+            LanguageService.currentLang.value = nextLang;
+            if (mounted) setState(() {});
           },
           borderRadius: BorderRadius.circular(20),
           child: Container(
@@ -146,17 +168,21 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Directionality(
-      textDirection: LanguageService.textDirection,
-      child: Scaffold(
-        backgroundColor: AppColors.background,
-        body: SafeArea(
-          child: Center(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
+    return ValueListenableBuilder<String>(
+      valueListenable: LanguageService.currentLang,
+      builder: (context, currentLangVal, _) {
+        final textDir = currentLangVal == 'ar' ? TextDirection.rtl : TextDirection.ltr;
+        return Directionality(
+          textDirection: textDir,
+          child: Scaffold(
+            backgroundColor: AppColors.background,
+            body: SafeArea(
+              child: Center(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
                   // زر تغيير اللغة في الأعلى
                   _buildLanguageSwitcher(),
                   const SizedBox(height: 12),
@@ -378,6 +404,8 @@ class _LoginScreenState extends State<LoginScreen> {
           ),
         ),
       ),
+    );
+      },
     );
   }
 }
