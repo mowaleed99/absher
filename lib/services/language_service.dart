@@ -1900,10 +1900,10 @@ class LanguageService {
     required String title,
     required String name,
     required String phone,
-    required String address,
-    required String executionTime,
-    required bool hasImage,
-    required String details,
+    String? address,
+    String? executionTime,
+    bool hasImage = false,
+    String? details,
     String? rooms,
     String? meters,
     String? calcPrice,
@@ -1911,45 +1911,50 @@ class LanguageService {
     String? paymentMethod,
   }) {
     final isAr = currentLang.value == 'ar';
-    String msg = '';
-    if (isAr) {
-      msg = 'طلب خدمة ($title):\n'
-          'الاسم: $name\n'
-          'رقم الهاتف: $phone\n'
-          'العنوان: $address\n'
-          'موعد التنفيذ: $executionTime\n'
-          'إرفاق صورة: ${hasImage ? 'نعم' : 'لا'}\n'
-          'التفاصيل: $details.';
-      if (rooms != null && meters != null && calcPrice != null) {
-        msg +=
-            '\n[تفاصيل التنظيف: $rooms غرف، مساحة $meters متر، التكلفة التقديرية $calcPrice لاري].';
-      }
-      if (promoCode != null && promoCode.isNotEmpty) {
-        msg += '\n[كود الخصم: $promoCode].';
-      }
-      if (paymentMethod != null) {
-        msg += '\n[طريقة الدفع: $paymentMethod]';
-      }
-    } else {
-      msg = 'Service Request ($title):\n'
-          'Name: $name\n'
-          'Phone: $phone\n'
-          'Address: $address\n'
-          'Execution Time: $executionTime\n'
-          'Attached Image: ${hasImage ? 'Yes' : 'No'}\n'
-          'Details: $details.';
-      if (rooms != null && meters != null && calcPrice != null) {
-        msg +=
-            '\n[Cleaning Details: $rooms rooms, area $meters sq.m., estimated cost $calcPrice GEL].';
-      }
-      if (promoCode != null && promoCode.isNotEmpty) {
-        msg += '\n[Promo Code: $promoCode].';
-      }
-      if (paymentMethod != null) {
-        msg += '\n[Payment Method: $paymentMethod]';
-      }
+    final List<String> lines = [];
+
+    if (name.trim().isNotEmpty) {
+      lines.add(isAr ? 'الاسم: ${name.trim()}' : 'Name: ${name.trim()}');
     }
-    return msg;
+    if (phone.trim().isNotEmpty) {
+      lines.add(isAr ? 'رقم الهاتف: ${phone.trim()}' : 'Phone: ${phone.trim()}');
+    }
+    if (address != null &&
+        address.trim().isNotEmpty &&
+        !address.contains('لم يُحدد') &&
+        !address.contains('Not specified') &&
+        !address.contains('not specified')) {
+      lines.add(isAr ? 'العنوان: ${address.trim()}' : 'Address: ${address.trim()}');
+    }
+    if (executionTime != null &&
+        executionTime.trim().isNotEmpty &&
+        !executionTime.contains('لم يتم التحديد') &&
+        !executionTime.contains('Not specified') &&
+        !executionTime.contains('not specified')) {
+      lines.add(isAr ? 'موعد التنفيذ: ${executionTime.trim()}' : 'Execution Time: ${executionTime.trim()}');
+    }
+    if (hasImage) {
+      lines.add(isAr ? 'إرفاق صورة: نعم' : 'Attached Image: Yes');
+    }
+    if (details != null &&
+        details.trim().isNotEmpty &&
+        !details.contains('بدون ملاحظات إضافية') &&
+        !details.contains('No additional notes')) {
+      lines.add(isAr ? 'ملاحظات: ${details.trim()}' : 'Notes: ${details.trim()}');
+    }
+    if (rooms != null && meters != null && calcPrice != null) {
+      lines.add(isAr
+          ? '[تفاصيل التنظيف: $rooms غرف، مساحة $meters متر، التكلفة التقديرية $calcPrice لاري]'
+          : '[Cleaning Details: $rooms rooms, area $meters sq.m., estimated cost $calcPrice GEL]');
+    }
+    if (promoCode != null && promoCode.trim().isNotEmpty) {
+      lines.add(isAr ? '[كود الخصم: ${promoCode.trim()}]' : '[Promo Code: ${promoCode.trim()}]');
+    }
+    if (paymentMethod != null && paymentMethod.trim().isNotEmpty) {
+      lines.add(isAr ? '[طريقة الدفع: ${paymentMethod.trim()}]' : '[Payment Method: ${paymentMethod.trim()}]');
+    }
+
+    return lines.join('\n');
   }
 
   static String formatRoommateRequestMessage({

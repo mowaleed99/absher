@@ -887,12 +887,15 @@ class _ServicesScreenState extends State<ServicesScreen> {
                     }
                   }
 
-                  final String resolvedAddress = addressCtrl.text.isNotEmpty
-                      ? addressCtrl.text
-                      : LanguageService.tr('auto_trans_1282');
-                  final String resolvedDetails = detailsCtrl.text.isNotEmpty
-                      ? detailsCtrl.text
-                      : LanguageService.tr('auto_trans_1285');
+                  final String? resolvedAddress = addressCtrl.text.trim().isNotEmpty
+                      ? addressCtrl.text.trim()
+                      : null;
+                  final String? resolvedDetails = detailsCtrl.text.trim().isNotEmpty
+                      ? detailsCtrl.text.trim()
+                      : null;
+                  final String? resolvedDate = dateCtrl.text.trim().isNotEmpty
+                      ? dateCtrl.text.trim()
+                      : null;
                   final String paymentMethodText = finalPrice == 0
                       ? (LanguageService.currentLang.value == 'ar'
                           ? 'مجانية'
@@ -911,7 +914,7 @@ class _ServicesScreenState extends State<ServicesScreen> {
                     name: nameCtrl.text,
                     phone: phoneCtrl.text,
                     address: resolvedAddress,
-                    executionTime: dateCtrl.text,
+                    executionTime: resolvedDate,
                     hasImage: false,
                     details: resolvedDetails,
                     rooms: finalIsCleanHome ? roomsCtrl.text : null,

@@ -586,15 +586,18 @@ if ($action === 'submit') {
             }
 
             if ($chatId) {
-                if ($paymentMethod === 'wallet') {
-                    $msgContent = "📋 [طلب مدفوع بالنقاط - #" . $requestId . "]\nالخدمة: " . $serviceTitle . "\n" . $fullDetails;
-                    $msgContent .= "\n[تم خصم $pointsCharged نقطة بنجاح]";
-                } else if ($paymentMethod === 'cash') {
-                    $msgContent = "📋 [طلب خدمة جديد - #" . $requestId . "]\nالخدمة: " . $serviceTitle . "\n" . $fullDetails;
-                    $msgContent .= "\nطريقة الدفع: نقدًا عند تنفيذ الخدمة";
-                } else {
-                    $msgContent = "📋 [طلب خدمة جديد - #" . $requestId . "]\nالخدمة: " . $serviceTitle . "\n" . $fullDetails;
+                $headerTitle = ($paymentMethod === 'wallet') ? "📋 [طلب مدفوع بالنقاط - #$requestId]" : "📋 [طلب خدمة جديد - #$requestId]";
+                $msgLines = [$headerTitle, "الخدمة: " . $serviceTitle];
+                if (!empty($studentUni) && strpos($fullDetails, 'الجامعة') === false) {
+                    $msgLines[] = "الجامعة: " . $studentUni;
                 }
+                $msgLines[] = $fullDetails;
+                if ($paymentMethod === 'wallet' && strpos($fullDetails, 'خصم') === false && $pointsCharged > 0) {
+                    $msgLines[] = "[تم خصم $pointsCharged نقطة بنجاح]";
+                } else if ($paymentMethod === 'cash' && strpos($fullDetails, 'طريقة الدفع') === false && strpos($fullDetails, 'الدفع') === false) {
+                    $msgLines[] = "[طريقة الدفع: نقدًا عند تنفيذ الخدمة]";
+                }
+                $msgContent = implode("\n", array_filter($msgLines));
 
                 $attachedImageUrl = '';
                 // Check if details contains a photo link using ASCII-safe uploads path regex

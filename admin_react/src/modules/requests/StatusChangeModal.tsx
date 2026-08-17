@@ -12,13 +12,40 @@ interface StatusChangeModalProps {
   showToast: (msg: string, type?: 'success' | 'error') => void;
 }
 
+function getServiceTitleEn(titleAr: string): string {
+  if (!titleAr) return titleAr;
+  const t = titleAr.trim().toLowerCase();
+  if (t.includes('تنظيف') || t.includes('clean')) return 'Cleaning Service';
+  if (t.includes('شريك') || t.includes('roommate')) return 'Roommate Match';
+  if (t.includes('حجز') || t.includes('معاينة') || t.includes('شقة') || t.includes('apartment')) return 'Apartment Viewing & Booking';
+  if (t.includes('استقبال') || t.includes('مطار') || t.includes('airport')) return 'Airport Pickup';
+  if (t.includes('ترجمة') || t.includes('translation')) return 'Translation Service';
+  if (t.includes('صيانة') || t.includes('maintenance')) return 'Maintenance Service';
+  if (t.includes('استشارة') || t.includes('consultation')) return 'Consultation Service';
+  if (t.includes('توصيل') || t.includes('delivery')) return 'Delivery Service';
+  return titleAr;
+}
+
+function getStatusLabelEn(st: string): string {
+  const norm = (st || '').toLowerCase().replace(/[\s_-]+/g, '_');
+  if (norm === 'قيد_المراجعة' || norm === 'under_review' || norm === 'pending') return 'Under Review';
+  if (norm === 'قيد_التنفيذ' || norm === 'in_progress') return 'In Progress';
+  if (norm === 'مكتمل' || norm === 'completed') return 'Completed';
+  if (norm === 'ملغي' || norm === 'cancelled' || norm === 'canceled') return 'Cancelled';
+  if (norm === 'pending_cash' || norm === 'pendingcash') return 'Pending Cash Payment';
+  return st;
+}
+
 // Helper to render template text with request values
-function renderTemplateText(tplText: string, req: ServiceRequest, targetStatus: string, reason = '') {
+function renderTemplateText(tplText: string, req: ServiceRequest, targetStatus: string, reason = '', isEn = false) {
+  const serviceTitle = isEn ? getServiceTitleEn(req.service_title) : req.service_title;
+  const statusStr = isEn ? getStatusLabelEn(targetStatus) : targetStatus;
+  const reasonStr = reason || (isEn ? 'Not specified' : 'لم يذكر سبب');
   return tplText
     .replace(/\{id\}/g, String(req.id))
-    .replace(/\{service\}/g, req.service_title || 'خدمة')
-    .replace(/\{status\}/g, targetStatus)
-    .replace(/\{reason\}/g, reason || '...')
+    .replace(/\{service\}/g, serviceTitle || (isEn ? 'Service' : 'خدمة'))
+    .replace(/\{status\}/g, statusStr)
+    .replace(/\{reason\}/g, reasonStr)
     .replace(/\{points\}/g, String(req.points_charged || 0));
 }
 
@@ -51,21 +78,33 @@ export function StatusChangeModal({
 
     const tpl = templates.find((t) => t.status_key === targetStatus);
     if (tpl) {
-      const renderedAr = renderTemplateText(tpl.template_ar, request, targetStatus, '');
-      const renderedEn = renderTemplateText(tpl.template_en, request, targetStatus, '');
+      const renderedAr = renderTemplateText(tpl.template_ar, request, targetStatus, '', false);
+      const renderedEn = renderTemplateText(tpl.template_en, request, targetStatus, '', true);
 
       if (msgLang === 'en') {
         setCustomMessage(renderedEn);
       } else if (msgLang === 'both') {
-        setCustomMessage(`${renderedAr}\n\n${renderedEn}`);
+        setCustomMessage(`${renderedAr}\n\n--------------------\n\n${renderedEn}`);
       } else {
         setCustomMessage(renderedAr);
       }
     } else {
       if (targetStatus === 'ملغي') {
-        setCustomMessage(`تحديث الطلب (#${request.id}): نود إعلامك بأنه تم إلغاء طلبك الخاص بـ (${request.service_title}).`);
+        if (msgLang === 'en') {
+          setCustomMessage(`Request Update (#${request.id}): We regret to inform you that your request for (${getServiceTitleEn(request.service_title)}) has been cancelled.`);
+        } else if (msgLang === 'both') {
+          setCustomMessage(`تحديث الطلب (#${request.id}): نود إعلامك بأنه تم إلغاء طلبك الخاص بـ (${request.service_title}).\n\n--------------------\n\nRequest Update (#${request.id}): We regret to inform you that your request for (${getServiceTitleEn(request.service_title)}) has been cancelled.`);
+        } else {
+          setCustomMessage(`تحديث الطلب (#${request.id}): نود إعلامك بأنه تم إلغاء طلبك الخاص بـ (${request.service_title}).`);
+        }
       } else {
-        setCustomMessage(`تحديث الطلب (#${request.id}): تم تغيير حالة طلبك الخاص بـ (${request.service_title}) إلى: ${targetStatus}`);
+        if (msgLang === 'en') {
+          setCustomMessage(`Request Update (#${request.id}): Your request for (${getServiceTitleEn(request.service_title)}) status has been updated to: ${getStatusLabelEn(targetStatus)}`);
+        } else if (msgLang === 'both') {
+          setCustomMessage(`تحديث الطلب (#${request.id}): تم تغيير حالة طلبك الخاص بـ (${request.service_title}) إلى: ${targetStatus}\n\n--------------------\n\nRequest Update (#${request.id}): Your request for (${getServiceTitleEn(request.service_title)}) status has been updated to: ${getStatusLabelEn(targetStatus)}`);
+        } else {
+          setCustomMessage(`تحديث الطلب (#${request.id}): تم تغيير حالة طلبك الخاص بـ (${request.service_title}) إلى: ${targetStatus}`);
+        }
       }
     }
   }, [isOpen, request, targetStatus, msgLang, templates]);
@@ -76,12 +115,12 @@ export function StatusChangeModal({
     if (targetStatus === 'ملغي' && request) {
       const tpl = templates.find((t) => t.status_key === 'ملغي');
       if (tpl) {
-        const renderedAr = renderTemplateText(tpl.template_ar, request, targetStatus, reason);
-        const renderedEn = renderTemplateText(tpl.template_en, request, targetStatus, reason);
+        const renderedAr = renderTemplateText(tpl.template_ar, request, targetStatus, reason, false);
+        const renderedEn = renderTemplateText(tpl.template_en, request, targetStatus, reason, true);
         if (msgLang === 'en') {
           setCustomMessage(renderedEn);
         } else if (msgLang === 'both') {
-          setCustomMessage(`${renderedAr}\n\n${renderedEn}`);
+          setCustomMessage(`${renderedAr}\n\n--------------------\n\n${renderedEn}`);
         } else {
           setCustomMessage(renderedAr);
         }
