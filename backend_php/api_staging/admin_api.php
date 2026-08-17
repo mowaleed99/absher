@@ -975,14 +975,24 @@ try {
                 if ($chat) {
                     $chatId = $chat['id'];
                     $conn->prepare("UPDATE chats SET last_msg = ?, status = 'تحديث الطلب', updated_at = NOW() WHERE id = ?")->execute([$msgText, $chatId]);
+                    $stmtMsg = $conn->prepare("INSERT INTO chat_messages (chat_id, sender, text) VALUES (?, 'admin', ?)");
+                    $stmtMsg->execute([$chatId, $msgText]);
                 } else {
-                    $conn->prepare("INSERT INTO chats (student_id, student_name, phone, last_msg, status, updated_at) VALUES (?, ?, ?, ?, 'تحديث الطلب', NOW())")
-                         ->execute([$studentId, $reqData['student_name'] ?? 'طالب', $phone, $msgText]);
-                    $chatId = $conn->lastInsertId();
+                    // Only recreate chat if the student account actually exists in the database
+                    $studentExists = true;
+                    if ($studentId > 0) {
+                        $stCheck = $conn->prepare("SELECT id FROM students WHERE id = ?");
+                        $stCheck->execute([$studentId]);
+                        $studentExists = (bool)$stCheck->fetch();
+                    }
+                    if ($studentExists) {
+                        $conn->prepare("INSERT INTO chats (student_id, student_name, phone, last_msg, status, updated_at) VALUES (?, ?, ?, ?, 'تحديث الطلب', NOW())")
+                             ->execute([$studentId, $reqData['student_name'] ?? 'طالب', $phone, $msgText]);
+                        $chatId = $conn->lastInsertId();
+                        $stmtMsg = $conn->prepare("INSERT INTO chat_messages (chat_id, sender, text) VALUES (?, 'admin', ?)");
+                        $stmtMsg->execute([$chatId, $msgText]);
+                    }
                 }
-
-                $stmtMsg = $conn->prepare("INSERT INTO chat_messages (chat_id, sender, text) VALUES (?, 'admin', ?)");
-                $stmtMsg->execute([$chatId, $msgText]);
             }
 
             $conn->commit();
