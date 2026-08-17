@@ -534,7 +534,6 @@ class _ServicesScreenState extends State<ServicesScreen> {
                   if (originalPrice > 0) ...[
                     Material(
                       color: Colors.grey.shade50,
-                      borderRadius: BorderRadius.circular(12),
                       shape: RoundedRectangleBorder(
                         side: BorderSide(color: Colors.grey.shade300),
                         borderRadius: BorderRadius.circular(12),
