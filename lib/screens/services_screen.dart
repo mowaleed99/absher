@@ -206,13 +206,12 @@ class _ServicesScreenState extends State<ServicesScreen> {
     final nameCtrl = TextEditingController(text: widget.user?.fullName ?? '');
     final phoneCtrl = TextEditingController(text: widget.user?.phone ?? '');
     final addressCtrl = TextEditingController();
-    final dateCtrl =
-        TextEditingController(text: LanguageService.tr('auto_trans_1279'));
+    final dateCtrl = TextEditingController();
     final detailsCtrl = TextEditingController();
     final promoCtrl = TextEditingController();
-    final roomsCtrl = TextEditingController(text: '2');
-    final metersCtrl = TextEditingController(text: '60');
-    double calcPrice = 60 * 3.5;
+    final roomsCtrl = TextEditingController();
+    final metersCtrl = TextEditingController();
+    double calcPrice = 0;
     String selectedPaymentMethod = 'wallet';
 
     Future<void> pickDateTime(StateSetter setDialogState) async {
@@ -301,9 +300,13 @@ class _ServicesScreenState extends State<ServicesScreen> {
               currentTitle.contains("تنظيف") || currentTitle.contains("Clean");
 
           if (currentIsCleanHome) {
-            final double m2 = double.tryParse(metersCtrl.text) ?? 0;
-            final double r = double.tryParse(roomsCtrl.text) ?? 0;
-            calcPrice = (m2 * 2.5) + (r * 15.0);
+            final double m2 = double.tryParse(metersCtrl.text.trim()) ?? 0;
+            final double r = double.tryParse(roomsCtrl.text.trim()) ?? 0;
+            if (m2 > 0 || r > 0) {
+              calcPrice = (m2 * 2.5) + (r * 15.0);
+            } else {
+              calcPrice = 0;
+            }
           }
 
           final int originalPrice = currentPrice;
@@ -480,7 +483,10 @@ class _ServicesScreenState extends State<ServicesScreen> {
                             controller: roomsCtrl,
                             keyboardType: TextInputType.number,
                             decoration: InputDecoration(
-                                labelText: "عدد الغرف",
+                                labelText: LanguageService.currentLang.value == 'ar'
+                                    ? "عدد الغرف (اختياري)"
+                                    : "Rooms (Optional)",
+                                hintText: "مثال: 2",
                                 border: OutlineInputBorder(
                                     borderRadius: BorderRadius.circular(12))),
                             onChanged: (val) => setDialogState(() {}),
@@ -492,7 +498,10 @@ class _ServicesScreenState extends State<ServicesScreen> {
                             controller: metersCtrl,
                             keyboardType: TextInputType.number,
                             decoration: InputDecoration(
-                                labelText: "المساحة (م²)",
+                                labelText: LanguageService.currentLang.value == 'ar'
+                                    ? "المساحة م² (اختياري)"
+                                    : "Area sq.m. (Optional)",
+                                hintText: "مثال: 60",
                                 border: OutlineInputBorder(
                                     borderRadius: BorderRadius.circular(12))),
                             onChanged: (val) => setDialogState(() {}),
@@ -500,20 +509,22 @@ class _ServicesScreenState extends State<ServicesScreen> {
                         ),
                       ],
                     ),
-                    const SizedBox(height: 8),
-                    Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                          color: AppColors.accentLight,
-                          borderRadius: BorderRadius.circular(8)),
-                      child: Text(
-                          LanguageService.formatCleaningEstimate(
-                              calcPrice.toString()),
-                          style: const TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 11,
-                              color: AppColors.primary)),
-                    ),
+                    if (calcPrice > 0) ...[
+                      const SizedBox(height: 8),
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                            color: AppColors.accentLight,
+                            borderRadius: BorderRadius.circular(8)),
+                        child: Text(
+                            LanguageService.formatCleaningEstimate(
+                                calcPrice.toStringAsFixed(0)),
+                            style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 11,
+                                color: AppColors.primary)),
+                      ),
+                    ],
                     const SizedBox(height: 10),
                   ],
 
@@ -908,6 +919,11 @@ class _ServicesScreenState extends State<ServicesScreen> {
                               ? 'نقدًا عند تنفيذ الخدمة'
                               : 'Cash upon execution'));
 
+                  final bool hasCleaningDetails = finalIsCleanHome &&
+                      roomsCtrl.text.trim().isNotEmpty &&
+                      metersCtrl.text.trim().isNotEmpty &&
+                      calcPrice > 0;
+
                   final String reqMsg =
                       LanguageService.formatServiceRequestMessage(
                     title: finalTitle,
@@ -917,9 +933,11 @@ class _ServicesScreenState extends State<ServicesScreen> {
                     executionTime: resolvedDate,
                     hasImage: false,
                     details: resolvedDetails,
-                    rooms: finalIsCleanHome ? roomsCtrl.text : null,
-                    meters: finalIsCleanHome ? metersCtrl.text : null,
-                    calcPrice: finalIsCleanHome ? calcPrice.toString() : null,
+                    rooms: hasCleaningDetails ? roomsCtrl.text.trim() : null,
+                    meters: hasCleaningDetails ? metersCtrl.text.trim() : null,
+                    calcPrice: hasCleaningDetails
+                        ? calcPrice.toStringAsFixed(0)
+                        : null,
                     promoCode:
                         promoCtrl.text.isNotEmpty ? promoCtrl.text : null,
                     paymentMethod: paymentMethodText,
