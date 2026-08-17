@@ -580,6 +580,13 @@ const arTranslations: Translations = {
   'apt.unpin_success': 'تم إلغاء تثبيت الشقة بنجاح',
   'apt.custom_expiry_date': 'تاريخ ووقت انتهاء التثبيت',
   'apt.is_featured_field': 'إعلان مميز (تثبيت في أعلى القائمة)',
+  'status.pending_cash': 'في انتظار الدفع نقداً',
+  'status.pending_payment': 'في انتظار الدفع',
+  'status.new': 'جديد',
+  'status.in_progress': 'قيد التنفيذ',
+  'status.completed': 'مكتمل',
+  'status.cancelled': 'ملغي',
+  'status.under_review': 'قيد المراجعة',
 };
 
 const enTranslations: Translations = {
@@ -1156,6 +1163,13 @@ const enTranslations: Translations = {
   'apt.unpin_success': 'Apartment unpinned successfully',
   'apt.custom_expiry_date': 'Pin Expiration Date & Time',
   'apt.is_featured_field': 'Featured Listing (Pin to top)',
+  'status.pending_cash': 'Pending Cash Payment',
+  'status.pending_payment': 'Pending Payment',
+  'status.new': 'New',
+  'status.in_progress': 'In Progress',
+  'status.completed': 'Completed',
+  'status.cancelled': 'Cancelled',
+  'status.under_review': 'Under Review',
 };
 
 interface I18nContextType {

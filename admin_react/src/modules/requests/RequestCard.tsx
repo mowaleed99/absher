@@ -14,20 +14,43 @@ export function RequestCard({ request, onViewDetails, onDelete }: RequestCardPro
   const cleanPhone = (request.student_phone || '').replace(/[^0-9]/g, '');
   const whatsappUrl = cleanPhone ? `https://wa.me/${cleanPhone}` : '';
 
+  const getStatusLabel = (st: string) => {
+    const norm = (st || '').toLowerCase().replace(/[\s_-]+/g, '_');
+    if (norm === 'pending_cash' || norm === 'pendingcash') return t('status.pending_cash');
+    if (norm === 'pending_payment' || norm === 'pendingpayment') return t('status.pending_payment');
+    if (norm === 'قيد_المراجعة' || norm === 'under_review' || norm === 'pending') return t('status.under_review');
+    if (norm === 'جديد' || norm === 'new') return t('status.new');
+    if (norm === 'قيد_التنفيذ' || norm === 'in_progress') return t('status.in_progress');
+    if (norm === 'مكتمل' || norm === 'completed') return t('status.completed');
+    if (norm === 'ملغي' || norm === 'cancelled' || norm === 'canceled') return t('status.cancelled');
+    return st;
+  };
+
   const getStatusBadgeStyle = (st: string) => {
-    switch (st) {
+    const norm = (st || '').toLowerCase().replace(/[\s_-]+/g, '_');
+    switch (norm) {
       case 'جديد':
-      case 'New':
+      case 'new':
         return { background: 'rgba(59, 130, 246, 0.12)', color: '#60a5fa', border: '1px solid rgba(59, 130, 246, 0.25)' };
-      case 'قيد التنفيذ':
-      case 'In Progress':
+      case 'قيد_التنفيذ':
+      case 'in_progress':
         return { background: 'rgba(245, 158, 11, 0.12)', color: '#fbbf24', border: '1px solid rgba(245, 158, 11, 0.25)' };
       case 'مكتمل':
-      case 'Completed':
+      case 'completed':
         return { background: 'rgba(16, 185, 129, 0.12)', color: '#34d399', border: '1px solid rgba(16, 185, 129, 0.25)' };
       case 'ملغي':
-      case 'Cancelled':
+      case 'cancelled':
+      case 'canceled':
         return { background: 'rgba(239, 68, 68, 0.12)', color: '#f87171', border: '1px solid rgba(239, 68, 68, 0.25)' };
+      case 'pending_cash':
+      case 'pendingcash':
+      case 'pending_payment':
+      case 'pendingpayment':
+        return { background: 'rgba(245, 158, 11, 0.12)', color: '#fbbf24', border: '1px solid rgba(245, 158, 11, 0.25)' };
+      case 'قيد_المراجعة':
+      case 'under_review':
+      case 'pending':
+        return { background: 'rgba(168, 85, 247, 0.12)', color: '#c084fc', border: '1px solid rgba(168, 85, 247, 0.25)' };
       default:
         return { background: 'rgba(148, 163, 184, 0.12)', color: '#94a3b8', border: '1px solid rgba(148, 163, 184, 0.25)' };
     }
@@ -103,7 +126,7 @@ export function RequestCard({ request, onViewDetails, onDelete }: RequestCardPro
             ...statusStyle,
           }}
         >
-          {request.status}
+          {getStatusLabel(request.status)}
         </span>
       </div>
 

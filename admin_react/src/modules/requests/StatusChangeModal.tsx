@@ -91,16 +91,40 @@ export function StatusChangeModal({
 
   if (!isOpen || !request) return null;
 
+  const getStatusLabel = (st: string) => {
+    const norm = (st || '').toLowerCase().replace(/[\s_-]+/g, '_');
+    if (norm === 'pending_cash' || norm === 'pendingcash') return t('status.pending_cash');
+    if (norm === 'pending_payment' || norm === 'pendingpayment') return t('status.pending_payment');
+    if (norm === 'قيد_المراجعة' || norm === 'under_review' || norm === 'pending') return t('status.under_review');
+    if (norm === 'جديد' || norm === 'new') return t('status.new');
+    if (norm === 'قيد_التنفيذ' || norm === 'in_progress') return t('status.in_progress');
+    if (norm === 'مكتمل' || norm === 'completed') return t('status.completed');
+    if (norm === 'ملغي' || norm === 'cancelled' || norm === 'canceled') return t('status.cancelled');
+    return st;
+  };
+
   const getStatusBadgeClass = (s: string) => {
-    switch (s) {
-      case 'قيد المراجعة':
+    const norm = (s || '').toLowerCase().replace(/[\s_-]+/g, '_');
+    switch (norm) {
+      case 'قيد_المراجعة':
+      case 'under_review':
+      case 'pending':
         return 'badge-warning';
-      case 'قيد التنفيذ':
+      case 'قيد_التنفيذ':
+      case 'in_progress':
         return 'badge-primary';
       case 'مكتمل':
+      case 'completed':
         return 'badge-success';
       case 'ملغي':
+      case 'cancelled':
+      case 'canceled':
         return 'badge-danger';
+      case 'pending_cash':
+      case 'pendingcash':
+      case 'pending_payment':
+      case 'pendingpayment':
+        return 'badge-warning';
       default:
         return 'badge-secondary';
     }
@@ -247,7 +271,7 @@ export function StatusChangeModal({
                 {t('req.current_status')}
               </div>
               <span className={`badge ${getStatusBadgeClass(request.status)}`} style={{ padding: '4px 10px' }}>
-                {request.status}
+                {getStatusLabel(request.status)}
               </span>
             </div>
 
@@ -260,7 +284,7 @@ export function StatusChangeModal({
                 {t('req.target_status')}
               </div>
               <span className={`badge ${getStatusBadgeClass(targetStatus)}`} style={{ padding: '4px 10px' }}>
-                {targetStatus}
+                {getStatusLabel(targetStatus)}
               </span>
             </div>
           </div>
