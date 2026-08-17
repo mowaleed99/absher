@@ -54,11 +54,23 @@ class _ApartmentDetailScreenState extends State<ApartmentDetailScreen> {
   }
 
   void _selectViewingDate(StateSetter setModalState) async {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    DateTime initial = today;
+    if (_viewingDate.isNotEmpty) {
+      try {
+        final parsed = DateTime.parse(_viewingDate);
+        if (!parsed.isBefore(today)) {
+          initial = DateTime(parsed.year, parsed.month, parsed.day);
+        }
+      } catch (_) {}
+    }
+
     final DateTime? picked = await showDatePicker(
       context: context,
-      initialDate: DateTime.now(),
-      firstDate: DateTime.now(),
-      lastDate: DateTime.now().add(const Duration(days: 90)),
+      initialDate: initial,
+      firstDate: today,
+      lastDate: today.add(const Duration(days: 180)),
       builder: (context, child) {
         return Theme(
           data: Theme.of(context).copyWith(
@@ -195,6 +207,53 @@ class _ApartmentDetailScreenState extends State<ApartmentDetailScreen> {
                   style: const TextStyle(
                       fontSize: 13, color: AppColors.textMuted, height: 1.4),
                 ),
+                const SizedBox(height: 12),
+                () {
+                  final isAr = LanguageService.currentLang.value == 'ar';
+                  final rawMoveIn = isAr
+                      ? (widget.apartment['move_in_date_ar'] ?? widget.apartment['move_in_date'])
+                      : (widget.apartment['move_in_date_en'] ?? widget.apartment['move_in_date']);
+                  final moveInStr = rawMoveIn?.toString().isNotEmpty == true
+                      ? rawMoveIn.toString()
+                      : LanguageService.tr('immediate_move_in');
+                  final isScheduled = widget.apartment['move_in_type'] == 'ميعاد' ||
+                      widget.apartment['move_in_type'] == 'Scheduled' ||
+                      widget.apartment['move_in_type_en'] == 'Scheduled' ||
+                      (!moveInStr.contains('فوري') && !moveInStr.contains('Immediate'));
+
+                  return Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: isScheduled ? const Color(0xFFFFF3E0) : const Color(0xFFE8F5E9),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(
+                        color: isScheduled ? const Color(0xFFFFB74D) : const Color(0xFFA5D6A7),
+                      ),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(
+                          isScheduled ? Icons.calendar_month : Icons.bolt,
+                          color: isScheduled ? const Color(0xFFE65100) : const Color(0xFF2E7D32),
+                          size: 18,
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            isAr
+                                ? 'موعد الانتقال المتاح للشقة: $moveInStr'
+                                : 'Available Move-in: $moveInStr',
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                              color: isScheduled ? const Color(0xFFE65100) : const Color(0xFF2E7D32),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                }(),
                 const SizedBox(height: 14),
                 TextField(
                   controller: _phoneController..text = widget.user?.phone ?? '',
@@ -681,6 +740,61 @@ class _ApartmentDetailScreenState extends State<ApartmentDetailScreen> {
                                                 fontSize: 12),
                                           ),
                                         ),
+                                        () {
+                                          final isAr = LanguageService.currentLang.value == 'ar';
+                                          final rawMoveIn = isAr
+                                              ? (widget.apartment['move_in_date_ar'] ?? widget.apartment['move_in_date'])
+                                              : (widget.apartment['move_in_date_en'] ?? widget.apartment['move_in_date']);
+                                          final moveInStr = rawMoveIn?.toString().isNotEmpty == true
+                                              ? rawMoveIn.toString()
+                                              : LanguageService.tr('immediate_move_in');
+                                          final isScheduled = widget.apartment['move_in_type'] == 'ميعاد' ||
+                                              widget.apartment['move_in_type'] == 'Scheduled' ||
+                                              widget.apartment['move_in_type_en'] == 'Scheduled' ||
+                                              (!moveInStr.contains('فوري') && !moveInStr.contains('Immediate'));
+
+                                          return Container(
+                                            padding: const EdgeInsets.symmetric(
+                                                horizontal: 10, vertical: 4),
+                                            decoration: BoxDecoration(
+                                              color: isScheduled
+                                                  ? const Color(0xFFFFF3E0)
+                                                  : const Color(0xFFE8F5E9),
+                                              borderRadius:
+                                                  BorderRadius.circular(8),
+                                              border: Border.all(
+                                                color: isScheduled
+                                                    ? const Color(0xFFFFB74D)
+                                                    : const Color(0xFFA5D6A7),
+                                              ),
+                                            ),
+                                            child: Row(
+                                              mainAxisSize: MainAxisSize.min,
+                                              children: [
+                                                Icon(
+                                                  isScheduled
+                                                      ? Icons.calendar_month
+                                                      : Icons.bolt,
+                                                  size: 14,
+                                                  color: isScheduled
+                                                      ? const Color(0xFFE65100)
+                                                      : const Color(0xFF2E7D32),
+                                                ),
+                                                const SizedBox(width: 4),
+                                                Text(
+                                                  moveInStr,
+                                                  style: TextStyle(
+                                                    color: isScheduled
+                                                        ? const Color(0xFFE65100)
+                                                        : const Color(0xFF2E7D32),
+                                                    fontWeight: FontWeight.bold,
+                                                    fontSize: 12,
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          );
+                                        }(),
                                       ],
                                     ),
                                     const SizedBox(height: 6),

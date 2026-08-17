@@ -83,6 +83,44 @@ export function EditApartmentModal({
     'July', 'August', 'September', 'October', 'November', 'December'
   ];
 
+  const parseDateStringToISO = (dateStr: string): string => {
+    if (!dateStr || dateStr.includes('فوري') || dateStr.includes('Immediate')) return '';
+    const trimmed = dateStr.trim();
+    if (/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) return trimmed;
+
+    // Try finding Arabic months
+    const arMonths = ['يناير', 'فبراير', 'مارس', 'أبريل', 'ابريل', 'مايو', 'يونيو', 'يوليو', 'أغسطس', 'اغسطس', 'سبتمبر', 'أكتوبر', 'اكتوبر', 'نوفمبر', 'ديسمبر'];
+    const arMonthNums = [1, 2, 3, 4, 4, 5, 6, 7, 8, 8, 9, 10, 10, 11, 12];
+    for (let i = 0; i < arMonths.length; i++) {
+      if (trimmed.includes(arMonths[i])) {
+        const nums = trimmed.match(/\d+/g);
+        if (nums && nums.length >= 2) {
+          const d = nums[0].length <= 2 ? nums[0] : nums[1];
+          const y = nums[0].length === 4 ? nums[0] : (nums[1].length === 4 ? nums[1] : (nums[2] || '2026'));
+          const m = String(arMonthNums[i]).padStart(2, '0');
+          return `${y}-${m}-${String(d).padStart(2, '0')}`;
+        }
+      }
+    }
+
+    // Try finding English months
+    const enMonths = ['january', 'february', 'march', 'april', 'may', 'june', 'july', 'august', 'september', 'october', 'november', 'december'];
+    const lower = trimmed.toLowerCase();
+    for (let i = 0; i < enMonths.length; i++) {
+      if (lower.includes(enMonths[i])) {
+        const nums = lower.match(/\d+/g);
+        if (nums && nums.length >= 2) {
+          const d = nums[0].length <= 2 ? nums[0] : nums[1];
+          const y = nums[0].length === 4 ? nums[0] : (nums[1].length === 4 ? nums[1] : (nums[2] || '2026'));
+          const m = String(i + 1).padStart(2, '0');
+          return `${y}-${m}-${String(d).padStart(2, '0')}`;
+        }
+      }
+    }
+
+    return '';
+  };
+
   const handleCalendarChange = (val: string) => {
     setCalendarDate(val);
     if (!val) return;
@@ -129,7 +167,8 @@ export function EditApartmentModal({
 
     const isImm = apt.move_in_type === 'فوري' || apt.move_in_type === 'Immediate' || apt.move_in_type_en === 'Immediate';
     setMoveInType(isImm ? 'immediate' : 'scheduled');
-    setCalendarDate('');
+    const existingDate = !isImm ? (apt.move_in_date_ar || apt.move_in_date || apt.move_in_date_en || '') : '';
+    setCalendarDate(parseDateStringToISO(existingDate));
     setMoveInDateAr(!isImm ? (apt.move_in_date_ar || apt.move_in_date || '') : '');
     setMoveInDateEn(!isImm ? (apt.move_in_date_en || '') : '');
 
