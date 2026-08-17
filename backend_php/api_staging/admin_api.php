@@ -854,7 +854,7 @@ try {
                         $conn->prepare("UPDATE students SET points = points + ? WHERE id = ?")->execute([$pointsCharged, $studentId]);
 
                         $svcTitle = $reqData['service_title'] ?? 'خدمة';
-                        $txDesc = "استرجاع نقاط لطلب ملغي (#$id): " . $svcTitle . " - السبب: " . $cancellationReason;
+                        $txDesc = "استرجاع نقاط لطلب ملغي: " . $svcTitle . " - السبب: " . $cancellationReason;
                         
                         $stmtTx = $conn->prepare("INSERT INTO wallet_transactions (student_id, service_request_id, amount, type, description, created_at) VALUES (?, ?, ?, 'استرجاع', ?, NOW())");
                         $stmtTx->execute([$studentId, $id, $pointsCharged, $txDesc]);
@@ -864,9 +864,9 @@ try {
 
                         // Notification
                         $notifTitleAr = "استرجاع نقاط";
-                        $notifBodyAr = "تم استرجاع $pointsCharged نقطة إلى محفظتك بسبب إلغاء الطلب (#$id): $cancellationReason";
+                        $notifBodyAr = "تم استرجاع $pointsCharged نقطة إلى محفظتك بسبب إلغاء الطلب: $cancellationReason";
                         $notifTitleEn = "Points Refund";
-                        $notifBodyEn = "Your $pointsCharged points have been refunded due to request cancellation (#$id): $cancellationReason";
+                        $notifBodyEn = "Your $pointsCharged points have been refunded due to request cancellation: $cancellationReason";
                         sendStudentNotification($studentId, $notifTitleAr, $notifBodyAr, $notifTitleEn, $notifBodyEn);
                     }
                 }
@@ -920,9 +920,9 @@ try {
 
             if ($status !== 'ملغي' && !empty($reqData['student_id'])) {
                 $studentId = intval($reqData['student_id']);
-                $notifTitleAr = "تحديث حالة الطلب (#$id)";
+                $notifTitleAr = "تحديث حالة الطلب";
                 $notifBodyAr = "تم تغيير حالة طلبك الخاص بـ ($svcTitleAr) إلى: $statusAr";
-                $notifTitleEn = "Request Update (#$id)";
+                $notifTitleEn = "Request Update";
                 $notifBodyEn = "The status of your request for ($svcTitleEn) has been changed to: $statusEn";
                 sendStudentNotification($studentId, $notifTitleAr, $notifBodyAr, $notifTitleEn, $notifBodyEn);
             }
@@ -952,8 +952,8 @@ try {
 
                     if ($tplRow) {
                         $searchVals = ['{id}', '{service}', '{status}', '{reason}', '{points}'];
-                        $replaceValsAr = [$id, $svcTitleAr, $statusAr, $cancellationReason, $pointsRefunded ?? 0];
-                        $replaceValsEn = [$id, $svcTitleEn, $statusEn, $cancellationReason, $pointsRefunded ?? 0];
+                        $replaceValsAr = ['', $svcTitleAr, $statusAr, $cancellationReason, $pointsRefunded ?? 0];
+                        $replaceValsEn = ['', $svcTitleEn, $statusEn, $cancellationReason, $pointsRefunded ?? 0];
 
                         $renderedAr = str_replace($searchVals, $replaceValsAr, $tplRow['template_ar']);
                         $renderedEn = str_replace($searchVals, $replaceValsEn, $tplRow['template_en']);
@@ -967,8 +967,8 @@ try {
                         }
                     } else {
                         $msgText = ($status === 'ملغي')
-                            ? "تحديث الطلب (#$id): تم إلغاء طلبك الخاص بـ ($svcTitleAr).\nالسبب: $cancellationReason" . (($pointsRefunded ?? 0) > 0 ? "\n[تم استرجاع $pointsRefunded نقطة إلى محفظتك بنجاح]" : "")
-                            : "تحديث الطلب (#$id): تم تغيير حالة طلبك الخاص بـ ($svcTitleAr) إلى: * $statusAr *";
+                            ? "تحديث الطلب: تم إلغاء طلبك الخاص بـ ($svcTitleAr).\nالسبب: $cancellationReason" . (($pointsRefunded ?? 0) > 0 ? "\n[تم استرجاع $pointsRefunded نقطة إلى محفظتك بنجاح]" : "")
+                            : "تحديث الطلب: تم تغيير حالة طلبك الخاص بـ ($svcTitleAr) إلى: * $statusAr *";
                     }
                 }
 

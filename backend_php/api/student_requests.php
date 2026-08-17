@@ -586,7 +586,7 @@ if ($action === 'submit') {
             }
 
             if ($chatId) {
-                $headerTitle = ($paymentMethod === 'wallet') ? "📋 [طلب مدفوع بالنقاط - #$requestId]" : "📋 [طلب خدمة جديد - #$requestId]";
+                $headerTitle = ($paymentMethod === 'wallet') ? "📋 [طلب مدفوع بالنقاط]" : "📋 [طلب خدمة جديد]";
                 $msgLines = [$headerTitle, "الخدمة: " . $serviceTitle];
                 if (!empty($studentUni) && strpos($fullDetails, 'الجامعة') === false) {
                     $msgLines[] = "الجامعة: " . $studentUni;
@@ -616,7 +616,7 @@ if ($action === 'submit') {
 
                 // 2. Insert Image Message if image is attached
                 if (!empty($attachedImageUrl)) {
-                    $imgCaption = "🖼️ صورة مرفقة بالطلب #" . $requestId;
+                    $imgCaption = "🖼️ صورة مرفقة بالطلب";
                     $imgStmt = $conn->prepare("INSERT INTO chat_messages (chat_id, sender, type, text, image_url, created_at) VALUES (?, 'student', 'image', ?, ?, NOW())");
                     $imgStmt->execute([$chatId, $imgCaption, $attachedImageUrl]);
                     $imgMsgId = $conn->lastInsertId();

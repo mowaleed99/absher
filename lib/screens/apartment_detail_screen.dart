@@ -413,9 +413,9 @@ class _ApartmentDetailScreenState extends State<ApartmentDetailScreen> {
                         studentPhone:
                             widget.user?.phone ?? _phoneController.text,
                         studentUni: widget.user?.universityId != null
-                            ? 'جامعة #${widget.user!.universityId}'
+                            ? (widget.user!.universityId.toString())
                             : '',
-                        serviceTitle: 'حجز شقة #$aptId - $aptTitle',
+                        serviceTitle: 'حجز سكن: $aptTitle',
                         details: bookingMsg,
                       ).then((result) {
                         if (!context.mounted) return;

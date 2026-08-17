@@ -42,7 +42,9 @@ function renderTemplateText(tplText: string, req: ServiceRequest, targetStatus: 
   const statusStr = isEn ? getStatusLabelEn(targetStatus) : targetStatus;
   const reasonStr = reason || (isEn ? 'Not specified' : 'لم يذكر سبب');
   return tplText
-    .replace(/\{id\}/g, String(req.id))
+    .replace(/\{id\}/g, '')
+    .replace(/\(#\)/g, '')
+    .replace(/#\{id\}/g, '')
     .replace(/\{service\}/g, serviceTitle || (isEn ? 'Service' : 'خدمة'))
     .replace(/\{status\}/g, statusStr)
     .replace(/\{reason\}/g, reasonStr)
@@ -91,19 +93,19 @@ export function StatusChangeModal({
     } else {
       if (targetStatus === 'ملغي') {
         if (msgLang === 'en') {
-          setCustomMessage(`Request Update (#${request.id}): We regret to inform you that your request for (${getServiceTitleEn(request.service_title)}) has been cancelled.`);
+          setCustomMessage(`Request Update: We regret to inform you that your request for (${getServiceTitleEn(request.service_title)}) has been cancelled.`);
         } else if (msgLang === 'both') {
-          setCustomMessage(`تحديث الطلب (#${request.id}): نود إعلامك بأنه تم إلغاء طلبك الخاص بـ (${request.service_title}).\n\n--------------------\n\nRequest Update (#${request.id}): We regret to inform you that your request for (${getServiceTitleEn(request.service_title)}) has been cancelled.`);
+          setCustomMessage(`تحديث الطلب: نود إعلامك بأنه تم إلغاء طلبك الخاص بـ (${request.service_title}).\n\n--------------------\n\nRequest Update: We regret to inform you that your request for (${getServiceTitleEn(request.service_title)}) has been cancelled.`);
         } else {
-          setCustomMessage(`تحديث الطلب (#${request.id}): نود إعلامك بأنه تم إلغاء طلبك الخاص بـ (${request.service_title}).`);
+          setCustomMessage(`تحديث الطلب: نود إعلامك بأنه تم إلغاء طلبك الخاص بـ (${request.service_title}).`);
         }
       } else {
         if (msgLang === 'en') {
-          setCustomMessage(`Request Update (#${request.id}): Your request for (${getServiceTitleEn(request.service_title)}) status has been updated to: ${getStatusLabelEn(targetStatus)}`);
+          setCustomMessage(`Request Update: Your request for (${getServiceTitleEn(request.service_title)}) status has been updated to: ${getStatusLabelEn(targetStatus)}`);
         } else if (msgLang === 'both') {
-          setCustomMessage(`تحديث الطلب (#${request.id}): تم تغيير حالة طلبك الخاص بـ (${request.service_title}) إلى: ${targetStatus}\n\n--------------------\n\nRequest Update (#${request.id}): Your request for (${getServiceTitleEn(request.service_title)}) status has been updated to: ${getStatusLabelEn(targetStatus)}`);
+          setCustomMessage(`تحديث الطلب: تم تغيير حالة طلبك الخاص بـ (${request.service_title}) إلى: ${targetStatus}\n\n--------------------\n\nRequest Update: Your request for (${getServiceTitleEn(request.service_title)}) status has been updated to: ${getStatusLabelEn(targetStatus)}`);
         } else {
-          setCustomMessage(`تحديث الطلب (#${request.id}): تم تغيير حالة طلبك الخاص بـ (${request.service_title}) إلى: ${targetStatus}`);
+          setCustomMessage(`تحديث الطلب: تم تغيير حالة طلبك الخاص بـ (${request.service_title}) إلى: ${targetStatus}`);
         }
       }
     }

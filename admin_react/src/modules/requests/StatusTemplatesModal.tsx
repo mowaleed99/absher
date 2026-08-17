@@ -30,8 +30,8 @@ export function StatusTemplatesModal({
       status_key: 'قيد المراجعة',
       status_name_ar: 'قيد المراجعة',
       status_name_en: 'Under Review',
-      template_ar: 'تحديث الطلب (#{id}): تم استلام طلبك الخاص بـ ({service}) وجارٍ مراجعته والتدقيق فيه بعناية.',
-      template_en: 'Request Update (#{id}): Your request for ({service}) has been received and is being reviewed.',
+      template_ar: 'تحديث الطلب: تم استلام طلبك الخاص بـ ({service}) وجارٍ مراجعته والتدقيق فيه بعناية.',
+      template_en: 'Request Update: Your request for ({service}) has been received and is being reviewed.',
       is_enabled: 1,
     },
     {
@@ -39,8 +39,8 @@ export function StatusTemplatesModal({
       status_key: 'قيد التنفيذ',
       status_name_ar: 'قيد التنفيذ',
       status_name_en: 'In Progress',
-      template_ar: 'تحديث الطلب (#{id}): طلبك الخاص بـ ({service}) قيد التنفيذ والعمل عليه الآن من قبل فريقنا.',
-      template_en: 'Request Update (#{id}): Your request for ({service}) is now in progress and being handled by our team.',
+      template_ar: 'تحديث الطلب: طلبك الخاص بـ ({service}) قيد التنفيذ والعمل عليه الآن من قبل فريقنا.',
+      template_en: 'Request Update: Your request for ({service}) is now in progress and being handled by our team.',
       is_enabled: 1,
     },
     {
@@ -48,8 +48,8 @@ export function StatusTemplatesModal({
       status_key: 'مكتمل',
       status_name_ar: 'مكتمل',
       status_name_en: 'Completed',
-      template_ar: 'تحديث الطلب (#{id}): تهانينا! تم إنجاز طلبك الخاص بـ ({service}) بنجاح. شكراً لثقتك بنا!',
-      template_en: 'Request Update (#{id}): Congratulations! Your request for ({service}) has been completed successfully.',
+      template_ar: 'تحديث الطلب: تهانينا! تم إنجاز طلبك الخاص بـ ({service}) بنجاح. شكراً لثقتك بنا!',
+      template_en: 'Request Update: Congratulations! Your request for ({service}) has been completed successfully.',
       is_enabled: 1,
     },
     {
@@ -57,8 +57,8 @@ export function StatusTemplatesModal({
       status_key: 'ملغي',
       status_name_ar: 'ملغي',
       status_name_en: 'Cancelled',
-      template_ar: 'تحديث الطلب (#{id}): نود إعلامك بأنه تم إلغاء طلبك الخاص بـ ({service}).\nالسبب: {reason}',
-      template_en: 'Request Update (#{id}): We regret to inform you that your request for ({service}) has been cancelled.\nReason: {reason}',
+      template_ar: 'تحديث الطلب: نود إعلامك بأنه تم إلغاء طلبك الخاص بـ ({service}).\nالسبب: {reason}',
+      template_en: 'Request Update: We regret to inform you that your request for ({service}) has been cancelled.\nReason: {reason}',
       is_enabled: 1,
     },
   ];

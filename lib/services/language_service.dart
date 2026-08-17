@@ -1876,7 +1876,7 @@ class LanguageService {
     required String notes,
   }) {
     if (currentLang.value == 'ar') {
-      return 'طلب حجز ومعاينة سكن رقم (#$aptId):\n'
+      return 'طلب حجز ومعاينة سكن ($aptTitle):\n'
           'السكن: $aptTitle\n'
           'نوع السكن: $rentalType\n'
           'السعر: $price\n'
@@ -1885,7 +1885,7 @@ class LanguageService {
           'هاتف التواصل: $phone\n'
           'ملاحظات: $notes\n\n';
     } else {
-      return 'Apartment booking & viewing request (#$aptId):\n'
+      return 'Apartment booking & viewing request ($aptTitle):\n'
           'Property: $aptTitle\n'
           'Rental Type: $rentalType\n'
           'Price: $price\n'
