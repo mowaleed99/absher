@@ -193,7 +193,9 @@ class _ApartmentDetailScreenState extends State<ApartmentDetailScreen> {
                     const SizedBox(width: 10),
                     Expanded(
                       child: Text(
-                          'تحديد موعد لرؤية الشقة رقم (#${widget.apartment['id'] ?? '1'})',
+                          LanguageService.currentLang.value == 'ar'
+                              ? 'تحديد موعد لرؤية ومعاينة الشقة'
+                              : 'Schedule Apartment Viewing',
                           style: const TextStyle(
                               fontSize: 18,
                               fontWeight: FontWeight.bold,
@@ -707,21 +709,7 @@ class _ApartmentDetailScreenState extends State<ApartmentDetailScreen> {
                                           ),
                                         Container(
                                           padding: const EdgeInsets.symmetric(
-                                              horizontal: 10, vertical: 4),
-                                          decoration: BoxDecoration(
-                                              color: const Color(0xFFE8F5E9),
-                                              borderRadius:
-                                                  BorderRadius.circular(8)),
-                                          child: Text(
-                                              '${LanguageService.tr('apartment_number')}${widget.apartment['id'] ?? '1'}',
-                                              style: const TextStyle(
-                                                  color: Color(0xFF2E7D32),
-                                                  fontWeight: FontWeight.bold,
-                                                  fontSize: 13)),
-                                        ),
-                                        Container(
-                                          padding: const EdgeInsets.symmetric(
-                                              horizontal: 10, vertical: 4),
+                                            horizontal: 10, vertical: 4),
                                           decoration: BoxDecoration(
                                             color: AppColors.accentLight,
                                             borderRadius:
