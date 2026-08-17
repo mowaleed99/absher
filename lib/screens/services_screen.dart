@@ -1136,7 +1136,6 @@ class _ServicesScreenState extends State<ServicesScreen> {
       itemCount: _services.length,
       itemBuilder: (context, index) {
         final s = _services[index];
-        final hasForm = s['has_form'] == true || s['has_form'] == 1;
 
         return Card(
           clipBehavior: Clip.antiAlias,
@@ -1155,38 +1154,6 @@ class _ServicesScreenState extends State<ServicesScreen> {
                     fit: StackFit.expand,
                     children: [
                       _buildImageWidget(s['img']?.toString() ?? ''),
-                      if (hasForm)
-                        PositionedDirectional(
-                          top: 8,
-                          end: 8,
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 8, vertical: 4),
-                            decoration: BoxDecoration(
-                                color: Colors.green.shade600,
-                                borderRadius: BorderRadius.circular(8),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: Colors.black.withValues(alpha: 0.2),
-                                    blurRadius: 4,
-                                    offset: const Offset(0, 2),
-                                  )
-                                ]),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                const Icon(Icons.edit_note,
-                                    color: Colors.white, size: 12),
-                                const SizedBox(width: 2),
-                                Text(LanguageService.tr('instant_tag'),
-                                    style: const TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 9,
-                                        fontWeight: FontWeight.bold)),
-                              ],
-                            ),
-                          ),
-                        ),
                     ],
                   ),
                 ),
