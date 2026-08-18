@@ -13,7 +13,7 @@ if (empty($identifier) || empty($password)) {
 }
 
 try {
-    $query = "SELECT id, full_name, email, phone, university, password, points FROM students WHERE (email = ? OR phone = ?) LIMIT 1";
+    $query = "SELECT id, full_name, email, phone, university, password, points, is_blocked FROM students WHERE (email = ? OR phone = ?) LIMIT 1";
     $stmt = $conn->prepare($query);
     $stmt->execute([$identifier, $identifier]);
     
@@ -21,6 +21,10 @@ try {
 
     if (!$student) {
         jsonResponse(false, "الحساب غير موجود", 401);
+    }
+
+    if (intval($student['is_blocked'] ?? 0) === 1) {
+        jsonResponse(false, "تم حظر هذا الحساب من قبل الإدارة. يرجى التواصل مع الدعم الفني.", 403);
     }
 
     $isValid = false;

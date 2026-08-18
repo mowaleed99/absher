@@ -30,8 +30,8 @@ try {
         jsonResponse(false, "الحساب غير موجود", 401);
     }
 
-    if (!empty($student['is_blocked']) && (int)$student['is_blocked'] === 1) {
-        jsonResponse(false, "Account is blocked by administration.", 403);
+    if (intval($student['is_blocked'] ?? 0) === 1) {
+        jsonResponse(false, "تم حظر هذا الحساب من قبل الإدارة. يرجى التواصل مع الدعم الفني.", 403);
     }
 
     $isValid = false;

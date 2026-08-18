@@ -10,7 +10,7 @@ if (!empty($data->identifier) && !empty($data->password)) {
 
     try {
         // البحث بالبريد الإلكتروني أو رقم الهاتف
-        $query = "SELECT id, full_name, email, phone, university, password FROM students WHERE email = :ident1 OR phone = :ident2 LIMIT 1";
+        $query = "SELECT id, full_name, email, phone, university, password, is_blocked FROM students WHERE email = :ident1 OR phone = :ident2 LIMIT 1";
         $stmt = $conn->prepare($query);
         $stmt->bindParam(':ident1', $identifier);
         $stmt->bindParam(':ident2', $identifier);
@@ -18,6 +18,13 @@ if (!empty($data->identifier) && !empty($data->password)) {
 
         if ($stmt->rowCount() > 0) {
             $row = $stmt->fetch();
+            if (intval($row['is_blocked'] ?? 0) === 1) {
+                echo json_encode([
+                    "status" => "error",
+                    "message" => "تم حظر هذا الحساب من قبل الإدارة. يرجى التواصل مع الدعم الفني."
+                ], JSON_UNESCAPED_UNICODE);
+                exit();
+            }
             if (password_verify($password, $row['password']) || $password === $row['password']) {
                 // نجاح تسجيل الدخول
                 echo json_encode([

@@ -298,6 +298,15 @@ class _HomeScreenState extends State<HomeScreen>
 
     _profSyncSub = sync.onProfileUpdated.listen((meta) {
       if (mounted && _currentUser != null) {
+        final isBlocked = meta['is_blocked'] == true ||
+            meta['is_blocked'] == 1 ||
+            meta['is_blocked']?.toString() == '1';
+
+        if (isBlocked) {
+          _handleBlockedAccount();
+          return;
+        }
+
         final newPoints = meta['points'] is int
             ? meta['points'] as int
             : int.tryParse(meta['points']?.toString() ?? '');
@@ -311,6 +320,60 @@ class _HomeScreenState extends State<HomeScreen>
 
     // إعادة جلب البيانات المترجمة عند تغيير اللغة
     LanguageService.currentLang.addListener(_onLangChanged);
+  }
+
+  bool _isHandlingBlock = false;
+  Future<void> _handleBlockedAccount() async {
+    if (_isHandlingBlock) return;
+    _isHandlingBlock = true;
+
+    await ApiService.clearTokens();
+
+    if (!mounted) return;
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Row(
+          children: [
+            const Icon(Icons.block, color: AppColors.error, size: 28),
+            const SizedBox(width: 10),
+            Text(
+              LanguageService.isEn ? 'Account Blocked' : 'تم حظر الحساب',
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+            ),
+          ],
+        ),
+        content: Text(
+          LanguageService.isEn
+              ? 'This account has been blocked by administration. You have been signed out.'
+              : 'تم حظر هذا الحساب من قبل الإدارة. تم تسجيل خروجك، يرجى التواصل مع الدعم الفني.',
+          style: const TextStyle(fontSize: 15, height: 1.4),
+        ),
+        actions: [
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.primary,
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12)),
+            ),
+            onPressed: () {
+              Navigator.of(ctx).pop();
+              Navigator.of(context).pushAndRemoveUntil(
+                MaterialPageRoute(builder: (_) => const LoginScreen()),
+                (route) => false,
+              );
+            },
+            child: Text(
+              LanguageService.isEn ? 'OK' : 'حسناً',
+              style: const TextStyle(
+                  color: Colors.white, fontWeight: FontWeight.bold),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   @override

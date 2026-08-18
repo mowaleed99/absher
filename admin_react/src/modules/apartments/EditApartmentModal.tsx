@@ -266,6 +266,8 @@ export function EditApartmentModal({
         description_ar: descAr,
         description_en: descEn,
         is_available: apt.is_available,
+        is_featured: apt.is_featured ? 1 : 0,
+        featured_until: apt.featured_until || null,
       };
 
       const result = await onSubmit(payload);

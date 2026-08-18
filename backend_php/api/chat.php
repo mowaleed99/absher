@@ -51,6 +51,14 @@ try {
             exit();
         }
 
+        $stmtStu = $conn->prepare("SELECT is_blocked FROM students WHERE phone = ? LIMIT 1");
+        $stmtStu->execute([$phone]);
+        $stuBlocked = $stmtStu->fetchColumn();
+        if ($stuBlocked !== false && intval($stuBlocked) === 1) {
+            echo json_encode(["status"=>"error","message"=>"تم حظر هذا الحساب من قبل الإدارة. لا يمكنك إرسال رسائل."], JSON_UNESCAPED_UNICODE);
+            exit();
+        }
+
         $lastMsgText = !empty($text) ? $text : ($type ==='video'?'فيديو مرفق':'صورة مرفقة');
 
         $stmt = $conn->prepare("SELECT id FROM chats WHERE phone = ?");

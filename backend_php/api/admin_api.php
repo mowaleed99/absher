@@ -413,8 +413,17 @@ try {
         $roommate_facilities = !empty($data['roommate_facilities']) ? trim($data['roommate_facilities']) : null;
         $owner_phone = !empty($data['owner_phone']) ? trim($data['owner_phone']) : null;
 
-        $is_featured = isset($data['is_featured']) ? (intval($data['is_featured']) ? 1 : 0) : 0;
-        $featured_until = !empty($data['featured_until']) ? trim($data['featured_until']) : null;
+        // Preserve existing is_featured and featured_until if not explicitly provided
+        if (!isset($data['is_featured'])) {
+            $currStmt = $conn->prepare("SELECT is_featured, featured_until FROM apartments WHERE id = ?");
+            $currStmt->execute([$id]);
+            $currApt = $currStmt->fetch(PDO::FETCH_ASSOC);
+            $is_featured = $currApt ? intval($currApt['is_featured']) : 0;
+            $featured_until = $currApt ? $currApt['featured_until'] : null;
+        } else {
+            $is_featured = intval($data['is_featured']) ? 1 : 0;
+            $featured_until = !empty($data['featured_until']) ? trim($data['featured_until']) : null;
+        }
 
         if ($id > 0 && !empty($title) && !empty($price)) {
             $stmt = $conn->prepare("UPDATE apartments SET title=?, price=?, location=?, proximity=?, universities=?, capacity=?, move_in_type=?, move_in_date=?, images=?, features=?, description=?, is_available=?, is_featured=?, featured_until=?, district_id=?, rental_type=?, rooms_count=?, roommate_reqs=?, roommate_facilities=?, owner_phone=?, title_ar=?, title_en=?, description_ar=?, description_en=?, location_ar=?, location_en=?, proximity_ar=?, proximity_en=?, capacity_ar=?, capacity_en=?, move_in_type_ar=?, move_in_type_en=?, move_in_date_ar=?, move_in_date_en=?, features_ar=?, features_en=? WHERE id=?");
@@ -1849,13 +1858,19 @@ try {
             $conn->beginTransaction();
 
             // ── Step 1: Lock the student row and read current balance ───────
-            $lockStmt = $conn->prepare("SELECT id, points FROM students WHERE id = ? FOR UPDATE");
+            $lockStmt = $conn->prepare("SELECT id, points, is_blocked FROM students WHERE id = ? FOR UPDATE");
             $lockStmt->execute([$studentId]);
             $student = $lockStmt->fetch(PDO::FETCH_ASSOC);
 
             if (!$student) {
                 $conn->rollBack();
                 echo json_encode(["status" => "error", "message" => "الطالب غير موجود"], JSON_UNESCAPED_UNICODE);
+                exit();
+            }
+
+            if (intval($student['is_blocked'] ?? 0) === 1 && $operation === 'add') {
+                $conn->rollBack();
+                echo json_encode(["status" => "error", "message" => "لا يمكن إضافة نقاط لحساب طالب محظور. يرجى إلغاء الحظر أولاً."], JSON_UNESCAPED_UNICODE);
                 exit();
             }
 

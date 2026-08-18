@@ -34,6 +34,22 @@ class AuthMiddleware {
             exit();
         }
 
+        // Enforce blocking check across all authenticated APIs
+        global $conn;
+        if ($conn) {
+            try {
+                $chk = $conn->prepare("SELECT is_blocked FROM students WHERE id = ? LIMIT 1");
+                $chk->execute([$payload['student_id']]);
+                $stu = $chk->fetch(PDO::FETCH_ASSOC);
+                if ($stu && intval($stu['is_blocked'] ?? 0) === 1) {
+                    jsonResponse(false, "تم حظر هذا الحساب من قبل الإدارة. يرجى التواصل مع الدعم الفني.", 403);
+                    exit();
+                }
+            } catch (Exception $e) {
+                // Fail safe continue
+            }
+        }
+
         self::$currentUserId = $payload['student_id'];
         return true;
     }

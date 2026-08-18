@@ -195,10 +195,15 @@ if ($action === 'submit') {
 
     if ($studentId) {
         try {
-            $stdQuery = $conn->prepare("SELECT full_name, phone FROM students WHERE id = ?");
+            $stdQuery = $conn->prepare("SELECT full_name, phone, is_blocked FROM students WHERE id = ?");
             $stdQuery->execute([$studentId]);
             $studentDbRow = $stdQuery->fetch(PDO::FETCH_ASSOC);
             if ($studentDbRow) {
+                if (intval($studentDbRow['is_blocked'] ?? 0) === 1) {
+                    http_response_code(403);
+                    echo json_encode(["status" => "error", "message" => "تم حظر هذا الحساب من قبل الإدارة. لا يمكنك تقديم طلبات."], JSON_UNESCAPED_UNICODE);
+                    exit();
+                }
                 if (empty($studentName)) {
                     $studentName = $studentDbRow['full_name'];
                 }
