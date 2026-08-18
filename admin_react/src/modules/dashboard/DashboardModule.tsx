@@ -10,6 +10,10 @@ import { ServiceRequest } from '../../types/request';
 import { Student } from '../../types/student';
 import { ApplicationFeedback } from '../../types/feedback';
 import { NewsItem } from '../../types/news';
+import { TrendAreaChart } from './components/TrendAreaChart';
+import { StatusDonutChart } from './components/StatusDonutChart';
+import { DistrictDistributionChart } from './components/DistrictDistributionChart';
+import { RatingBreakdownChart } from './components/RatingBreakdownChart';
 
 interface DashboardStats {
   apartments: Apartment[];
@@ -849,6 +853,38 @@ export function DashboardModule() {
                 <span>{t('dashboard.action_send_notif')}</span>
               </Link>
             </div>
+          </div>
+
+          {/* Visual Analytics & Charts Section */}
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))',
+              gap: '16px',
+            }}
+          >
+            {/* 1. Requests Trend Area Chart */}
+            <TrendAreaChart requests={stats.requests} />
+
+            {/* 2. Status Donut Chart */}
+            <StatusDonutChart requests={stats.requests} />
+          </div>
+
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))',
+              gap: '16px',
+            }}
+          >
+            {/* 3. District Distribution */}
+            <DistrictDistributionChart apartments={stats.apartments} />
+
+            {/* 4. Rating & Satisfaction Breakdown */}
+            <RatingBreakdownChart
+              avgRating={stats.avgRating}
+              ratingDistribution={stats.ratingDistribution}
+            />
           </div>
 
           {/* 4. Two Column Recent Activity Section */}
