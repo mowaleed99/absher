@@ -31,6 +31,7 @@ class LanguageService {
   }
 
   static bool get isRtl => currentLang.value == 'ar';
+  static bool get isEn => currentLang.value == 'en';
   static TextDirection get textDirection =>
       isRtl ? TextDirection.rtl : TextDirection.ltr;
 
