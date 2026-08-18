@@ -136,11 +136,25 @@ class ApiService {
         }
         return data;
       } else {
+        if (response.statusCode == 403 ||
+            (data['message']?.toString().contains('حظر') ?? false) ||
+            (data['error']?.toString().contains('حظر') ?? false) ||
+            (response.body.contains('حظر')) ||
+            (response.body.contains('Forbidden'))) {
+          final blockMsg = LanguageService.isEn
+              ? 'This account has been blocked by administration. Please contact support.'
+              : 'تم حظر هذا الحساب من قبل الإدارة. يرجى التواصل مع الدعم الفني.';
+          return {
+            'success': false,
+            'message': blockMsg,
+          };
+        }
+
         final serverMsg = data['message'] ?? data['error'];
         final String errorMessage =
             (serverMsg != null && serverMsg.toString().isNotEmpty)
                 ? serverMsg.toString()
-                : 'خطأ في الاتصال بالخادم (${response.statusCode})';
+                : LanguageService.tr('login_fail');
         return {
           'success': false,
           'message': errorMessage,
