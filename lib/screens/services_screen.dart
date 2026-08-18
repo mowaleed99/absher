@@ -2,6 +2,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../theme/app_colors.dart';
 import '../services/api_service.dart';
 import '../services/realtime_sync_service.dart';
@@ -124,6 +125,15 @@ class _ServicesScreenState extends State<ServicesScreen> {
   }
 
   Future<void> _handleServiceTap(Map<String, dynamic> service) async {
+    final hasForm = service['has_form'] == true ||
+        service['has_form'] == 1 ||
+        service['has_form']?.toString() == '1';
+
+    if (!hasForm) {
+      _showDirectServiceDialog(context, service);
+      return;
+    }
+
     final isGuest = widget.user == null ||
         widget.user!.id == 0 ||
         widget.user!.fullName.contains(LanguageService.tr('auto_trans_1277'));
@@ -154,6 +164,303 @@ class _ServicesScreenState extends State<ServicesScreen> {
     if (mounted) {
       _showServiceForm(context, service);
     }
+  }
+
+  void _showDirectServiceDialog(
+      BuildContext context, Map<String, dynamic> service) {
+    final title = service['title']?.toString() ?? 'خدمة';
+    final desc = service['description']?.toString() ?? '';
+    final imageUrl = service['image_url']?.toString() ?? '';
+    final pricePoints =
+        int.tryParse(service['price_points']?.toString() ?? '0') ?? 0;
+    final notesCtrl = TextEditingController();
+    bool isSubmitting = false;
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setSheetState) {
+          return Container(
+            decoration: const BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+            ),
+            padding: EdgeInsets.only(
+              left: 20,
+              right: 20,
+              top: 20,
+              bottom: MediaQuery.of(ctx).viewInsets.bottom + 24,
+            ),
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Center(
+                    child: Container(
+                      width: 44,
+                      height: 5,
+                      decoration: BoxDecoration(
+                        color: Colors.grey[300],
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Row(
+                    children: [
+                      Container(
+                        width: 52,
+                        height: 52,
+                        decoration: BoxDecoration(
+                          color: AppColors.primary.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                        clipBehavior: Clip.antiAlias,
+                        child: imageUrl.isNotEmpty
+                            ? _buildImageWidget(imageUrl)
+                            : const Icon(Icons.handyman,
+                                color: AppColors.primary, size: 28),
+                      ),
+                      const SizedBox(width: 14),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              title,
+                              style: const TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                                color: AppColors.primary,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 10, vertical: 3),
+                              decoration: BoxDecoration(
+                                color: pricePoints > 0
+                                    ? Colors.amber.withValues(alpha: 0.15)
+                                    : Colors.green.withValues(alpha: 0.15),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Text(
+                                pricePoints > 0
+                                    ? '$pricePoints ${LanguageService.isEn ? 'Points' : 'نقطة'}'
+                                    : (LanguageService.isEn
+                                        ? 'Free / Direct Inquiries'
+                                        : 'مجاناً / استفسار وتواصل'),
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.bold,
+                                  color: pricePoints > 0
+                                      ? Colors.amber[800]
+                                      : Colors.green[800],
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                  if (desc.isNotEmpty) ...[
+                    const SizedBox(height: 14),
+                    Text(
+                      desc,
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: Colors.grey[700],
+                        height: 1.4,
+                      ),
+                    ),
+                  ],
+                  const SizedBox(height: 18),
+                  TextField(
+                    controller: notesCtrl,
+                    maxLines: 2,
+                    decoration: InputDecoration(
+                      hintText: LanguageService.tr('optional_notes'),
+                      hintStyle:
+                          TextStyle(fontSize: 13, color: Colors.grey[400]),
+                      filled: true,
+                      fillColor: Colors.grey[50],
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(14),
+                        borderSide: BorderSide(color: Colors.grey[300]!),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(14),
+                        borderSide: BorderSide(color: Colors.grey[200]!),
+                      ),
+                      contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 14, vertical: 12),
+                    ),
+                  ),
+                  const SizedBox(height: 18),
+                  ElevatedButton.icon(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.primary,
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14)),
+                      elevation: 0,
+                    ),
+                    onPressed: isSubmitting
+                        ? null
+                        : () async {
+                            final isGuest =
+                                widget.user == null || widget.user!.id == 0;
+                            if (isGuest) {
+                              Navigator.pop(ctx);
+                              _showServiceForm(context, service);
+                              return;
+                            }
+                            setSheetState(() => isSubmitting = true);
+                            final requestUuid = ApiService.generateUuidV4();
+                            try {
+                              await ApiService.submitServiceRequest(
+                                serviceId: service['id'] is int
+                                    ? service['id'] as int
+                                    : int.tryParse(
+                                        service['id']?.toString() ?? ''),
+                                studentName: widget.user!.fullName,
+                                studentPhone: widget.user!.phone ?? '',
+                                studentUni: '',
+                                universityId: widget.user!.universityId,
+                                serviceTitle: title,
+                                details: notesCtrl.text.trim().isNotEmpty
+                                    ? notesCtrl.text.trim()
+                                    : (LanguageService.isEn
+                                        ? 'Direct service request without form: $title'
+                                        : 'طلب خدمة مباشر بدون نموذج: $title'),
+                                payWithPoints: false,
+                                paymentMethod: 'cash',
+                                requestUuid: requestUuid,
+                              );
+                              if (ctx.mounted) Navigator.pop(ctx);
+                              if (context.mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text(LanguageService.tr(
+                                        'service_order_success')),
+                                    backgroundColor: Colors.green[700],
+                                    behavior: SnackBarBehavior.floating,
+                                  ),
+                                );
+                              }
+                            } catch (e) {
+                              setSheetState(() => isSubmitting = false);
+                              if (context.mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text('حدث خطأ: $e'),
+                                    backgroundColor: AppColors.error,
+                                    behavior: SnackBarBehavior.floating,
+                                  ),
+                                );
+                              }
+                            }
+                          },
+                    icon: isSubmitting
+                        ? const SizedBox(
+                            width: 18,
+                            height: 18,
+                            child: CircularProgressIndicator(
+                                strokeWidth: 2, color: Colors.white),
+                          )
+                        : const Icon(Icons.send_rounded,
+                            color: Colors.white, size: 20),
+                    label: Text(
+                      LanguageService.tr('direct_order_btn'),
+                      style: const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 15),
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton.icon(
+                          style: OutlinedButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                            side: BorderSide(
+                                color: Colors.green[600]!, width: 1.2),
+                            shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(14)),
+                          ),
+                          onPressed: () async {
+                            final msg = Uri.encodeComponent(
+                                'مرحباً، أود الاستفسار عن خدمة: $title');
+                            final url = Uri.parse(
+                                'https://wa.me/995551529019?text=$msg');
+                            try {
+                              if (!await launchUrl(url,
+                                  mode: LaunchMode.externalApplication)) {
+                                await launchUrl(url,
+                                  mode: LaunchMode.platformDefault);
+                              }
+                            } catch (e) {
+                              debugPrint('WhatsApp launch error: $e');
+                            }
+                          },
+                          icon: Icon(Icons.chat,
+                              color: Colors.green[700], size: 18),
+                          label: Text(
+                            LanguageService.tr('contact_whatsapp'),
+                            style: TextStyle(
+                                color: Colors.green[800],
+                                fontWeight: FontWeight.bold,
+                                fontSize: 13),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: OutlinedButton.icon(
+                          style: OutlinedButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                            side: const BorderSide(
+                                color: AppColors.primary, width: 1.2),
+                            shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(14)),
+                          ),
+                          onPressed: () {
+                            Navigator.pop(ctx);
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => ChatScreen(
+                                  user: widget.user,
+                                ),
+                              ),
+                            );
+                          },
+                          icon: const Icon(Icons.support_agent,
+                              color: AppColors.primary, size: 18),
+                          label: Text(
+                            LanguageService.tr('contact_chat'),
+                            style: const TextStyle(
+                                color: AppColors.primary,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 13),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
+      ),
+    );
   }
 
   void _showServiceForm(BuildContext context, Map<String, dynamic> service) {
