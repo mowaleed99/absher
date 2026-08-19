@@ -2228,6 +2228,163 @@ try {
     }
 
 
+    if ($action === 'get_staff') {
+        $stmt = $conn->query("SELECT id, username, email, full_name, job_title, role, is_active, created_at, updated_at FROM admins ORDER BY id ASC");
+        $staff = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        echo json_encode(["status" => "success", "data" => $staff], JSON_UNESCAPED_UNICODE);
+        exit();
+    }
+
+    if ($action === 'create_staff') {
+        $username = trim($data['username'] ?? '');
+        $email = trim($data['email'] ?? '');
+        $password = $data['password'] ?? '';
+        $fullName = trim($data['full_name'] ?? '');
+        $jobTitle = trim($data['job_title'] ?? '');
+
+        if (empty($username) || empty($password) || empty($fullName)) {
+            echo json_encode(["status" => "error", "message" => "يرجى تعبئة الاسم الكامل واسم المستخدم وكلمة المرور"], JSON_UNESCAPED_UNICODE);
+            exit();
+        }
+
+        if (strlen($password) < 6) {
+            echo json_encode(["status" => "error", "message" => "كلمة المرور يجب ألا تقل عن 6 خانات"], JSON_UNESCAPED_UNICODE);
+            exit();
+        }
+
+        $chk = $conn->prepare("SELECT id FROM admins WHERE username = ? OR (email != '' AND email = ?)");
+        $chk->execute([$username, $email]);
+        if ($chk->fetch()) {
+            echo json_encode(["status" => "error", "message" => "اسم المستخدم أو البريد الإلكتروني مسجل مسبقاً لموظف آخر"], JSON_UNESCAPED_UNICODE);
+            exit();
+        }
+
+        $hash = password_hash($password, PASSWORD_DEFAULT);
+        $ins = $conn->prepare("INSERT INTO admins (username, email, password, full_name, job_title, role, is_active, created_at) VALUES (?, ?, ?, ?, ?, 'admin', 1, NOW())");
+        $ins->execute([$username, $email, $hash, $fullName, $jobTitle ?: 'مشرف']);
+
+        echo json_encode(["status" => "success", "message" => "تم إنشاء حساب الموظف بنجاح"], JSON_UNESCAPED_UNICODE);
+        exit();
+    }
+
+    if ($action === 'update_staff') {
+        $id = intval($data['id'] ?? 0);
+        $fullName = trim($data['full_name'] ?? '');
+        $jobTitle = trim($data['job_title'] ?? '');
+        $email = trim($data['email'] ?? '');
+        $password = trim($data['password'] ?? '');
+        $isActive = isset($data['is_active']) ? intval($data['is_active']) : 1;
+
+        if ($id <= 0 || empty($fullName)) {
+            echo json_encode(["status" => "error", "message" => "بيانات غير صالحة"], JSON_UNESCAPED_UNICODE);
+            exit();
+        }
+
+        if (!empty($password)) {
+            if (strlen($password) < 6) {
+                echo json_encode(["status" => "error", "message" => "كلمة المرور يجب ألا تقل عن 6 خانات"], JSON_UNESCAPED_UNICODE);
+                exit();
+            }
+            $hash = password_hash($password, PASSWORD_DEFAULT);
+            $stmt = $conn->prepare("UPDATE admins SET full_name = ?, job_title = ?, email = ?, password = ?, is_active = ?, updated_at = NOW() WHERE id = ?");
+            $stmt->execute([$fullName, $jobTitle, $email, $hash, $isActive, $id]);
+        } else {
+            $stmt = $conn->prepare("UPDATE admins SET full_name = ?, job_title = ?, email = ?, is_active = ?, updated_at = NOW() WHERE id = ?");
+            $stmt->execute([$fullName, $jobTitle, $email, $isActive, $id]);
+        }
+
+        echo json_encode(["status" => "success", "message" => "تم تحديث بيانات الموظف بنجاح"], JSON_UNESCAPED_UNICODE);
+        exit();
+    }
+
+    if ($action === 'toggle_staff_status') {
+        $id = intval($data['id'] ?? 0);
+        $isActive = intval($data['is_active'] ?? 0);
+
+        if ($id === 1 && $isActive === 0) {
+            echo json_encode(["status" => "error", "message" => "لا يمكن تعطيل حساب المدير العام الرئيسي"], JSON_UNESCAPED_UNICODE);
+            exit();
+        }
+
+        $stmt = $conn->prepare("UPDATE admins SET is_active = ?, updated_at = NOW() WHERE id = ?");
+        $stmt->execute([$isActive, $id]);
+
+        echo json_encode(["status" => "success", "message" => $isActive ? "تم تفعيل الحساب بنجاح" : "تم تعطيل الحساب بنجاح"], JSON_UNESCAPED_UNICODE);
+        exit();
+    }
+
+    if ($action === 'delete_staff') {
+        $id = intval($data['id'] ?? 0);
+        if ($id === 1) {
+            echo json_encode(["status" => "error", "message" => "لا يمكن حذف حساب المدير العام الرئيسي"], JSON_UNESCAPED_UNICODE);
+            exit();
+        }
+        if ($id === AuthMiddleware::$currentUserId) {
+            echo json_encode(["status" => "error", "message" => "لا يمكنك حذف حسابك الحالي أثناء تسجيل الدخول منه"], JSON_UNESCAPED_UNICODE);
+            exit();
+        }
+
+        $stmt = $conn->prepare("DELETE FROM admins WHERE id = ?");
+        $stmt->execute([$id]);
+
+        echo json_encode(["status" => "success", "message" => "تم حذف الحساب بنجاح"], JSON_UNESCAPED_UNICODE);
+        exit();
+    }
+
+    if ($action === 'change_my_password') {
+        $currentPass = $data['current_password'] ?? '';
+        $newPass = $data['new_password'] ?? '';
+        $adminId = AuthMiddleware::$currentUserId;
+
+        if (empty($currentPass) || empty($newPass)) {
+            echo json_encode(["status" => "error", "message" => "يرجى إدخال كلمة المرور الحالية والجديدة"], JSON_UNESCAPED_UNICODE);
+            exit();
+        }
+
+        if (strlen($newPass) < 6) {
+            echo json_encode(["status" => "error", "message" => "كلمة المرور الجديدة يجب ألا تقل عن 6 خانات"], JSON_UNESCAPED_UNICODE);
+            exit();
+        }
+
+        $stmt = $conn->prepare("SELECT password FROM admins WHERE id = ?");
+        $stmt->execute([$adminId]);
+        $row = $stmt->fetch();
+
+        if (!$row || (!password_verify($currentPass, $row['password']) && !hash_equals($row['password'], $currentPass))) {
+            echo json_encode(["status" => "error", "message" => "كلمة المرور الحالية غير صحيحة"], JSON_UNESCAPED_UNICODE);
+            exit();
+        }
+
+        $newHash = password_hash($newPass, PASSWORD_DEFAULT);
+        $up = $conn->prepare("UPDATE admins SET password = ?, updated_at = NOW() WHERE id = ?");
+        $up->execute([$newHash, $adminId]);
+
+        echo json_encode(["status" => "success", "message" => "تم تغيير كلمة المرور بنجاح"], JSON_UNESCAPED_UNICODE);
+        exit();
+    }
+
+    if ($action === 'update_my_profile') {
+        $fullName = trim($data['full_name'] ?? '');
+        $jobTitle = trim($data['job_title'] ?? '');
+        $email = trim($data['email'] ?? '');
+        $adminId = AuthMiddleware::$currentUserId;
+
+        if (empty($fullName)) {
+            echo json_encode(["status" => "error", "message" => "الاسم الكامل مطلوب"], JSON_UNESCAPED_UNICODE);
+            exit();
+        }
+
+        $stmt = $conn->prepare("UPDATE admins SET full_name = ?, job_title = ?, email = ?, updated_at = NOW() WHERE id = ?");
+        $stmt->execute([$fullName, $jobTitle, $email, $adminId]);
+
+        $stmt = $conn->prepare("SELECT id, username, email, full_name, job_title, role FROM admins WHERE id = ?");
+        $stmt->execute([$adminId]);
+        $admin = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        echo json_encode(["status" => "success", "message" => "تم تحديث الملف الشخصي بنجاح", "admin" => $admin], JSON_UNESCAPED_UNICODE);
+        exit();
+    }
+
     echo json_encode(["status"=>"error","message"=>"إجراء غير محدد أو غير معروف"], JSON_UNESCAPED_UNICODE);
 
 } catch (Exception $e) {

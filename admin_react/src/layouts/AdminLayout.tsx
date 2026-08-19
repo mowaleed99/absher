@@ -1,4 +1,4 @@
-import { NavLink, Outlet, useLocation } from 'react-router-dom';
+import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
 import { useBadges } from '../contexts/BadgesContext';
@@ -6,9 +6,10 @@ import { useI18n } from '../lib/i18n';
 import logoImg from '../assets/logo.png';
 
 export function AdminLayout() {
-  const { logout } = useAuth();
+  const { logout, adminUser } = useAuth();
   const { toggleTheme, theme } = useTheme();
   const { lang, setLang, t } = useI18n();
+  const navigate = useNavigate();
   const {
     pendingReviewsCount,
     negativeReviewsCount,
@@ -75,18 +76,47 @@ export function AdminLayout() {
           <button
             type="button"
             className="action-btn"
+            onClick={() => navigate('/settings')}
+            title={lang === 'ar' ? 'الإعدادات وفريق العمل' : 'Settings & Staff'}
+          >
+            <i className="fa-solid fa-gear"></i>
+          </button>
+          <button
+            type="button"
+            className="action-btn"
             onClick={logout}
             title={t('admin.logout')}
             style={{ color: '#f87171' }}
           >
             <i className="fa-solid fa-right-from-bracket"></i>
           </button>
-          <div className="admin-profile">
-            <img
-              src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80"
-              alt="Admin"
-            />
-            <span>{t('admin.general_manager')}</span>
+          <div
+            className="admin-profile"
+            onClick={() => navigate('/settings')}
+            title={lang === 'ar' ? 'الملف الشخصي والإعدادات' : 'Profile & Settings'}
+            style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', padding: '4px 12px 4px 6px', borderRadius: '24px', background: 'rgba(255, 255, 255, 0.06)', border: '1px solid var(--border-color)', transition: 'all 0.2s ease' }}
+          >
+            <div
+              style={{
+                width: '32px',
+                height: '32px',
+                borderRadius: '50%',
+                background: 'linear-gradient(135deg, var(--primary), #3b82f6)',
+                color: '#ffffff',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontWeight: 800,
+                fontSize: '0.85rem',
+                flexShrink: 0,
+              }}
+            >
+              {adminUser?.full_name ? adminUser.full_name.charAt(0).toUpperCase() : 'A'}
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', textAlign: lang === 'ar' ? 'right' : 'left', lineHeight: 1.2 }}>
+              <span style={{ fontWeight: 700, fontSize: '0.88rem', color: 'var(--text-main)' }}>{adminUser?.full_name || 'المدير العام'}</span>
+              <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>{adminUser?.job_title || 'المدير العام'}</span>
+            </div>
           </div>
         </div>
       </header>
@@ -351,6 +381,13 @@ export function AdminLayout() {
             >
               <i className="fa-solid fa-bullhorn"></i>
               <span>{t('nav.notifications')}</span>
+            </NavLink>
+            <NavLink
+              to="/settings"
+              className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
+            >
+              <i className="fa-solid fa-users-gear"></i>
+              <span>{lang === 'ar' ? 'الإعدادات وفريق العمل' : 'Settings & Staff'}</span>
             </NavLink>
           </nav>
 

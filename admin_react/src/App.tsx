@@ -20,6 +20,7 @@ import { NotificationsModule } from './modules/notifications/NotificationsModule
 import { ChatsModule } from './modules/chats/ChatsModule';
 import { PromoCodesModule } from './modules/promo/PromoCodesModule';
 import { HousingOffersModule } from './modules/offers/HousingOffersModule';
+import { SettingsModule } from './modules/settings/SettingsModule';
 import { LoginOverlay } from './components/LoginOverlay';
 import logoImg from './assets/logo.png';
 import './style.css';
@@ -78,6 +79,7 @@ function MainRouter() {
           <Route path="notifications" element={<NotificationsModule />} />
           <Route path="chats" element={<ChatsModule />} />
           <Route path="promo-codes" element={<PromoCodesModule />} />
+          <Route path="settings" element={<SettingsModule />} />
           <Route path="*" element={<Navigate to="/dashboard" replace />} />
         </Route>
       </Routes>

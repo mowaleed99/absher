@@ -31,6 +31,10 @@ try {
     }
 
     if ($isValid) {
+        if (isset($admin['is_active']) && (int)$admin['is_active'] === 0) {
+            jsonResponse(false, "تم تعطيل هذا الحساب. يرجى مراجعة المدير العام.", 403);
+        }
+
         if ($needsRehash) {
             $newHash = password_hash($password, PASSWORD_DEFAULT);
             $updateStmt = $conn->prepare("UPDATE admins SET password = ? WHERE id = ?");
@@ -38,7 +42,9 @@ try {
         }
         $payload = [
             "admin_id" => $admin['id'],
-            "role" => $admin['role'],
+            "role" => $admin['role'] ?? 'admin',
+            "full_name" => $admin['full_name'] ?? 'المدير العام',
+            "job_title" => $admin['job_title'] ?? 'المدير العام',
             "type" => "admin",
             "iat" => time(),
             "exp" => time() + (86400 * 7) // 7 days expiration
@@ -51,11 +57,13 @@ try {
                 "id" => $admin['id'],
                 "username" => $admin['username'],
                 "email" => $admin['email'],
-                "role" => $admin['role']
+                "full_name" => $admin['full_name'] ?? 'المدير العام',
+                "job_title" => $admin['job_title'] ?? 'المدير العام',
+                "role" => $admin['role'] ?? 'admin'
             ]
         ]);
     } else {
-        jsonResponse(false, "Invalid credentials", 401);
+        jsonResponse(false, "بيانات الدخول غير صحيحة", 401);
     }
 } catch (PDOException $e) {
     error_log("Database error in " . __FILE__ . " on line " . __LINE__ . ": " . $e->getMessage());
