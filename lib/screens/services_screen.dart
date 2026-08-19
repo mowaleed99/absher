@@ -1448,10 +1448,14 @@ class _ServicesScreenState extends State<ServicesScreen> {
     }
 
     final screenWidth = MediaQuery.of(context).size.width;
-    final int crossAxisCount = screenWidth > 600 ? 3 : 2;
-    final double childAspectRatio = screenWidth > 600
-        ? 0.72
-        : (screenWidth < 360 ? 0.54 : 0.58);
+    final int crossAxisCount = screenWidth > 900
+        ? 4
+        : (screenWidth > 600 ? 3 : 2);
+    final double childAspectRatio = screenWidth > 900
+        ? 0.70
+        : (screenWidth > 600
+            ? 0.62
+            : (screenWidth < 360 ? 0.45 : 0.49));
 
     return GridView.builder(
       padding: const EdgeInsets.all(16),
