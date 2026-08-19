@@ -11,6 +11,7 @@ export function LoginOverlay() {
 
   const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const submittingRef = useRef(false);
 
@@ -114,22 +115,49 @@ export function LoginOverlay() {
 
           <div className="form-group">
             <label style={{ color: 'var(--text-main)', fontWeight: 600 }}>كلمة المرور:</label>
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="••••••••••••"
-              required
-              style={{
-                width: '100%',
-                padding: '0.85rem 1.1rem',
-                borderRadius: '12px',
-                border: '1px solid var(--border-color)',
-                background: 'rgba(0, 0, 0, 0.25)',
-                color: '#fff',
-                fontSize: '1rem',
-              }}
-            />
+            <div style={{ position: 'relative', width: '100%' }}>
+              <input
+                type={showPassword ? 'text' : 'password'}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="••••••••••••"
+                required
+                style={{
+                  width: '100%',
+                  padding: '0.85rem 3rem 0.85rem 1.1rem',
+                  borderRadius: '12px',
+                  border: '1px solid var(--border-color)',
+                  background: 'rgba(0, 0, 0, 0.25)',
+                  color: '#fff',
+                  fontSize: '1rem',
+                  outline: 'none',
+                }}
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                tabIndex={-1}
+                title={showPassword ? 'إخفاء كلمة المرور' : 'إظهار كلمة المرور'}
+                style={{
+                  position: 'absolute',
+                  insetInlineEnd: '12px',
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  background: 'transparent',
+                  border: 'none',
+                  color: showPassword ? 'var(--primary)' : 'var(--text-muted)',
+                  cursor: 'pointer',
+                  fontSize: '1.1rem',
+                  padding: '6px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  transition: 'color 0.15s ease',
+                }}
+              >
+                <i className={showPassword ? 'fa-solid fa-eye-slash' : 'fa-solid fa-eye'}></i>
+              </button>
+            </div>
           </div>
 
           <button
