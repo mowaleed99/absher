@@ -85,6 +85,27 @@ export function useServices() {
         return { success: false, error: result.error };
       }
 
+      setServices((prev) =>
+        prev.map((s) =>
+          s.id === data.id
+            ? {
+                ...s,
+                ...data,
+                title: data.title_ar || data.title_en || s.title,
+                title_ar: data.title_ar,
+                title_en: data.title_en,
+                description: data.description_ar || data.description_en || s.description,
+                description_ar: data.description_ar,
+                description_en: data.description_en,
+                price_points: data.price_points,
+                price_cash: data.price_cash,
+                image_url: data.image_url,
+                has_form: data.has_form,
+              }
+            : s
+        )
+      );
+
       await fetchServices();
       return { success: true };
     } catch (err) {

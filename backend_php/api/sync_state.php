@@ -31,13 +31,13 @@ try {
     ");
     $apartmentsVersion = strval($aptStmt->fetchColumn() ?: '0');
 
-    // 2. Services version (counts, max id, and any changes to titles/prices)
+    // 2. Services version (counts, max id, max updated_at/created_at, and full checksum)
     $srvStmt = $conn->query("
         SELECT CONCAT(
             COUNT(*), '_',
             COALESCE(MAX(id), 0), '_',
-            COALESCE(MAX(price_points), 0), '_',
-            COALESCE(MAX(created_at), '2026-01-01 00:00:00')
+            COALESCE(MAX(COALESCE(updated_at, created_at)), '2026-01-01 00:00:00'), '_',
+            COALESCE(MD5(GROUP_CONCAT(CONCAT_WS(':', id, title, price_points, price_cash, has_form, image_url) ORDER BY id ASC SEPARATOR '|')), '0')
         ) FROM services
     ");
     $servicesVersion = strval($srvStmt->fetchColumn() ?: '0');
