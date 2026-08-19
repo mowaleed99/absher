@@ -662,7 +662,7 @@ class _HomeScreenState extends State<HomeScreen>
                             }
                             messenger.showSnackBar(
                               SnackBar(
-                                content: Text(res['message']),
+                                content: Text(LanguageService.tr('rating_success_msg')),
                                 backgroundColor: AppColors.success,
                               ),
                             );

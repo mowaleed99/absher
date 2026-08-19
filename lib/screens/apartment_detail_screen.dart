@@ -6,6 +6,7 @@ import 'chat_screen.dart';
 import 'login_screen.dart';
 import '../services/language_service.dart';
 import '../models/student.dart';
+import '../models/university.dart';
 
 class ApartmentDetailScreen extends StatefulWidget {
   final Map<String, dynamic> apartment;
@@ -36,6 +37,7 @@ class _ApartmentDetailScreenState extends State<ApartmentDetailScreen> {
   final _notesController = TextEditingController();
   String _viewingDate = '';
   String _viewingTime = LanguageService.tr('auto_trans_1001');
+  List<University> _universitiesList = [];
 
   @override
   void initState() {
@@ -43,6 +45,180 @@ class _ApartmentDetailScreenState extends State<ApartmentDetailScreen> {
     final today = DateTime.now();
     _viewingDate =
         '${today.year}-${today.month.toString().padLeft(2, '0')}-${today.day.toString().padLeft(2, '0')}';
+    _loadUniversities();
+  }
+
+  Future<void> _loadUniversities() async {
+    try {
+      final list = await ApiService.getUniversities();
+      if (mounted) {
+        setState(() {
+          _universitiesList = list.map((u) => University.fromJson(u)).toList();
+        });
+      }
+    } catch (_) {}
+  }
+
+  String _localizeUni(String rawUni) {
+    if (rawUni.trim().isEmpty) return '';
+    final isEn = LanguageService.currentLang.value == 'en';
+    final trimmed = rawUni.trim();
+
+    for (final u in _universitiesList) {
+      if (u.name == trimmed ||
+          u.nameAr == trimmed ||
+          u.nameEn == trimmed ||
+          u.id.toString() == trimmed ||
+          (u.nameAr.isNotEmpty && trimmed.contains(u.nameAr)) ||
+          (u.nameEn.isNotEmpty && trimmed.contains(u.nameEn))) {
+        return isEn
+            ? (u.nameEn.isNotEmpty ? u.nameEn : u.name)
+            : (u.nameAr.isNotEmpty ? u.nameAr : u.name);
+      }
+    }
+
+    final match = RegExp(r'\(([A-Za-z0-9]+)\)').firstMatch(trimmed);
+    if (match != null) {
+      final code = match.group(1)!;
+      for (final u in _universitiesList) {
+        if (u.name.contains('($code)') ||
+            u.nameAr.contains('($code)') ||
+            u.nameEn.contains('($code)')) {
+          return isEn
+              ? (u.nameEn.isNotEmpty ? u.nameEn : u.name)
+              : (u.nameAr.isNotEmpty ? u.nameAr : u.name);
+        }
+      }
+    }
+
+    return trimmed;
+  }
+
+  List<String> _getApartmentUniversities() {
+    final rawUnis = widget.apartment['universities'];
+    final List<String> list = [];
+    if (rawUnis is List) {
+      for (final item in rawUnis) {
+        final s = item?.toString().trim() ?? '';
+        if (s.isNotEmpty) {
+          final localized = _localizeUni(s);
+          if (localized.isNotEmpty && !list.contains(localized)) {
+            list.add(localized);
+          }
+        }
+      }
+    }
+
+    final prox = widget.apartment['proximity']?.toString() ?? '';
+    if (prox.isNotEmpty) {
+      for (final u in _universitiesList) {
+        final isEn = LanguageService.currentLang.value == 'en';
+        final targetName = isEn
+            ? (u.nameEn.isNotEmpty ? u.nameEn : u.name)
+            : (u.nameAr.isNotEmpty ? u.nameAr : u.name);
+        final match = RegExp(r'\(([A-Za-z0-9]+)\)')
+            .firstMatch("${u.nameAr} ${u.nameEn}");
+        final code = match?.group(1);
+        if ((u.nameAr.isNotEmpty && prox.contains(u.nameAr)) ||
+            (u.nameEn.isNotEmpty && prox.contains(u.nameEn)) ||
+            (code != null && prox.contains('($code)'))) {
+          if (!list.contains(targetName)) {
+            list.add(targetName);
+          }
+        }
+      }
+    }
+
+    return list;
+  }
+
+  Widget _buildNearbyUniversitiesSection() {
+    final unis = _getApartmentUniversities();
+    if (unis.isEmpty) return const SizedBox.shrink();
+
+    final isAr = LanguageService.currentLang.value == 'ar';
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const SizedBox(height: 14),
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            color: const Color(0xFFF0F7FF),
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: const Color(0xFFBAE6FD), width: 1),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(6),
+                    decoration: BoxDecoration(
+                      color: AppColors.primary,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: const Icon(Icons.school_rounded,
+                        color: AppColors.accent, size: 16),
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    isAr ? 'الجامعات القريبة من السكن' : 'Nearby Universities',
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 13.5,
+                      color: AppColors.primary,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 10),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: unis.map((uni) {
+                  return Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 10, vertical: 5),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: const Color(0xFF93C5FD)),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.03),
+                          blurRadius: 4,
+                          offset: const Offset(0, 2),
+                        )
+                      ],
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(Icons.check_circle_rounded,
+                            size: 13, color: Color(0xFF0284C7)),
+                        const SizedBox(width: 5),
+                        Text(
+                          uni,
+                          style: const TextStyle(
+                            fontSize: 11.5,
+                            fontWeight: FontWeight.w700,
+                            color: Color(0xFF0C4A6E),
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                }).toList(),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
   }
 
   @override
@@ -907,6 +1083,7 @@ class _ApartmentDetailScreenState extends State<ApartmentDetailScreen> {
                                           fontWeight: FontWeight.w600))),
                             ],
                           ),
+                          _buildNearbyUniversitiesSection(),
                           if (widget.apartment['roommate_reqs'] != null ||
                               widget.apartment['roommate_facilities'] != null ||
                               (widget.apartment['rental_type']

@@ -180,7 +180,7 @@ class _MyReviewsScreenState extends State<MyReviewsScreen> {
                             navigator.pop();
                             messenger.showSnackBar(
                               SnackBar(
-                                  content: Text(res['message']),
+                                  content: Text(LanguageService.tr('rating_success_msg')),
                                   backgroundColor: AppColors.success),
                             );
                             _loadReviews();
