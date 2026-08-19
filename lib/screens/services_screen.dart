@@ -1517,18 +1517,20 @@ class _ServicesScreenState extends State<ServicesScreen> {
                         padding: const EdgeInsets.symmetric(
                             horizontal: 10, vertical: 4),
                         decoration: BoxDecoration(
-                          color: (s['price_points'] as int? ?? 0) > 0
+                          color: ((s['price_points'] as int? ?? 0) > 0 || ((s['price_cash'] as num?)?.toDouble() ?? 0.0) > 0)
                               ? AppColors.accentLight
                               : Colors.green.shade50,
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: Text(
                           LanguageService.formatServiceCost(
-                              s['price_points'] as int? ?? 0),
+                            s['price_points'] as int? ?? 0,
+                            (s['price_cash'] as num?)?.toDouble() ?? 0.0,
+                          ),
                           style: TextStyle(
                             fontSize: 11,
                             fontWeight: FontWeight.bold,
-                            color: (s['price_points'] as int? ?? 0) > 0
+                            color: ((s['price_points'] as int? ?? 0) > 0 || ((s['price_cash'] as num?)?.toDouble() ?? 0.0) > 0)
                                 ? AppColors.primary
                                 : Colors.green.shade700,
                           ),

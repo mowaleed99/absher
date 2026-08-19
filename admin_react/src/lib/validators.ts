@@ -192,6 +192,7 @@ export function parseService(v: unknown): Service | null {
     image_url: toString(v.image_url),
     has_form: v.has_form !== undefined ? (toNumber(v.has_form) ?? 1) : 1,
     price_points: toNumber(v.price_points) ?? 0,
+    price_cash: toNumber(v.price_cash) ?? 0,
     created_at: toString(v.created_at),
     display_title: toString(v.display_title || v.title_ar || v.title),
     display_desc: toString(v.display_desc || v.description_ar || v.description),

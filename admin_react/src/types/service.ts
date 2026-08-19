@@ -9,6 +9,7 @@ export interface Service {
   image_url: string;
   has_form: number; // 0 or 1
   price_points: number;
+  price_cash?: number;
   created_at?: string;
   display_title?: string;
   display_desc?: string;
@@ -22,4 +23,5 @@ export interface ServiceFormData {
   image_url: string;
   has_form: number;
   price_points: number;
+  price_cash?: number;
 }

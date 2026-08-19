@@ -185,6 +185,7 @@ const arTranslations: Translations = {
   'form.service_image_url': 'رابط صورة الخدمة:',
   'form.service_has_form': 'هل تتطلب الخدمة تعبئة نموذج من الطالب؟',
   'form.service_points': 'تكلفة الخدمة بالنقاط (0 = مجانية):',
+  'form.service_cash': 'السعر نقدي (بالدولار $ أو كاش):',
   'form.add_service_btn': 'إضافة الخدمة',
 
   // Service Reviews Moderation Module
@@ -772,6 +773,7 @@ const enTranslations: Translations = {
   'form.service_image_url': 'Service Image URL:',
   'form.service_has_form': 'Does this service require a student form submission?',
   'form.service_points': 'Service Cost in Points (0 = Free):',
+  'form.service_cash': 'Cash Price (USD $ or Cash):',
   'form.add_service_btn': 'Add Service',
 
   // Service Reviews Moderation Module

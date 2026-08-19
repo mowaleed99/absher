@@ -552,6 +552,13 @@ class ApiService {
                 throw FormatException(
                     'Unexpected price_points type: ${raw.runtimeType} for service ID: $svcId');
               })(),
+              'price_cash': (() {
+                final raw = svc['price_cash'];
+                if (raw == null) return 0.0;
+                if (raw is num) return raw.toDouble();
+                if (raw is String) return double.tryParse(raw) ?? 0.0;
+                return 0.0;
+              })(),
             };
           }).toList();
         }

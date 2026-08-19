@@ -81,29 +81,79 @@ export function ServiceCard({ service, onEdit, onDelete }: ServiceCardProps) {
           />
         )}
 
-        {/* Points Badge */}
+        {/* Price Badges (Points and/or Cash) */}
         <div
           style={{
             position: 'absolute',
             top: '12px',
             right: '12px',
-            background: service.price_points > 0 ? 'rgba(99, 102, 241, 0.9)' : 'rgba(16, 185, 129, 0.9)',
-            color: '#fff',
-            padding: '4px 10px',
-            borderRadius: '20px',
-            fontSize: '0.8rem',
-            fontWeight: 700,
-            backdropFilter: 'blur(4px)',
             display: 'flex',
-            alignItems: 'center',
-            gap: '5px',
-            boxShadow: '0 2px 6px rgba(0,0,0,0.2)',
+            gap: '6px',
+            flexWrap: 'wrap',
           }}
         >
-          <i className={`fa-solid ${service.price_points > 0 ? 'fa-coins' : 'fa-gift'}`}></i>
-          <span>
-            {service.price_points > 0 ? t('services.price_points', { points: service.price_points }) : t('services.free')}
-          </span>
+          {service.price_points > 0 && (
+            <div
+              style={{
+                background: 'rgba(99, 102, 241, 0.9)',
+                color: '#fff',
+                padding: '4px 10px',
+                borderRadius: '20px',
+                fontSize: '0.8rem',
+                fontWeight: 700,
+                backdropFilter: 'blur(4px)',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '5px',
+                boxShadow: '0 2px 6px rgba(0,0,0,0.2)',
+              }}
+            >
+              <i className="fa-solid fa-coins"></i>
+              <span>{t('services.price_points', { points: service.price_points })}</span>
+            </div>
+          )}
+
+          {Number(service.price_cash) > 0 && (
+            <div
+              style={{
+                background: 'rgba(16, 185, 129, 0.9)',
+                color: '#fff',
+                padding: '4px 10px',
+                borderRadius: '20px',
+                fontSize: '0.8rem',
+                fontWeight: 700,
+                backdropFilter: 'blur(4px)',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '5px',
+                boxShadow: '0 2px 6px rgba(0,0,0,0.2)',
+              }}
+            >
+              <i className="fa-solid fa-money-bill-wave"></i>
+              <span>${Number(service.price_cash)}</span>
+            </div>
+          )}
+
+          {service.price_points <= 0 && (!service.price_cash || Number(service.price_cash) <= 0) && (
+            <div
+              style={{
+                background: 'rgba(16, 185, 129, 0.9)',
+                color: '#fff',
+                padding: '4px 10px',
+                borderRadius: '20px',
+                fontSize: '0.8rem',
+                fontWeight: 700,
+                backdropFilter: 'blur(4px)',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '5px',
+                boxShadow: '0 2px 6px rgba(0,0,0,0.2)',
+              }}
+            >
+              <i className="fa-solid fa-gift"></i>
+              <span>{t('services.free')}</span>
+            </div>
+          )}
         </div>
 
         {/* Form Requirement Badge */}

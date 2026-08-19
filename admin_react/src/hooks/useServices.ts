@@ -52,6 +52,7 @@ export function useServices() {
         image_url: data.image_url,
         has_form: data.has_form,
         price_points: data.price_points,
+        price_cash: data.price_cash ?? 0,
       });
 
       if (!result.success) {
@@ -77,6 +78,7 @@ export function useServices() {
         image_url: data.image_url,
         has_form: data.has_form,
         price_points: data.price_points,
+        price_cash: data.price_cash ?? 0,
       });
 
       if (!result.success) {

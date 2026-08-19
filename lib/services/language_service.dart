@@ -2044,12 +2044,26 @@ class LanguageService {
     }
   }
 
-  static String formatServiceCost(int price) {
-    if (price == 0) {
+  static String formatServiceCost(int price, [double priceCash = 0.0]) {
+    final bool hasPoints = price > 0;
+    final bool hasCash = priceCash > 0;
+
+    if (!hasPoints && !hasCash) {
       return tr('service_cost_free');
     }
+
     final pointsLabel = tr('points_unit');
-    return '$price $pointsLabel';
+    final String cashStr = priceCash.truncateToDouble() == priceCash
+        ? '${priceCash.toInt()} \$'
+        : '${priceCash.toStringAsFixed(2)} \$';
+
+    if (hasPoints && hasCash) {
+      return '$price $pointsLabel  •  $cashStr';
+    }
+    if (hasPoints) {
+      return '$price $pointsLabel';
+    }
+    return cashStr;
   }
 
   static String formatCleaningEstimate(String price) {

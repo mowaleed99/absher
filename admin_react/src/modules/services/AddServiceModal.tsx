@@ -23,6 +23,7 @@ export function AddServiceModal({ isOpen, onClose, onSubmit, showToast }: AddSer
   const [imageUrl, setImageUrl] = useState('');
   const [hasForm, setHasForm] = useState(true);
   const [pricePoints, setPricePoints] = useState(0);
+  const [priceCash, setPriceCash] = useState(0);
 
   useEffect(() => {
     if (isOpen) {
@@ -33,6 +34,7 @@ export function AddServiceModal({ isOpen, onClose, onSubmit, showToast }: AddSer
       setImageUrl('');
       setHasForm(true);
       setPricePoints(0);
+      setPriceCash(0);
     }
   }, [isOpen]);
 
@@ -94,6 +96,7 @@ export function AddServiceModal({ isOpen, onClose, onSubmit, showToast }: AddSer
         image_url: imageUrl.trim(),
         has_form: hasForm ? 1 : 0,
         price_points: Number(pricePoints) || 0,
+        price_cash: Number(priceCash) || 0,
       });
 
       if (res.success) {
@@ -386,8 +389,8 @@ export function AddServiceModal({ isOpen, onClose, onSubmit, showToast }: AddSer
             )}
           </div>
 
-          {/* Points & Has Form Row */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px', alignItems: 'center' }}>
+          {/* Points, Cash Price & Has Form Row */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '16px', alignItems: 'center' }}>
             <div>
               <label style={{ display: 'block', marginBottom: '8px', fontSize: '0.9rem', fontWeight: 600, color: 'var(--text-main)' }}>
                 {t('form.service_points')}
@@ -398,6 +401,32 @@ export function AddServiceModal({ isOpen, onClose, onSubmit, showToast }: AddSer
                 value={pricePoints}
                 onChange={(e) => setPricePoints(Math.max(0, parseInt(e.target.value) || 0))}
                 disabled={isSubmitting}
+                placeholder="0"
+                style={{
+                  width: '100%',
+                  padding: '12px 14px',
+                  borderRadius: '10px',
+                  border: '1px solid var(--border-color)',
+                  background: 'var(--bg-main)',
+                  color: 'var(--text-main)',
+                  fontSize: '0.95rem',
+                  outline: 'none',
+                }}
+              />
+            </div>
+
+            <div>
+              <label style={{ display: 'block', marginBottom: '8px', fontSize: '0.9rem', fontWeight: 600, color: 'var(--text-main)' }}>
+                {t('form.service_cash')}
+              </label>
+              <input
+                type="number"
+                min="0"
+                step="any"
+                value={priceCash}
+                onChange={(e) => setPriceCash(Math.max(0, parseFloat(e.target.value) || 0))}
+                disabled={isSubmitting}
+                placeholder="0"
                 style={{
                   width: '100%',
                   padding: '12px 14px',

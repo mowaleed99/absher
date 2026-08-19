@@ -16,7 +16,7 @@ try {
     $descCol  = ($lang === 'en') ? "COALESCE(NULLIF(description_en, ''), NULLIF(description_ar, ''), description)" : "COALESCE(NULLIF(description_ar, ''), description)";
 
     $stmt = $conn->query(
-        "SELECT id, $titleCol AS title, $descCol AS description, image_url, has_form, price_points
+        "SELECT id, $titleCol AS title, $descCol AS description, image_url, has_form, price_points, COALESCE(price_cash, 0.00) AS price_cash
          FROM services
          ORDER BY id ASC"
     );
@@ -25,12 +25,13 @@ try {
     $result = [];
     foreach ($services as $svc) {
         $result[] = [
-            'id'          => (int)$svc['id'],
-            'title'       => $svc['title'],
-            'description' => $svc['description'],
-            'image_url'   => $svc['image_url'],
-            'has_form'    => (bool)$svc['has_form'],
+            'id'           => (int)$svc['id'],
+            'title'        => $svc['title'],
+            'description'  => $svc['description'],
+            'image_url'    => $svc['image_url'],
+            'has_form'     => (bool)$svc['has_form'],
             'price_points' => isset($svc['price_points']) ? (int)$svc['price_points'] : 0,
+            'price_cash'   => isset($svc['price_cash']) ? (float)$svc['price_cash'] : 0.0,
         ];
     }
 

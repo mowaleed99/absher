@@ -611,10 +611,11 @@ try {
         $image_url = saveBase64IfPresent($image_url);
         $has_form = isset($data['has_form']) ? (int)$data['has_form'] : 1;
         $price_points = isset($data['price_points']) ? (int)$data['price_points'] : 0;
+        $price_cash = isset($data['price_cash']) ? floatval($data['price_cash']) : 0.0;
 
         if (!empty($title)) {
-            $stmt = $conn->prepare("INSERT INTO services (title, description, image_url, has_form, price_points, title_ar, title_en, description_ar, description_en) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
-            $stmt->execute([$title, $description, $image_url, $has_form, $price_points, $title_ar, $title_en, $description_ar, $description_en]);
+            $stmt = $conn->prepare("INSERT INTO services (title, description, image_url, has_form, price_points, price_cash, title_ar, title_en, description_ar, description_en) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+            $stmt->execute([$title, $description, $image_url, $has_form, $price_points, $price_cash, $title_ar, $title_en, $description_ar, $description_en]);
             
             // إضافة تنبيه تلقائي في الإشعارات
             $stmtNotif = $conn->prepare("INSERT INTO notifications (student_id, title, body, created_at) VALUES (0, ?, ?, NOW())");
@@ -657,10 +658,11 @@ try {
         $image_url = saveBase64IfPresent($image_url);
         $has_form = isset($data['has_form']) ? (int)$data['has_form'] : 1;
         $price_points = isset($data['price_points']) ? (int)$data['price_points'] : 0;
+        $price_cash = isset($data['price_cash']) ? floatval($data['price_cash']) : 0.0;
 
         if ($id > 0 && !empty($title)) {
-            $stmt = $conn->prepare("UPDATE services SET title=?, description=?, image_url=?, has_form=?, price_points=?, title_ar=?, title_en=?, description_ar=?, description_en=? WHERE id=?");
-            $stmt->execute([$title, $description, $image_url, $has_form, $price_points, $title_ar, $title_en, $description_ar, $description_en, $id]);
+            $stmt = $conn->prepare("UPDATE services SET title=?, description=?, image_url=?, has_form=?, price_points=?, price_cash=?, title_ar=?, title_en=?, description_ar=?, description_en=? WHERE id=?");
+            $stmt->execute([$title, $description, $image_url, $has_form, $price_points, $price_cash, $title_ar, $title_en, $description_ar, $description_en, $id]);
             echo json_encode(["status"=>"success","message"=>"تم تعديل الخدمة بنجاح"], JSON_UNESCAPED_UNICODE);
         } else {
             echo json_encode(["status"=>"error","message"=>"معرف الخدمة والعنوان مطلوبان"], JSON_UNESCAPED_UNICODE);
