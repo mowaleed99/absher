@@ -22,7 +22,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final _localPhoneController = TextEditingController();
   final _passwordController = TextEditingController();
 
-  CountryCode _selectedCountry = CountryCode.defaultCountry;
+  CountryCode _selectedNationality = CountryCode.allCountries.firstWhere(
+    (c) => c.code == 'EG',
+    orElse: () => CountryCode.defaultCountry,
+  );
+  CountryCode _selectedPhoneCountry = CountryCode.defaultCountry;
 
   final _customUniController = TextEditingController();
 
@@ -81,17 +85,29 @@ class _RegisterScreenState extends State<RegisterScreen> {
   /// Combines selected country dial code and local phone number
   String get _fullPhone {
     final local = _localPhoneController.text.trim().replaceAll(RegExp(r'^0+'), '');
-    return '${_selectedCountry.dialCode}$local';
+    return '${_selectedPhoneCountry.dialCode}$local';
   }
 
-  Future<void> _pickCountry() async {
+  Future<void> _pickNationality() async {
     final selected = await CountryPickerBottomSheet.show(
       context,
-      selectedCountry: _selectedCountry,
+      selectedCountry: _selectedNationality,
     );
     if (selected != null && mounted) {
       setState(() {
-        _selectedCountry = selected;
+        _selectedNationality = selected;
+      });
+    }
+  }
+
+  Future<void> _pickPhoneCountry() async {
+    final selected = await CountryPickerBottomSheet.show(
+      context,
+      selectedCountry: _selectedPhoneCountry,
+    );
+    if (selected != null && mounted) {
+      setState(() {
+        _selectedPhoneCountry = selected;
       });
     }
   }
@@ -110,8 +126,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
         email: _emailController.text.trim(),
         phone: _fullPhone,
         nationality: LanguageService.currentLang.value == 'ar'
-            ? _selectedCountry.nameAr
-            : _selectedCountry.nameEn,
+            ? _selectedNationality.nameAr
+            : _selectedNationality.nameEn,
         university: _selectedUni == LanguageService.tr('other_uni_manual')
             ? _customUniController.text.trim()
             : _selectedUni,
@@ -310,7 +326,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
                           // الدولة / الجنسية
                           InkWell(
-                            onTap: _pickCountry,
+                            onTap: _pickNationality,
                             borderRadius: BorderRadius.circular(12),
                             child: InputDecorator(
                               decoration: InputDecoration(
@@ -321,7 +337,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                   padding: const EdgeInsets.symmetric(
                                       horizontal: 12, vertical: 10),
                                   child: Text(
-                                    _selectedCountry.flag,
+                                    _selectedNationality.flag,
                                     style: const TextStyle(fontSize: 22),
                                   ),
                                 ),
@@ -337,8 +353,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                               ),
                               child: Text(
                                 LanguageService.currentLang.value == 'ar'
-                                    ? _selectedCountry.nameAr
-                                    : _selectedCountry.nameEn,
+                                    ? _selectedNationality.nameAr
+                                    : _selectedNationality.nameEn,
                                 style: const TextStyle(
                                   fontSize: 15,
                                   fontWeight: FontWeight.w600,
@@ -403,7 +419,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                           const EdgeInsets.symmetric(
                                               horizontal: 12, vertical: 12),
                                       prefixIcon: InkWell(
-                                        onTap: _pickCountry,
+                                        onTap: _pickPhoneCountry,
                                         borderRadius: BorderRadius.circular(12),
                                         child: Padding(
                                           padding:
@@ -413,7 +429,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                             mainAxisSize: MainAxisSize.min,
                                             children: [
                                               Text(
-                                                _selectedCountry.flag,
+                                                _selectedPhoneCountry.flag,
                                                 style: const TextStyle(
                                                     fontSize: 20),
                                               ),
@@ -422,7 +438,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                                 textDirection:
                                                     TextDirection.ltr,
                                                 child: Text(
-                                                  _selectedCountry.dialCode,
+                                                  _selectedPhoneCountry.dialCode,
                                                   style: const TextStyle(
                                                     color: AppColors.primary,
                                                     fontWeight: FontWeight.bold,

@@ -244,7 +244,7 @@ export function AddApartmentModal({
         features_ar: featArrAr,
         features_en: featArrEn,
         images,
-        description: `${descAr} (${bathrooms})`.trim(),
+        description: descAr,
         description_ar: descAr,
         description_en: descEn,
       };
