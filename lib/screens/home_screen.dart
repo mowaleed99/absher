@@ -1202,7 +1202,7 @@ class _HomeScreenState extends State<HomeScreen>
     // Server-side filters (rental_type, rooms_count, district_id) are applied via API.
     // Only client-side filters remain: university (JSON array field), price (free-text string).
 
-    // University filter (cross-language matching supporting Arabic, English, IDs, and abbreviations)
+    // University filter (Strict matching based on Dashboard assignments, ID, full name, or university code)
     if (_selectedUniversities.isNotEmpty) {
       filteredApts = filteredApts.where((a) {
         final aptUnis = (a['universities'] as List?)
@@ -1210,17 +1210,18 @@ class _HomeScreenState extends State<HomeScreen>
                 .toList() ??
             [];
         final prox = (a['proximity'] ?? '').toString();
-        final tit = (a['title'] ?? '').toString();
-        final desc = (a['description'] ?? '').toString();
-        final combined = '$prox $tit $desc ${aptUnis.join(" ")}'.toLowerCase();
+        final aptUnisJoined = aptUnis.join(' ');
+        final uniContext = '$aptUnisJoined | $prox';
 
         return _selectedUniversities.any((selected) {
           final selLower = selected.toLowerCase().trim();
-          if (aptUnis.contains(selected) || combined.contains(selLower)) {
+
+          // 1. Direct match in universities array
+          if (aptUnis.any((u) => u.toLowerCase() == selLower)) {
             return true;
           }
 
-          // Look up matching university object in _universitiesList
+          // 2. Look up matching university object in _universitiesList
           University? matchedUni;
           for (final u in _universitiesList) {
             if (u.name.toLowerCase() == selLower ||
@@ -1233,52 +1234,39 @@ class _HomeScreenState extends State<HomeScreen>
           }
 
           if (matchedUni != null) {
-            // Check by ID
             final idStr = matchedUni.id.toString();
+            // Match by ID in apt['universities']
             if (aptUnis.contains(idStr)) return true;
 
-            // Check by Arabic name
             final nameArLower = matchedUni.nameAr.toLowerCase().trim();
-            if (nameArLower.isNotEmpty &&
-                (aptUnis.any((u) => u.toLowerCase().contains(nameArLower)) ||
-                    combined.contains(nameArLower))) {
-              return true;
-            }
-
-            // Check by English name
             final nameEnLower = matchedUni.nameEn.toLowerCase().trim();
-            if (nameEnLower.isNotEmpty &&
-                (aptUnis.any((u) => u.toLowerCase().contains(nameEnLower)) ||
-                    combined.contains(nameEnLower))) {
+
+            // Match full Arabic or English name in apt['universities']
+            if (aptUnis.any((u) {
+              final uLow = u.toLowerCase().trim();
+              return (nameArLower.isNotEmpty && (uLow == nameArLower || uLow.contains(nameArLower) || nameArLower.contains(uLow))) ||
+                     (nameEnLower.isNotEmpty && (uLow == nameEnLower || uLow.contains(nameEnLower) || nameEnLower.contains(uLow)));
+            })) {
               return true;
             }
 
-            // Check abbreviation in parentheses e.g. (CIU), (SEU), (EU), (GRUNI)
+            // Match unique code in parentheses like (TSMU), (CIU), (SEU), (EU), (IBSU), (GRUNI), (TSU), (SSU), (ISU)
             final match = RegExp(r'\(([A-Za-z0-9]+)\)')
                 .firstMatch("${matchedUni.nameAr} ${matchedUni.nameEn}");
             if (match != null) {
-              final code = match.group(1)!.toLowerCase();
-              if (combined.contains('($code)') || combined.contains(code)) {
+              final code = match.group(1)!;
+              final parenCode = '($code)'.toLowerCase();
+              if (uniContext.toLowerCase().contains(parenCode)) {
                 return true;
               }
             }
 
-            // Check main keyword (e.g. "caucasus", "قوقاز")
-            for (final keyword in [nameArLower, nameEnLower]) {
-              final words = keyword
-                  .split(RegExp(r'[\s\(\)]+'))
-                  .where((w) =>
-                      w.length > 3 &&
-                      w != 'جامعة' &&
-                      w != 'university' &&
-                      w != 'international' &&
-                      w != 'state' &&
-                      w != 'دراسية' &&
-                      w != 'الدولية' &&
-                      w != 'الحكومية');
-              for (final w in words) {
-                if (combined.contains(w)) return true;
-              }
+            // Match full name in proximity string
+            if (nameArLower.isNotEmpty && prox.toLowerCase().contains(nameArLower)) {
+              return true;
+            }
+            if (nameEnLower.isNotEmpty && prox.toLowerCase().contains(nameEnLower)) {
+              return true;
             }
           }
 
