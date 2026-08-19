@@ -359,6 +359,8 @@ class ApiService {
               .map((u) => <String, dynamic>{
                     'id': u['id']?.toString() ?? '',
                     'name': u['name']?.toString() ?? '',
+                    'name_ar': u['name_ar']?.toString() ?? '',
+                    'name_en': u['name_en']?.toString() ?? '',
                   })
               .toList();
         }
@@ -389,6 +391,8 @@ class ApiService {
               .map((d) => <String, dynamic>{
                     'id': d['id']?.toString() ?? '',
                     'name': d['name']?.toString() ?? '',
+                    'name_ar': d['name_ar']?.toString() ?? '',
+                    'name_en': d['name_en']?.toString() ?? '',
                   })
               .toList();
         }

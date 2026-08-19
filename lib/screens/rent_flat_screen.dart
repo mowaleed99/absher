@@ -536,6 +536,7 @@ class _RentFlatScreenState extends State<RentFlatScreen> {
 
             // 4. Uni
             DropdownButtonFormField<String?>(
+              isExpanded: true,
               initialValue: _unisList.any((u) => u['id']?.toString() == _selectedUniId)
                   ? _selectedUniId
                   : null,
@@ -549,8 +550,12 @@ class _RentFlatScreenState extends State<RentFlatScreen> {
               items: _unisList.map((uni) {
                 return DropdownMenuItem<String?>(
                   value: uni['id']?.toString(),
-                  child: Text(uni['name']?.toString() ?? '',
-                      style: const TextStyle(fontSize: 13)),
+                  child: Text(
+                    uni['name']?.toString() ?? '',
+                    overflow: TextOverflow.ellipsis,
+                    maxLines: 1,
+                    style: const TextStyle(fontSize: 13),
+                  ),
                 );
               }).toList(),
               onChanged: (val) => setState(() => _selectedUniId = val),

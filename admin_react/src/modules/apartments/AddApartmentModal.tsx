@@ -175,23 +175,35 @@ export function AddApartmentModal({
     setIsSubmitting(true);
 
     try {
-      // Build proximity list
-      const proxList: string[] = [];
+      // Build bilingual proximity lists
+      const proxListAr: string[] = [];
+      const proxListEn: string[] = [];
+      const allSelectedUniIds: (string | number)[] = [];
+
       selectedUnis.forEach(uniName => {
-        const uniObj = universities.find(u => u.name === uniName || u.name_ar === uniName);
+        const uniObj = universities.find(u => u.name === uniName || u.name_ar === uniName || u.name_en === uniName || String(u.id) === uniName);
         if (uniObj) {
+          allSelectedUniIds.push(uniObj.id);
           const time = uniTimes[String(uniObj.id)];
+          const uNameAr = uniObj.name_ar || uniObj.name;
+          const uNameEn = uniObj.name_en || uniObj.name;
           if (time) {
-            proxList.push(`${uniName} (${time} ${t('form.uni_walk_time')})`);
+            proxListAr.push(`${uNameAr} (${time} ${t('form.uni_walk_time')})`);
+            proxListEn.push(`${uNameEn} (${time} min walk)`);
           } else {
-            proxList.push(uniName);
+            proxListAr.push(uNameAr);
+            proxListEn.push(uNameEn);
           }
         }
       });
 
-      const finalProximityAr = proxList.length > 0
-        ? `${proximityAr} | ${proxList.join(' ، ')}`.replace(/^ \| /, '')
+      const finalProximityAr = proxListAr.length > 0
+        ? `${proximityAr} | ${proxListAr.join(' ، ')}`.replace(/^ \| /, '')
         : proximityAr;
+
+      const finalProximityEn = proxListEn.length > 0
+        ? (proximityEn ? `${proximityEn} | ${proxListEn.join(' , ')}` : proxListEn.join(' , '))
+        : proximityEn;
 
       const featArrAr = featuresAr.split(/[،,]/).map(f => f.trim()).filter(Boolean);
       const featArrEn = featuresEn.split(/[,،]/).map(f => f.trim()).filter(Boolean);
@@ -211,8 +223,8 @@ export function AddApartmentModal({
         location_en: locationEn,
         proximity: finalProximityAr,
         proximity_ar: finalProximityAr,
-        proximity_en: proximityEn,
-        universities: selectedUnis,
+        proximity_en: finalProximityEn,
+        universities: Array.from(new Set([...allSelectedUniIds.map(String), ...selectedUnis])),
         capacity: capacityAr || t('apartments.default_rooms_desc'),
         capacity_ar: capacityAr || t('apartments.default_rooms_desc'),
         capacity_en: capacityEn || '',

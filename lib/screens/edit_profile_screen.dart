@@ -388,6 +388,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
                       // University Dropdown
                       DropdownButtonFormField<String>(
+                        isExpanded: true,
                         initialValue: _selectedUni,
                         decoration: InputDecoration(
                           labelText: LanguageService.tr('georgia_uni'),
@@ -399,8 +400,12 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                         items: _universities.map((uni) {
                           return DropdownMenuItem(
                               value: uni,
-                              child: Text(uni,
-                                  style: const TextStyle(fontSize: 13)));
+                              child: Text(
+                                uni,
+                                overflow: TextOverflow.ellipsis,
+                                maxLines: 1,
+                                style: const TextStyle(fontSize: 13),
+                              ));
                         }).toList(),
                         onChanged: _isSaving
                             ? null

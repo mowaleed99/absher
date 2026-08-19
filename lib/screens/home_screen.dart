@@ -757,6 +757,42 @@ class _HomeScreenState extends State<HomeScreen>
     }
   }
 
+  String _getLocalizedUniversity(String? rawUni) {
+    if (rawUni == null || rawUni.trim().isEmpty) return '';
+    final isEn = LanguageService.currentLang.value == 'en';
+    final trimmed = rawUni.trim();
+
+    // 1. Direct match with university items
+    for (final u in _universitiesList) {
+      if (u.name == trimmed ||
+          u.nameAr == trimmed ||
+          u.nameEn == trimmed ||
+          (u.nameAr.isNotEmpty && trimmed.contains(u.nameAr)) ||
+          (u.nameEn.isNotEmpty && trimmed.contains(u.nameEn))) {
+        return isEn
+            ? (u.nameEn.isNotEmpty ? u.nameEn : u.name)
+            : (u.nameAr.isNotEmpty ? u.nameAr : u.name);
+      }
+    }
+
+    // 2. Extract abbreviation in parentheses like (GRUNI), (CIU), (SEU)
+    final match = RegExp(r'\(([A-Za-z0-9]+)\)').firstMatch(trimmed);
+    if (match != null) {
+      final code = match.group(1)!;
+      for (final u in _universitiesList) {
+        if (u.name.contains('($code)') ||
+            u.nameAr.contains('($code)') ||
+            u.nameEn.contains('($code)')) {
+          return isEn
+              ? (u.nameEn.isNotEmpty ? u.nameEn : u.name)
+              : (u.nameAr.isNotEmpty ? u.nameAr : u.name);
+        }
+      }
+    }
+
+    return trimmed;
+  }
+
   Future<void> _loadDistricts() async {
     final list = await ApiService.getDistricts();
     if (mounted) {
@@ -1166,23 +1202,87 @@ class _HomeScreenState extends State<HomeScreen>
     // Server-side filters (rental_type, rooms_count, district_id) are applied via API.
     // Only client-side filters remain: university (JSON array field), price (free-text string).
 
-    // University filter (client-side — stored as JSON array, not easily filterable in SQL)
+    // University filter (cross-language matching supporting Arabic, English, IDs, and abbreviations)
     if (_selectedUniversities.isNotEmpty) {
       filteredApts = filteredApts.where((a) {
-        final aptUnis =
-            (a['universities'] as List?)?.map((e) => e.toString()).toList() ??
-                [];
-        if (aptUnis.isNotEmpty) {
-          return _selectedUniversities
-              .any((selected) => aptUnis.contains(selected));
-        }
+        final aptUnis = (a['universities'] as List?)
+                ?.map((e) => e.toString().trim())
+                .toList() ??
+            [];
         final prox = (a['proximity'] ?? '').toString();
         final tit = (a['title'] ?? '').toString();
         final desc = (a['description'] ?? '').toString();
-        final combined = '$prox $tit $desc';
-        return _selectedUniversities.any((uni) {
-          final shortUni = uni.split(' ')[0];
-          return combined.contains(uni) || combined.contains(shortUni);
+        final combined = '$prox $tit $desc ${aptUnis.join(" ")}'.toLowerCase();
+
+        return _selectedUniversities.any((selected) {
+          final selLower = selected.toLowerCase().trim();
+          if (aptUnis.contains(selected) || combined.contains(selLower)) {
+            return true;
+          }
+
+          // Look up matching university object in _universitiesList
+          University? matchedUni;
+          for (final u in _universitiesList) {
+            if (u.name.toLowerCase() == selLower ||
+                u.nameAr.toLowerCase() == selLower ||
+                u.nameEn.toLowerCase() == selLower ||
+                u.id.toString() == selected) {
+              matchedUni = u;
+              break;
+            }
+          }
+
+          if (matchedUni != null) {
+            // Check by ID
+            final idStr = matchedUni.id.toString();
+            if (aptUnis.contains(idStr)) return true;
+
+            // Check by Arabic name
+            final nameArLower = matchedUni.nameAr.toLowerCase().trim();
+            if (nameArLower.isNotEmpty &&
+                (aptUnis.any((u) => u.toLowerCase().contains(nameArLower)) ||
+                    combined.contains(nameArLower))) {
+              return true;
+            }
+
+            // Check by English name
+            final nameEnLower = matchedUni.nameEn.toLowerCase().trim();
+            if (nameEnLower.isNotEmpty &&
+                (aptUnis.any((u) => u.toLowerCase().contains(nameEnLower)) ||
+                    combined.contains(nameEnLower))) {
+              return true;
+            }
+
+            // Check abbreviation in parentheses e.g. (CIU), (SEU), (EU), (GRUNI)
+            final match = RegExp(r'\(([A-Za-z0-9]+)\)')
+                .firstMatch("${matchedUni.nameAr} ${matchedUni.nameEn}");
+            if (match != null) {
+              final code = match.group(1)!.toLowerCase();
+              if (combined.contains('($code)') || combined.contains(code)) {
+                return true;
+              }
+            }
+
+            // Check main keyword (e.g. "caucasus", "قوقاز")
+            for (final keyword in [nameArLower, nameEnLower]) {
+              final words = keyword
+                  .split(RegExp(r'[\s\(\)]+'))
+                  .where((w) =>
+                      w.length > 3 &&
+                      w != 'جامعة' &&
+                      w != 'university' &&
+                      w != 'international' &&
+                      w != 'state' &&
+                      w != 'دراسية' &&
+                      w != 'الدولية' &&
+                      w != 'الحكومية');
+              for (final w in words) {
+                if (combined.contains(w)) return true;
+              }
+            }
+          }
+
+          return false;
         });
       }).toList();
     }
@@ -1332,7 +1432,7 @@ class _HomeScreenState extends State<HomeScreen>
                                       usr.university!.isNotEmpty) ...[
                                     const SizedBox(height: 4),
                                     Text(
-                                      usr.university!,
+                                      _getLocalizedUniversity(usr.university),
                                       style: const TextStyle(
                                           color: AppColors.accentLight,
                                           fontSize: 13),

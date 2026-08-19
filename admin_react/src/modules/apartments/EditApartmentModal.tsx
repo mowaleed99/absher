@@ -242,7 +242,15 @@ export function EditApartmentModal({
         proximity: proximityAr,
         proximity_ar: proximityAr,
         proximity_en: proximityEn,
-        universities: selectedUnis,
+        universities: Array.from(
+          new Set([
+            ...selectedUnis,
+            ...selectedUnis.map(uName => {
+              const u = universities.find(x => x.name === uName || x.name_ar === uName || x.name_en === uName || String(x.id) === uName);
+              return u ? String(u.id) : null;
+            }).filter(Boolean) as string[],
+          ])
+        ),
         capacity: capacityAr || t('apartments.default_rooms_desc'),
         capacity_ar: capacityAr || t('apartments.default_rooms_desc'),
         capacity_en: capacityEn || '',

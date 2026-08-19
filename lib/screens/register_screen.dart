@@ -510,6 +510,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                   initialValue: '__loading__',
                                 )
                               : DropdownButtonFormField<String>(
+                                  isExpanded: true,
                                   initialValue: _selectedUni.isEmpty ? null : _selectedUni,
                                   decoration: InputDecoration(
                                     labelText: LanguageService.tr('georgia_uni'),
@@ -521,8 +522,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                   items: _universities.map((uni) {
                                     return DropdownMenuItem(
                                         value: uni,
-                                        child: Text(uni,
-                                            style: const TextStyle(fontSize: 13)));
+                                        child: Text(
+                                          uni,
+                                          overflow: TextOverflow.ellipsis,
+                                          maxLines: 1,
+                                          style: const TextStyle(fontSize: 13),
+                                        ));
                                   }).toList(),
                                   onChanged: (val) =>
                                       setState(() => _selectedUni = val!),
