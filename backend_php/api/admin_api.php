@@ -21,7 +21,10 @@ function saveBase64IfPresent($url) {
     return $url;
 }
 
-$data = json_decode(file_get_contents("php://input"), true);
+$data = json_decode(file_get_contents("php://input"), true) ?? [];
+if (isset($data['body']) && is_array($data['body'])) {
+    $data = array_merge($data, $data['body']);
+}
 $action = $_GET['action'] ?? ($data['action'] ?? '');
 try {
     if ($action ==='get_all') {

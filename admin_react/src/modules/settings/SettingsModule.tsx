@@ -96,12 +96,9 @@ export function SettingsModule() {
     setIsSavingProfile(true);
     try {
       const res = await apiFetch<{ admin: AdminUser }>('update_my_profile', {
-        method: 'POST',
-        body: {
-          full_name: fullName.trim(),
-          job_title: jobTitle.trim() || 'مشرف',
-          email: email.trim(),
-        },
+        full_name: fullName.trim(),
+        job_title: jobTitle.trim() || 'مشرف',
+        email: email.trim(),
       });
 
       if (res.success) {
@@ -140,11 +137,8 @@ export function SettingsModule() {
     setIsChangingPass(true);
     try {
       const res = await apiFetch('change_my_password', {
-        method: 'POST',
-        body: {
-          current_password: currentPassword,
-          new_password: newPassword,
-        },
+        current_password: currentPassword,
+        new_password: newPassword,
       });
 
       if (res.success) {
@@ -203,14 +197,11 @@ export function SettingsModule() {
     try {
       if (modalMode === 'add') {
         const res = await apiFetch('create_staff', {
-          method: 'POST',
-          body: {
-            full_name: staffFullName.trim(),
-            job_title: staffJobTitle.trim() || 'مشرف',
-            username: staffUsername.trim(),
-            email: staffEmail.trim(),
-            password: staffPassword,
-          },
+          full_name: staffFullName.trim(),
+          job_title: staffJobTitle.trim() || 'مشرف',
+          username: staffUsername.trim(),
+          email: staffEmail.trim(),
+          password: staffPassword,
         });
 
         if (res.success) {
@@ -222,14 +213,11 @@ export function SettingsModule() {
         }
       } else {
         const res = await apiFetch('update_staff', {
-          method: 'POST',
-          body: {
-            id: editingStaffId,
-            full_name: staffFullName.trim(),
-            job_title: staffJobTitle.trim() || 'مشرف',
-            email: staffEmail.trim(),
-            password: staffPassword.trim() || undefined,
-          },
+          id: editingStaffId,
+          full_name: staffFullName.trim(),
+          job_title: staffJobTitle.trim() || 'مشرف',
+          email: staffEmail.trim(),
+          password: staffPassword.trim() || undefined,
         });
 
         if (res.success) {
@@ -267,8 +255,8 @@ export function SettingsModule() {
 
     try {
       const res = await apiFetch('toggle_staff_status', {
-        method: 'POST',
-        body: { id: member.id, is_active: newStatus },
+        id: member.id,
+        is_active: newStatus,
       });
 
       if (res.success) {
@@ -302,8 +290,7 @@ export function SettingsModule() {
 
     try {
       const res = await apiFetch('delete_staff', {
-        method: 'POST',
-        body: { id: member.id },
+        id: member.id,
       });
 
       if (res.success) {
