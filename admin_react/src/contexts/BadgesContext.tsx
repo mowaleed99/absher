@@ -5,6 +5,7 @@ import { useAuth } from './AuthContext';
 interface BadgesContextType {
   pendingReviewsCount: number;
   negativeReviewsCount: number;
+  rejectedReviewsCount: number;
   totalReviewsCount: number;
   pendingFeedbackCount: number;
   pendingChatsCount: number;
@@ -16,6 +17,7 @@ interface BadgesContextType {
 const BadgesContext = createContext<BadgesContextType>({
   pendingReviewsCount: 0,
   negativeReviewsCount: 0,
+  rejectedReviewsCount: 0,
   totalReviewsCount: 0,
   pendingFeedbackCount: 0,
   pendingChatsCount: 0,
@@ -30,6 +32,7 @@ export function BadgesProvider({ children }: { children: React.ReactNode }) {
   const { isAuthenticated } = useAuth();
   const [pendingReviewsCount, setPendingReviewsCount] = useState<number>(0);
   const [negativeReviewsCount, setNegativeReviewsCount] = useState<number>(0);
+  const [rejectedReviewsCount, setRejectedReviewsCount] = useState<number>(0);
   const [totalReviewsCount, setTotalReviewsCount] = useState<number>(0);
   const [pendingFeedbackCount, setPendingFeedbackCount] = useState<number>(0);
   const [pendingChatsCount, setPendingChatsCount] = useState<number>(0);
@@ -39,6 +42,7 @@ export function BadgesProvider({ children }: { children: React.ReactNode }) {
     if (!isAuthenticated) {
       setPendingReviewsCount(0);
       setNegativeReviewsCount(0);
+      setRejectedReviewsCount(0);
       setTotalReviewsCount(0);
       setPendingFeedbackCount(0);
       setPendingChatsCount(0);
@@ -49,7 +53,7 @@ export function BadgesProvider({ children }: { children: React.ReactNode }) {
     try {
       const result = await apiFetch<Record<string, unknown>>('get_all');
       if (result.success && result.data) {
-        // 1. Reviews: Total, Pending, Negative
+        // 1. Reviews: Total, Pending, Negative, Rejected (غير المرئي)
         if (Array.isArray(result.data.reviews)) {
           const total = result.data.reviews.length;
           const pCount = result.data.reviews.filter(
@@ -58,14 +62,19 @@ export function BadgesProvider({ children }: { children: React.ReactNode }) {
           const negCount = result.data.reviews.filter(
             (r: Record<string, unknown>) => Number(r.rating || 5) <= 2
           ).length;
+          const rejCount = result.data.reviews.filter(
+            (r: Record<string, unknown>) => String(r.status || '').trim().toLowerCase() === 'rejected'
+          ).length;
 
           setTotalReviewsCount(total);
           setPendingReviewsCount(pCount);
           setNegativeReviewsCount(negCount);
+          setRejectedReviewsCount(rejCount);
         } else {
           setTotalReviewsCount(0);
           setPendingReviewsCount(0);
           setNegativeReviewsCount(0);
+          setRejectedReviewsCount(0);
         }
 
         // 2. Feedback: status === 'pending'
@@ -129,6 +138,7 @@ export function BadgesProvider({ children }: { children: React.ReactNode }) {
       value={{
         pendingReviewsCount,
         negativeReviewsCount,
+        rejectedReviewsCount,
         totalReviewsCount,
         pendingFeedbackCount,
         pendingChatsCount,

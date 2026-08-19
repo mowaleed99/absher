@@ -12,6 +12,7 @@ export function AdminLayout() {
   const {
     pendingReviewsCount,
     negativeReviewsCount,
+    rejectedReviewsCount,
     totalReviewsCount,
     pendingFeedbackCount,
     pendingChatsCount,
@@ -30,8 +31,9 @@ export function AdminLayout() {
     return count > 99 ? '99+' : String(count);
   };
 
-  const reviewAlertsCount = pendingReviewsCount + negativeReviewsCount;
-  const reviewAlertsText = formatBadge(reviewAlertsCount);
+  const negativeReviewsText = formatBadge(negativeReviewsCount);
+  const rejectedReviewsText = formatBadge(rejectedReviewsCount);
+  const pendingReviewsText = formatBadge(pendingReviewsCount);
   const totalReviewsText = formatBadge(totalReviewsCount);
   const feedbackBadgeText = formatBadge(pendingFeedbackCount);
   const chatsBadgeText = formatBadge(pendingChatsCount);
@@ -179,28 +181,70 @@ export function AdminLayout() {
             >
               <i className="fa-solid fa-star"></i>
               <span style={{ flex: 1 }}>{t('nav.reviews')}</span>
-              <div style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', flexShrink: 0 }}>
-                {reviewAlertsText && (
+              <div style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', flexShrink: 0 }}>
+                {negativeReviewsText && (
                   <span
-                    title={lang === 'ar' ? `تنبيه: ${reviewAlertsText} تقييمات بحاجة لمتابعة (سلبية أو معلقة)` : `Alert: ${reviewAlertsText} reviews require attention`}
+                    title={lang === 'ar' ? `تقييمات سلبية (1-2 نجوم): ${negativeReviewsText}` : `Negative reviews (1-2 stars): ${negativeReviewsText}`}
                     style={{
                       background: '#ef4444',
                       color: '#ffffff',
-                      border: '1px solid rgba(255, 255, 255, 0.4)',
                       minWidth: '20px',
                       height: '20px',
-                      padding: '0 5px',
+                      padding: '0 6px',
                       borderRadius: '10px',
-                      fontSize: '0.7rem',
+                      fontSize: '0.72rem',
                       fontWeight: 800,
                       lineHeight: 1,
                       display: 'inline-flex',
                       alignItems: 'center',
                       justifyContent: 'center',
-                      boxShadow: '0 2px 4px rgba(239, 68, 68, 0.4)',
+                      boxShadow: '0 2px 5px rgba(239, 68, 68, 0.4)',
                     }}
                   >
-                    ⚠️ {reviewAlertsText}
+                    {negativeReviewsText}
+                  </span>
+                )}
+                {rejectedReviewsText && (
+                  <span
+                    title={lang === 'ar' ? `غير مرئي / مرفوض: ${rejectedReviewsText}` : `Hidden / Rejected: ${rejectedReviewsText}`}
+                    style={{
+                      background: '#f59e0b',
+                      color: '#0f172a',
+                      minWidth: '20px',
+                      height: '20px',
+                      padding: '0 6px',
+                      borderRadius: '10px',
+                      fontSize: '0.72rem',
+                      fontWeight: 800,
+                      lineHeight: 1,
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      boxShadow: '0 2px 5px rgba(245, 158, 11, 0.3)',
+                    }}
+                  >
+                    {rejectedReviewsText}
+                  </span>
+                )}
+                {pendingReviewsText && (
+                  <span
+                    title={lang === 'ar' ? `قيد المراجعة: ${pendingReviewsText}` : `Pending: ${pendingReviewsText}`}
+                    style={{
+                      background: '#3b82f6',
+                      color: '#ffffff',
+                      minWidth: '20px',
+                      height: '20px',
+                      padding: '0 6px',
+                      borderRadius: '10px',
+                      fontSize: '0.72rem',
+                      fontWeight: 800,
+                      lineHeight: 1,
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                    }}
+                  >
+                    {pendingReviewsText}
                   </span>
                 )}
                 {totalReviewsText && (
