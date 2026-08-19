@@ -1237,13 +1237,20 @@ class ApiService {
       if (response.statusCode == 200 && data['success'] == true) {
         return {
           'success': true,
-          'message': data['message'] ?? 'تم تغيير كلمة المرور بنجاح',
+          'message': data['message'] ?? LanguageService.tr('password_changed_success'),
         };
       } else {
+        String msg = data['message']?.toString() ?? '';
+        if (response.statusCode == 401 ||
+            msg.toLowerCase().contains('incorrect current password') ||
+            msg.contains('كلمة المرور الحالية غير صحيحة')) {
+          msg = LanguageService.tr('incorrect_current_password');
+        } else if (msg.isEmpty) {
+          msg = LanguageService.tr('error_occurred');
+        }
         return {
           'success': false,
-          'message': data['message'] ??
-              'خطأ في تغيير كلمة المرور (${response.statusCode})',
+          'message': msg,
         };
       }
     } catch (e) {

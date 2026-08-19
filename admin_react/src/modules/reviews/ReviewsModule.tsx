@@ -25,12 +25,15 @@ export function ReviewsModule() {
     { key: 'pending', label: t('reviews.status_pending'), icon: 'fa-clock' },
     { key: 'approved', label: t('reviews.status_approved'), icon: 'fa-circle-check' },
     { key: 'rejected', label: t('reviews.status_rejected'), icon: 'fa-ban' },
+    { key: 'low_rating', label: lang === 'ar' ? 'تقييمات منخفضة (1-2 ★)' : 'Low Ratings (1-2 ★)', icon: 'fa-triangle-exclamation', color: '#ef4444' },
   ];
 
   const filteredReviews = useMemo(() => {
     return reviews.filter((r) => {
-      // 1. Status Filter
-      if (statusFilter !== 'all') {
+      // 1. Status / Rating Filter
+      if (statusFilter === 'low_rating') {
+        if ((r.rating || 0) > 2) return false;
+      } else if (statusFilter !== 'all') {
         if (r.status !== statusFilter) return false;
       }
 
@@ -133,6 +136,8 @@ export function ReviewsModule() {
             const isActive = statusFilter === opt.key;
             const count = opt.key === 'all'
               ? reviews.length
+              : opt.key === 'low_rating'
+              ? reviews.filter((r) => (r.rating || 0) <= 2).length
               : reviews.filter((r) => r.status === opt.key).length;
 
             return (

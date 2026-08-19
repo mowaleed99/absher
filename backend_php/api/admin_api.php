@@ -983,26 +983,38 @@ try {
                     }
                 }
 
-                if ($chat) {
-                    $chatId = $chat['id'];
-                    $conn->prepare("UPDATE chats SET last_msg = ?, status = 'تحديث الطلب', updated_at = NOW() WHERE id = ?")->execute([$msgText, $chatId]);
-                    $stmtMsg = $conn->prepare("INSERT INTO chat_messages (chat_id, sender, text) VALUES (?, 'admin', ?)");
-                    $stmtMsg->execute([$chatId, $msgText]);
-                } else {
-                    // Only recreate chat if the student account actually exists in the database
-                    $studentExists = true;
-                    if ($studentId > 0) {
-                        $stCheck = $conn->prepare("SELECT id FROM students WHERE id = ?");
-                        $stCheck->execute([$studentId]);
-                        $studentExists = (bool)$stCheck->fetch();
-                    }
-                    if ($studentExists) {
-                        $conn->prepare("INSERT INTO chats (student_id, student_name, phone, last_msg, status, updated_at) VALUES (?, ?, ?, ?, 'تحديث الطلب', NOW())")
-                             ->execute([$studentId, $reqData['student_name'] ?? 'طالب', $phone, $msgText]);
-                        $chatId = $conn->lastInsertId();
+                try {
+                    if ($chat) {
+                        $chatId = $chat['id'];
+                        $conn->prepare("UPDATE chats SET last_msg = ?, status = 'تحديث الطلب', updated_at = NOW() WHERE id = ?")->execute([$msgText, $chatId]);
                         $stmtMsg = $conn->prepare("INSERT INTO chat_messages (chat_id, sender, text) VALUES (?, 'admin', ?)");
                         $stmtMsg->execute([$chatId, $msgText]);
+                    } else {
+                        // Only recreate chat if the student account actually exists in the database
+                        $studentExists = true;
+                        if ($studentId > 0) {
+                            $stCheck = $conn->prepare("SELECT id FROM students WHERE id = ?");
+                            $stCheck->execute([$studentId]);
+                            $studentExists = (bool)$stCheck->fetch();
+                        }
+                        if ($studentExists && !empty($phone)) {
+                            $pCheck = $conn->prepare("SELECT id FROM chats WHERE phone = ? LIMIT 1");
+                            $pCheck->execute([$phone]);
+                            $existingChat = $pCheck->fetch(PDO::FETCH_ASSOC);
+                            if ($existingChat) {
+                                $chatId = $existingChat['id'];
+                                $conn->prepare("UPDATE chats SET last_msg = ?, status = 'تحديث الطلب', updated_at = NOW() WHERE id = ?")->execute([$msgText, $chatId]);
+                                $conn->prepare("INSERT INTO chat_messages (chat_id, sender, text) VALUES (?, 'admin', ?)")->execute([$chatId, $msgText]);
+                            } else {
+                                $conn->prepare("INSERT INTO chats (student_id, student_name, phone, last_msg, status, updated_at) VALUES (?, ?, ?, ?, 'تحديث الطلب', NOW())")
+                                     ->execute([$studentId > 0 ? $studentId : null, $reqData['student_name'] ?? 'طالب', $phone, $msgText]);
+                                $chatId = $conn->lastInsertId();
+                                $conn->prepare("INSERT INTO chat_messages (chat_id, sender, text) VALUES (?, 'admin', ?)")->execute([$chatId, $msgText]);
+                            }
+                        }
                     }
+                } catch (Exception $chatEx) {
+                    error_log("Failed to insert chat message on request update: " . $chatEx->getMessage());
                 }
             }
 

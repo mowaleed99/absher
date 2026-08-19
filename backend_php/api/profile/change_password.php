@@ -14,12 +14,12 @@ $newPassword = $data['new_password'] ?? '';
 
 // 1. Policy & Format Validation
 if (empty($currentPassword)) {
-    jsonResponse(false, "Current password is required.", 400);
+    jsonResponse(false, "يرجى إدخال كلمة المرور الحالية", 400);
 }
 
 $newPasswordLength = strlen($newPassword);
 if ($newPasswordLength < 8 || $newPasswordLength > 128) {
-    jsonResponse(false, "New password must be between 8 and 128 characters.", 400);
+    jsonResponse(false, "يجب أن تكون كلمة المرور الجديدة بين 8 و 128 حرفاً", 400);
 }
 
 try {
@@ -29,7 +29,7 @@ try {
     $student = $stmt->fetch(PDO::FETCH_ASSOC);
 
     if (!$student) {
-        jsonResponse(false, "Student not found.", 404);
+        jsonResponse(false, "لم يتم العثور على الحساب", 404);
     }
 
     $storedHash = $student['password'];
@@ -44,7 +44,7 @@ try {
     }
 
     if (!$isValid) {
-        jsonResponse(false, "Incorrect current password.", 401);
+        jsonResponse(false, "كلمة المرور الحالية غير صحيحة", 401);
     }
 
     // 4. Update with New Hashed Password
@@ -52,10 +52,10 @@ try {
     $updateStmt = $conn->prepare("UPDATE students SET password = ? WHERE id = ?");
     $updateStmt->execute([$newHash, $studentId]);
 
-    jsonResponse(true, "Password changed successfully.", 200);
+    jsonResponse(true, "تم تغيير كلمة المرور بنجاح", 200);
 
 } catch (PDOException $e) {
     error_log("Database error in " . __FILE__ . " on line " . __LINE__ . ": " . $e->getMessage());
-    jsonResponse(false, "Database error occurred. Please try again later.", 500);
+    jsonResponse(false, "حدث خطأ أثناء الاتصال بقاعدة البيانات. يرجى المحاولة لاحقاً.", 500);
 }
 ?>

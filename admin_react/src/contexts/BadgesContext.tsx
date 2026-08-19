@@ -41,11 +41,13 @@ export function BadgesProvider({ children }: { children: React.ReactNode }) {
     try {
       const result = await apiFetch<Record<string, unknown>>('get_all');
       if (result.success && result.data) {
-        // 1. Reviews: status === 'pending'
+        // 1. Reviews: status === 'pending' OR (rating <= 2 AND status === 'approved')
         if (Array.isArray(result.data.reviews)) {
-          const pReviews = result.data.reviews.filter(
-            (r: Record<string, unknown>) => String(r.status || '').trim().toLowerCase() === 'pending'
-          );
+          const pReviews = result.data.reviews.filter((r: Record<string, unknown>) => {
+            const st = String(r.status || '').trim().toLowerCase();
+            const rating = Number(r.rating || 5);
+            return st === 'pending' || rating <= 2;
+          });
           setPendingReviewsCount(pReviews.length);
         } else {
           setPendingReviewsCount(0);

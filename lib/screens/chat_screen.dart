@@ -8,6 +8,7 @@ import '../services/realtime_sync_service.dart';
 import '../services/web_helper.dart';
 import '../services/language_service.dart';
 import '../models/student.dart';
+import 'login_screen.dart';
 
 class ChatScreen extends StatefulWidget {
   final Student? user;
@@ -280,7 +281,69 @@ class _ChatScreenState extends State<ChatScreen> {
     }
   }
 
+  void _showGuestLoginDialog() {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Row(
+          children: [
+            const Icon(Icons.lock_outline, color: AppColors.primary, size: 26),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                LanguageService.tr('login_required_title'),
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 18,
+                  color: AppColors.primary,
+                ),
+              ),
+            ),
+          ],
+        ),
+        content: Text(
+          LanguageService.tr('chat_guest_login_prompt'),
+          style: const TextStyle(fontSize: 14, height: 1.5, color: AppColors.textDark),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: Text(
+              LanguageService.tr('cancel'),
+              style: const TextStyle(color: AppColors.textMuted),
+            ),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.primary,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
+            ),
+            onPressed: () {
+              Navigator.pop(ctx);
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const LoginScreen()),
+              );
+            },
+            child: Text(
+              LanguageService.tr('login_btn'),
+              style: const TextStyle(fontWeight: FontWeight.bold),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Future<void> _sendMessage() async {
+    if (widget.user == null || _currentChatId == 0) {
+      _showGuestLoginDialog();
+      return;
+    }
+
     if (_messageController.text.trim().isEmpty) return;
     final text = _messageController.text.trim();
     final quoteText =
@@ -384,6 +447,11 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 
   Future<void> _sendMediaMessage(String type, String url, String text) async {
+    if (widget.user == null || _currentChatId == 0) {
+      _showGuestLoginDialog();
+      return;
+    }
+
     final quoteText =
         _replyingToMsg != null ? _replyingToMsg!['text']?.toString() ?? '' : '';
     final quoteSender = _replyingToMsg != null
@@ -413,9 +481,12 @@ class _ChatScreenState extends State<ChatScreen> {
     }
   }
 
-
-
   Future<void> _pickAndUploadMedia(bool isVideo) async {
+    if (widget.user == null || _currentChatId == 0) {
+      _showGuestLoginDialog();
+      return;
+    }
+
     try {
       final ImagePicker picker = ImagePicker();
       final XFile? file = isVideo
