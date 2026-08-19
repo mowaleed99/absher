@@ -15,18 +15,20 @@ $studentId = intval($_GET['student_id'] ?? ($_POST['student_id'] ?? 0));
 $chatId = intval($_GET['chat_id'] ?? ($_POST['chat_id'] ?? 0));
 
 try {
-    // 1. Apartments version (counts, max id, and max created/featured timestamp)
+    // 1. Apartments version (counts, max id, max updated_at/created_at, and full checksum)
     $aptStmt = $conn->query("
         SELECT CONCAT(
             COUNT(*), '_',
             COALESCE(MAX(id), 0), '_',
             COALESCE(
                 MAX(GREATEST(
+                    COALESCE(updated_at, '2026-01-01 00:00:00'),
                     COALESCE(created_at, '2026-01-01 00:00:00'),
                     COALESCE(featured_until, '2026-01-01 00:00:00')
                 )), 
                 '2026-01-01 00:00:00'
-            )
+            ), '_',
+            COALESCE(MD5(GROUP_CONCAT(CONCAT_WS(':', id, title, price, location, proximity, is_available, is_featured, universities, district_id, move_in_type, move_in_date) ORDER BY id ASC SEPARATOR '|')), '0')
         ) FROM apartments
     ");
     $apartmentsVersion = strval($aptStmt->fetchColumn() ?: '0');
