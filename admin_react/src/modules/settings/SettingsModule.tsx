@@ -68,9 +68,10 @@ export function SettingsModule() {
   const fetchStaff = useCallback(async () => {
     setIsLoadingStaff(true);
     try {
-      const res = await apiFetch<StaffMember[]>('get_staff');
-      if (res.success && Array.isArray(res.data)) {
-        setStaffList(res.data);
+      const res = await apiFetch<{ data?: StaffMember[]; staff?: StaffMember[] }>('get_staff');
+      if (res.success && res.data) {
+        const list = (res.data as Record<string, unknown>).data || (res.data as Record<string, unknown>).staff || (Array.isArray(res.data) ? res.data : []);
+        setStaffList(Array.isArray(list) ? (list as StaffMember[]) : []);
       }
     } catch {
       showToast(lang === 'ar' ? 'فشل تحميل بيانات فريق العمل' : 'Failed to load staff list', 'error');
