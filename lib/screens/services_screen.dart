@@ -1513,50 +1513,34 @@ class _ServicesScreenState extends State<ServicesScreen> {
                             height: 1.3),
                       ),
                       const SizedBox(height: 6),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 10, vertical: 4),
-                        decoration: BoxDecoration(
-                          color: ((s['price_points'] as int? ?? 0) > 0 || ((s['price_cash'] as num?)?.toDouble() ?? 0.0) > 0)
-                              ? AppColors.accentLight
-                              : Colors.green.shade50,
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Text(
-                          LanguageService.formatServiceCost(
-                            s['price_points'] as int? ?? 0,
-                            (s['price_cash'] as num?)?.toDouble() ?? 0.0,
-                          ),
-                          style: TextStyle(
-                            fontSize: 11,
-                            fontWeight: FontWeight.bold,
-                            color: ((s['price_points'] as int? ?? 0) > 0 || ((s['price_cash'] as num?)?.toDouble() ?? 0.0) > 0)
-                                ? AppColors.primary
-                                : Colors.green.shade700,
-                          ),
-                        ),
-                      ),
+                      _buildServicePriceBadges(s),
                       const SizedBox(height: 8),
                       Container(
                         width: double.infinity,
-                        padding: const EdgeInsets.symmetric(vertical: 8),
+                        padding: const EdgeInsets.symmetric(vertical: 8.5),
                         decoration: BoxDecoration(
-                            color: AppColors.primary,
-                            borderRadius: BorderRadius.circular(10),
-                            boxShadow: [
-                              BoxShadow(
-                                color: AppColors.primary.withValues(alpha: 0.2),
-                                blurRadius: 4,
-                                offset: const Offset(0, 2),
-                              )
-                            ]),
+                          gradient: const LinearGradient(
+                            colors: [AppColors.primary, Color(0xFF1E4968)],
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                          ),
+                          borderRadius: BorderRadius.circular(10),
+                          boxShadow: [
+                            BoxShadow(
+                              color: AppColors.primary.withValues(alpha: 0.25),
+                              blurRadius: 4,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
+                        ),
                         alignment: Alignment.center,
                         child: Text(
                           LanguageService.tr('request_service_button'),
                           style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 11.5,
-                              fontWeight: FontWeight.bold),
+                            color: Colors.white,
+                            fontSize: 11.5,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
                       ),
                     ],
@@ -1567,6 +1551,101 @@ class _ServicesScreenState extends State<ServicesScreen> {
           ),
         );
       },
+    );
+  }
+
+  Widget _buildServicePriceBadges(Map<String, dynamic> s) {
+    final int points = (s['price_points'] as int?) ?? 0;
+    final double cash = ((s['price_cash'] as num?)?.toDouble()) ?? 0.0;
+    final bool hasPoints = points > 0;
+    final bool hasCash = cash > 0;
+
+    if (!hasPoints && !hasCash) {
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3.5),
+        decoration: BoxDecoration(
+          color: const Color(0xFFECFDF5),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: const Color(0xFFA7F3D0), width: 0.8),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(Icons.card_giftcard_rounded, size: 12, color: Color(0xFF059669)),
+            const SizedBox(width: 4),
+            Text(
+              LanguageService.tr('service_cost_free'),
+              style: const TextStyle(
+                fontSize: 10.5,
+                fontWeight: FontWeight.w800,
+                color: Color(0xFF059669),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    final pointsLabel = LanguageService.tr('points_unit');
+    final String cashStr = cash.truncateToDouble() == cash
+        ? '${cash.toInt()} \$'
+        : '${cash.toStringAsFixed(2)} \$';
+
+    return Wrap(
+      alignment: WrapAlignment.center,
+      crossAxisAlignment: WrapCrossAlignment.center,
+      spacing: 5,
+      runSpacing: 4,
+      children: [
+        if (hasPoints)
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+            decoration: BoxDecoration(
+              color: const Color(0xFFEFF6FF),
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: const Color(0xFFBFDBFE), width: 0.8),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(Icons.stars_rounded, size: 12, color: Color(0xFF2563EB)),
+                const SizedBox(width: 3.5),
+                Text(
+                  '$points $pointsLabel',
+                  style: const TextStyle(
+                    fontSize: 10,
+                    fontWeight: FontWeight.w800,
+                    color: Color(0xFF1E40AF),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        if (hasCash)
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+            decoration: BoxDecoration(
+              color: const Color(0xFFECFDF5),
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: const Color(0xFFA7F3D0), width: 0.8),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(Icons.payments_rounded, size: 12, color: Color(0xFF059669)),
+                const SizedBox(width: 3.5),
+                Text(
+                  cashStr,
+                  style: const TextStyle(
+                    fontSize: 10,
+                    fontWeight: FontWeight.w800,
+                    color: Color(0xFF065F46),
+                  ),
+                ),
+              ],
+            ),
+          ),
+      ],
     );
   }
 }
