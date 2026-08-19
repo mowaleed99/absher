@@ -9,7 +9,14 @@ export function AdminLayout() {
   const { logout } = useAuth();
   const { toggleTheme, theme } = useTheme();
   const { lang, setLang, t } = useI18n();
-  const { pendingReviewsCount, pendingFeedbackCount, pendingChatsCount, pendingRequestsCount } = useBadges();
+  const {
+    pendingReviewsCount,
+    negativeReviewsCount,
+    totalReviewsCount,
+    pendingFeedbackCount,
+    pendingChatsCount,
+    pendingRequestsCount,
+  } = useBadges();
   const location = useLocation();
 
   const isChatsRoute = location.pathname.startsWith('/chats');
@@ -23,7 +30,9 @@ export function AdminLayout() {
     return count > 99 ? '99+' : String(count);
   };
 
-  const reviewsBadgeText = formatBadge(pendingReviewsCount);
+  const reviewAlertsCount = pendingReviewsCount + negativeReviewsCount;
+  const reviewAlertsText = formatBadge(reviewAlertsCount);
+  const totalReviewsText = formatBadge(totalReviewsCount);
   const feedbackBadgeText = formatBadge(pendingFeedbackCount);
   const chatsBadgeText = formatBadge(pendingChatsCount);
   const requestsBadgeText = formatBadge(pendingRequestsCount);
@@ -170,29 +179,53 @@ export function AdminLayout() {
             >
               <i className="fa-solid fa-star"></i>
               <span style={{ flex: 1 }}>{t('nav.reviews')}</span>
-              {reviewsBadgeText && (
-                <span
-                  style={{
-                    background: '#f59e0b',
-                    color: '#0f172a',
-                    border: '1px solid rgba(255, 255, 255, 0.4)',
-                    minWidth: '20px',
-                    height: '20px',
-                    padding: '0 6px',
-                    borderRadius: '10px',
-                    fontSize: '0.72rem',
-                    fontWeight: 800,
-                    lineHeight: 1,
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    boxShadow: '0 2px 4px rgba(0, 0, 0, 0.25)',
-                    flexShrink: 0,
-                  }}
-                >
-                  {reviewsBadgeText}
-                </span>
-              )}
+              <div style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', flexShrink: 0 }}>
+                {reviewAlertsText && (
+                  <span
+                    title={lang === 'ar' ? `تنبيه: ${reviewAlertsText} تقييمات بحاجة لمتابعة (سلبية أو معلقة)` : `Alert: ${reviewAlertsText} reviews require attention`}
+                    style={{
+                      background: '#ef4444',
+                      color: '#ffffff',
+                      border: '1px solid rgba(255, 255, 255, 0.4)',
+                      minWidth: '20px',
+                      height: '20px',
+                      padding: '0 5px',
+                      borderRadius: '10px',
+                      fontSize: '0.7rem',
+                      fontWeight: 800,
+                      lineHeight: 1,
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      boxShadow: '0 2px 4px rgba(239, 68, 68, 0.4)',
+                    }}
+                  >
+                    ⚠️ {reviewAlertsText}
+                  </span>
+                )}
+                {totalReviewsText && (
+                  <span
+                    title={lang === 'ar' ? `إجمالي التقييمات: ${totalReviewsText}` : `Total reviews: ${totalReviewsText}`}
+                    style={{
+                      background: 'rgba(255, 255, 255, 0.12)',
+                      color: 'var(--text-main)',
+                      border: '1px solid var(--border-color)',
+                      minWidth: '20px',
+                      height: '20px',
+                      padding: '0 6px',
+                      borderRadius: '10px',
+                      fontSize: '0.72rem',
+                      fontWeight: 700,
+                      lineHeight: 1,
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                    }}
+                  >
+                    {totalReviewsText}
+                  </span>
+                )}
+              </div>
             </NavLink>
             <NavLink
               to="/feedback"
