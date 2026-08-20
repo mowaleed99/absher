@@ -187,7 +187,9 @@ class _RoommateMatchScreenState extends State<RoommateMatchScreen> {
         studentPhone: _phoneController.text,
         studentUni: selectedUniName,
         universityId: int.tryParse(_selectedUniId ?? ''),
-        serviceTitle: 'طلب بحث عن شريك سكن',
+        serviceTitle: LanguageService.isEn
+            ? 'Roommate Search Request'
+            : 'طلب بحث عن شريك سكن',
         details: matchMsg,
       );
       if (!mounted) return;

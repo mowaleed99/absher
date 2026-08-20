@@ -583,15 +583,15 @@ class _ApartmentDetailScreenState extends State<ApartmentDetailScreen> {
                           ) +
                           LanguageService.tr("auto_trans_1016");
 
-                      // 2. Submit booking as a service_request with all required fields
                       ApiService.submitServiceRequest(
                         studentName: widget.user?.fullName ?? '',
                         studentPhone:
                             widget.user?.phone ?? _phoneController.text,
-                        studentUni: widget.user?.universityId != null
-                            ? (widget.user!.universityId.toString())
-                            : '',
-                        serviceTitle: 'حجز سكن: $aptTitle',
+                        studentUni: widget.user?.university ?? '',
+                        universityId: widget.user?.universityId,
+                        serviceTitle: LanguageService.isEn
+                            ? 'Apartment Booking: $aptTitle'
+                            : 'حجز سكن: $aptTitle',
                         details: bookingMsg,
                       ).then((result) {
                         if (!context.mounted) return;

@@ -167,7 +167,9 @@ class _RoommateFormScreenState extends State<RoommateFormScreen> {
         studentPhone: _wpController.text,
         studentUni: selectedUniName,
         universityId: int.tryParse(_selectedUniId ?? ''),
-        serviceTitle: 'طلب بحث عن شريك سكن',
+        serviceTitle: LanguageService.isEn
+            ? 'Roommate Search Request'
+            : 'طلب بحث عن شريك سكن',
         details: msg,
       );
       if (!mounted) return;

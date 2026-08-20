@@ -329,7 +329,7 @@ class _ServicesScreenState extends State<ServicesScreen> {
                                         service['id']?.toString() ?? ''),
                                 studentName: widget.user!.fullName,
                                 studentPhone: widget.user!.phone ?? '',
-                                studentUni: '',
+                                studentUni: widget.user!.university ?? '',
                                 universityId: widget.user!.universityId,
                                 serviceTitle: title,
                                 details: notesCtrl.text.trim().isNotEmpty

@@ -176,7 +176,9 @@ class _RentFlatScreenState extends State<RentFlatScreen> {
         studentPhone: _wpController.text,
         studentUni: selectedUniName,
         universityId: int.tryParse(_selectedUniId ?? ''),
-        serviceTitle: 'طلب بحث عن شريك سكن',
+        serviceTitle: LanguageService.isEn
+            ? 'Roommate Search Request'
+            : 'طلب بحث عن شريك سكن',
         details: msg,
       );
       if (!mounted) return;
@@ -224,9 +226,11 @@ class _RentFlatScreenState extends State<RentFlatScreen> {
       await ApiService.submitServiceRequest(
         studentName: widget.user!.fullName,
         studentPhone: widget.user!.phone ?? '',
-        studentUni: '', // Let backend resolve it
+        studentUni: widget.user?.university ?? '',
         universityId: widget.user?.universityId,
-        serviceTitle: LanguageService.tr('auto_trans_1226'),
+        serviceTitle: LanguageService.isEn
+            ? 'Apartment Rental Assistance'
+            : LanguageService.tr('auto_trans_1226'),
         details: aloneMsg,
       );
       if (!mounted) return;
