@@ -150,19 +150,26 @@ if ($action === 'submit') {
     $studentName = trim($input['student_name'] ?? '');
     $studentPhone = trim($input['student_phone'] ?? '');
     $universityId = isset($input['university_id']) ? intval($input['university_id']) : 0;
+    $serviceTitle = trim($input['service_title'] ?? '');
+    $details = trim($input['details'] ?? '');
+    $requestUuid = trim($input['request_uuid'] ?? '');
+    $reqLang = strtolower(trim($input['lang'] ?? 'ar'));
 
     // Resolve university name according to strict fallback order:
-    // 1. Valid submitted university_id resolved from universities table.
-    // 2. Authenticated student's university from students table.
-    // 3. Arabic empty state.
     $resolvedUni = '';
     if ($universityId > 0) {
         try {
-            $uniStmt = $conn->prepare("SELECT name FROM universities WHERE id = ?");
+            $uniStmt = $conn->prepare("SELECT name, name_ar, name_en FROM universities WHERE id = ?");
             $uniStmt->execute([$universityId]);
             $uniRow = $uniStmt->fetch(PDO::FETCH_ASSOC);
-            if ($uniRow && !empty($uniRow['name'])) {
-                $resolvedUni = trim($uniRow['name']);
+            if ($uniRow) {
+                if ($reqLang === 'en' && !empty($uniRow['name_en'])) {
+                    $resolvedUni = trim($uniRow['name_en']);
+                } else if (!empty($uniRow['name_ar'])) {
+                    $resolvedUni = trim($uniRow['name_ar']);
+                } else {
+                    $resolvedUni = trim($uniRow['name'] ?? '');
+                }
             }
         } catch (Throwable $e) {
             // Ignore DB resolution errors
@@ -172,11 +179,30 @@ if ($action === 'submit') {
     if (empty($resolvedUni) || strtolower($resolvedUni) === 'null') {
         if ($studentId > 0) {
             try {
-                $stdQuery = $conn->prepare("SELECT university FROM students WHERE id = ?");
+                $stdQuery = $conn->prepare("SELECT university, university_id FROM students WHERE id = ?");
                 $stdQuery->execute([$studentId]);
                 $studentDbRow = $stdQuery->fetch(PDO::FETCH_ASSOC);
-                if ($studentDbRow && !empty($studentDbRow['university'])) {
-                    $resolvedUni = trim($studentDbRow['university']);
+                if ($studentDbRow) {
+                    $rawStdUni = trim($studentDbRow['university'] ?? '');
+                    $stdUniId = intval($studentDbRow['university_id'] ?? 0);
+                    if ($stdUniId > 0) {
+                        $uniLookup = $conn->prepare("SELECT name, name_ar, name_en FROM universities WHERE id = ?");
+                        $uniLookup->execute([$stdUniId]);
+                        $uRow = $uniLookup->fetch(PDO::FETCH_ASSOC);
+                        if ($uRow) {
+                            $resolvedUni = ($reqLang === 'en' && !empty($uRow['name_en'])) ? trim($uRow['name_en']) : trim($uRow['name_ar'] ?: ($uRow['name'] ?: $rawStdUni));
+                        }
+                    }
+                    if (empty($resolvedUni) && !empty($rawStdUni)) {
+                        $uniLookup = $conn->prepare("SELECT name, name_ar, name_en FROM universities WHERE name = ? OR name_ar = ? OR name_en = ?");
+                        $uniLookup->execute([$rawStdUni, $rawStdUni, $rawStdUni]);
+                        $uRow = $uniLookup->fetch(PDO::FETCH_ASSOC);
+                        if ($uRow && $reqLang === 'en' && !empty($uRow['name_en'])) {
+                            $resolvedUni = trim($uRow['name_en']);
+                        } else {
+                            $resolvedUni = $rawStdUni;
+                        }
+                    }
                 }
             } catch (Throwable $e) {
                 // Ignore DB errors
@@ -185,14 +211,27 @@ if ($action === 'submit') {
     }
 
     if (empty($resolvedUni) || strtolower($resolvedUni) === 'null') {
-        $resolvedUni = 'جامعة غير محددة';
+        $resolvedUni = ($reqLang === 'en') ? 'Unspecified University' : 'جامعة غير محددة';
     }
     $studentUni = $resolvedUni;
 
-    $serviceTitle = trim($input['service_title'] ?? '');
-    $details = trim($input['details'] ?? '');
-    $requestUuid = trim($input['request_uuid'] ?? '');
-    $reqLang = strtolower(trim($input['lang'] ?? 'ar'));
+    // Resolve service title in English if serviceId provided
+    if ($serviceId > 0) {
+        try {
+            $svcStmt = $conn->prepare("SELECT title, title_ar, title_en FROM services WHERE id = ?");
+            $svcStmt->execute([$serviceId]);
+            $svcRow = $svcStmt->fetch(PDO::FETCH_ASSOC);
+            if ($svcRow) {
+                if ($reqLang === 'en' && !empty($svcRow['title_en'])) {
+                    $serviceTitle = trim($svcRow['title_en']);
+                } else if (!empty($svcRow['title_ar'])) {
+                    $serviceTitle = trim($svcRow['title_ar']);
+                } else if (!empty($svcRow['title'])) {
+                    $serviceTitle = trim($svcRow['title']);
+                }
+            }
+        } catch (Throwable $e) {}
+    }
 
     if ($studentId) {
         try {
@@ -218,10 +257,10 @@ if ($action === 'submit') {
     }
 
     if (empty($studentName)) {
-        $studentName = 'طالب أبشر';
+        $studentName = ($reqLang === 'en') ? 'Absher Student' : 'طالب أبشر';
     }
     if (empty($serviceTitle)) {
-        $serviceTitle = 'طلب خدمة';
+        $serviceTitle = ($reqLang === 'en') ? 'Service Request' : 'طلب خدمة';
     }
 
     if (empty($details)) {
@@ -511,7 +550,9 @@ if ($action === 'submit') {
         // 5. Request insert (using machine status values)
         $status = ($paymentMethod === 'cash') ? 'pending_cash' : 'قيد المراجعة';
         $stmt = $conn->prepare("INSERT INTO service_requests (student_id, service_id, promo_code_id, service_price_points, discount_points, final_price_points, points_charged, payment_method, request_uuid, student_name, student_phone, service_title, details, status, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())");
-        $fullDetails = "الجامعة: " . $studentUni . "\nالتفاصيل: " . $details;
+        $uniLabel = ($reqLang === 'en') ? "University: " : "الجامعة: ";
+        $detailsLabel = ($reqLang === 'en') ? "Details:\n" : "التفاصيل:\n";
+        $fullDetails = $uniLabel . $studentUni . "\n" . $detailsLabel . $details;
         $stmt->execute([$studentId, $serviceId ?: null, $promoCodeId ?: null, $pricePoints, $discountPoints, $finalPricePoints, $pointsCharged, $paymentMethod, $requestUuid ?: null, $studentName, $studentPhone, $serviceTitle, $fullDetails, $status]);
         $requestId = $conn->lastInsertId();
 

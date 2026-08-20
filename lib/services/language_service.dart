@@ -1880,6 +1880,10 @@ class LanguageService {
         return tr('tx_type_bonus');
       case 'refund':
       case 'استرداد':
+      case 'استرجاع':
+      case 'إلغاء':
+      case 'cancel':
+      case 'cancelled':
         return tr('tx_type_refund');
       default:
         return tr('tx_type_unknown');
