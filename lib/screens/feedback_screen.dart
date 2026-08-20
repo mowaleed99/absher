@@ -172,6 +172,7 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
                       const SizedBox(height: 16),
                       // Dropdown type selector
                       DropdownButtonFormField<String>(
+                        isExpanded: true,
                         initialValue: _selectedType,
                         decoration: InputDecoration(
                           labelText: LanguageService.tr('feedback_type'),
@@ -186,7 +187,11 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
                         items: _feedbackTypes.map((type) {
                           return DropdownMenuItem<String>(
                             value: type['value'],
-                            child: Text(isRtl ? type['ar']! : type['en']!),
+                            child: Text(
+                              isRtl ? type['ar']! : type['en']!,
+                              overflow: TextOverflow.ellipsis,
+                              maxLines: 1,
+                            ),
                           );
                         }).toList(),
                         onChanged: _isSubmitting

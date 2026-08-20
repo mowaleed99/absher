@@ -518,6 +518,7 @@ class _RentFlatScreenState extends State<RentFlatScreen> {
 
             // 3. Gender
             DropdownButtonFormField<String>(
+              isExpanded: true,
               initialValue: _selectedGender,
               decoration: InputDecoration(
                 labelText: LanguageService.tr('gender_label'),
@@ -528,7 +529,12 @@ class _RentFlatScreenState extends State<RentFlatScreen> {
               ),
               items: ['male', 'female']
                   .map((g) => DropdownMenuItem(
-                      value: g, child: Text(LanguageService.tr(g))))
+                      value: g,
+                      child: Text(
+                        LanguageService.tr(g),
+                        overflow: TextOverflow.ellipsis,
+                        maxLines: 1,
+                      )))
                   .toList(),
               onChanged: (val) => setState(() => _selectedGender = val!),
             ),

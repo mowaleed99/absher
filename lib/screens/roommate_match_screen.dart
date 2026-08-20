@@ -303,6 +303,7 @@ class _RoommateMatchScreenState extends State<RoommateMatchScreen> {
                       ),
                       const SizedBox(height: 16),
                       DropdownButtonFormField<String?>(
+                        isExpanded: true,
                         initialValue: _unisList.any(
                                 (u) => u['id']?.toString() == _selectedUniId)
                             ? _selectedUniId
@@ -317,8 +318,12 @@ class _RoommateMatchScreenState extends State<RoommateMatchScreen> {
                         items: _unisList.map((uni) {
                           return DropdownMenuItem<String?>(
                               value: uni['id']?.toString(),
-                              child: Text(uni['name']?.toString() ?? '',
-                                  style: const TextStyle(fontSize: 13)));
+                              child: Text(
+                                uni['name']?.toString() ?? '',
+                                overflow: TextOverflow.ellipsis,
+                                maxLines: 1,
+                                style: const TextStyle(fontSize: 13),
+                              ));
                         }).toList(),
                         onChanged: (val) =>
                             setState(() => _selectedUniId = val),
@@ -369,6 +374,7 @@ class _RoommateMatchScreenState extends State<RoommateMatchScreen> {
                       ),
                       const SizedBox(height: 16),
                       DropdownButtonFormField<String>(
+                        isExpanded: true,
                         initialValue: _selectedHousingPref,
                         decoration: InputDecoration(
                           labelText: LanguageService.tr('housing_type_req'),
@@ -381,24 +387,34 @@ class _RoommateMatchScreenState extends State<RoommateMatchScreen> {
                           DropdownMenuItem(
                               value: 'apartment',
                               child: Text(
-                                  LanguageService.getLocalizedHousingType(
-                                      'apartment'))),
+                                LanguageService.getLocalizedHousingType(
+                                    'apartment'),
+                                overflow: TextOverflow.ellipsis,
+                                maxLines: 1,
+                              )),
                           DropdownMenuItem(
                               value: 'room_shared',
                               child: Text(
-                                  LanguageService.getLocalizedHousingType(
-                                      'room_shared'))),
+                                LanguageService.getLocalizedHousingType(
+                                    'room_shared'),
+                                overflow: TextOverflow.ellipsis,
+                                maxLines: 1,
+                              )),
                           DropdownMenuItem(
                               value: 'studio',
                               child: Text(
-                                  LanguageService.getLocalizedHousingType(
-                                      'studio'))),
+                                LanguageService.getLocalizedHousingType(
+                                    'studio'),
+                                overflow: TextOverflow.ellipsis,
+                                maxLines: 1,
+                              )),
                         ],
                         onChanged: (val) =>
                             setState(() => _selectedHousingPref = val!),
                       ),
                       const SizedBox(height: 16),
                       DropdownButtonFormField<String>(
+                        isExpanded: true,
                         initialValue: _selectedGender,
                         decoration: InputDecoration(
                           labelText: "شريك السكن المفضل",
@@ -409,13 +425,19 @@ class _RoommateMatchScreenState extends State<RoommateMatchScreen> {
                         ),
                         items: ['males_only', 'females_only']
                             .map((g) => DropdownMenuItem(
-                                value: g, child: Text(LanguageService.tr(g))))
+                                value: g,
+                                child: Text(
+                                  LanguageService.tr(g),
+                                  overflow: TextOverflow.ellipsis,
+                                  maxLines: 1,
+                                )))
                             .toList(),
                         onChanged: (val) =>
                             setState(() => _selectedGender = val!),
                       ),
                       const SizedBox(height: 16),
                       DropdownButtonFormField<String>(
+                        isExpanded: true,
                         initialValue: _moveInDate,
                         decoration: InputDecoration(
                           labelText: LanguageService.tr('move_in_date_label'),
@@ -429,8 +451,13 @@ class _RoommateMatchScreenState extends State<RoommateMatchScreen> {
                           'this_month_move',
                           'next_semester_move'
                         ]
-                            .map((d) => DropdownMenuItem(
-                                value: d, child: Text(LanguageService.tr(d))))
+                            .map((m) => DropdownMenuItem(
+                                value: m,
+                                child: Text(
+                                  LanguageService.tr(m),
+                                  overflow: TextOverflow.ellipsis,
+                                  maxLines: 1,
+                                )))
                             .toList(),
                         onChanged: (val) => setState(() => _moveInDate = val!),
                       ),
