@@ -150,6 +150,7 @@ if ($action === 'submit') {
     $studentName = trim($input['student_name'] ?? '');
     $studentPhone = trim($input['student_phone'] ?? '');
     $universityId = isset($input['university_id']) ? intval($input['university_id']) : 0;
+    $serviceId = isset($input['service_id']) ? intval($input['service_id']) : 0;
     $serviceTitle = trim($input['service_title'] ?? '');
     $details = trim($input['details'] ?? '');
     $requestUuid = trim($input['request_uuid'] ?? '');
@@ -364,7 +365,9 @@ if ($action === 'submit') {
             if (!$serviceRow) {
                 throw new Exception("الخدمة المطلوبة غير موجودة في النظام.");
             }
-            $serviceTitle = $serviceRow['title'];
+            if (empty($serviceTitle)) {
+                $serviceTitle = $serviceRow['title'];
+            }
             $pricePoints = (int)$serviceRow['price_points'];
         } else {
             // Fallback for legacy requests (e.g. roommate match requests by title)
