@@ -59,6 +59,24 @@ class _WalletScreenState extends State<WalletScreen> {
     }
   }
 
+  String _localizeDescription(String? desc) {
+    if (desc == null || desc.isEmpty) return '';
+    if (LanguageService.currentLang.value != 'en') return desc;
+
+    var s = desc;
+    s = s.replaceAll('خصم لطلب خدمة:', 'Deduction for service:');
+    s = s.replaceAll('خصم لطلب خدمة', 'Deduction for service:');
+    s = s.replaceAll('بعد خصم', 'after');
+    s = s.replaceAll('نقطة', 'pts');
+    s = s.replaceAll('نقاط', 'pts');
+    s = s.replaceAll('شحن رصيد', 'Wallet Top-up');
+    s = s.replaceAll('إضافة رصيد', 'Balance Added');
+    s = s.replaceAll('استرجاع نقاط', 'Points Refund');
+    s = s.replaceAll('مكافأة تسجيل', 'Registration Bonus');
+    s = s.replaceAll('هدية', 'Gift');
+    return s;
+  }
+
   @override
   Widget build(BuildContext context) {
     final isRtl = LanguageService.isRtl;
@@ -261,7 +279,7 @@ class _WalletScreenState extends State<WalletScreen> {
                     Padding(
                       padding: const EdgeInsets.only(top: 3),
                       child: Text(
-                        tx.description!,
+                        _localizeDescription(tx.description),
                         style: const TextStyle(
                             color: AppColors.textMuted, fontSize: 12),
                         maxLines: 2,

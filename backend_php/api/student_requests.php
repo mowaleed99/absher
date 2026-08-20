@@ -192,6 +192,7 @@ if ($action === 'submit') {
     $serviceTitle = trim($input['service_title'] ?? '');
     $details = trim($input['details'] ?? '');
     $requestUuid = trim($input['request_uuid'] ?? '');
+    $reqLang = strtolower(trim($input['lang'] ?? 'ar'));
 
     if ($studentId) {
         try {
@@ -551,17 +552,26 @@ if ($action === 'submit') {
 
         // 7. Wallet transaction insert (with UNIQUE composite constraint)
         if ($payWithPoints && $pointsCharged > 0) {
-            $txDesc = "خصم لطلب خدمة: " . $serviceTitle;
-            if ($discountPoints > 0) {
-                $txDesc .= " (بعد خصم $discountPoints نقطة)";
+            if ($reqLang === 'en') {
+                $txDesc = "Deduction for service request: " . $serviceTitle;
+                if ($discountPoints > 0) {
+                    $txDesc .= " (after $discountPoints pts discount)";
+                }
+                $notifTitle = "Points Deduction";
+                $notifBody = "$pointsCharged points deducted from your wallet for service: $serviceTitle";
+            } else {
+                $txDesc = "خصم لطلب خدمة: " . $serviceTitle;
+                if ($discountPoints > 0) {
+                    $txDesc .= " (بعد خصم $discountPoints نقطة)";
+                }
+                $notifTitle = "سحب نقاط";
+                $notifBody = "تم خصم $pointsCharged نقطة من محفظتك لطلب الخدمة: $serviceTitle";
             }
             $txStmt = $conn->prepare("INSERT INTO wallet_transactions (student_id, service_request_id, amount, type, description, created_at) VALUES (?, ?, ?, 'خصم', ?, NOW())");
             $txStmt->execute([$studentId, $requestId, $pointsCharged, $txDesc]);
             $walletTxId = $conn->lastInsertId();
 
             // Notification insert
-            $notifTitle = "سحب نقاط";
-            $notifBody = "تم خصم $pointsCharged نقطة من محفظتك لطلب الخدمة: $serviceTitle";
             sendStudentNotification($studentId, $notifTitle, $notifBody);
         }
 
@@ -591,16 +601,30 @@ if ($action === 'submit') {
             }
 
             if ($chatId) {
-                $headerTitle = ($paymentMethod === 'wallet') ? "📋 [طلب مدفوع بالنقاط]" : "📋 [طلب خدمة جديد]";
-                $msgLines = [$headerTitle, "الخدمة: " . $serviceTitle];
-                if (!empty($studentUni) && strpos($fullDetails, 'الجامعة') === false) {
-                    $msgLines[] = "الجامعة: " . $studentUni;
-                }
-                $msgLines[] = $fullDetails;
-                if ($paymentMethod === 'wallet' && strpos($fullDetails, 'خصم') === false && $pointsCharged > 0) {
-                    $msgLines[] = "[تم خصم $pointsCharged نقطة بنجاح]";
-                } else if ($paymentMethod === 'cash' && strpos($fullDetails, 'طريقة الدفع') === false && strpos($fullDetails, 'الدفع') === false) {
-                    $msgLines[] = "[طريقة الدفع: نقدًا عند تنفيذ الخدمة]";
+                if ($reqLang === 'en') {
+                    $headerTitle = ($paymentMethod === 'wallet') ? "📋 [Points-Paid Request]" : "📋 [New Service Request]";
+                    $msgLines = [$headerTitle, "Service: " . $serviceTitle];
+                    if (!empty($studentUni) && stripos($fullDetails, 'university') === false && strpos($fullDetails, 'الجامعة') === false) {
+                        $msgLines[] = "University: " . $studentUni;
+                    }
+                    $msgLines[] = $fullDetails;
+                    if ($paymentMethod === 'wallet' && stripos($fullDetails, 'deducted') === false && strpos($fullDetails, 'خصم') === false && $pointsCharged > 0) {
+                        $msgLines[] = "[$pointsCharged points deducted successfully]";
+                    } else if ($paymentMethod === 'cash' && stripos($fullDetails, 'payment method') === false && strpos($fullDetails, 'الدفع') === false) {
+                        $msgLines[] = "[Payment Method: Cash upon service execution]";
+                    }
+                } else {
+                    $headerTitle = ($paymentMethod === 'wallet') ? "📋 [طلب مدفوع بالنقاط]" : "📋 [طلب خدمة جديد]";
+                    $msgLines = [$headerTitle, "الخدمة: " . $serviceTitle];
+                    if (!empty($studentUni) && strpos($fullDetails, 'الجامعة') === false) {
+                        $msgLines[] = "الجامعة: " . $studentUni;
+                    }
+                    $msgLines[] = $fullDetails;
+                    if ($paymentMethod === 'wallet' && strpos($fullDetails, 'خصم') === false && $pointsCharged > 0) {
+                        $msgLines[] = "[تم خصم $pointsCharged نقطة بنجاح]";
+                    } else if ($paymentMethod === 'cash' && strpos($fullDetails, 'طريقة الدفع') === false && strpos($fullDetails, 'الدفع') === false) {
+                        $msgLines[] = "[طريقة الدفع: نقدًا عند تنفيذ الخدمة]";
+                    }
                 }
                 $msgContent = implode("\n", array_filter($msgLines));
 

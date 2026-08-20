@@ -628,6 +628,7 @@ class ApiService {
       }
       final bodyMap = <String, dynamic>{
         'action': 'submit',
+        'lang': LanguageService.currentLang.value,
         'service_id': serviceId,
         'student_name': studentName,
         'student_phone': studentPhone,
