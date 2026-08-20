@@ -2121,11 +2121,14 @@ class _HomeScreenState extends State<HomeScreen>
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Row(
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceBetween,
+                                Wrap(
+                                  spacing: 8,
+                                  runSpacing: 8,
+                                  alignment: WrapAlignment.spaceBetween,
+                                  crossAxisAlignment: WrapCrossAlignment.center,
                                   children: [
                                     Row(
+                                      mainAxisSize: MainAxisSize.min,
                                       children: [
                                         Container(
                                           padding: const EdgeInsets.symmetric(
@@ -2231,14 +2234,19 @@ class _HomeScreenState extends State<HomeScreen>
                                 ),
                                 const Divider(height: 24),
                                 Row(
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceBetween,
                                   children: [
-                                    Text(LanguageService.tr('auto_trans_1181'),
+                                    Expanded(
+                                      child: Text(
+                                        LanguageService.tr('auto_trans_1181'),
                                         style: const TextStyle(
                                             color: AppColors.accent,
                                             fontWeight: FontWeight.bold,
-                                            fontSize: 13)),
+                                            fontSize: 13),
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 8),
                                     Icon(
                                         LanguageService.isRtl
                                             ? Icons.arrow_back

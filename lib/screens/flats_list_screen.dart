@@ -344,9 +344,12 @@ class FlatsListScreen extends StatelessWidget {
                                     crossAxisAlignment:
                                         CrossAxisAlignment.start,
                                     children: [
-                                      Row(
-                                        mainAxisAlignment:
-                                            MainAxisAlignment.spaceBetween,
+                                      Wrap(
+                                        spacing: 8,
+                                        runSpacing: 8,
+                                        alignment: WrapAlignment.spaceBetween,
+                                        crossAxisAlignment:
+                                            WrapCrossAlignment.center,
                                         children: [
                                           Container(
                                             padding: const EdgeInsets.symmetric(
@@ -431,16 +434,20 @@ class FlatsListScreen extends StatelessWidget {
                                       ),
                                       const Divider(height: 24),
                                       Row(
-                                        mainAxisAlignment:
-                                            MainAxisAlignment.spaceBetween,
                                         children: [
-                                          Text(
+                                          Expanded(
+                                            child: Text(
                                               LanguageService.tr(
                                                   'click_to_view_images'),
                                               style: const TextStyle(
                                                   color: AppColors.accent,
                                                   fontWeight: FontWeight.bold,
-                                                  fontSize: 13)),
+                                                  fontSize: 13),
+                                              maxLines: 1,
+                                              overflow: TextOverflow.ellipsis,
+                                            ),
+                                          ),
+                                          const SizedBox(width: 8),
                                           Icon(
                                               LanguageService.isRtl
                                                   ? Icons.arrow_back
