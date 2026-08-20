@@ -155,60 +155,76 @@ if ($action === 'submit') {
     $details = trim($input['details'] ?? '');
     $requestUuid = trim($input['request_uuid'] ?? '');
     $reqLang = strtolower(trim($input['lang'] ?? 'ar'));
+    $submittedUni = trim($input['student_uni'] ?? '');
+
+    // Fallback: Resolve student ID and info by phone if not authenticated via JWT
+    if (!$studentId && !empty($studentPhone)) {
+        try {
+            $pQuery = $conn->prepare("SELECT id, full_name, phone, university, is_blocked FROM students WHERE phone = ? LIMIT 1");
+            $pQuery->execute([$studentPhone]);
+            $pRow = $pQuery->fetch(PDO::FETCH_ASSOC);
+            if ($pRow) {
+                $studentId = intval($pRow['id']);
+            }
+        } catch (Throwable $e) {}
+    }
 
     // Resolve university name according to strict fallback order:
     $resolvedUni = '';
-    if ($universityId > 0) {
+    if (!empty($submittedUni) && strtolower($submittedUni) !== 'null') {
+        $resolvedUni = $submittedUni;
+    }
+
+    if (empty($resolvedUni) && $universityId > 0) {
         try {
             $uniStmt = $conn->prepare("SELECT name, name_ar, name_en FROM universities WHERE id = ?");
             $uniStmt->execute([$universityId]);
             $uniRow = $uniStmt->fetch(PDO::FETCH_ASSOC);
             if ($uniRow) {
-                if ($reqLang === 'en' && !empty($uniRow['name_en'])) {
-                    $resolvedUni = trim($uniRow['name_en']);
-                } else if (!empty($uniRow['name_ar'])) {
-                    $resolvedUni = trim($uniRow['name_ar']);
-                } else {
-                    $resolvedUni = trim($uniRow['name'] ?? '');
-                }
+                $resolvedUni = ($reqLang === 'en' && !empty($uniRow['name_en'])) 
+                    ? trim($uniRow['name_en']) 
+                    : trim($uniRow['name_ar'] ?: ($uniRow['name'] ?? ''));
             }
-        } catch (Throwable $e) {
-            // Ignore DB resolution errors
-        }
+        } catch (Throwable $e) {}
     }
 
-    if (empty($resolvedUni) || strtolower($resolvedUni) === 'null') {
-        if ($studentId > 0) {
-            try {
-                $stdQuery = $conn->prepare("SELECT university, university_id FROM students WHERE id = ?");
-                $stdQuery->execute([$studentId]);
-                $studentDbRow = $stdQuery->fetch(PDO::FETCH_ASSOC);
-                if ($studentDbRow) {
-                    $rawStdUni = trim($studentDbRow['university'] ?? '');
-                    $stdUniId = intval($studentDbRow['university_id'] ?? 0);
-                    if ($stdUniId > 0) {
-                        $uniLookup = $conn->prepare("SELECT name, name_ar, name_en FROM universities WHERE id = ?");
-                        $uniLookup->execute([$stdUniId]);
-                        $uRow = $uniLookup->fetch(PDO::FETCH_ASSOC);
-                        if ($uRow) {
-                            $resolvedUni = ($reqLang === 'en' && !empty($uRow['name_en'])) ? trim($uRow['name_en']) : trim($uRow['name_ar'] ?: ($uRow['name'] ?: $rawStdUni));
-                        }
-                    }
-                    if (empty($resolvedUni) && !empty($rawStdUni)) {
-                        $uniLookup = $conn->prepare("SELECT name, name_ar, name_en FROM universities WHERE name = ? OR name_ar = ? OR name_en = ?");
-                        $uniLookup->execute([$rawStdUni, $rawStdUni, $rawStdUni]);
-                        $uRow = $uniLookup->fetch(PDO::FETCH_ASSOC);
-                        if ($uRow && $reqLang === 'en' && !empty($uRow['name_en'])) {
-                            $resolvedUni = trim($uRow['name_en']);
-                        } else {
-                            $resolvedUni = $rawStdUni;
-                        }
+    if (empty($resolvedUni) && $studentId > 0) {
+        try {
+            $stdQuery = $conn->prepare("SELECT university, university_id FROM students WHERE id = ?");
+            $stdQuery->execute([$studentId]);
+            $studentDbRow = $stdQuery->fetch(PDO::FETCH_ASSOC);
+            if ($studentDbRow) {
+                $rawStdUni = trim($studentDbRow['university'] ?? '');
+                $stdUniId = intval($studentDbRow['university_id'] ?? 0);
+                if ($stdUniId > 0) {
+                    $uniLookup = $conn->prepare("SELECT name, name_ar, name_en FROM universities WHERE id = ?");
+                    $uniLookup->execute([$stdUniId]);
+                    $uRow = $uniLookup->fetch(PDO::FETCH_ASSOC);
+                    if ($uRow) {
+                        $resolvedUni = ($reqLang === 'en' && !empty($uRow['name_en'])) ? trim($uRow['name_en']) : trim($uRow['name_ar'] ?: ($uRow['name'] ?: $rawStdUni));
                     }
                 }
-            } catch (Throwable $e) {
-                // Ignore DB errors
+                if (empty($resolvedUni) && !empty($rawStdUni)) {
+                    $resolvedUni = $rawStdUni;
+                }
             }
-        }
+        } catch (Throwable $e) {}
+    }
+
+    // Translate resolvedUni into English/Arabic if university exists in universities table
+    if (!empty($resolvedUni) && strtolower($resolvedUni) !== 'null') {
+        try {
+            $uniLookup = $conn->prepare("SELECT name, name_ar, name_en FROM universities WHERE name = ? OR name_ar = ? OR name_en = ? LIMIT 1");
+            $uniLookup->execute([$resolvedUni, $resolvedUni, $resolvedUni]);
+            $uRow = $uniLookup->fetch(PDO::FETCH_ASSOC);
+            if ($uRow) {
+                if ($reqLang === 'en' && !empty($uRow['name_en'])) {
+                    $resolvedUni = trim($uRow['name_en']);
+                } else if ($reqLang === 'ar' && !empty($uRow['name_ar'])) {
+                    $resolvedUni = trim($uRow['name_ar']);
+                }
+            }
+        } catch (Throwable $e) {}
     }
 
     if (empty($resolvedUni) || strtolower($resolvedUni) === 'null') {

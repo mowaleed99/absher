@@ -1281,7 +1281,7 @@ class _ServicesScreenState extends State<ServicesScreen> {
                       studentPhone: phoneCtrl.text.isNotEmpty
                           ? phoneCtrl.text
                           : (widget.user?.phone ?? ''),
-                      studentUni: '', // Let backend resolve it
+                      studentUni: widget.user?.university ?? '',
                       universityId: widget.user?.universityId,
                       serviceTitle: finalTitle,
                       details: finalDetails,
