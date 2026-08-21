@@ -8,6 +8,7 @@ New-Item -ItemType Directory -Path "temp_deploy/api/core" -Force | Out-Null
 
 # Copy modified files
 Copy-Item "backend_php/admin/index.html" "temp_deploy/admin/"
+Copy-Item "backend_php/admin/style.css" "temp_deploy/admin/"
 Copy-Item "backend_php/admin/lang.js" "temp_deploy/admin/"
 Copy-Item -Path "backend_php/admin/js" -Destination "temp_deploy/admin/" -Recurse -Force
 Copy-Item "backend_php/api/admin_api.php" "temp_deploy/api/"
