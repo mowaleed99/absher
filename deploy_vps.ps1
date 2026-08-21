@@ -6,11 +6,8 @@ New-Item -ItemType Directory -Path "temp_deploy/admin" -Force | Out-Null
 New-Item -ItemType Directory -Path "temp_deploy/api/chat" -Force | Out-Null
 New-Item -ItemType Directory -Path "temp_deploy/api/core" -Force | Out-Null
 
-# Copy modified files
-Copy-Item "backend_php/admin/index.html" "temp_deploy/admin/"
-Copy-Item "backend_php/admin/style.css" "temp_deploy/admin/"
-Copy-Item "backend_php/admin/lang.js" "temp_deploy/admin/"
-Copy-Item -Path "backend_php/admin/js" -Destination "temp_deploy/admin/" -Recurse -Force
+# Copy React Admin build
+Copy-Item -Path "admin_react/dist/*" -Destination "temp_deploy/admin/" -Recurse -Force
 Copy-Item "backend_php/api/admin_api.php" "temp_deploy/api/"
 Copy-Item "backend_php/api/chat/admin_reply.php" "temp_deploy/api/chat/"
 Copy-Item "backend_php/api/student_requests.php" "temp_deploy/api/"
