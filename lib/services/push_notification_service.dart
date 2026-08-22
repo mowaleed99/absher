@@ -41,6 +41,10 @@ class PushNotificationService {
   /// Initialize Firebase & FCM settings.
   static Future<void> initialize() async {
     if (_isInitialized) return;
+    if (kIsWeb) {
+      debugPrint("PushNotificationService: Web platform detected; push notifications disabled on web debug.");
+      return;
+    }
 
     try {
       await Firebase.initializeApp();
@@ -274,6 +278,7 @@ class PushNotificationService {
 
   /// Sync device token to backend if user is authenticated.
   static Future<bool> syncTokenWithBackend({String? customToken, int? studentId}) async {
+    if (kIsWeb) return false;
     try {
       final token = currentFcmToken ?? await FirebaseMessaging.instance.getToken();
       if (token == null || token.isEmpty) {
