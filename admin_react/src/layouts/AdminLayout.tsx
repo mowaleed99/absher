@@ -141,7 +141,7 @@ export function AdminLayout() {
               <span>{t('nav.apartments')}</span>
             </NavLink>
             <NavLink
-              to="/offers"
+              to="/shared-rooms"
               className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
             >
               <i className="fa-solid fa-house-circle-check"></i>
