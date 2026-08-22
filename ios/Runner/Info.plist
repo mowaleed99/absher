@@ -66,5 +66,18 @@
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
+	<key>NSCameraUsageDescription</key>
+	<string>يحتاج التطبيق إلى استخدام الكاميرا لالتقاط وتصوير المستندات وإيصالات الدفع والصور الشخصية.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>يحتاج التطبيق إلى الوصول لمعرض الصور لاختيار ورفع المستندات وإيصالات التحويل والصور.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>يحتاج التطبيق لإذن الميكروفون عند تسجيل أو إرسال مقاطع الصوت في المحادثات.</string>
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>fetch</string>
+		<string>remote-notification</string>
+	</array>
+	<key>FirebaseAppDelegateProxyEnabled</key>
+	<false/>
 </dict>
 </plist>
