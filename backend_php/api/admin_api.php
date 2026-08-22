@@ -417,16 +417,19 @@ try {
             $stmt->execute([$title, $price, $location, $proximity, $universities, $capacity, $move_in_type, $move_in_date, $images, $features, $description, $is_available, $is_featured, $featured_until, $is_special_offer, $district_id, $rental_type, $rooms_count, $roommate_reqs, $roommate_facilities, $owner_phone, $title_ar, $title_en, $description_ar, $description_en, $location_ar, $location_en, $proximity_ar, $proximity_en, $capacity_ar, $capacity_en, $move_in_type_ar, $move_in_type_en, $move_in_date_ar, $move_in_date_en, $features_ar, $features_en]);
             
             $newAptId = (int)$conn->lastInsertId();
-            // إضافة تنبيه تلقائي في الإشعارات
-            $notifTitle = "شقة سكنية جديدة معروضة للإيجار";
-            $notifBody = "تمت إضافة شقة سكنية جديدة للإيجار في حي: " . $location . " بسعر " . $price . ". تصفح شاشات السكن للاطلاع على الصور والتفاصيل كاملة.";
+            $isShared = ($rental_type === 'room_shared' || strpos($rental_type, 'room') !== false || strpos($rental_type, 'مشترك') !== false);
+            $notifTitle = $isShared ? "غرفة مشتركة جديدة متاحة" : "شقة سكنية جديدة معروضة للإيجار";
+            $notifBody = $isShared
+                ? ("تمت إضافة غرفة مشتركة جديدة في: " . $location . " بسعر " . $price . "$. اضغط للاطلاع على التفاصيل الكاملة والصور.")
+                : ("تمت إضافة شقة سكنية جديدة للإيجار في حي: " . $location . " بسعر " . $price . "$. تصفح شاشات السكن للاطلاع على الصور والتفاصيل كاملة.");
             $stmtNotif = $conn->prepare("INSERT INTO notifications (student_id, title, body, created_at) VALUES (0, ?, ?, NOW())");
             $stmtNotif->execute([$notifTitle, $notifBody]);
             try {
                 require_once __DIR__ . '/core/fcm_service.php';
                 FcmService::sendToAll($notifTitle, $notifBody, [
-                    'type' => 'apartment',
-                    'apartment_id' => (string)$newAptId
+                    'type' => $isShared ? 'shared_room' : 'apartment',
+                    'apartment_id' => (string)$newAptId,
+                    'target_id' => (string)$newAptId
                 ]);
             } catch (Throwable $e) {
                 error_log("FCM sendToAll apartment error: " . $e->getMessage());

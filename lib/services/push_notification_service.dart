@@ -157,7 +157,14 @@ class PushNotificationService {
             builder: (_) => const RequestsHistoryScreen(),
           ),
         );
-      } else if (type == 'apartment' || type == 'housing' || type == 'new_apartment') {
+      } else if (type == 'apartment' ||
+          type == 'housing' ||
+          type == 'new_apartment' ||
+          type == 'shared_room' ||
+          type == 'room_shared' ||
+          type == 'room' ||
+          type == 'flat' ||
+          type == 'special_offer') {
         _handleApartmentNavigation(navState, data, currentUser);
       } else {
         // 'broadcast_alert', 'general', or fallback
