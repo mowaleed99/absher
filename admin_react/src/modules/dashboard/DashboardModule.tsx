@@ -130,7 +130,7 @@ export function DashboardModule() {
     fetchDashboardData(false);
     const timer = setInterval(() => {
       fetchDashboardData(true);
-    }, 3000);
+    }, 12000);
     return () => clearInterval(timer);
   }, [fetchDashboardData]);
 
