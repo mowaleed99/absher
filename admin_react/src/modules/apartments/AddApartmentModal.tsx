@@ -12,6 +12,7 @@ interface AddApartmentModalProps {
   onSubmit: (data: Record<string, unknown>) => Promise<{ success: boolean; error?: string }>;
   districts: District[];
   universities: University[];
+  defaultRentalType?: 'apartment' | 'room_shared' | 'studio';
 }
 
 export function AddApartmentModal({
@@ -20,6 +21,7 @@ export function AddApartmentModal({
   onSubmit,
   districts,
   universities,
+  defaultRentalType = 'apartment',
 }: AddApartmentModalProps) {
   const { t } = useI18n();
   const { showToast } = useToast();
@@ -30,7 +32,7 @@ export function AddApartmentModal({
   const [titleEn, setTitleEn] = useState('');
   const [price, setPrice] = useState('');
   const [districtId, setDistrictId] = useState('');
-  const [rentalType, setRentalType] = useState('apartment');
+  const [rentalType, setRentalType] = useState(defaultRentalType);
   const [roomsCount, setRoomsCount] = useState('2');
   const [bathrooms, setBathrooms] = useState('1 حمام');
   const [locationAr, setLocationAr] = useState('');
@@ -101,12 +103,18 @@ export function AddApartmentModal({
     }
   };
 
+  React.useEffect(() => {
+    if (isOpen) {
+      setRentalType(defaultRentalType);
+    }
+  }, [isOpen, defaultRentalType]);
+
   const resetForm = () => {
     setTitleAr('');
     setTitleEn('');
     setPrice('');
     setDistrictId('');
-    setRentalType('apartment');
+    setRentalType(defaultRentalType);
     setRoomsCount('');
     setBathrooms('1 حمام');
     setLocationAr('');
@@ -346,7 +354,7 @@ export function AddApartmentModal({
               <label>{t('form.rental_type')}</label>
               <select
                 value={rentalType}
-                onChange={(e) => setRentalType(e.target.value)}
+                onChange={(e) => setRentalType(e.target.value as 'apartment' | 'room_shared' | 'studio')}
                 style={{
                   width: '100%',
                   padding: '0.8rem 1rem',

@@ -93,21 +93,17 @@ class _FlatsListScreenState extends State<FlatsListScreen> {
           : int.tryParse(apt['rooms_count']?.toString() ?? '');
 
       // 1. Single / Shared filter mode
+      final bool isSharedRoom = (rType == 'room_shared' ||
+          rType == 'مشترك' ||
+          rType == 'غرفة مشتركة' ||
+          rType == 'غرفة في شقة');
+
       if (widget.filterSingleOnly) {
-        bool matchesSingle = (roomsCount == 1 || rType == 'room_shared' || rType == 'studio');
-        if (!matchesSingle) {
-          final titleStr = (apt['title'] ?? '').toString();
-          final descStr = (apt['description'] ?? '').toString();
-          final featuresList = (apt['features'] as List?)?.map((e) => e.toString()).join(' ') ?? '';
-          final combined = '$titleStr $descStr $featuresList'.toLowerCase();
-          matchesSingle = combined.contains('غرفة') ||
-              combined.contains('غرفه') ||
-              combined.contains('مشترك') ||
-              combined.contains('استوديو') ||
-              combined.contains('studio') ||
-              combined.contains('room');
-        }
-        if (!matchesSingle) return false;
+        // "اختيار غرفة في شقة": only shared rooms
+        if (!isSharedRoom) return false;
+      } else {
+        // "إيجار الشقق السكنية": full flats & studios (exclude shared rooms)
+        if (isSharedRoom) return false;
       }
 
       // 2. Text Search

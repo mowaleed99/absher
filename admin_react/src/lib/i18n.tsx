@@ -19,7 +19,7 @@ const arTranslations: Translations = {
   'nav.stats': 'الإحصائيات العامة',
   'nav.chats': 'محادثات خدمة العملاء',
   'nav.requests': 'طلبات الخدمات',
-  'nav.apartments': 'إدارة الشقق والسعة',
+  'nav.apartments': 'إدارة الشقق السكنية',
   'nav.offers': 'إدارة الغرف المشتركة',
   'nav.services': 'خدمات الطلاب',
   'nav.universities': 'الجامعات',

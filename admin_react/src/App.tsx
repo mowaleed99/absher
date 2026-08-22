@@ -19,7 +19,7 @@ import { NewsModule } from './modules/news/NewsModule';
 import { NotificationsModule } from './modules/notifications/NotificationsModule';
 import { ChatsModule } from './modules/chats/ChatsModule';
 import { PromoCodesModule } from './modules/promo/PromoCodesModule';
-import { HousingOffersModule } from './modules/offers/HousingOffersModule';
+import { SharedRoomsModule } from './modules/shared_rooms/SharedRoomsModule';
 import { SettingsModule } from './modules/settings/SettingsModule';
 import { LoginOverlay } from './components/LoginOverlay';
 import logoImg from './assets/logo.png';
@@ -67,7 +67,8 @@ function MainRouter() {
           <Route index element={<DashboardModule />} />
           <Route path="dashboard" element={<DashboardModule />} />
           <Route path="apartments" element={<ApartmentsModule />} />
-          <Route path="offers" element={<HousingOffersModule />} />
+          <Route path="offers" element={<SharedRoomsModule />} />
+          <Route path="shared-rooms" element={<SharedRoomsModule />} />
           <Route path="districts" element={<DistrictsModule />} />
           <Route path="universities" element={<UniversitiesModule />} />
           <Route path="services" element={<ServicesModule />} />

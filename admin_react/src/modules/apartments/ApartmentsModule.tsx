@@ -43,6 +43,11 @@ export function ApartmentsModule() {
   // Filtered Apartments
   const filteredApartments = useMemo(() => {
     return apartments.filter((apt) => {
+      // Exclude shared rooms (managed separately in SharedRoomsModule)
+      if (apt.rental_type === 'room_shared') {
+        return false;
+      }
+
       // 1. Search Query
       if (searchQuery.trim()) {
         const q = searchQuery.trim().toLowerCase();
@@ -227,9 +232,8 @@ export function ApartmentsModule() {
             outline: 'none',
           }}
         >
-          <option value="all">{t('rental_type.all')}</option>
+          <option value="all">{t('rental_type.all_residential') || (t('lang') === 'en' ? 'All Flats & Studios' : 'كل الشقق والاستوديوهات')}</option>
           <option value="apartment">{t('rental_type.apartment')}</option>
-          <option value="room_shared">{t('rental_type.room_shared')}</option>
           <option value="studio">{t('rental_type.studio')}</option>
         </select>
       </div>
@@ -294,6 +298,7 @@ export function ApartmentsModule() {
         onSubmit={addApartment}
         districts={districts}
         universities={universities}
+        defaultRentalType="apartment"
       />
 
       {/* Edit Modal */}
