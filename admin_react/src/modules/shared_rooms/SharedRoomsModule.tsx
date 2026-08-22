@@ -144,24 +144,13 @@ export function SharedRoomsModule() {
         <div className="section-title">
           <h2>
             <i className="fa-solid fa-house-circle-check" style={{ color: '#a855f7', marginLeft: '8px' }}></i>
-            {lang === 'ar' ? 'إدارة الغرف المشتركة والسكن المشترك' : 'Shared Rooms & Co-Living Management'}
+            {t('shared_rooms.title')}
           </h2>
           <p>
-            {lang === 'ar'
-              ? 'إدارة وتخصيص الغرف المتاحة للحجز في الشقق المشتركة وسكن الزملاء للطلاب في تبليسي'
-              : 'Manage and customize rooms available in shared student flats across Tbilisi'}
+            {t('shared_rooms.desc')}
           </p>
         </div>
         <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
-          <button
-            type="button"
-            className="btn btn-secondary"
-            onClick={() => refetch?.()}
-            title={t('btn.refresh')}
-          >
-            <i className="fa-solid fa-arrows-rotate"></i>
-            {t('btn.refresh')}
-          </button>
           <button
             type="button"
             className="btn btn-glow"
@@ -172,7 +161,7 @@ export function SharedRoomsModule() {
             onClick={() => setIsAddOpen(true)}
           >
             <i className="fa-solid fa-plus-circle"></i>
-            {lang === 'ar' ? 'إضافة غرفة مشتركة جديدة' : 'Add Shared Room'}
+            {t('btn.add_shared_room')}
           </button>
         </div>
       </div>
@@ -218,7 +207,7 @@ export function SharedRoomsModule() {
           <div>
             <div style={{ fontSize: '1.4rem', fontWeight: 800, color: 'var(--text-main)' }}>{stats.total}</div>
             <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-              {lang === 'ar' ? 'إجمالي الغرف المشتركة' : 'Total Shared Rooms'}
+              {t('shared_rooms.total')}
             </div>
           </div>
         </div>
@@ -256,7 +245,7 @@ export function SharedRoomsModule() {
           <div>
             <div style={{ fontSize: '1.4rem', fontWeight: 800, color: '#10b981' }}>{stats.available}</div>
             <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-              {lang === 'ar' ? 'الغرف المتاحة للحجز' : 'Available for Booking'}
+              {t('shared_rooms.available')}
             </div>
           </div>
         </div>
@@ -294,7 +283,7 @@ export function SharedRoomsModule() {
           <div>
             <div style={{ fontSize: '1.4rem', fontWeight: 800, color: '#ef4444' }}>{stats.special}</div>
             <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-              {lang === 'ar' ? 'عروض خاصة' : 'Special Offers'}
+              {t('shared_rooms.special_offers')}
             </div>
           </div>
         </div>
@@ -332,7 +321,7 @@ export function SharedRoomsModule() {
           <div>
             <div style={{ fontSize: '1.4rem', fontWeight: 800, color: '#f59e0b' }}>{stats.featured}</div>
             <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-              {lang === 'ar' ? 'غرف مميزة ومثبتة' : 'Featured & Pinned'}
+              {t('shared_rooms.featured')}
             </div>
           </div>
         </div>
@@ -342,7 +331,7 @@ export function SharedRoomsModule() {
       <div
         style={{
           display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
           gap: '12px',
           alignItems: 'center',
         }}
@@ -352,11 +341,7 @@ export function SharedRoomsModule() {
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder={
-              lang === 'ar'
-                ? 'ابحث برقم الغرفة، الحي، شروط السكن المشترك...'
-                : 'Search by room ID, district, roommate terms...'
-            }
+            placeholder={t('shared_rooms.search_placeholder')}
             style={{
               width: '100%',
               padding: '12px 18px',
@@ -388,6 +373,29 @@ export function SharedRoomsModule() {
           )}
         </div>
 
+        {/* Status Filter */}
+        <div>
+          <select
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value as 'all' | 'available' | 'special' | 'featured')}
+            style={{
+              width: '100%',
+              padding: '12px 18px',
+              borderRadius: '12px',
+              border: '1px solid var(--border-color)',
+              background: 'var(--bg-card)',
+              color: 'var(--text-main)',
+              fontSize: '0.95rem',
+            }}
+          >
+            <option value="all">{t('filter.all_statuses')}</option>
+            <option value="available">{t('filter.status_available')}</option>
+            <option value="special">{t('filter.status_special')}</option>
+            <option value="featured">{t('filter.status_featured')}</option>
+          </select>
+        </div>
+
+        {/* District Filter */}
         <div>
           <select
             value={districtFilter}
@@ -405,7 +413,7 @@ export function SharedRoomsModule() {
             <option value="">{t('filter.all_districts')}</option>
             {districts.map((d) => (
               <option key={d.id} value={d.id}>
-                {d.name}
+                {lang === 'ar' ? (d.name_ar || d.name) : (d.name_en || d.name)}
               </option>
             ))}
           </select>
@@ -439,12 +447,12 @@ export function SharedRoomsModule() {
         >
           <i className="fa-solid fa-house-circle-xmark" style={{ fontSize: '3rem', marginBottom: '16px', color: 'var(--text-muted)' }}></i>
           <h3 style={{ fontSize: '1.2rem', marginBottom: '8px', color: 'var(--text-main)' }}>
-            {lang === 'ar' ? 'لا توجد غرف مشتركة مطابقة' : 'No matching shared rooms found'}
+            {t('shared_rooms.empty_title')}
           </h3>
           <p style={{ maxWidth: '450px', margin: '0 auto 20px auto', fontSize: '0.9rem' }}>
             {searchQuery || districtFilter || statusFilter !== 'all'
               ? (lang === 'ar' ? 'جرب تغيير معايير البحث أو تصفية الحالة.' : 'Try changing your search or status filter criteria.')
-              : (lang === 'ar' ? 'لم يتم إضافة أي غرف مشتركة بعد. يمكنك البدء بإضافة غرفة مشتركة جديدة الآن.' : 'No shared rooms have been added yet. Start adding one now.')}
+              : t('shared_rooms.empty_desc')}
           </p>
           <button
             type="button"
@@ -453,7 +461,7 @@ export function SharedRoomsModule() {
             onClick={() => setIsAddOpen(true)}
           >
             <i className="fa-solid fa-plus-circle"></i>
-            {lang === 'ar' ? 'إضافة أول غرفة مشتركة' : 'Add First Shared Room'}
+            {t('btn.add_shared_room')}
           </button>
         </div>
       ) : (
