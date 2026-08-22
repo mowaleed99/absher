@@ -24,9 +24,10 @@ export function EditApartmentModal({
   districts,
   universities,
 }: EditApartmentModalProps) {
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
   const { showToast } = useToast();
   const { uploadImages, isUploading } = useUpload();
+  const isRtl = lang === 'ar';
 
   // Form State
   const [titleAr, setTitleAr] = useState('');
@@ -35,6 +36,7 @@ export function EditApartmentModal({
   const [districtId, setDistrictId] = useState('');
   const [rentalType, setRentalType] = useState('apartment');
   const [roomsCount, setRoomsCount] = useState('');
+  const [bathrooms, setBathrooms] = useState('1 حمام');
   const [locationAr, setLocationAr] = useState('');
   const [locationEn, setLocationEn] = useState('');
   const [proximityAr, setProximityAr] = useState('');
@@ -55,6 +57,7 @@ export function EditApartmentModal({
 
   // Universities selection
   const [selectedUnis, setSelectedUnis] = useState<string[]>([]);
+  const [uniTimes, setUniTimes] = useState<Record<string, string>>({});
 
   // Images state (existing + newly uploaded)
   const [existingImages, setExistingImages] = useState<string[]>([]);
@@ -65,6 +68,8 @@ export function EditApartmentModal({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const submittingRef = useRef(false);
   const dateInputRef = useRef<HTMLInputElement>(null);
+
+  const isSharedRoom = rentalType === 'room_shared' || apt?.rental_type === 'room_shared';
 
   const handleOpenCalendar = () => {
     try {
@@ -98,27 +103,12 @@ export function EditApartmentModal({
         if (nums && nums.length >= 2) {
           const d = nums[0].length <= 2 ? nums[0] : nums[1];
           const y = nums[0].length === 4 ? nums[0] : (nums[1].length === 4 ? nums[1] : (nums[2] || '2026'));
-          const m = String(arMonthNums[i]).padStart(2, '0');
-          return `${y}-${m}-${String(d).padStart(2, '0')}`;
+          const mm = String(arMonthNums[i]).padStart(2, '0');
+          const dd = String(d).padStart(2, '0');
+          return `${y}-${mm}-${dd}`;
         }
       }
     }
-
-    // Try finding English months
-    const enMonths = ['january', 'february', 'march', 'april', 'may', 'june', 'july', 'august', 'september', 'october', 'november', 'december'];
-    const lower = trimmed.toLowerCase();
-    for (let i = 0; i < enMonths.length; i++) {
-      if (lower.includes(enMonths[i])) {
-        const nums = lower.match(/\d+/g);
-        if (nums && nums.length >= 2) {
-          const d = nums[0].length <= 2 ? nums[0] : nums[1];
-          const y = nums[0].length === 4 ? nums[0] : (nums[1].length === 4 ? nums[1] : (nums[2] || '2026'));
-          const m = String(i + 1).padStart(2, '0');
-          return `${y}-${m}-${String(d).padStart(2, '0')}`;
-        }
-      }
-    }
-
     return '';
   };
 
@@ -140,47 +130,62 @@ export function EditApartmentModal({
     }
   };
 
-  // Pre-populate fields on apartment change
+  // Populate form when apartment prop changes
   useEffect(() => {
-    if (!apt) return;
+    if (apt) {
+      setTitleAr(apt.title_ar || apt.title || '');
+      setTitleEn(apt.title_en || apt.title || '');
+      setPrice(apt.price !== undefined && apt.price !== null ? String(apt.price) : '');
+      setDistrictId(apt.district_id ? String(apt.district_id) : '');
+      setRentalType(apt.rental_type || 'apartment');
+      setRoomsCount(apt.rooms_count ? String(apt.rooms_count) : '');
+      setLocationAr(apt.location_ar || apt.location || '');
+      setLocationEn(apt.location_en || apt.location || '');
+      setProximityAr(apt.proximity_ar || apt.proximity || '');
+      setProximityEn(apt.proximity_en || apt.proximity || '');
+      setCapacityAr(apt.capacity_ar || apt.capacity || '');
+      setCapacityEn(apt.capacity_en || apt.capacity || '');
+      setOwnerPhone(apt.owner_phone || '');
 
-    setTitleAr(apt.title_ar || apt.title || '');
-    setTitleEn(apt.title_en || '');
-    setPrice(String(apt.price ?? ''));
-    setDistrictId(apt.district_id ? String(apt.district_id) : '');
-    setRentalType(apt.rental_type || 'apartment');
-    setRoomsCount(apt.rooms_count ? String(apt.rooms_count) : '');
-    setLocationAr(apt.location_ar || apt.location || '');
-    setLocationEn(apt.location_en || '');
-    setProximityAr(apt.proximity_ar || apt.proximity || '');
-    setProximityEn(apt.proximity_en || '');
-    setCapacityAr(apt.capacity_ar || apt.capacity || '');
-    setCapacityEn(apt.capacity_en || '');
-    setOwnerPhone(apt.owner_phone || '');
-    setRoommateReqs(apt.roommate_reqs || '');
-    setRoommateFacilities(apt.roommate_facilities || '');
-    setDescAr(apt.description_ar || apt.description || '');
-    setDescEn(apt.description_en || '');
+      // Parse features
+      const fAr = Array.isArray(apt.features_ar) ? apt.features_ar : (Array.isArray(apt.features) ? apt.features : []);
+      const fEn = Array.isArray(apt.features_en) ? apt.features_en : [];
+      setFeaturesAr(fAr.join(' ، '));
+      setFeaturesEn(fEn.join(' , '));
 
-    const featsAr = apt.features_ar && apt.features_ar.length > 0 ? apt.features_ar : apt.features;
-    setFeaturesAr(featsAr.join(' ، '));
-    setFeaturesEn(apt.features_en ? apt.features_en.join(', ') : '');
+      // Extract bathroom info
+      const foundBath = fAr.find(f => f.includes('حمام') || f.includes('Bath'));
+      if (foundBath) {
+        setBathrooms(foundBath.includes('3') ? '3+ حمامات' : (foundBath.includes('2') ? '2 حمام' : '1 حمام'));
+      } else {
+        setBathrooms('1 حمام');
+      }
 
-    const isImm = apt.move_in_type === 'فوري' || apt.move_in_type === 'Immediate' || apt.move_in_type_en === 'Immediate';
-    setMoveInType(isImm ? 'immediate' : 'scheduled');
-    const existingDate = !isImm ? (apt.move_in_date_ar || apt.move_in_date || apt.move_in_date_en || '') : '';
-    setCalendarDate(parseDateStringToISO(existingDate));
-    setMoveInDateAr(!isImm ? (apt.move_in_date_ar || apt.move_in_date || '') : '');
-    setMoveInDateEn(!isImm ? (apt.move_in_date_en || '') : '');
+      // Move-in
+      const isImmed = !apt.move_in_type || apt.move_in_type === 'فوري' || apt.move_in_type === 'immediate';
+      setMoveInType(isImmed ? 'immediate' : 'scheduled');
+      const dAr = apt.move_in_date_ar || apt.move_in_date || 'انتقال فوري';
+      const dEn = apt.move_in_date_en || 'Immediate Move-in';
+      setMoveInDateAr(dAr);
+      setMoveInDateEn(dEn);
+      setCalendarDate(parseDateStringToISO(dAr));
 
-    // Existing universities
-    const existingUniList = (apt.universities || []).map(String);
-    setSelectedUnis(existingUniList);
+      setRoommateReqs(apt.roommate_reqs || '');
+      setRoommateFacilities(apt.roommate_facilities || '');
+      setDescAr(apt.description_ar || apt.description || '');
+      setDescEn(apt.description_en || apt.description || '');
 
-    // Existing images
-    setExistingImages(apt.images || []);
-    setNewImages([]);
-    setIsSpecialOffer(Boolean(apt.is_special_offer));
+      // Universities
+      const unis = Array.isArray(apt.universities) ? apt.universities : [];
+      setSelectedUnis(unis.map(String));
+
+      // Images
+      const imgs = Array.isArray(apt.images) ? apt.images : [];
+      setExistingImages(imgs);
+      setNewImages([]);
+
+      setIsSpecialOffer(Boolean(apt.is_special_offer));
+    }
   }, [apt]);
 
   if (!isOpen || !apt) return null;
@@ -191,24 +196,28 @@ export function EditApartmentModal({
     );
   };
 
+  const handleUniTimeChange = (uniId: number, time: string) => {
+    setUniTimes(prev => ({ ...prev, [String(uniId)]: time }));
+  };
+
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!e.target.files || e.target.files.length === 0) return;
     const fileCount = e.target.files.length;
     showToast(t('msg.compressing_images', { count: fileCount }), 'info');
 
-    const uploaded = await uploadImages(e.target.files, 'apartments');
-    if (uploaded.length > 0) {
-      setNewImages(prev => [...prev, ...uploaded]);
-      showToast(t('msg.images_uploaded', { count: uploaded.length }), 'success');
+    const newUrls = await uploadImages(e.target.files, 'apartments');
+    if (newUrls.length > 0) {
+      setNewImages(prev => [...prev, ...newUrls]);
+      showToast(t('msg.images_uploaded', { count: newUrls.length }), 'success');
     }
   };
 
-  const handleRemoveExistingImage = (idxToRemove: number) => {
-    setExistingImages(prev => prev.filter((_, idx) => idx !== idxToRemove));
+  const handleRemoveExistingImage = (indexToRemove: number) => {
+    setExistingImages(prev => prev.filter((_, idx) => idx !== indexToRemove));
   };
 
-  const handleRemoveNewImage = (idxToRemove: number) => {
-    setNewImages(prev => prev.filter((_, idx) => idx !== idxToRemove));
+  const handleRemoveNewImage = (indexToRemove: number) => {
+    setNewImages(prev => prev.filter((_, idx) => idx !== indexToRemove));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -224,13 +233,44 @@ export function EditApartmentModal({
     setIsSubmitting(true);
 
     try {
+      // Build bilingual proximity lists
+      const proxListAr: string[] = [];
+      const proxListEn: string[] = [];
+      const allSelectedUniIds: (string | number)[] = [];
+
+      selectedUnis.forEach(uniName => {
+        const uniObj = universities.find(u => u.name === uniName || u.name_ar === uniName || u.name_en === uniName || String(u.id) === uniName);
+        if (uniObj) {
+          allSelectedUniIds.push(uniObj.id);
+          const time = uniTimes[String(uniObj.id)];
+          const uNameAr = uniObj.name_ar || uniObj.name;
+          const uNameEn = uniObj.name_en || uniObj.name;
+          if (time) {
+            proxListAr.push(`${uNameAr} (${time} ${t('form.uni_walk_time')})`);
+            proxListEn.push(`${uNameEn} (${time} min walk)`);
+          } else {
+            proxListAr.push(uNameAr);
+            proxListEn.push(uNameEn);
+          }
+        }
+      });
+
+      const finalProximityAr = proxListAr.length > 0
+        ? `${proximityAr} | ${proxListAr.join(' ، ')}`.replace(/^ \| /, '')
+        : proximityAr;
+
+      const finalProximityEn = proxListEn.length > 0
+        ? (proximityEn ? `${proximityEn} | ${proxListEn.join(' , ')}` : proxListEn.join(' , '))
+        : proximityEn;
+
       const featArrAr = featuresAr.split(/[،,]/).map(f => f.trim()).filter(Boolean);
       const featArrEn = featuresEn.split(/[,،]/).map(f => f.trim()).filter(Boolean);
-
-      // Final images: if user uploaded new images, combine or replace based on state
-      const finalImages = [...existingImages, ...newImages];
+      if (!featArrAr.includes(bathrooms)) featArrAr.unshift(bathrooms);
+      if (isSharedRoom && !featArrAr.includes('استئجار مع شريك')) featArrAr.push('استئجار مع شريك');
+      if (!isSharedRoom && rentalType === 'apartment' && !featArrAr.includes('شقة بمفردك')) featArrAr.push('شقة بمفردك');
 
       const isImmediate = moveInType === 'immediate';
+      const finalImages = [...existingImages, ...newImages];
 
       const payload: Record<string, unknown> = {
         id: apt.id,
@@ -241,20 +281,12 @@ export function EditApartmentModal({
         location: locationAr,
         location_ar: locationAr,
         location_en: locationEn,
-        proximity: proximityAr,
-        proximity_ar: proximityAr,
-        proximity_en: proximityEn,
-        universities: Array.from(
-          new Set([
-            ...selectedUnis,
-            ...selectedUnis.map(uName => {
-              const u = universities.find(x => x.name === uName || x.name_ar === uName || x.name_en === uName || String(x.id) === uName);
-              return u ? String(u.id) : null;
-            }).filter(Boolean) as string[],
-          ])
-        ),
-        capacity: capacityAr || t('apartments.default_rooms_desc'),
-        capacity_ar: capacityAr || t('apartments.default_rooms_desc'),
+        proximity: finalProximityAr,
+        proximity_ar: finalProximityAr,
+        proximity_en: finalProximityEn,
+        universities: Array.from(new Set([...allSelectedUniIds.map(String), ...selectedUnis])),
+        capacity: capacityAr || (isSharedRoom ? 'طالبين' : '3 أفراد'),
+        capacity_ar: capacityAr || (isSharedRoom ? 'طالبين' : '3 أفراد'),
         capacity_en: capacityEn || '',
         rental_type: rentalType,
         rooms_count: roomsCount ? parseInt(roomsCount, 10) : null,
@@ -266,8 +298,8 @@ export function EditApartmentModal({
         move_in_date_ar: isImmediate ? 'انتقال فوري' : moveInDateAr,
         move_in_date_en: isImmediate ? 'Immediate Move-in' : moveInDateEn,
         owner_phone: ownerPhone || null,
-        roommate_reqs: rentalType === 'room_shared' ? roommateReqs : null,
-        roommate_facilities: rentalType === 'room_shared' ? roommateFacilities : null,
+        roommate_reqs: isSharedRoom ? roommateReqs : null,
+        roommate_facilities: isSharedRoom ? roommateFacilities : null,
         features: featArrAr,
         features_ar: featArrAr,
         features_en: featArrEn,
@@ -283,7 +315,12 @@ export function EditApartmentModal({
 
       const result = await onSubmit(payload);
       if (result.success) {
-        showToast(t('msg.apartment_updated'), 'success');
+        showToast(
+          isSharedRoom
+            ? (isRtl ? 'تم تعديل بيانات الغرفة المشتركة بنجاح' : 'Shared room updated successfully')
+            : t('msg.apartment_updated'),
+          'success'
+        );
         onClose();
       } else {
         showToast(result.error || t('msg.error_update_apartment'), 'error');
@@ -299,8 +336,13 @@ export function EditApartmentModal({
       <div className="modal-box" style={{ maxWidth: '750px' }}>
         <div className="modal-header">
           <h3>
-            <i className="fa-solid fa-pen-to-square" style={{ color: 'var(--primary)', marginLeft: '8px' }}></i>
-            {t('btn.edit')} #{apt.id} - {titleAr || titleEn}
+            <i
+              className={`fa-solid ${isSharedRoom ? 'fa-people-roof' : 'fa-pen-to-square'}`}
+              style={{ color: isSharedRoom ? '#a855f7' : 'var(--primary)', marginLeft: '8px' }}
+            ></i>
+            {isSharedRoom
+              ? `${isRtl ? 'تعديل بيانات الغرفة المشتركة' : 'Edit Shared Room'} #${apt.id} - ${titleAr || titleEn}`
+              : `${t('btn.edit')} #${apt.id} - ${titleAr || titleEn}`}
           </h3>
           <button type="button" className="close-btn" onClick={onClose}>
             <i className="fa-solid fa-xmark"></i>
@@ -311,20 +353,38 @@ export function EditApartmentModal({
           {/* Row: Titles AR & EN */}
           <div className="form-row">
             <div className="form-group">
-              <label>{t('form.title_ar')}</label>
+              <label>
+                {isSharedRoom
+                  ? (isRtl ? 'عنوان الغرفة / السكن المشترك (عربي):' : 'Shared Room Title (Arabic):')
+                  : t('form.title_ar')}
+              </label>
               <input
                 type="text"
                 value={titleAr}
                 onChange={(e) => setTitleAr(e.target.value)}
+                placeholder={
+                  isSharedRoom
+                    ? 'مثال: سرير في غرفة ماستر لشابين بسابورتالو'
+                    : 'مثال: شقة مودرن بإطلالة مفتوحة'
+                }
                 required
               />
             </div>
             <div className="form-group">
-              <label>{t('form.title_en')}</label>
+              <label>
+                {isSharedRoom
+                  ? (isRtl ? 'عنوان الغرفة (إنجليزي):' : 'Shared Room Title (English):')
+                  : t('form.title_en')}
+              </label>
               <input
                 type="text"
                 value={titleEn}
                 onChange={(e) => setTitleEn(e.target.value)}
+                placeholder={
+                  isSharedRoom
+                    ? 'e.g. Master bedroom for 2 students'
+                    : 'e.g. Modern Apartment with Open View'
+                }
               />
             </div>
           </div>
@@ -332,7 +392,11 @@ export function EditApartmentModal({
           {/* Row: Price, District, Rental Type */}
           <div className="form-row" style={{ gridTemplateColumns: '1fr 1fr 1fr' }}>
             <div className="form-group">
-              <label>{t('form.price')}</label>
+              <label>
+                {isSharedRoom
+                  ? (isRtl ? 'الإيجار الشهري للسرير/الغرفة (دولار):' : 'Monthly Rent per Bed ($):')
+                  : t('form.price')}
+              </label>
               <input
                 type="text"
                 value={price}
@@ -364,10 +428,68 @@ export function EditApartmentModal({
               </select>
             </div>
             <div className="form-group">
-              <label>{t('form.rental_type')}</label>
+              <label>{isRtl ? 'نوع السكن' : 'Category'}</label>
+              {isSharedRoom ? (
+                <div
+                  style={{
+                    padding: '0.8rem 1rem',
+                    borderRadius: '12px',
+                    background: 'rgba(168, 85, 247, 0.12)',
+                    border: '1px solid rgba(168, 85, 247, 0.3)',
+                    color: '#c084fc',
+                    fontWeight: 700,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    fontSize: '0.9rem',
+                    height: '46px',
+                  }}
+                >
+                  <i className="fa-solid fa-people-roof"></i>
+                  <span>{isRtl ? 'سكن مشترك وغرف للطلاب' : 'Shared Room / Co-Living'}</span>
+                </div>
+              ) : (
+                <select
+                  value={rentalType}
+                  onChange={(e) => setRentalType(e.target.value)}
+                  style={{
+                    width: '100%',
+                    padding: '0.8rem 1rem',
+                    borderRadius: '12px',
+                    border: '1px solid var(--border-color)',
+                    background: 'var(--bg-card)',
+                    color: 'var(--text-main)',
+                    fontSize: '0.95rem',
+                  }}
+                >
+                  <option value="apartment">{t('rental_type.apartment')}</option>
+                  <option value="studio">{t('rental_type.studio')}</option>
+                </select>
+              )}
+            </div>
+          </div>
+
+          {/* Row: Bedrooms & Bathrooms */}
+          <div className="form-row">
+            <div className="form-group">
+              <label>
+                {isSharedRoom
+                  ? (isRtl ? 'إجمالي غرف الشقة المشتركة:' : 'Total Rooms in Flat:')
+                  : t('form.rooms_count')}
+              </label>
+              <input
+                type="number"
+                min="1"
+                max="20"
+                value={roomsCount}
+                onChange={(e) => setRoomsCount(e.target.value)}
+              />
+            </div>
+            <div className="form-group">
+              <label>{t('form.bathrooms')}</label>
               <select
-                value={rentalType}
-                onChange={(e) => setRentalType(e.target.value)}
+                value={bathrooms}
+                onChange={(e) => setBathrooms(e.target.value)}
                 style={{
                   width: '100%',
                   padding: '0.8rem 1rem',
@@ -378,66 +500,85 @@ export function EditApartmentModal({
                   fontSize: '0.95rem',
                 }}
               >
-                <option value="apartment">{t('rental_type.apartment')}</option>
-                <option value="room_shared">{t('rental_type.room_shared')}</option>
-                <option value="studio">{t('rental_type.studio')}</option>
+                <option value="1 حمام">{t('bathrooms.1')}</option>
+                <option value="2 حمام">{t('bathrooms.2')}</option>
+                <option value="3+ حمامات">{t('bathrooms.3plus')}</option>
               </select>
             </div>
           </div>
 
-          {/* Row: Bedrooms & Owner Phone */}
-          <div className="form-row">
-            <div className="form-group">
-              <label>{t('form.rooms_count')}</label>
-              <input
-                type="number"
-                min="1"
-                max="20"
-                value={roomsCount}
-                onChange={(e) => setRoomsCount(e.target.value)}
-              />
-            </div>
-            <div className="form-group">
-              <label>{t('form.owner_phone')}</label>
-              <input
-                type="text"
-                value={ownerPhone}
-                onChange={(e) => setOwnerPhone(e.target.value)}
-                placeholder="+995 555 123 456"
-              />
-            </div>
-          </div>
-
           {/* Roommate Section (Conditional) */}
-          {rentalType === 'room_shared' && (
+          {isSharedRoom && (
             <div
               style={{
-                background: 'rgba(251, 191, 36, 0.08)',
-                border: '1px dashed #fbbf24',
+                background: 'linear-gradient(135deg, rgba(168, 85, 247, 0.08), rgba(251, 191, 36, 0.06))',
+                border: '1px solid rgba(168, 85, 247, 0.35)',
                 padding: '1.2rem',
                 borderRadius: '14px',
                 display: 'flex',
                 flexDirection: 'column',
                 gap: '1rem',
+                boxShadow: '0 4px 14px rgba(0, 0, 0, 0.1)',
+                marginBottom: '1rem',
               }}
             >
-              <h4 style={{ color: '#fbbf24', fontSize: '1rem', margin: 0 }}>
-                <i className="fa-solid fa-users"></i> إعدادات واشتراطات شريك السكن
-              </h4>
-              <div className="form-group">
-                <label>{t('form.roommate_reqs')}</label>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <div
+                  style={{
+                    width: '34px',
+                    height: '34px',
+                    borderRadius: '8px',
+                    background: 'rgba(168, 85, 247, 0.2)',
+                    color: '#c084fc',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontSize: '1rem',
+                  }}
+                >
+                  <i className="fa-solid fa-users"></i>
+                </div>
+                <div>
+                  <h4 style={{ color: '#c084fc', fontSize: '0.98rem', fontWeight: 800, margin: 0 }}>
+                    {isRtl ? 'اشتراطات ومواصفات السكن المشترك' : 'Roommate Requirements & Shared Facilities'}
+                  </h4>
+                  <span style={{ fontSize: '0.74rem', color: 'var(--text-muted)' }}>
+                    {isRtl
+                      ? 'تظهر هذه التفاصيل بدقة للطلاب عند تصفح الغرف في تطبيق الهاتف'
+                      : 'Displayed directly in the mobile app for student roommate matching'}
+                  </span>
+                </div>
+              </div>
+
+              <div className="form-group" style={{ margin: 0 }}>
+                <label style={{ color: 'var(--text-main)', fontWeight: 700 }}>
+                  {isRtl ? 'شروط ومواصفات شريك السكن المطلوب:' : 'Roommate Requirements:'}
+                </label>
                 <input
                   type="text"
                   value={roommateReqs}
                   onChange={(e) => setRoommateReqs(e.target.value)}
+                  placeholder={
+                    isRtl
+                      ? 'مثال: طالب غير مدخن، هادئ وملتزم، دراسة طبية أو هندسة'
+                      : 'e.g. Non-smoker, quiet, medical or engineering student'
+                  }
                 />
               </div>
-              <div className="form-group">
-                <label>{t('form.roommate_facilities')}</label>
+
+              <div className="form-group" style={{ margin: 0 }}>
+                <label style={{ color: 'var(--text-main)', fontWeight: 700 }}>
+                  {isRtl ? 'المساحة والمرافق المتاحة لشريك السكن:' : 'Available Space & Shared Amenities:'}
+                </label>
                 <input
                   type="text"
                   value={roommateFacilities}
                   onChange={(e) => setRoommateFacilities(e.target.value)}
+                  placeholder={
+                    isRtl
+                      ? 'مثال: سرير ومكتب مستقل، دولاب ملابس، مطبخ وصالة مشتركة، إنترنت فائق السرعة'
+                      : 'e.g. Independent bed & desk, wardrobe, equipped kitchen, shared lounge, fast Wi-Fi'
+                  }
                 />
               </div>
             </div>
@@ -451,6 +592,7 @@ export function EditApartmentModal({
                 type="text"
                 value={locationAr}
                 onChange={(e) => setLocationAr(e.target.value)}
+                placeholder="مثال: شارع بيكيني، سابورتالو"
               />
             </div>
             <div className="form-group">
@@ -459,6 +601,7 @@ export function EditApartmentModal({
                 type="text"
                 value={locationEn}
                 onChange={(e) => setLocationEn(e.target.value)}
+                placeholder="e.g. Pekini Ave, Saburtalo"
               />
             </div>
           </div>
@@ -471,6 +614,7 @@ export function EditApartmentModal({
                 type="text"
                 value={proximityAr}
                 onChange={(e) => setProximityAr(e.target.value)}
+                placeholder="مثال: يبعد 5 دقائق عن محطة المترو"
               />
             </div>
             <div className="form-group">
@@ -479,6 +623,7 @@ export function EditApartmentModal({
                 type="text"
                 value={proximityEn}
                 onChange={(e) => setProximityEn(e.target.value)}
+                placeholder="e.g. 5 minutes from metro station"
               />
             </div>
           </div>
@@ -486,24 +631,45 @@ export function EditApartmentModal({
           {/* Row: Capacity AR & EN */}
           <div className="form-row">
             <div className="form-group">
-              <label>{t('form.capacity_ar')}</label>
+              <label>
+                {isSharedRoom
+                  ? (isRtl ? 'السعة الاستيعابية للغرفة (عربي):' : 'Room Capacity (Arabic):')
+                  : t('form.capacity_ar')}
+              </label>
               <input
                 type="text"
                 value={capacityAr}
                 onChange={(e) => setCapacityAr(e.target.value)}
+                placeholder={isSharedRoom ? 'مثال: طالبين (سريرين)' : 'مثال: 3 أفراد'}
               />
             </div>
             <div className="form-group">
-              <label>{t('form.capacity_en')}</label>
+              <label>
+                {isSharedRoom
+                  ? (isRtl ? 'السعة الاستيعابية (إنجليزي):' : 'Room Capacity (English):')
+                  : t('form.capacity_en')}
+              </label>
               <input
                 type="text"
                 value={capacityEn}
                 onChange={(e) => setCapacityEn(e.target.value)}
+                placeholder={isSharedRoom ? 'e.g. 2 Students (2 Beds)' : 'e.g. 3 People'}
               />
             </div>
           </div>
 
-          {/* Move-in Type and Date */}
+          {/* Row: Owner Phone */}
+          <div className="form-group">
+            <label>{t('form.owner_phone')}</label>
+            <input
+              type="text"
+              value={ownerPhone}
+              onChange={(e) => setOwnerPhone(e.target.value)}
+              placeholder="+995 555 123 456"
+            />
+          </div>
+
+          {/* Move-in Type and Scheduled Date */}
           <div className="form-row">
             <div className="form-group">
               <label>{t('form.move_in_type')}</label>
@@ -560,11 +726,10 @@ export function EditApartmentModal({
                       display: 'inline-flex',
                       alignItems: 'center',
                       gap: '6px',
-                      boxShadow: '0 2px 8px var(--primary-glow)',
                     }}
                   >
-                    <i className="fa-solid fa-arrow-pointer"></i>
-                    {t('form.click_to_pick_date')}
+                    <i className="fa-solid fa-calendar"></i>
+                    {t('btn.choose_date')}
                   </button>
                 </div>
                 <input
@@ -572,47 +737,122 @@ export function EditApartmentModal({
                   type="date"
                   value={calendarDate}
                   onChange={(e) => handleCalendarChange(e.target.value)}
-                  onClick={handleOpenCalendar}
                   style={{
                     width: '100%',
-                    padding: '0.85rem 1rem',
+                    padding: '0.75rem 1rem',
                     borderRadius: '10px',
-                    border: '1px solid var(--primary)',
+                    border: '1px solid var(--border-color)',
                     background: 'var(--bg-card)',
                     color: 'var(--text-main)',
-                    fontSize: '1rem',
+                    fontSize: '0.95rem',
                     cursor: 'pointer',
-                    colorScheme: 'dark',
                   }}
                 />
               </div>
 
               <div className="form-row" style={{ margin: 0 }}>
                 <div className="form-group" style={{ margin: 0 }}>
-                  <label style={{ fontSize: '0.85rem' }}>{t('form.move_in_date_ar')}</label>
+                  <label style={{ fontSize: '0.82rem' }}>{t('form.move_in_date_ar')}</label>
                   <input
                     type="text"
                     value={moveInDateAr}
                     onChange={(e) => setMoveInDateAr(e.target.value)}
                     placeholder="مثال: 1 سبتمبر 2026"
-                    style={{ fontSize: '0.9rem' }}
                   />
                 </div>
                 <div className="form-group" style={{ margin: 0 }}>
-                  <label style={{ fontSize: '0.85rem' }}>{t('form.move_in_date_en')}</label>
+                  <label style={{ fontSize: '0.82rem' }}>{t('form.move_in_date_en')}</label>
                   <input
                     type="text"
                     value={moveInDateEn}
                     onChange={(e) => setMoveInDateEn(e.target.value)}
-                    placeholder="e.g. 1 September 2026"
-                    style={{ fontSize: '0.9rem' }}
+                    placeholder="e.g. September 1, 2026"
                   />
                 </div>
               </div>
             </div>
           )}
 
-          {/* Features AR & EN */}
+          {/* Universities Multi-Select & Proximity Times */}
+          <div className="form-group">
+            <label>{t('form.universities_nearby')}</label>
+            <div
+              style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))',
+                gap: '8px',
+                maxHeight: '180px',
+                overflowY: 'auto',
+                padding: '10px',
+                border: '1px solid var(--border-color)',
+                borderRadius: '12px',
+                background: 'var(--bg-card)',
+                marginBottom: '10px',
+              }}
+            >
+              {universities.map((uni) => {
+                const uName = uni.name_ar || uni.name;
+                const isSelected = selectedUnis.includes(uni.name) || selectedUnis.includes(uni.name_ar || '') || selectedUnis.includes(String(uni.id));
+                return (
+                  <label
+                    key={uni.id}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '8px',
+                      fontSize: '0.85rem',
+                      cursor: 'pointer',
+                      padding: '4px 8px',
+                      borderRadius: '6px',
+                      background: isSelected ? 'rgba(99, 102, 241, 0.15)' : 'transparent',
+                    }}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={isSelected}
+                      onChange={() => handleUniToggle(uni.name_ar || uni.name)}
+                      style={{ accentColor: 'var(--primary)' }}
+                    />
+                    <span style={{ color: isSelected ? 'var(--primary)' : 'var(--text-main)' }}>{uName}</span>
+                  </label>
+                );
+              })}
+            </div>
+
+            {/* Time inputs for selected universities */}
+            {selectedUnis.length > 0 && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+                  {t('form.uni_time_instruction')}
+                </span>
+                {selectedUnis.map((uName) => {
+                  const uniObj = universities.find(u => u.name === uName || u.name_ar === uName || u.name_en === uName || String(u.id) === uName);
+                  if (!uniObj) return null;
+                  return (
+                    <div key={uniObj.id} style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                      <span style={{ fontSize: '0.85rem', minWidth: '140px', fontWeight: 600 }}>
+                        {uniObj.name_ar || uniObj.name}:
+                      </span>
+                      <input
+                        type="number"
+                        min="1"
+                        max="120"
+                        placeholder="5"
+                        value={uniTimes[String(uniObj.id)] || ''}
+                        onChange={(e) => handleUniTimeChange(uniObj.id, e.target.value)}
+                        style={{ width: '80px', padding: '4px 8px', borderRadius: '6px' }}
+                      />
+                      <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+                        {t('form.uni_walk_time')}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+
+          {/* Features / Amenities AR & EN */}
           <div className="form-row">
             <div className="form-group">
               <label>{t('form.features_ar')}</label>
@@ -620,6 +860,7 @@ export function EditApartmentModal({
                 type="text"
                 value={featuresAr}
                 onChange={(e) => setFeaturesAr(e.target.value)}
+                placeholder="تكييف، تدفئة، غسالة..."
               />
             </div>
             <div className="form-group">
@@ -628,169 +869,184 @@ export function EditApartmentModal({
                 type="text"
                 value={featuresEn}
                 onChange={(e) => setFeaturesEn(e.target.value)}
+                placeholder="AC, Heating, Washing Machine..."
               />
             </div>
           </div>
 
-          {/* Universities Checkboxes */}
+          {/* Images Section (Existing + New Uploads) */}
           <div className="form-group">
-            <label>{t('form.nearby_unis')}</label>
+            <label>{t('form.apartment_images')}</label>
             <div
               style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
-                gap: '10px',
-                background: 'rgba(0,0,0,0.2)',
-                padding: '12px',
+                border: '2px dashed var(--border-color)',
+                padding: '20px',
                 borderRadius: '12px',
-                border: '1px solid var(--border-color)',
+                textAlign: 'center',
+                background: 'rgba(255, 255, 255, 0.02)',
               }}
             >
-              {universities.map((uni) => {
-                const isChecked = selectedUnis.includes(uni.name) || selectedUnis.includes(uni.name_ar) || selectedUnis.includes(String(uni.id));
-                return (
-                  <label key={uni.id} style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', margin: 0 }}>
-                    <input
-                      type="checkbox"
-                      checked={isChecked}
-                      onChange={() => handleUniToggle(uni.name_ar || uni.name)}
-                      style={{ width: '16px', height: '16px' }}
-                    />
-                    <span>{uni.name_ar || uni.name}</span>
-                  </label>
-                );
-              })}
+              <input
+                type="file"
+                multiple
+                accept="image/*"
+                onChange={handleFileChange}
+                disabled={isUploading}
+                style={{ display: 'none' }}
+                id="editAptImageUpload"
+              />
+              <label
+                htmlFor="editAptImageUpload"
+                style={{
+                  cursor: isUploading ? 'not-allowed' : 'pointer',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  background: 'var(--bg-card)',
+                  padding: '8px 16px',
+                  borderRadius: '8px',
+                  border: '1px solid var(--border-color)',
+                  fontWeight: 600,
+                  fontSize: '0.9rem',
+                }}
+              >
+                {isUploading ? (
+                  <>
+                    <i className="fa-solid fa-spinner fa-spin"></i> {t('msg.uploading')}
+                  </>
+                ) : (
+                  <>
+                    <i className="fa-solid fa-cloud-arrow-up" style={{ color: 'var(--primary)' }}></i>
+                    {t('form.choose_images')}
+                  </>
+                )}
+              </label>
+
+              {/* Existing & New Images Preview */}
+              {(existingImages.length > 0 || newImages.length > 0) && (
+                <div
+                  style={{
+                    display: 'flex',
+                    gap: '10px',
+                    flexWrap: 'wrap',
+                    marginTop: '16px',
+                    justifyContent: 'center',
+                  }}
+                >
+                  {existingImages.map((imgUrl, idx) => (
+                    <div
+                      key={`existing-${idx}`}
+                      style={{
+                        position: 'relative',
+                        width: '80px',
+                        height: '80px',
+                        borderRadius: '8px',
+                        overflow: 'hidden',
+                        border: '1px solid var(--border-color)',
+                      }}
+                    >
+                      <img
+                        src={resolveImageUrl(imgUrl)}
+                        alt={`Existing ${idx + 1}`}
+                        style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveExistingImage(idx)}
+                        style={{
+                          position: 'absolute',
+                          top: '2px',
+                          right: '2px',
+                          background: 'rgba(239, 68, 68, 0.85)',
+                          color: '#fff',
+                          border: 'none',
+                          borderRadius: '50%',
+                          width: '20px',
+                          height: '20px',
+                          fontSize: '0.7rem',
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                        }}
+                      >
+                        <i className="fa-solid fa-xmark"></i>
+                      </button>
+                    </div>
+                  ))}
+
+                  {newImages.map((imgUrl, idx) => (
+                    <div
+                      key={`new-${idx}`}
+                      style={{
+                        position: 'relative',
+                        width: '80px',
+                        height: '80px',
+                        borderRadius: '8px',
+                        overflow: 'hidden',
+                        border: '2px solid var(--primary)',
+                      }}
+                    >
+                      <img
+                        src={resolveImageUrl(imgUrl)}
+                        alt={`New ${idx + 1}`}
+                        style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveNewImage(idx)}
+                        style={{
+                          position: 'absolute',
+                          top: '2px',
+                          right: '2px',
+                          background: 'rgba(239, 68, 68, 0.85)',
+                          color: '#fff',
+                          border: 'none',
+                          borderRadius: '50%',
+                          width: '20px',
+                          height: '20px',
+                          fontSize: '0.7rem',
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                        }}
+                      >
+                        <i className="fa-solid fa-xmark"></i>
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
-          </div>
-
-          {/* Images Section: Current Images & Upload New */}
-          <div className="form-group">
-            <label>{t('apartments.current_images')}</label>
-            {existingImages.length > 0 ? (
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginBottom: '10px' }}>
-                {existingImages.map((url, idx) => (
-                  <div key={idx} style={{ position: 'relative', width: '65px', height: '65px' }}>
-                    <img
-                      src={resolveImageUrl(url)}
-                      alt="current"
-                      style={{
-                        width: '100%',
-                        height: '100%',
-                        borderRadius: '8px',
-                        objectFit: 'cover',
-                        border: '2px solid var(--accent-amber)',
-                      }}
-                    />
-                    <button
-                      type="button"
-                      onClick={() => handleRemoveExistingImage(idx)}
-                      style={{
-                        position: 'absolute',
-                        top: '-6px',
-                        right: '-6px',
-                        background: '#ef4444',
-                        color: '#fff',
-                        border: 'none',
-                        borderRadius: '50%',
-                        width: '20px',
-                        height: '20px',
-                        fontSize: '0.7rem',
-                        cursor: 'pointer',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                      }}
-                      title="حذف الصورة"
-                    >
-                      <i className="fa-solid fa-xmark"></i>
-                    </button>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)', display: 'block', marginBottom: '8px' }}>
-                {t('apartments.no_current_images')}
-              </span>
-            )}
-
-            <label style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginTop: '6px' }}>
-              {t('apartments.replace_images_notice')}
-            </label>
-            <input
-              type="file"
-              multiple
-              accept="image/*"
-              onChange={handleFileChange}
-              disabled={isUploading}
-              style={{
-                width: '100%',
-                padding: '0.8rem',
-                borderRadius: '12px',
-                border: '1px dashed var(--border-color)',
-                background: 'rgba(0,0,0,0.15)',
-                color: 'var(--text-muted)',
-                cursor: 'pointer',
-              }}
-            />
-            {newImages.length > 0 && (
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginTop: '10px' }}>
-                {newImages.map((url, idx) => (
-                  <div key={idx} style={{ position: 'relative', width: '65px', height: '65px' }}>
-                    <img
-                      src={resolveImageUrl(url)}
-                      alt="new upload"
-                      style={{
-                        width: '100%',
-                        height: '100%',
-                        borderRadius: '8px',
-                        objectFit: 'cover',
-                        border: '2px solid #25D366',
-                      }}
-                    />
-                    <button
-                      type="button"
-                      onClick={() => handleRemoveNewImage(idx)}
-                      style={{
-                        position: 'absolute',
-                        top: '-6px',
-                        right: '-6px',
-                        background: '#ef4444',
-                        color: '#fff',
-                        border: 'none',
-                        borderRadius: '50%',
-                        width: '20px',
-                        height: '20px',
-                        fontSize: '0.7rem',
-                        cursor: 'pointer',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                      }}
-                    >
-                      <i className="fa-solid fa-xmark"></i>
-                    </button>
-                  </div>
-                ))}
-              </div>
-            )}
           </div>
 
           {/* Description AR & EN */}
           <div className="form-row">
             <div className="form-group">
-              <label>{t('form.desc_ar')}</label>
+              <label>
+                {isSharedRoom
+                  ? (isRtl ? 'وصف وتفاصيل الغرفة المشتركة (عربي):' : 'Shared Room Details (Arabic):')
+                  : t('form.desc_ar')}
+              </label>
               <textarea
                 rows={3}
                 value={descAr}
                 onChange={(e) => setDescAr(e.target.value)}
+                placeholder="تفاصيل العرض..."
               />
             </div>
             <div className="form-group">
-              <label>{t('form.desc_en')}</label>
+              <label>
+                {isSharedRoom
+                  ? (isRtl ? 'وصف الغرفة (إنجليزي):' : 'Shared Room Details (English):')
+                  : t('form.desc_en')}
+              </label>
               <textarea
                 rows={3}
                 value={descEn}
                 onChange={(e) => setDescEn(e.target.value)}
+                placeholder="Details..."
               />
             </div>
           </div>
@@ -798,9 +1054,6 @@ export function EditApartmentModal({
           {/* Special Offer Toggle */}
           <div
             style={{
-              display: 'flex',
-              gap: '16px',
-              flexWrap: 'wrap',
               padding: '12px 16px',
               borderRadius: '12px',
               background: 'rgba(255, 255, 255, 0.03)',
@@ -831,7 +1084,10 @@ export function EditApartmentModal({
               type="submit"
               disabled={isSubmitting || isUploading}
               className="btn btn-glow"
-              style={{ opacity: isSubmitting ? 0.7 : 1 }}
+              style={{
+                background: isSharedRoom ? 'linear-gradient(135deg, #9333ea, #6366f1)' : undefined,
+                opacity: isSubmitting ? 0.7 : 1,
+              }}
             >
               {isSubmitting ? (
                 <>
@@ -839,7 +1095,10 @@ export function EditApartmentModal({
                 </>
               ) : (
                 <>
-                  <i className="fa-solid fa-check"></i> {t('form.save_changes')}
+                  <i className={`fa-solid ${isSharedRoom ? 'fa-people-roof' : 'fa-check'}`}></i>{' '}
+                  {isSharedRoom
+                    ? (isRtl ? 'حفظ تعديلات الغرفة المشتركة' : 'Save Shared Room Changes')
+                    : (isRtl ? 'حفظ تعديلات الشقة' : 'Save Apartment Changes')}
                 </>
               )}
             </button>

@@ -23,6 +23,7 @@ try {
     $featsCol = ($lang === 'en') ? "COALESCE(NULLIF(features_en, ''), NULLIF(features_ar, ''), features)" : "COALESCE(NULLIF(features_ar, ''), features)";
 
     $aptQuery = "SELECT id, price, images, district_id, rental_type, rooms_count, is_available, is_featured, featured_until, is_special_offer, universities,
+                        roommate_reqs, roommate_facilities, owner_phone,
                         $titleCol AS title, $descCol AS description, $locCol AS location, $proxCol AS proximity,
                         $capCol AS capacity, $mitCol AS move_in_type, $midCol AS move_in_date, $featsCol AS features
                  FROM apartments 

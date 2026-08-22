@@ -23,9 +23,11 @@ export function AddApartmentModal({
   universities,
   defaultRentalType = 'apartment',
 }: AddApartmentModalProps) {
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
   const { showToast } = useToast();
   const { uploadImages, isUploading } = useUpload();
+  const isRtl = lang === 'ar';
+  const isSharedRoom = defaultRentalType === 'room_shared';
 
   // Form State
   const [titleAr, setTitleAr] = useState('');
@@ -33,23 +35,35 @@ export function AddApartmentModal({
   const [price, setPrice] = useState('');
   const [districtId, setDistrictId] = useState('');
   const [rentalType, setRentalType] = useState(defaultRentalType);
-  const [roomsCount, setRoomsCount] = useState('2');
+  const [roomsCount, setRoomsCount] = useState(isSharedRoom ? '3' : '2');
   const [bathrooms, setBathrooms] = useState('1 حمام');
   const [locationAr, setLocationAr] = useState('');
   const [locationEn, setLocationEn] = useState('');
   const [proximityAr, setProximityAr] = useState('');
   const [proximityEn, setProximityEn] = useState('');
-  const [capacityAr, setCapacityAr] = useState('3 أفراد');
-  const [capacityEn, setCapacityEn] = useState('3 People');
+  const [capacityAr, setCapacityAr] = useState(isSharedRoom ? 'طالبين (سريرين)' : '3 أفراد');
+  const [capacityEn, setCapacityEn] = useState(isSharedRoom ? '2 Students (2 Beds)' : '3 People');
   const [ownerPhone, setOwnerPhone] = useState('');
-  const [featuresAr, setFeaturesAr] = useState('تكييف ، تدفئة مركزية ، غسالة');
-  const [featuresEn, setFeaturesEn] = useState('AC, Central Heating, Washing Machine');
+  const [featuresAr, setFeaturesAr] = useState(
+    isSharedRoom
+      ? 'إنترنت فائق السرعة، مكتب دراسي، تدفئة مركزية، غسالة، تكييف، مطبخ مجهز'
+      : 'تكييف، تدفئة مركزية، غسالة، مصعد، أمن وحراسة'
+  );
+  const [featuresEn, setFeaturesEn] = useState(
+    isSharedRoom
+      ? 'High-speed Wi-Fi, Study Desk, Central Heating, Washing Machine, AC, Equipped Kitchen'
+      : 'Air Conditioning, Central Heating, Washing Machine, Elevator, Security'
+  );
   const [moveInType, setMoveInType] = useState('immediate');
   const [calendarDate, setCalendarDate] = useState('');
-  const [moveInDateAr, setMoveInDateAr] = useState('');
-  const [moveInDateEn, setMoveInDateEn] = useState('');
-  const [roommateReqs, setRoommateReqs] = useState('');
-  const [roommateFacilities, setRoommateFacilities] = useState('');
+  const [moveInDateAr, setMoveInDateAr] = useState('انتقال فوري');
+  const [moveInDateEn, setMoveInDateEn] = useState('Immediate Move-in');
+  const [roommateReqs, setRoommateReqs] = useState(
+    isSharedRoom ? 'طالب غير مدخن، هادئ وملتزم' : ''
+  );
+  const [roommateFacilities, setRoommateFacilities] = useState(
+    isSharedRoom ? 'سرير ومكتب مستقل، دولاب ملابس، صالة ومطبخ مشترك' : ''
+  );
   const [descAr, setDescAr] = useState('');
   const [descEn, setDescEn] = useState('');
 
@@ -106,6 +120,19 @@ export function AddApartmentModal({
   React.useEffect(() => {
     if (isOpen) {
       setRentalType(defaultRentalType);
+      if (defaultRentalType === 'room_shared') {
+        setCapacityAr('طالبين (سريرين)');
+        setCapacityEn('2 Students (2 Beds)');
+        setRoomsCount('3');
+        setRoommateReqs('طالب غير مدخن، هادئ وملتزم');
+        setRoommateFacilities('سرير ومكتب مستقل، دولاب ملابس، صالة ومطبخ مشترك');
+      } else {
+        setCapacityAr('3 أفراد');
+        setCapacityEn('3 People');
+        setRoomsCount('2');
+        setRoommateReqs('');
+        setRoommateFacilities('');
+      }
     }
   }, [isOpen, defaultRentalType]);
 
@@ -115,7 +142,7 @@ export function AddApartmentModal({
     setPrice('');
     setDistrictId('');
     setRentalType(defaultRentalType);
-    setRoomsCount('');
+    setRoomsCount(isSharedRoom ? '3' : '2');
     setBathrooms('1 حمام');
     setLocationAr('');
     setLocationEn('');
@@ -124,14 +151,22 @@ export function AddApartmentModal({
     setCalendarDate('');
     setMoveInDateAr('انتقال فوري');
     setMoveInDateEn('Immediate Move-in');
-    setCapacityAr('');
-    setCapacityEn('');
+    setCapacityAr(isSharedRoom ? 'طالبين (سريرين)' : '3 أفراد');
+    setCapacityEn(isSharedRoom ? '2 Students (2 Beds)' : '3 People');
     setProximityAr('');
     setProximityEn('');
-    setFeaturesAr('تكييف، تدفئة مركزية، غسالة، مصعد، أمن وحراسة');
-    setFeaturesEn('Air Conditioning, Central Heating, Washing Machine, Elevator, Security');
-    setRoommateReqs('غير مدخن، طالب، ملتزم بالهدوء');
-    setRoommateFacilities('غرفة نوم خاصة، صالة مشتركة، حمام ومطبخ مجهزان بالكامل');
+    setFeaturesAr(
+      isSharedRoom
+        ? 'إنترنت فائق السرعة، مكتب دراسي، تدفئة مركزية، غسالة، تكييف، مطبخ مجهز'
+        : 'تكييف، تدفئة مركزية، غسالة، مصعد، أمن وحراسة'
+    );
+    setFeaturesEn(
+      isSharedRoom
+        ? 'High-speed Wi-Fi, Study Desk, Central Heating, Washing Machine, AC, Equipped Kitchen'
+        : 'Air Conditioning, Central Heating, Washing Machine, Elevator, Security'
+    );
+    setRoommateReqs(isSharedRoom ? 'طالب غير مدخن، هادئ وملتزم' : '');
+    setRoommateFacilities(isSharedRoom ? 'سرير ومكتب مستقل، دولاب ملابس، صالة ومطبخ مشترك' : '');
     setDescAr('');
     setDescEn('');
     setSelectedUnis([]);
@@ -220,8 +255,8 @@ export function AddApartmentModal({
       const featArrAr = featuresAr.split(/[،,]/).map(f => f.trim()).filter(Boolean);
       const featArrEn = featuresEn.split(/[,،]/).map(f => f.trim()).filter(Boolean);
       if (!featArrAr.includes(bathrooms)) featArrAr.unshift(bathrooms);
-      if (rentalType === 'room_shared' && !featArrAr.includes('استئجار مع شريك')) featArrAr.push('استئجار مع شريك');
-      if (rentalType === 'apartment' && !featArrAr.includes('شقة بمفردك')) featArrAr.push('شقة بمفردك');
+      if (isSharedRoom && !featArrAr.includes('استئجار مع شريك')) featArrAr.push('استئجار مع شريك');
+      if (!isSharedRoom && rentalType === 'apartment' && !featArrAr.includes('شقة بمفردك')) featArrAr.push('شقة بمفردك');
 
       const isImmediate = moveInType === 'immediate';
 
@@ -237,10 +272,10 @@ export function AddApartmentModal({
         proximity_ar: finalProximityAr,
         proximity_en: finalProximityEn,
         universities: Array.from(new Set([...allSelectedUniIds.map(String), ...selectedUnis])),
-        capacity: capacityAr || t('apartments.default_rooms_desc'),
-        capacity_ar: capacityAr || t('apartments.default_rooms_desc'),
+        capacity: capacityAr || (isSharedRoom ? 'طالبين' : '3 أفراد'),
+        capacity_ar: capacityAr || (isSharedRoom ? 'طالبين' : '3 أفراد'),
         capacity_en: capacityEn || '',
-        rental_type: rentalType,
+        rental_type: isSharedRoom ? 'room_shared' : rentalType,
         rooms_count: roomsCount ? parseInt(roomsCount, 10) : null,
         district_id: districtId ? parseInt(districtId, 10) : null,
         move_in_type: isImmediate ? 'فوري' : 'ميعاد',
@@ -250,8 +285,8 @@ export function AddApartmentModal({
         move_in_date_ar: isImmediate ? 'انتقال فوري' : moveInDateAr,
         move_in_date_en: isImmediate ? 'Immediate Move-in' : moveInDateEn,
         owner_phone: ownerPhone || null,
-        roommate_reqs: rentalType === 'room_shared' ? roommateReqs : null,
-        roommate_facilities: rentalType === 'room_shared' ? roommateFacilities : null,
+        roommate_reqs: isSharedRoom ? roommateReqs : null,
+        roommate_facilities: isSharedRoom ? roommateFacilities : null,
         features: featArrAr,
         features_ar: featArrAr,
         features_en: featArrEn,
@@ -265,7 +300,12 @@ export function AddApartmentModal({
 
       const result = await onSubmit(payload);
       if (result.success) {
-        showToast(t('msg.apartment_added'), 'success');
+        showToast(
+          isSharedRoom
+            ? (isRtl ? 'تم إضافة الغرفة المشتركة بنجاح' : 'Shared room added successfully')
+            : t('msg.apartment_added'),
+          'success'
+        );
         resetForm();
         onClose();
       } else {
@@ -282,8 +322,13 @@ export function AddApartmentModal({
       <div className="modal-box" style={{ maxWidth: '750px' }}>
         <div className="modal-header">
           <h3>
-            <i className="fa-solid fa-plus-circle" style={{ color: 'var(--primary)', marginLeft: '8px' }}></i>
-            {t('apartments.add_button')}
+            <i
+              className={`fa-solid ${isSharedRoom ? 'fa-people-roof' : 'fa-building-circle-check'}`}
+              style={{ color: isSharedRoom ? '#a855f7' : 'var(--primary)', marginLeft: '8px' }}
+            ></i>
+            {isSharedRoom
+              ? (isRtl ? 'إضافة غرفة مشتركة جديدة (سكن طلابي)' : 'Add New Shared Room (Student Co-Living)')
+              : (isRtl ? 'إضافة شقة سكنية جديدة' : 'Add New Residential Apartment')}
           </h3>
           <button type="button" className="close-btn" onClick={handleClose}>
             <i className="fa-solid fa-xmark"></i>
@@ -294,35 +339,55 @@ export function AddApartmentModal({
           {/* Row: Titles AR & EN */}
           <div className="form-row">
             <div className="form-group">
-              <label>{t('form.title_ar')}</label>
+              <label>
+                {isSharedRoom
+                  ? (isRtl ? 'عنوان الغرفة / السكن المشترك (عربي):' : 'Shared Room Title (Arabic):')
+                  : t('form.title_ar')}
+              </label>
               <input
                 type="text"
                 value={titleAr}
                 onChange={(e) => setTitleAr(e.target.value)}
-                placeholder="مثال: شقة مودرن بإطلالة مفتوحة"
+                placeholder={
+                  isSharedRoom
+                    ? 'مثال: سرير في غرفة ماستر لشابين بشقة مفروشة بسابورتالو'
+                    : 'مثال: شقة مودرن بإطلالة مفتوحة'
+                }
                 required
               />
             </div>
             <div className="form-group">
-              <label>{t('form.title_en')}</label>
+              <label>
+                {isSharedRoom
+                  ? (isRtl ? 'عنوان الغرفة (إنجليزي):' : 'Shared Room Title (English):')
+                  : t('form.title_en')}
+              </label>
               <input
                 type="text"
                 value={titleEn}
                 onChange={(e) => setTitleEn(e.target.value)}
-                placeholder="e.g. Modern Apartment with Open View"
+                placeholder={
+                  isSharedRoom
+                    ? 'e.g. Master bedroom bed for 2 students in Saburtalo'
+                    : 'e.g. Modern Apartment with Open View'
+                }
               />
             </div>
           </div>
 
-          {/* Row: Price, District, Rental Type */}
+          {/* Row: Price, District, Category */}
           <div className="form-row" style={{ gridTemplateColumns: '1fr 1fr 1fr' }}>
             <div className="form-group">
-              <label>{t('form.price')}</label>
+              <label>
+                {isSharedRoom
+                  ? (isRtl ? 'الإيجار الشهري للسرير/الغرفة (دولار):' : 'Monthly Rent per Bed ($):')
+                  : t('form.price')}
+              </label>
               <input
                 type="text"
                 value={price}
                 onChange={(e) => setPrice(e.target.value)}
-                placeholder="مثال: 450"
+                placeholder={isSharedRoom ? 'مثال: 200' : 'مثال: 450'}
                 required
               />
             </div>
@@ -350,39 +415,65 @@ export function AddApartmentModal({
                 ))}
               </select>
             </div>
+
+            {/* Housing Type: Locked badge for Shared Rooms, Dropdown for Apartments */}
             <div className="form-group">
-              <label>{t('form.rental_type')}</label>
-              <select
-                value={rentalType}
-                onChange={(e) => setRentalType(e.target.value as 'apartment' | 'room_shared' | 'studio')}
-                style={{
-                  width: '100%',
-                  padding: '0.8rem 1rem',
-                  borderRadius: '12px',
-                  border: '1px solid var(--border-color)',
-                  background: 'var(--bg-card)',
-                  color: 'var(--text-main)',
-                  fontSize: '0.95rem',
-                }}
-              >
-                <option value="apartment">{t('rental_type.apartment')}</option>
-                <option value="room_shared">{t('rental_type.room_shared')}</option>
-                <option value="studio">{t('rental_type.studio')}</option>
-              </select>
+              <label>{isRtl ? 'نوع السكن' : 'Housing Category'}</label>
+              {isSharedRoom ? (
+                <div
+                  style={{
+                    padding: '0.8rem 1rem',
+                    borderRadius: '12px',
+                    background: 'rgba(168, 85, 247, 0.12)',
+                    border: '1px solid rgba(168, 85, 247, 0.3)',
+                    color: '#c084fc',
+                    fontWeight: 700,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    fontSize: '0.9rem',
+                    height: '46px',
+                  }}
+                >
+                  <i className="fa-solid fa-people-roof"></i>
+                  <span>{isRtl ? 'سكن مشترك وغرفة في شقة' : 'Shared Room / Co-Living'}</span>
+                </div>
+              ) : (
+                <select
+                  value={rentalType}
+                  onChange={(e) => setRentalType(e.target.value as 'apartment' | 'studio')}
+                  style={{
+                    width: '100%',
+                    padding: '0.8rem 1rem',
+                    borderRadius: '12px',
+                    border: '1px solid var(--border-color)',
+                    background: 'var(--bg-card)',
+                    color: 'var(--text-main)',
+                    fontSize: '0.95rem',
+                  }}
+                >
+                  <option value="apartment">{t('rental_type.apartment')}</option>
+                  <option value="studio">{t('rental_type.studio')}</option>
+                </select>
+              )}
             </div>
           </div>
 
-          {/* Row: Bedrooms & Bathrooms */}
+          {/* Row: Rooms & Bathrooms */}
           <div className="form-row">
             <div className="form-group">
-              <label>{t('form.rooms_count')}</label>
+              <label>
+                {isSharedRoom
+                  ? (isRtl ? 'إجمالي غرف الشقة المشتركة:' : 'Total Rooms in Apartment:')
+                  : t('form.rooms_count')}
+              </label>
               <input
                 type="number"
                 min="1"
                 max="20"
                 value={roomsCount}
                 onChange={(e) => setRoomsCount(e.target.value)}
-                placeholder="2"
+                placeholder={isSharedRoom ? '3' : '2'}
               />
             </div>
             <div className="form-group">
@@ -407,38 +498,78 @@ export function AddApartmentModal({
             </div>
           </div>
 
-          {/* Roommate Section (Conditional) */}
-          {rentalType === 'room_shared' && (
+          {/* Roommate Section (Dedicated for Shared Rooms) */}
+          {isSharedRoom && (
             <div
               style={{
-                background: 'rgba(251, 191, 36, 0.08)',
-                border: '1px dashed #fbbf24',
+                background: 'linear-gradient(135deg, rgba(168, 85, 247, 0.08), rgba(251, 191, 36, 0.06))',
+                border: '1px solid rgba(168, 85, 247, 0.35)',
                 padding: '1.2rem',
                 borderRadius: '14px',
                 display: 'flex',
                 flexDirection: 'column',
                 gap: '1rem',
+                boxShadow: '0 4px 14px rgba(0, 0, 0, 0.1)',
+                marginBottom: '1rem',
               }}
             >
-              <h4 style={{ color: '#fbbf24', fontSize: '1rem', margin: 0 }}>
-                <i className="fa-solid fa-users"></i> إعدادات واشتراطات شريك السكن
-              </h4>
-              <div className="form-group">
-                <label>{t('form.roommate_reqs')}</label>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <div
+                  style={{
+                    width: '34px',
+                    height: '34px',
+                    borderRadius: '8px',
+                    background: 'rgba(168, 85, 247, 0.2)',
+                    color: '#c084fc',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontSize: '1rem',
+                  }}
+                >
+                  <i className="fa-solid fa-users"></i>
+                </div>
+                <div>
+                  <h4 style={{ color: '#c084fc', fontSize: '0.98rem', fontWeight: 800, margin: 0 }}>
+                    {isRtl ? 'اشتراطات ومواصفات السكن المشترك' : 'Roommate Requirements & Shared Facilities'}
+                  </h4>
+                  <span style={{ fontSize: '0.74rem', color: 'var(--text-muted)' }}>
+                    {isRtl
+                      ? 'تظهر هذه التفاصيل بدقة للطلاب عند اختيارهم (غرفة في شقة) في تطبيق الهاتف'
+                      : 'Displayed prominently to students when browsing shared rooms in the mobile app'}
+                  </span>
+                </div>
+              </div>
+
+              <div className="form-group" style={{ margin: 0 }}>
+                <label style={{ color: 'var(--text-main)', fontWeight: 700 }}>
+                  {isRtl ? 'شروط ومواصفات شريك السكن المطلوب:' : 'Roommate Requirements:'}
+                </label>
                 <input
                   type="text"
                   value={roommateReqs}
                   onChange={(e) => setRoommateReqs(e.target.value)}
-                  placeholder="مثال: طالب غير مدخن، هادئ وملتزم"
+                  placeholder={
+                    isRtl
+                      ? 'مثال: طالب غير مدخن، هادئ وملتزم، دراسة طبية أو هندسة'
+                      : 'e.g. Non-smoker, quiet, medical or engineering student'
+                  }
                 />
               </div>
-              <div className="form-group">
-                <label>{t('form.roommate_facilities')}</label>
+
+              <div className="form-group" style={{ margin: 0 }}>
+                <label style={{ color: 'var(--text-main)', fontWeight: 700 }}>
+                  {isRtl ? 'المساحة والمرافق المتاحة لشريك السكن:' : 'Available Space & Shared Amenities:'}
+                </label>
                 <input
                   type="text"
                   value={roommateFacilities}
                   onChange={(e) => setRoommateFacilities(e.target.value)}
-                  placeholder="مثال: غرفة مستقلة، حمام خاص"
+                  placeholder={
+                    isRtl
+                      ? 'مثال: سرير ومكتب مستقل، دولاب ملابس، مطبخ وصالة مشتركة، إنترنت فائق السرعة'
+                      : 'e.g. Independent bed & desk, wardrobe, equipped kitchen, shared lounge, fast Wi-Fi'
+                  }
                 />
               </div>
             </div>
@@ -452,7 +583,7 @@ export function AddApartmentModal({
                 type="text"
                 value={locationAr}
                 onChange={(e) => setLocationAr(e.target.value)}
-                placeholder="مثال: شارع بيكيني، سابورتالو"
+                placeholder={isRtl ? 'مثال: شارع بيكيني، سابورتالو' : 'e.g. Pekini Ave, Saburtalo'}
               />
             </div>
             <div className="form-group">
@@ -474,7 +605,7 @@ export function AddApartmentModal({
                 type="text"
                 value={proximityAr}
                 onChange={(e) => setProximityAr(e.target.value)}
-                placeholder="مثال: يبعد 5 دقائق عن محطة المترو"
+                placeholder={isRtl ? 'مثال: يبعد 5 دقائق مشياً عن محطة المترو' : 'e.g. 5 minutes walk from metro'}
               />
             </div>
             <div className="form-group">
@@ -491,21 +622,29 @@ export function AddApartmentModal({
           {/* Row: Capacity AR & EN */}
           <div className="form-row">
             <div className="form-group">
-              <label>{t('form.capacity_ar')}</label>
+              <label>
+                {isSharedRoom
+                  ? (isRtl ? 'السعة الاستيعابية للغرفة (عربي):' : 'Room Capacity (Arabic):')
+                  : t('form.capacity_ar')}
+              </label>
               <input
                 type="text"
                 value={capacityAr}
                 onChange={(e) => setCapacityAr(e.target.value)}
-                placeholder="مثال: 3 أفراد"
+                placeholder={isSharedRoom ? 'مثال: طالبين (سريرين)' : 'مثال: 3 أفراد'}
               />
             </div>
             <div className="form-group">
-              <label>{t('form.capacity_en')}</label>
+              <label>
+                {isSharedRoom
+                  ? (isRtl ? 'السعة الاستيعابية (إنجليزي):' : 'Room Capacity (English):')
+                  : t('form.capacity_en')}
+              </label>
               <input
                 type="text"
                 value={capacityEn}
                 onChange={(e) => setCapacityEn(e.target.value)}
-                placeholder="e.g. 3 People"
+                placeholder={isSharedRoom ? 'e.g. 2 Students (2 Beds)' : 'e.g. 3 People'}
               />
             </div>
           </div>
@@ -578,11 +717,10 @@ export function AddApartmentModal({
                       display: 'inline-flex',
                       alignItems: 'center',
                       gap: '6px',
-                      boxShadow: '0 2px 8px var(--primary-glow)',
                     }}
                   >
-                    <i className="fa-solid fa-arrow-pointer"></i>
-                    {t('form.click_to_pick_date')}
+                    <i className="fa-solid fa-calendar"></i>
+                    {t('btn.choose_date')}
                   </button>
                 </div>
                 <input
@@ -590,47 +728,122 @@ export function AddApartmentModal({
                   type="date"
                   value={calendarDate}
                   onChange={(e) => handleCalendarChange(e.target.value)}
-                  onClick={handleOpenCalendar}
                   style={{
                     width: '100%',
-                    padding: '0.85rem 1rem',
+                    padding: '0.75rem 1rem',
                     borderRadius: '10px',
-                    border: '1px solid var(--primary)',
+                    border: '1px solid var(--border-color)',
                     background: 'var(--bg-card)',
                     color: 'var(--text-main)',
-                    fontSize: '1rem',
+                    fontSize: '0.95rem',
                     cursor: 'pointer',
-                    colorScheme: 'dark',
                   }}
                 />
               </div>
 
               <div className="form-row" style={{ margin: 0 }}>
                 <div className="form-group" style={{ margin: 0 }}>
-                  <label style={{ fontSize: '0.85rem' }}>{t('form.move_in_date_ar')}</label>
+                  <label style={{ fontSize: '0.82rem' }}>{t('form.move_in_date_ar')}</label>
                   <input
                     type="text"
                     value={moveInDateAr}
                     onChange={(e) => setMoveInDateAr(e.target.value)}
                     placeholder="مثال: 1 سبتمبر 2026"
-                    style={{ fontSize: '0.9rem' }}
                   />
                 </div>
                 <div className="form-group" style={{ margin: 0 }}>
-                  <label style={{ fontSize: '0.85rem' }}>{t('form.move_in_date_en')}</label>
+                  <label style={{ fontSize: '0.82rem' }}>{t('form.move_in_date_en')}</label>
                   <input
                     type="text"
                     value={moveInDateEn}
                     onChange={(e) => setMoveInDateEn(e.target.value)}
-                    placeholder="e.g. 1 September 2026"
-                    style={{ fontSize: '0.9rem' }}
+                    placeholder="e.g. September 1, 2026"
                   />
                 </div>
               </div>
             </div>
           )}
 
-          {/* Features AR & EN */}
+          {/* Universities Multi-Select & Proximity Times */}
+          <div className="form-group">
+            <label>{t('form.universities_nearby')}</label>
+            <div
+              style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))',
+                gap: '8px',
+                maxHeight: '180px',
+                overflowY: 'auto',
+                padding: '10px',
+                border: '1px solid var(--border-color)',
+                borderRadius: '12px',
+                background: 'var(--bg-card)',
+                marginBottom: '10px',
+              }}
+            >
+              {universities.map((uni) => {
+                const uName = uni.name_ar || uni.name;
+                const isSelected = selectedUnis.includes(uni.name) || selectedUnis.includes(uni.name_ar || '') || selectedUnis.includes(String(uni.id));
+                return (
+                  <label
+                    key={uni.id}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '8px',
+                      fontSize: '0.85rem',
+                      cursor: 'pointer',
+                      padding: '4px 8px',
+                      borderRadius: '6px',
+                      background: isSelected ? 'rgba(99, 102, 241, 0.15)' : 'transparent',
+                    }}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={isSelected}
+                      onChange={() => handleUniToggle(uni.name_ar || uni.name)}
+                      style={{ accentColor: 'var(--primary)' }}
+                    />
+                    <span style={{ color: isSelected ? 'var(--primary)' : 'var(--text-main)' }}>{uName}</span>
+                  </label>
+                );
+              })}
+            </div>
+
+            {/* Time inputs for selected universities */}
+            {selectedUnis.length > 0 && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+                  {t('form.uni_time_instruction')}
+                </span>
+                {selectedUnis.map((uName) => {
+                  const uniObj = universities.find(u => u.name === uName || u.name_ar === uName || u.name_en === uName || String(u.id) === uName);
+                  if (!uniObj) return null;
+                  return (
+                    <div key={uniObj.id} style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                      <span style={{ fontSize: '0.85rem', minWidth: '140px', fontWeight: 600 }}>
+                        {uniObj.name_ar || uniObj.name}:
+                      </span>
+                      <input
+                        type="number"
+                        min="1"
+                        max="120"
+                        placeholder="5"
+                        value={uniTimes[String(uniObj.id)] || ''}
+                        onChange={(e) => handleUniTimeChange(uniObj.id, e.target.value)}
+                        style={{ width: '80px', padding: '4px 8px', borderRadius: '6px' }}
+                      />
+                      <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+                        {t('form.uni_walk_time')}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+
+          {/* Features / Amenities AR & EN */}
           <div className="form-row">
             <div className="form-group">
               <label>{t('form.features_ar')}</label>
@@ -638,7 +851,7 @@ export function AddApartmentModal({
                 type="text"
                 value={featuresAr}
                 onChange={(e) => setFeaturesAr(e.target.value)}
-                placeholder="تكييف ، تدفئة ، مصعد ، بلكونة"
+                placeholder="تكييف، تدفئة، غسالة، إنترنت..."
               />
             </div>
             <div className="form-group">
@@ -647,143 +860,153 @@ export function AddApartmentModal({
                 type="text"
                 value={featuresEn}
                 onChange={(e) => setFeaturesEn(e.target.value)}
-                placeholder="AC, Heating, Elevator, Balcony"
+                placeholder="AC, Heating, Washing Machine, Wi-Fi..."
               />
             </div>
           </div>
 
-          {/* Nearby Universities Checkboxes */}
+          {/* Images Upload Section */}
           <div className="form-group">
-            <label>{t('form.nearby_unis')}</label>
+            <label>{t('form.apartment_images')}</label>
             <div
               style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
-                gap: '10px',
-                background: 'rgba(0,0,0,0.2)',
-                padding: '12px',
+                border: '2px dashed var(--border-color)',
+                padding: '20px',
                 borderRadius: '12px',
-                border: '1px solid var(--border-color)',
+                textAlign: 'center',
+                background: 'rgba(255, 255, 255, 0.02)',
               }}
             >
-              {universities.map((uni) => {
-                const isChecked = selectedUnis.includes(uni.name) || selectedUnis.includes(uni.name_ar);
-                return (
-                  <div key={uni.id} style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                    <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', margin: 0 }}>
-                      <input
-                        type="checkbox"
-                        checked={isChecked}
-                        onChange={() => handleUniToggle(uni.name_ar || uni.name)}
-                        style={{ width: '16px', height: '16px' }}
-                      />
-                      <span>{uni.name_ar || uni.name}</span>
-                    </label>
-                    {isChecked && (
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginRight: '24px' }}>
-                        <input
-                          type="number"
-                          placeholder="5"
-                          value={uniTimes[String(uni.id)] || ''}
-                          onChange={(e) => handleUniTimeChange(uni.id, e.target.value)}
-                          style={{ width: '60px', padding: '4px 8px', fontSize: '0.85rem' }}
-                        />
-                        <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-                          {t('form.uni_walk_time')}
-                        </span>
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* Image Upload Area */}
-          <div className="form-group">
-            <label>{t('apartments.upload_images_btn')}</label>
-            <input
-              type="file"
-              multiple
-              accept="image/*"
-              onChange={handleFileChange}
-              disabled={isUploading}
-              style={{
-                width: '100%',
-                padding: '0.8rem',
-                borderRadius: '12px',
-                border: '1px dashed var(--border-color)',
-                background: 'rgba(0,0,0,0.15)',
-                color: 'var(--text-muted)',
-                cursor: 'pointer',
-              }}
-            />
-            {isUploading && (
-              <p style={{ color: 'var(--primary)', fontSize: '0.85rem', marginTop: '4px' }}>
-                <i className="fa-solid fa-spinner fa-spin"></i> جارِ رفع وضغط الصور...
+              <input
+                type="file"
+                multiple
+                accept="image/*"
+                onChange={handleFileChange}
+                disabled={isUploading}
+                style={{ display: 'none' }}
+                id="addAptImageUpload"
+              />
+              <label
+                htmlFor="addAptImageUpload"
+                style={{
+                  cursor: isUploading ? 'not-allowed' : 'pointer',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  background: 'var(--bg-card)',
+                  padding: '8px 16px',
+                  borderRadius: '8px',
+                  border: '1px solid var(--border-color)',
+                  fontWeight: 600,
+                  fontSize: '0.9rem',
+                }}
+              >
+                {isUploading ? (
+                  <>
+                    <i className="fa-solid fa-spinner fa-spin"></i> {t('msg.uploading')}
+                  </>
+                ) : (
+                  <>
+                    <i className="fa-solid fa-cloud-arrow-up" style={{ color: 'var(--primary)' }}></i>
+                    {t('form.choose_images')}
+                  </>
+                )}
+              </label>
+              <p style={{ margin: '8px 0 0 0', fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                {t('form.images_hint')}
               </p>
-            )}
-            {images.length > 0 && (
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginTop: '10px' }}>
-                {images.map((url, idx) => (
-                  <div key={idx} style={{ position: 'relative', width: '65px', height: '65px' }}>
-                    <img
-                      src={resolveImageUrl(url)}
-                      alt="preview"
+
+              {/* Uploaded Images Preview */}
+              {images.length > 0 && (
+                <div
+                  style={{
+                    display: 'flex',
+                    gap: '10px',
+                    flexWrap: 'wrap',
+                    marginTop: '16px',
+                    justifyContent: 'center',
+                  }}
+                >
+                  {images.map((imgUrl, idx) => (
+                    <div
+                      key={idx}
                       style={{
-                        width: '100%',
-                        height: '100%',
+                        position: 'relative',
+                        width: '80px',
+                        height: '80px',
                         borderRadius: '8px',
-                        objectFit: 'cover',
-                        border: '1px solid var(--accent-amber)',
-                      }}
-                    />
-                    <button
-                      type="button"
-                      onClick={() => handleRemoveImage(idx)}
-                      style={{
-                        position: 'absolute',
-                        top: '-6px',
-                        right: '-6px',
-                        background: '#ef4444',
-                        color: '#fff',
-                        border: 'none',
-                        borderRadius: '50%',
-                        width: '20px',
-                        height: '20px',
-                        fontSize: '0.7rem',
-                        cursor: 'pointer',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
+                        overflow: 'hidden',
+                        border: '1px solid var(--border-color)',
                       }}
                     >
-                      <i className="fa-solid fa-xmark"></i>
-                    </button>
-                  </div>
-                ))}
-              </div>
-            )}
+                      <img
+                        src={resolveImageUrl(imgUrl)}
+                        alt={`Preview ${idx + 1}`}
+                        style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveImage(idx)}
+                        style={{
+                          position: 'absolute',
+                          top: '2px',
+                          right: '2px',
+                          background: 'rgba(239, 68, 68, 0.85)',
+                          color: '#fff',
+                          border: 'none',
+                          borderRadius: '50%',
+                          width: '20px',
+                          height: '20px',
+                          fontSize: '0.7rem',
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                        }}
+                      >
+                        <i className="fa-solid fa-xmark"></i>
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
 
           {/* Description AR & EN */}
           <div className="form-row">
             <div className="form-group">
-              <label>{t('form.desc_ar')}</label>
+              <label>
+                {isSharedRoom
+                  ? (isRtl ? 'وصف وتفاصيل الغرفة المشتركة (عربي):' : 'Shared Room Details (Arabic):')
+                  : t('form.desc_ar')}
+              </label>
               <textarea
                 rows={3}
                 value={descAr}
                 onChange={(e) => setDescAr(e.target.value)}
-                placeholder="شقة ممتازة قريبة من الخدمات..."
+                placeholder={
+                  isSharedRoom
+                    ? 'مثال: متاح سرير في غرفة ثنائية لشاب هادئ، الشقة نظيفة وقريبة من الجامعة والمترو...'
+                    : 'شقة ممتازة قريبة من الخدمات...'
+                }
               />
             </div>
             <div className="form-group">
-              <label>{t('form.desc_en')}</label>
+              <label>
+                {isSharedRoom
+                  ? (isRtl ? 'وصف الغرفة (إنجليزي):' : 'Shared Room Details (English):')
+                  : t('form.desc_en')}
+              </label>
               <textarea
                 rows={3}
                 value={descEn}
                 onChange={(e) => setDescEn(e.target.value)}
-                placeholder="Excellent apartment close to services..."
+                placeholder={
+                  isSharedRoom
+                    ? 'e.g. Bed available in double room for quiet student, near university and metro...'
+                    : 'Excellent apartment close to services...'
+                }
               />
             </div>
           </div>
@@ -837,7 +1060,10 @@ export function AddApartmentModal({
               type="submit"
               disabled={isSubmitting || isUploading}
               className="btn btn-glow"
-              style={{ opacity: isSubmitting ? 0.7 : 1 }}
+              style={{
+                background: isSharedRoom ? 'linear-gradient(135deg, #9333ea, #6366f1)' : undefined,
+                opacity: isSubmitting ? 0.7 : 1,
+              }}
             >
               {isSubmitting ? (
                 <>
@@ -845,7 +1071,10 @@ export function AddApartmentModal({
                 </>
               ) : (
                 <>
-                  <i className="fa-solid fa-check"></i> {t('form.add_apartment_btn')}
+                  <i className={`fa-solid ${isSharedRoom ? 'fa-people-roof' : 'fa-check'}`}></i>{' '}
+                  {isSharedRoom
+                    ? (isRtl ? 'حفظ ونشر الغرفة المشتركة' : 'Publish Shared Room')
+                    : (isRtl ? 'حفظ ونشر الشقة السكنية' : 'Publish Apartment')}
                 </>
               )}
             </button>

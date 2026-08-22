@@ -64,7 +64,7 @@ try {
     $sql = "SELECT id, $titleCol AS title, $descCol AS description, price, $locCol AS location, $proxCol AS proximity,
                    universities, $capCol AS capacity, $mitCol AS move_in_type, $midCol AS move_in_date,
                    images, $featsCol AS features, is_available, is_featured, featured_until, is_special_offer, district_id,
-                   rental_type, rooms_count
+                   rental_type, rooms_count, roommate_reqs, roommate_facilities, owner_phone
             FROM apartments
             WHERE " . implode(" AND ", $where) . "
             ORDER BY (is_featured = 1 AND (featured_until IS NULL OR featured_until > NOW())) DESC, created_at DESC, id DESC";
