@@ -310,6 +310,9 @@ class ApiService {
               'images': imagesList,
               'features': featuresList,
               'universities': universitiesList,
+              'roommate_reqs': a['roommate_reqs']?.toString(),
+              'roommate_facilities': a['roommate_facilities']?.toString(),
+              'owner_phone': a['owner_phone']?.toString(),
             };
           }).toList();
         }

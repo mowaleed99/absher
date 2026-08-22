@@ -775,45 +775,54 @@ export function EditApartmentModal({
 
           {/* Universities Multi-Select & Proximity Times */}
           <div className="form-group">
-            <label>{t('form.universities_nearby')}</label>
+            <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 700, marginBottom: '8px' }}>
+              <i className="fa-solid fa-graduation-cap" style={{ color: 'var(--primary)' }}></i>
+              {t('form.universities_nearby')}
+            </label>
             <div
               style={{
                 display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))',
-                gap: '8px',
-                maxHeight: '180px',
+                gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))',
+                gap: '10px',
+                maxHeight: '220px',
                 overflowY: 'auto',
-                padding: '10px',
-                border: '1px solid var(--border-color)',
+                padding: '12px',
+                border: '1px solid rgba(255, 255, 255, 0.08)',
                 borderRadius: '12px',
-                background: 'var(--bg-card)',
-                marginBottom: '10px',
+                background: 'rgba(0, 0, 0, 0.2)',
+                marginBottom: '12px',
               }}
             >
               {universities.map((uni) => {
-                const uName = uni.name_ar || uni.name;
-                const isSelected = selectedUnis.includes(uni.name) || selectedUnis.includes(uni.name_ar || '') || selectedUnis.includes(String(uni.id));
+                const uName = isRtl ? (uni.name_ar || uni.name) : (uni.name_en || uni.name || uni.name_ar);
+                const isSelected = selectedUnis.includes(uni.name) || selectedUnis.includes(uni.name_ar || '') || selectedUnis.includes(uni.name_en || '') || selectedUnis.includes(String(uni.id));
                 return (
                   <label
                     key={uni.id}
                     style={{
                       display: 'flex',
+                      flexDirection: 'row',
                       alignItems: 'center',
-                      gap: '8px',
-                      fontSize: '0.85rem',
+                      gap: '10px',
+                      fontSize: '0.86rem',
                       cursor: 'pointer',
-                      padding: '4px 8px',
-                      borderRadius: '6px',
-                      background: isSelected ? 'rgba(99, 102, 241, 0.15)' : 'transparent',
+                      padding: '8px 12px',
+                      borderRadius: '8px',
+                      border: isSelected ? '1px solid var(--primary)' : '1px solid rgba(255, 255, 255, 0.06)',
+                      background: isSelected ? 'rgba(99, 102, 241, 0.15)' : 'rgba(255, 255, 255, 0.02)',
+                      transition: 'all 0.2s ease',
+                      userSelect: 'none',
                     }}
                   >
                     <input
                       type="checkbox"
                       checked={isSelected}
                       onChange={() => handleUniToggle(uni.name_ar || uni.name)}
-                      style={{ accentColor: 'var(--primary)' }}
+                      style={{ width: '17px', height: '17px', flexShrink: 0, cursor: 'pointer', accentColor: 'var(--primary)' }}
                     />
-                    <span style={{ color: isSelected ? 'var(--primary)' : 'var(--text-main)' }}>{uName}</span>
+                    <span style={{ flex: 1, color: isSelected ? '#fff' : 'var(--text-main)', fontWeight: isSelected ? 700 : 500, lineHeight: 1.35, textAlign: isRtl ? 'right' : 'left' }}>
+                      {uName}
+                    </span>
                   </label>
                 );
               })}
@@ -821,33 +830,37 @@ export function EditApartmentModal({
 
             {/* Time inputs for selected universities */}
             {selectedUnis.length > 0 && (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', padding: '10px', background: 'rgba(99, 102, 241, 0.05)', borderRadius: '10px', border: '1px solid rgba(99, 102, 241, 0.15)' }}>
+                <span style={{ fontSize: '0.82rem', color: '#818cf8', fontWeight: 600 }}>
+                  <i className="fa-solid fa-person-walking" style={{ marginInlineEnd: '6px' }}></i>
                   {t('form.uni_time_instruction')}
                 </span>
-                {selectedUnis.map((uName) => {
-                  const uniObj = universities.find(u => u.name === uName || u.name_ar === uName || u.name_en === uName || String(u.id) === uName);
-                  if (!uniObj) return null;
-                  return (
-                    <div key={uniObj.id} style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                      <span style={{ fontSize: '0.85rem', minWidth: '140px', fontWeight: 600 }}>
-                        {uniObj.name_ar || uniObj.name}:
-                      </span>
-                      <input
-                        type="number"
-                        min="1"
-                        max="120"
-                        placeholder="5"
-                        value={uniTimes[String(uniObj.id)] || ''}
-                        onChange={(e) => handleUniTimeChange(uniObj.id, e.target.value)}
-                        style={{ width: '80px', padding: '4px 8px', borderRadius: '6px' }}
-                      />
-                      <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-                        {t('form.uni_walk_time')}
-                      </span>
-                    </div>
-                  );
-                })}
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: '10px', marginTop: '4px' }}>
+                  {selectedUnis.map((uName) => {
+                    const uniObj = universities.find(u => u.name === uName || u.name_ar === uName || u.name_en === uName || String(u.id) === uName);
+                    if (!uniObj) return null;
+                    const displayName = isRtl ? (uniObj.name_ar || uniObj.name) : (uniObj.name_en || uniObj.name || uniObj.name_ar);
+                    return (
+                      <div key={uniObj.id} style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'var(--bg-card)', padding: '6px 10px', borderRadius: '8px', border: '1px solid var(--border-color)' }}>
+                        <span style={{ fontSize: '0.83rem', flex: 1, fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                          {displayName}:
+                        </span>
+                        <input
+                          type="number"
+                          min="1"
+                          max="120"
+                          placeholder="5"
+                          value={uniTimes[String(uniObj.id)] || ''}
+                          onChange={(e) => handleUniTimeChange(uniObj.id, e.target.value)}
+                          style={{ width: '65px', padding: '4px 8px', borderRadius: '6px', textAlign: 'center' }}
+                        />
+                        <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>
+                          {t('form.uni_walk_time')}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
             )}
           </div>
@@ -860,7 +873,8 @@ export function EditApartmentModal({
                 type="text"
                 value={featuresAr}
                 onChange={(e) => setFeaturesAr(e.target.value)}
-                placeholder="تكييف، تدفئة، غسالة..."
+                placeholder="إنترنت فائق السرعة، مكتب دراسي، تدفئة مركزية..."
+                style={{ width: '100%', boxSizing: 'border-box' }}
               />
             </div>
             <div className="form-group">
@@ -869,7 +883,8 @@ export function EditApartmentModal({
                 type="text"
                 value={featuresEn}
                 onChange={(e) => setFeaturesEn(e.target.value)}
-                placeholder="AC, Heating, Washing Machine..."
+                placeholder="High-Speed Wi-Fi, Study Desk, Central Heating, AC..."
+                style={{ width: '100%', boxSizing: 'border-box' }}
               />
             </div>
           </div>
