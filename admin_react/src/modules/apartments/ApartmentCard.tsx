@@ -9,13 +9,15 @@ interface ApartmentCardProps {
   onEdit: (apt: Apartment) => void;
   onDelete: (id: number) => void;
   onPin?: (apt: Apartment) => void;
+  onToggleSpecialOffer?: (apt: Apartment) => void;
 }
 
-export function ApartmentCard({ apartment: apt, onEdit, onDelete, onPin }: ApartmentCardProps) {
+export function ApartmentCard({ apartment: apt, onEdit, onDelete, onPin, onToggleSpecialOffer }: ApartmentCardProps) {
   const { t, lang } = useI18n();
   const isRtl = lang === 'ar';
   const { showToast } = useToast();
 
+  const isSpecialOfferActive = Boolean(apt.is_special_offer);
   const isFeaturedActive = Boolean(
     apt.is_featured &&
     (!apt.featured_until || new Date(apt.featured_until).getTime() > Date.now())
@@ -260,10 +262,36 @@ export function ApartmentCard({ apartment: apt, onEdit, onDelete, onPin }: Apart
                 fontWeight: 700,
                 padding: '6px 12px',
                 fontSize: '0.8rem',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '5px',
               }}
               title={t('apt.pin_action')}
             >
               <i className="fa-solid fa-thumbtack" /> {isFeaturedActive ? t('apt.featured_badge') : t('apt.pin_action')}
+            </button>
+          )}
+
+          {onToggleSpecialOffer && (
+            <button
+              type="button"
+              className="btn"
+              onClick={() => onToggleSpecialOffer(apt)}
+              style={{
+                background: isSpecialOfferActive ? 'rgba(239, 68, 68, 0.18)' : 'rgba(255, 255, 255, 0.05)',
+                border: isSpecialOfferActive ? '1px solid #ef4444' : '1px solid var(--border-color)',
+                color: isSpecialOfferActive ? '#f87171' : 'var(--text-muted)',
+                fontWeight: 700,
+                padding: '6px 12px',
+                fontSize: '0.8rem',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '5px',
+              }}
+              title={isSpecialOfferActive ? t('apt.remove_special_offer') : t('apt.add_special_offer')}
+            >
+              <i className="fa-solid fa-fire" style={{ color: isSpecialOfferActive ? '#ef4444' : 'inherit' }} />
+              {isSpecialOfferActive ? t('apt.badge_special_offer') : t('apt.add_special_offer')}
             </button>
           )}
 

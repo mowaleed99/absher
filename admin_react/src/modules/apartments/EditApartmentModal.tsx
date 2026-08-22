@@ -62,7 +62,6 @@ export function EditApartmentModal({
   // Images state (existing + newly uploaded)
   const [existingImages, setExistingImages] = useState<string[]>([]);
   const [newImages, setNewImages] = useState<string[]>([]);
-  const [isSpecialOffer, setIsSpecialOffer] = useState(false);
 
   // Double-submit protection
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -183,8 +182,6 @@ export function EditApartmentModal({
       const imgs = Array.isArray(apt.images) ? apt.images : [];
       setExistingImages(imgs);
       setNewImages([]);
-
-      setIsSpecialOffer(Boolean(apt.is_special_offer));
     }
   }, [apt]);
 
@@ -310,7 +307,7 @@ export function EditApartmentModal({
         is_available: apt.is_available,
         is_featured: apt.is_featured ? 1 : 0,
         featured_until: apt.featured_until || null,
-        is_special_offer: isSpecialOffer ? 1 : 0,
+        is_special_offer: apt.is_special_offer ? 1 : 0,
       };
 
       const result = await onSubmit(payload);
@@ -1064,30 +1061,6 @@ export function EditApartmentModal({
                 placeholder="Details..."
               />
             </div>
-          </div>
-
-          {/* Special Offer Toggle */}
-          <div
-            style={{
-              padding: '12px 16px',
-              borderRadius: '12px',
-              background: 'rgba(255, 255, 255, 0.03)',
-              border: '1px solid var(--border-color)',
-              marginBottom: '1rem',
-            }}
-          >
-            <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', margin: 0 }}>
-              <input
-                type="checkbox"
-                checked={isSpecialOffer}
-                onChange={(e) => setIsSpecialOffer(e.target.checked)}
-                style={{ width: '18px', height: '18px', accentColor: '#ef4444' }}
-              />
-              <span style={{ fontWeight: 700, color: isSpecialOffer ? '#f87171' : 'var(--text-main)', fontSize: '0.9rem' }}>
-                <i className="fa-solid fa-fire" style={{ color: '#ef4444', marginLeft: '4px' }}></i>
-                {t('apt.is_special_offer_field')}
-              </span>
-            </label>
           </div>
 
           {/* Modal Actions */}

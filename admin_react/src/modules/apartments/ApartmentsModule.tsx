@@ -24,6 +24,7 @@ export function ApartmentsModule() {
     updateApartment,
     deleteApartment,
     toggleFeatured,
+    toggleSpecialOffer,
     refetch,
   } = useApartments();
 
@@ -122,6 +123,19 @@ export function ApartmentsModule() {
       }
     } else {
       showToast(res.error || t('msg.delete_failed'), 'error');
+    }
+  };
+
+  const handleToggleSpecialOffer = async (apt: Apartment) => {
+    const newStatus = !apt.is_special_offer;
+    const res = await toggleSpecialOffer(apt.id, newStatus);
+    if (res.success) {
+      showToast(
+        newStatus ? t('apt.special_offer_success') : t('apt.special_offer_removed'),
+        'success'
+      );
+    } else {
+      showToast(res.error || t('msg.update_failed'), 'error');
     }
   };
 
@@ -286,6 +300,7 @@ export function ApartmentsModule() {
               onEdit={(apartment) => setEditingApartment(apartment)}
               onDelete={handleDelete}
               onPin={(apartment) => setPinningApartment(apartment)}
+              onToggleSpecialOffer={handleToggleSpecialOffer}
             />
           ))}
         </div>

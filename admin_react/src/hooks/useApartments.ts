@@ -157,6 +157,27 @@ export function useApartments() {
     return { success: false, error: result.error };
   };
 
+  // Toggle Special Offer mutation
+  const toggleSpecialOffer = async (
+    id: number,
+    isSpecialOffer: boolean
+  ): Promise<{ success: boolean; message?: string; error?: string }> => {
+    const payload: Record<string, unknown> = {
+      id,
+      is_special_offer: isSpecialOffer ? 1 : 0,
+    };
+
+    const result = await apiFetch<{ message?: string }>('toggle_apartment_special_offer', payload, {
+      dedupeKey: `toggle_apartment_special_offer:${id}`,
+    });
+
+    if (result.success) {
+      await refreshApartments();
+      return { success: true, message: result.data?.message };
+    }
+    return { success: false, error: result.error };
+  };
+
   return {
     apartments,
     isLoading,
@@ -167,5 +188,6 @@ export function useApartments() {
     updateApartment,
     deleteApartment,
     toggleFeatured,
+    toggleSpecialOffer,
   };
 }

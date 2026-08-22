@@ -73,8 +73,6 @@ export function AddApartmentModal({
 
   // Uploaded Image URLs
   const [images, setImages] = useState<string[]>([]);
-  const [isSpecialOffer, setIsSpecialOffer] = useState(false);
-  const [isFeatured, setIsFeatured] = useState(false);
 
   // Double-submit protection
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -172,8 +170,6 @@ export function AddApartmentModal({
     setSelectedUnis([]);
     setUniTimes({});
     setImages([]);
-    setIsSpecialOffer(false);
-    setIsFeatured(false);
   };
 
   const handleClose = () => {
@@ -294,8 +290,8 @@ export function AddApartmentModal({
         description: descAr,
         description_ar: descAr,
         description_en: descEn,
-        is_special_offer: isSpecialOffer ? 1 : 0,
-        is_featured: isFeatured ? 1 : 0,
+        is_special_offer: 0,
+        is_featured: 0,
       };
 
       const result = await onSubmit(payload);
@@ -1024,46 +1020,6 @@ export function AddApartmentModal({
                 }
               />
             </div>
-          </div>
-
-          {/* Badges Toggles: Special Offer & Featured */}
-          <div
-            style={{
-              display: 'flex',
-              gap: '16px',
-              flexWrap: 'wrap',
-              padding: '12px 16px',
-              borderRadius: '12px',
-              background: 'rgba(255, 255, 255, 0.03)',
-              border: '1px solid var(--border-color)',
-              marginBottom: '1rem',
-            }}
-          >
-            <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', margin: 0 }}>
-              <input
-                type="checkbox"
-                checked={isSpecialOffer}
-                onChange={(e) => setIsSpecialOffer(e.target.checked)}
-                style={{ width: '18px', height: '18px', accentColor: '#ef4444' }}
-              />
-              <span style={{ fontWeight: 700, color: isSpecialOffer ? '#f87171' : 'var(--text-main)', fontSize: '0.9rem' }}>
-                <i className="fa-solid fa-fire" style={{ color: '#ef4444', marginLeft: '4px' }}></i>
-                {t('apt.is_special_offer_field')}
-              </span>
-            </label>
-
-            <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', margin: 0 }}>
-              <input
-                type="checkbox"
-                checked={isFeatured}
-                onChange={(e) => setIsFeatured(e.target.checked)}
-                style={{ width: '18px', height: '18px', accentColor: '#f59e0b' }}
-              />
-              <span style={{ fontWeight: 700, color: isFeatured ? '#fbbf24' : 'var(--text-main)', fontSize: '0.9rem' }}>
-                <i className="fa-solid fa-star" style={{ color: '#f59e0b', marginLeft: '4px' }}></i>
-                {t('apt.is_featured_field')}
-              </span>
-            </label>
           </div>
 
           {/* Modal Actions */}

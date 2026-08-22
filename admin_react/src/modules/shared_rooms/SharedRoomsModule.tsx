@@ -24,6 +24,7 @@ export function SharedRoomsModule() {
     updateApartment,
     deleteApartment,
     toggleFeatured,
+    toggleSpecialOffer,
     refetch,
   } = useApartments();
 
@@ -118,6 +119,19 @@ export function SharedRoomsModule() {
       }
     } else {
       showToast(res.error || t('msg.delete_failed'), 'error');
+    }
+  };
+
+  const handleToggleSpecialOffer = async (apt: Apartment) => {
+    const newStatus = !apt.is_special_offer;
+    const res = await toggleSpecialOffer(apt.id, newStatus);
+    if (res.success) {
+      showToast(
+        newStatus ? t('apt.special_offer_success') : t('apt.special_offer_removed'),
+        'success'
+      );
+    } else {
+      showToast(res.error || t('msg.update_failed'), 'error');
     }
   };
 
@@ -274,6 +288,7 @@ export function SharedRoomsModule() {
               onEdit={(apt) => setEditingApartment(apt)}
               onDelete={handleDelete}
               onPin={(apt) => setPinningApartment(apt)}
+              onToggleSpecialOffer={handleToggleSpecialOffer}
             />
           ))}
         </div>
