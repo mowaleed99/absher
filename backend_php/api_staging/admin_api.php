@@ -138,23 +138,31 @@ try {
             ORDER BY display_order ASC, created_at DESC
         ")->fetchAll();
 
-        // جلب المحادثات ورسائل كل محادثة مع صورة بروفايل الطالب
+        // جلب المحادثات ورسائل كل محادثة مع صورة بروفايل الطالب بطريقة سريعة جداً (Single Query Optimization)
         $chats = $conn->query("
             SELECT c.*, s.avatar_url AS student_avatar 
             FROM chats c 
             LEFT JOIN students s ON (c.student_id = s.id OR (c.phone IS NOT NULL AND c.phone != '' AND c.phone = s.phone))
             ORDER BY COALESCE(c.updated_at, c.last_activity_at) DESC
-        ")->fetchAll();
-        foreach ($chats as &$c) {
-            $stmtMsg = $conn->prepare("SELECT id, sender, text, type, image_url AS imageUrl, quote_text AS quoteText, quote_sender AS quoteSender, is_deleted AS deleted, DATE_FORMAT(created_at,'%h:%i %p') AS time FROM chat_messages WHERE chat_id = ? ORDER BY id ASC");
-            $stmtMsg->execute([$c['id']]);
-            $msgs = $stmtMsg->fetchAll();
-            foreach ($msgs as &$m) {
-                $m['deleted'] = ($m['deleted'] == 1 || $m['deleted'] === true);
-            }
-            $c['messages'] = $msgs;
-            $c['time'] = !empty($msgs) ? end($msgs)['time'] :'';
+        ")->fetchAll(PDO::FETCH_ASSOC);
+
+        $allMsgs = $conn->query("
+            SELECT id, chat_id, sender, text, type, image_url AS imageUrl, quote_text AS quoteText, quote_sender AS quoteSender, is_deleted AS deleted, DATE_FORMAT(created_at,'%h:%i %p') AS time 
+            FROM chat_messages 
+            ORDER BY id ASC
+        ")->fetchAll(PDO::FETCH_ASSOC);
+        
+        $msgsByChat = [];
+        foreach ($allMsgs as $m) {
+            $m['deleted'] = ($m['deleted'] == 1 || $m['deleted'] === true);
+            $msgsByChat[$m['chat_id']][] = $m;
         }
+        foreach ($chats as &$c) {
+            $msgs = $msgsByChat[$c['id']] ?? [];
+            $c['messages'] = $msgs;
+            $c['time'] = !empty($msgs) ? end($msgs)['time'] : '';
+        }
+        unset($c);
 
         // Promo Codes Summary List
         $promo_codes = $conn->query("
@@ -166,20 +174,23 @@ try {
             ORDER BY pc.id DESC
         ")->fetchAll(PDO::FETCH_ASSOC);
 
-        foreach ($promo_codes as &$p) {
-            $p['service_ids'] = [];
-            if ($p['service_scope'] === 'selected') {
-                $sStmt = $conn->prepare("SELECT service_id FROM promo_code_services WHERE promo_code_id = ?");
-                $sStmt->execute([$p['id']]);
-                $p['service_ids'] = $sStmt->fetchAll(PDO::FETCH_COLUMN);
-            }
-            $p['student_ids'] = [];
-            if ($p['audience_scope'] === 'selected') {
-                $aStmt = $conn->prepare("SELECT student_id FROM promo_code_students WHERE promo_code_id = ?");
-                $aStmt->execute([$p['id']]);
-                $p['student_ids'] = $aStmt->fetchAll(PDO::FETCH_COLUMN);
-            }
+        $allServiceIds = $conn->query("SELECT promo_code_id, service_id FROM promo_code_services")->fetchAll(PDO::FETCH_ASSOC);
+        $serviceIdsByPromo = [];
+        foreach ($allServiceIds as $row) {
+            $serviceIdsByPromo[$row['promo_code_id']][] = $row['service_id'];
         }
+
+        $allStudentIds = $conn->query("SELECT promo_code_id, student_id FROM promo_code_students")->fetchAll(PDO::FETCH_ASSOC);
+        $studentIdsByPromo = [];
+        foreach ($allStudentIds as $row) {
+            $studentIdsByPromo[$row['promo_code_id']][] = $row['student_id'];
+        }
+
+        foreach ($promo_codes as &$p) {
+            $p['service_ids'] = $serviceIdsByPromo[$p['id']] ?? [];
+            $p['student_ids'] = $studentIdsByPromo[$p['id']] ?? [];
+        }
+        unset($p);
         $now = date('Y-m-d H:i:s');
         $active_housing_offers_count = (int)$conn->query("
             SELECT COUNT(*) 
@@ -196,6 +207,66 @@ try {
         echo json_encode(["status"=>"success","stats"=> ["total_apartments"=> count($apartments),"total_services"=> count($services),"total_students"=> count($students),"total_universities"=> count($universities),"total_districts"=> count($districts),"pending_requests"=> count(array_filter($requests, fn($r) => $r['status'] ==='قيد المراجعة')),"active_housing_offers_count" => $active_housing_offers_count,"promo_codes_count" => count($promo_codes)
             ],"apartments"=> $apartments,"services"=> $services,"students"=> $students,"universities"=> $universities,"districts"=> $districts,"requests"=> $requests,"reviews"=> $reviews,"reviews_analytics"=> $reviews_analytics,"application_feedback"=> $application_feedback,"chats"=> $chats,"news"=> $news,"notifications"=> $notifications,"housing_offers"=> $housing_offers,"active_housing_offers_count" => $active_housing_offers_count,"blocked_identities"=> $blocked_identities,"promo_codes"=> $promo_codes,"status_reply_templates"=> $status_reply_templates
         ], JSON_UNESCAPED_UNICODE);
+        exit();
+    }
+
+    if ($action === 'get_badge_counts') {
+        $pendingReviews = (int)$conn->query("SELECT COUNT(*) FROM service_reviews WHERE status = 'pending'")->fetchColumn();
+        $negativeReviews = (int)$conn->query("SELECT COUNT(*) FROM service_reviews WHERE rating <= 2")->fetchColumn();
+        $rejectedReviews = (int)$conn->query("SELECT COUNT(*) FROM service_reviews WHERE status = 'rejected'")->fetchColumn();
+        $totalReviews = (int)$conn->query("SELECT COUNT(*) FROM service_reviews")->fetchColumn();
+        
+        $pendingFeedback = (int)$conn->query("SELECT COUNT(*) FROM application_feedback WHERE status = 'pending'")->fetchColumn();
+        $pendingRequests = (int)$conn->query("SELECT COUNT(*) FROM service_requests WHERE status = 'قيد المراجعة' OR status = 'pending'")->fetchColumn();
+        
+        $pendingChats = (int)$conn->query("
+            SELECT COUNT(*) FROM chats c
+            WHERE EXISTS (
+                SELECT 1 FROM chat_messages m
+                WHERE m.chat_id = c.id 
+                  AND (m.is_deleted = 0 OR m.is_deleted IS NULL)
+                  AND m.sender = 'student'
+                  AND m.id = (
+                      SELECT MAX(m2.id) FROM chat_messages m2 
+                      WHERE m2.chat_id = c.id AND (m2.is_deleted = 0 OR m2.is_deleted IS NULL)
+                  )
+            )
+        ")->fetchColumn();
+
+        echo json_encode([
+            "status" => "success",
+            "data" => [
+                "pending_reviews" => $pendingReviews,
+                "negative_reviews" => $negativeReviews,
+                "rejected_reviews" => $rejectedReviews,
+                "total_reviews" => $totalReviews,
+                "pending_feedback" => $pendingFeedback,
+                "pending_requests" => $pendingRequests,
+                "pending_chats" => $pendingChats,
+            ]
+        ], JSON_UNESCAPED_UNICODE);
+        exit();
+    }
+
+    if ($action === 'get_districts') {
+        $districts = $conn->query("
+            SELECT *, 
+                   COALESCE(NULLIF(name_ar, ''), name) AS display_name
+            FROM districts 
+            ORDER BY id DESC
+        ")->fetchAll(PDO::FETCH_ASSOC);
+        echo json_encode(["status" => "success", "data" => ["districts" => $districts]], JSON_UNESCAPED_UNICODE);
+        exit();
+    }
+
+    if ($action === 'get_universities') {
+        $universities = $conn->query("
+            SELECT *, 
+                   COALESCE(NULLIF(name_ar, ''), name) AS display_name
+            FROM universities 
+            ORDER BY id DESC
+        ")->fetchAll(PDO::FETCH_ASSOC);
+        echo json_encode(["status" => "success", "data" => ["universities" => $universities]], JSON_UNESCAPED_UNICODE);
         exit();
     }
 

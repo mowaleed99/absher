@@ -51,18 +51,33 @@ export function BadgesProvider({ children }: { children: React.ReactNode }) {
     }
 
     try {
-      const result = await apiFetch<Record<string, unknown>>('get_all');
+      const result = await apiFetch<Record<string, unknown>>('get_badge_counts');
       if (result.success && result.data) {
-        // 1. Reviews: Total, Pending, Negative, Rejected (غير المرئي)
-        if (Array.isArray(result.data.reviews)) {
-          const total = result.data.reviews.length;
-          const pCount = result.data.reviews.filter(
+        const payload = (result.data.data as Record<string, unknown>) || result.data;
+        if (payload.pending_reviews !== undefined) {
+          setTotalReviewsCount(Number(payload.total_reviews || 0));
+          setPendingReviewsCount(Number(payload.pending_reviews || 0));
+          setNegativeReviewsCount(Number(payload.negative_reviews || 0));
+          setRejectedReviewsCount(Number(payload.rejected_reviews || 0));
+          setPendingFeedbackCount(Number(payload.pending_feedback || 0));
+          setPendingChatsCount(Number(payload.pending_chats || 0));
+          setPendingRequestsCount(Number(payload.pending_requests || 0));
+          return;
+        }
+      }
+
+      // Fallback to get_all if get_badge_counts not available
+      const fallback = await apiFetch<Record<string, unknown>>('get_all');
+      if (fallback.success && fallback.data) {
+        if (Array.isArray(fallback.data.reviews)) {
+          const total = fallback.data.reviews.length;
+          const pCount = fallback.data.reviews.filter(
             (r: Record<string, unknown>) => String(r.status || '').trim().toLowerCase() === 'pending'
           ).length;
-          const negCount = result.data.reviews.filter(
+          const negCount = fallback.data.reviews.filter(
             (r: Record<string, unknown>) => Number(r.rating || 5) <= 2
           ).length;
-          const rejCount = result.data.reviews.filter(
+          const rejCount = fallback.data.reviews.filter(
             (r: Record<string, unknown>) => String(r.status || '').trim().toLowerCase() === 'rejected'
           ).length;
 
@@ -70,31 +85,19 @@ export function BadgesProvider({ children }: { children: React.ReactNode }) {
           setPendingReviewsCount(pCount);
           setNegativeReviewsCount(negCount);
           setRejectedReviewsCount(rejCount);
-        } else {
-          setTotalReviewsCount(0);
-          setPendingReviewsCount(0);
-          setNegativeReviewsCount(0);
-          setRejectedReviewsCount(0);
         }
 
-        // 2. Feedback: status === 'pending'
-        const rawFeedback = result.data.application_feedback || result.data.feedback;
+        const rawFeedback = fallback.data.application_feedback || fallback.data.feedback;
         if (Array.isArray(rawFeedback)) {
           const pFeedback = rawFeedback.filter(
             (f: Record<string, unknown>) => String(f.status || '').trim().toLowerCase() === 'pending'
           );
           setPendingFeedbackCount(pFeedback.length);
-        } else {
-          setPendingFeedbackCount(0);
         }
 
-        // 3. Customer Support Chats requiring admin attention:
-        // SOLE SOURCE OF TRUTH: Latest active non-deleted message sender === 'student'
-        if (Array.isArray(result.data.chats)) {
-          const pChats = result.data.chats.filter((c: Record<string, unknown>) => {
-            if (!Array.isArray(c.messages) || c.messages.length === 0) {
-              return false;
-            }
+        if (Array.isArray(fallback.data.chats)) {
+          const pChats = fallback.data.chats.filter((c: Record<string, unknown>) => {
+            if (!Array.isArray(c.messages) || c.messages.length === 0) return false;
             const activeMsgs = c.messages.filter(
               (m: Record<string, unknown>) => !m.deleted && !m.is_deleted
             );
@@ -103,19 +106,14 @@ export function BadgesProvider({ children }: { children: React.ReactNode }) {
             return lastMsg && (lastMsg.sender === 'student' || lastMsg.sender === 'user');
           });
           setPendingChatsCount(pChats.length);
-        } else {
-          setPendingChatsCount(0);
         }
 
-        // 4. Service Requests requiring attention: New, Under Review, Pending Cash
-        if (Array.isArray(result.data.requests)) {
-          const pReqs = result.data.requests.filter((r: Record<string, unknown>) => {
+        if (Array.isArray(fallback.data.requests)) {
+          const pReqs = fallback.data.requests.filter((r: Record<string, unknown>) => {
             const norm = String(r.status || '').trim().toLowerCase().replace(/[\s_-]+/g, '_');
             return ['قيد_المراجعة', 'under_review', 'جديد', 'new', 'pending', 'pending_cash', 'pending_payment'].includes(norm);
           });
           setPendingRequestsCount(pReqs.length);
-        } else {
-          setPendingRequestsCount(0);
         }
       }
     } catch (err) {

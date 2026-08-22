@@ -18,18 +18,28 @@ export function useDistricts() {
     setIsLoading(true);
     setError(null);
     try {
-      const result = await apiFetch<Record<string, unknown>>('get_all');
-      if (!result.success) {
-        setError(result.error);
-        return;
+      const result = await apiFetch<Record<string, unknown>>('get_districts');
+      if (result.success && result.data) {
+        const nested = result.data.data as Record<string, unknown> | undefined;
+        const raw = nested?.districts ?? result.data.districts;
+        const parsed = parseDistricts(raw);
+        if (parsed) {
+          setDistricts(parsed);
+          return;
+        }
       }
 
-      const parsed = parseDistricts(result.data.districts);
-      if (parsed) {
-        setDistricts(parsed);
-      } else {
-        setError('Failed to parse districts');
+      // Fallback to get_all
+      const fallback = await apiFetch<Record<string, unknown>>('get_all');
+      if (fallback.success && fallback.data) {
+        const parsed = parseDistricts(fallback.data.districts);
+        if (parsed) {
+          setDistricts(parsed);
+          return;
+        }
       }
+
+      setError('Failed to parse districts');
     } catch (err) {
       console.error('[useDistricts] fetch error:', err);
       setError('Connection error');

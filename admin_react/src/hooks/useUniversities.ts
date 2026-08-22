@@ -18,18 +18,28 @@ export function useUniversities() {
     setIsLoading(true);
     setError(null);
     try {
-      const result = await apiFetch<Record<string, unknown>>('get_all');
-      if (!result.success) {
-        setError(result.error);
-        return;
+      const result = await apiFetch<Record<string, unknown>>('get_universities');
+      if (result.success && result.data) {
+        const nested = result.data.data as Record<string, unknown> | undefined;
+        const raw = nested?.universities ?? result.data.universities;
+        const parsed = parseUniversities(raw);
+        if (parsed) {
+          setUniversities(parsed);
+          return;
+        }
       }
 
-      const parsed = parseUniversities(result.data.universities);
-      if (parsed) {
-        setUniversities(parsed);
-      } else {
-        setError('Failed to parse universities');
+      // Fallback to get_all
+      const fallback = await apiFetch<Record<string, unknown>>('get_all');
+      if (fallback.success && fallback.data) {
+        const parsed = parseUniversities(fallback.data.universities);
+        if (parsed) {
+          setUniversities(parsed);
+          return;
+        }
       }
+
+      setError('Failed to parse universities');
     } catch (err) {
       console.error('[useUniversities] fetch error:', err);
       setError('Connection error');

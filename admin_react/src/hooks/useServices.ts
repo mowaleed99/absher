@@ -18,18 +18,28 @@ export function useServices() {
     setIsLoading(true);
     setError(null);
     try {
-      const result = await apiFetch<Record<string, unknown>>('get_all');
-      if (!result.success) {
-        setError(result.error);
-        return;
+      const result = await apiFetch<Record<string, unknown>>('get_services');
+      if (result.success && result.data) {
+        const nested = result.data.data as Record<string, unknown> | undefined;
+        const raw = nested?.services ?? result.data.services;
+        const parsed = parseServices(raw);
+        if (parsed) {
+          setServices(parsed);
+          return;
+        }
       }
 
-      const parsed = parseServices(result.data.services);
-      if (parsed) {
-        setServices(parsed);
-      } else {
-        setError('Failed to parse services');
+      // Fallback to get_all
+      const fallback = await apiFetch<Record<string, unknown>>('get_all');
+      if (fallback.success && fallback.data) {
+        const parsed = parseServices(fallback.data.services);
+        if (parsed) {
+          setServices(parsed);
+          return;
+        }
       }
+
+      setError('Failed to parse services');
     } catch (err) {
       console.error('[useServices] fetch error:', err);
       setError('Connection error');

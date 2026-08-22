@@ -8,7 +8,7 @@ export function useApartments() {
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Fetch all apartments (initial load using get_all)
+  // Fetch all apartments (using fast get_apartments)
   const fetchApartments = useCallback(async () => {
     const token = localStorage.getItem('adminToken');
     if (!token) {
@@ -19,19 +19,28 @@ export function useApartments() {
     setIsLoading(true);
     setError(null);
     try {
-      const result = await apiFetch<Record<string, unknown>>('get_all');
-      if (!result.success) {
-        setError(result.error);
-        return;
+      const result = await apiFetch<Record<string, unknown>>('get_apartments');
+      if (result.success && result.data) {
+        const nested = result.data.data as Record<string, unknown> | undefined;
+        const raw = nested?.apartments ?? result.data.apartments;
+        const parsed = parseApartments(raw);
+        if (parsed) {
+          setApartments(parsed);
+          return;
+        }
       }
 
-      // get_all returns apartments as top-level key
-      const parsed = parseApartments(result.data.apartments);
-      if (parsed) {
-        setApartments(parsed);
-      } else {
-        setError('Unexpected apartments format from server.');
+      // Fallback to get_all if get_apartments format differs
+      const fallback = await apiFetch<Record<string, unknown>>('get_all');
+      if (fallback.success && fallback.data) {
+        const parsed = parseApartments(fallback.data.apartments);
+        if (parsed) {
+          setApartments(parsed);
+          return;
+        }
       }
+
+      setError('Unexpected apartments format from server.');
     } catch (err) {
       console.error('[useApartments] fetch error:', err);
       setError('Connection error');
