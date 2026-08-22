@@ -1,5 +1,7 @@
 import 'package:absher/services/language_service.dart';
 import 'package:absher/services/realtime_sync_service.dart';
+import 'package:absher/services/api_service.dart';
+import 'package:absher/services/push_notification_service.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'theme/app_colors.dart';
@@ -8,6 +10,11 @@ import 'screens/splash_screen.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await LanguageService.initLanguage();
+  await ApiService.initTokens();
+  await PushNotificationService.initialize();
+  if (ApiService.authToken != null) {
+    PushNotificationService.syncTokenWithBackend();
+  }
   RealtimeSyncService().init();
   runApp(const AbsherApp());
 }
@@ -21,6 +28,7 @@ class AbsherApp extends StatelessWidget {
       valueListenable: LanguageService.currentLang,
       builder: (context, lang, child) {
         return MaterialApp(
+          navigatorKey: PushNotificationService.navigatorKey,
           title: LanguageService.tr('auto_trans_1000'),
           debugShowCheckedModeBanner: false,
           theme: ThemeData(

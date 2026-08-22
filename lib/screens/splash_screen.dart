@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../theme/app_colors.dart';
 import 'home_screen.dart';
 import '../services/api_service.dart';
+import '../services/push_notification_service.dart';
 import '../models/student.dart';
 
 class SplashScreen extends StatefulWidget {
@@ -58,6 +59,7 @@ class _SplashScreenState extends State<SplashScreen>
             ),
           ),
         );
+        PushNotificationService.processPendingNavigation();
         return;
       }
     }
@@ -70,6 +72,7 @@ class _SplashScreenState extends State<SplashScreen>
         ),
       ),
     );
+    PushNotificationService.processPendingNavigation();
   }
 
   @override

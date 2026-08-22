@@ -9,6 +9,7 @@ import '../services/api_service.dart';
 import 'edit_profile_screen.dart';
 import 'change_password_screen.dart';
 import '../models/student.dart';
+import '../models/university.dart';
 import 'my_reviews_screen.dart';
 import 'feedback_screen.dart';
 import 'package:image_picker/image_picker.dart';
@@ -34,6 +35,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   bool _isUploadingAvatar = false;
   int _avatarTimestamp = DateTime.now().millisecondsSinceEpoch;
   StreamSubscription? _profileSub;
+  List<University> _universities = [];
 
   @override
   void initState() {
@@ -42,6 +44,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     if (!widget.isGuest) {
       _fetchProfile();
     }
+    _loadUniversities();
 
     _profileSub = RealtimeSyncService().onProfileUpdated.listen((meta) {
       if (mounted && _student != null) {
@@ -86,6 +89,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
         });
       }
     }
+  }
+
+  Future<void> _loadUniversities() async {
+    try {
+      final list = await ApiService.getUniversities();
+      if (mounted) {
+        setState(() {
+          _universities = list.map((u) => University.fromJson(u)).toList();
+        });
+      }
+    } catch (_) {}
   }
 
   Future<void> _pickAndUploadAvatar() async {
@@ -364,7 +378,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                           borderRadius:
                                               BorderRadius.circular(20)),
                                       child: Text(
-                                        _student!.university!,
+                                        University.localize(
+                                          _student!.university!,
+                                          universitiesList: _universities,
+                                          isEnglish: LanguageService.currentLang.value == 'en',
+                                        ),
                                         textAlign: TextAlign.center,
                                         style: const TextStyle(
                                             color: AppColors.accentLight,

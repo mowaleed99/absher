@@ -36,4 +36,5 @@ export interface Apartment {
   is_available: number;
   is_featured?: number | boolean;
   featured_until?: string | null;
+  is_special_offer?: number | boolean;
 }

@@ -333,15 +333,18 @@ class _RentFlatScreenState extends State<RentFlatScreen> {
     );
   }
 
-  // 1. قسم السكن بمفردي (Alone -> All Flats Sc / Flat Sc / Customer Service)
+  // 1. قسم السكن (إيجار الشقق + اختيار غرفة في شقة)
   Widget _buildAloneSection() {
+    final isAr = LanguageService.currentLang.value == 'ar';
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // الخيار الأول: All Flats Sc
+        // الخيار الأول: إيجار الشقق (شقة كاملة)
         _buildAloneCard(
-          title: LanguageService.tr('browse_flats'),
-          subtitle: LanguageService.tr('browse_flats_desc'),
+          title: isAr ? 'إيجار الشقق' : 'Rent Full Flats',
+          subtitle: isAr
+              ? 'مخصص لمن يريد استئجار شقة كاملة (طالب بمفرده أو مع أسرته) مع بحث وتصفية متقدمة'
+              : 'Rent a complete flat with advanced search, district filters, and pricing',
           icon: Icons.apartment,
           onTap: () => Navigator.push(
             context,
@@ -349,8 +352,10 @@ class _RentFlatScreenState extends State<RentFlatScreen> {
               builder: (_) => FlatsListScreen(
                 apartments: _apartments,
                 user: widget.user,
-                title: LanguageService.tr('auto_trans_1228'),
-                subtitle: LanguageService.tr('auto_trans_1229'),
+                title: isAr ? 'إيجار الشقق السكنية' : 'Full Flats for Rent',
+                subtitle: isAr
+                    ? 'تصفح كافة الشقق الكاملة المتاحة مع إمكانية البحث والفلترة'
+                    : 'Browse all available full flats with search & filters',
                 filterSingleOnly: false,
               ),
             ),
@@ -358,19 +363,23 @@ class _RentFlatScreenState extends State<RentFlatScreen> {
         ),
         const SizedBox(height: 14),
 
-        // الخيار الثاني: Flat Sc
+        // الخيار الثاني: اختيار غرفة في شقة
         _buildAloneCard(
-          title: LanguageService.tr('flat_room_choice'),
-          subtitle: LanguageService.tr('flat_room_desc'),
-          icon: Icons.person_pin_circle,
+          title: isAr ? 'اختيار غرفة في شقة' : 'Shared Room in Flat',
+          subtitle: isAr
+              ? 'مخصص لتأجير الغرف والسكن المشترك والبحث عن غرف مستقلة داخل شقق مشتركة'
+              : 'Rent a room or bed in a shared apartment matching your preferences',
+          icon: Icons.meeting_room_outlined,
           onTap: () => Navigator.push(
             context,
             MaterialPageRoute(
               builder: (_) => FlatsListScreen(
                 apartments: _apartments,
                 user: widget.user,
-                title: LanguageService.tr('auto_trans_1230'),
-                subtitle: LanguageService.tr('auto_trans_1231'),
+                title: isAr ? 'اختيار غرفة في شقة' : 'Shared Rooms & Flats',
+                subtitle: isAr
+                    ? 'غرف وسكن طلابي مشترك مخصص للطلاب بأسعار مناسبة'
+                    : 'Shared rooms and student co-living spaces',
                 filterSingleOnly: true,
               ),
             ),

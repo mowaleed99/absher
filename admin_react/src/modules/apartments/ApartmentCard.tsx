@@ -69,6 +69,31 @@ export function ApartmentCard({ apartment: apt, onEdit, onDelete, onPin }: Apart
       }}
     >
       <div className="card-img-wrap" style={{ background: '#1f2937', position: 'relative' }}>
+        {/* Special Offer Flame Badge */}
+        {Boolean(apt.is_special_offer) && (
+          <div
+            style={{
+              position: 'absolute',
+              top: '10px',
+              [isRtl ? (isFeaturedActive ? 'left' : 'right') : (isFeaturedActive ? 'right' : 'left')]: '10px',
+              background: 'linear-gradient(135deg, #ef4444, #f97316)',
+              color: '#fff',
+              padding: '4px 10px',
+              borderRadius: '8px',
+              fontSize: '0.75rem',
+              fontWeight: 800,
+              display: 'flex',
+              alignItems: 'center',
+              gap: '4px',
+              boxShadow: '0 4px 12px rgba(239, 68, 68, 0.4)',
+              zIndex: 2,
+            }}
+          >
+            <i className="fa-solid fa-fire" />
+            <span>{t('apt.badge_special_offer')}</span>
+          </div>
+        )}
+
         {/* Featured Golden Badge */}
         {isFeaturedActive && (
           <div

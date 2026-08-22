@@ -883,6 +883,52 @@ class _ApartmentDetailScreenState extends State<ApartmentDetailScreen> {
                                               ],
                                             ),
                                           ),
+                                        if (widget.apartment['is_special_offer'] == true ||
+                                            widget.apartment['is_special_offer'] == 1 ||
+                                            widget.apartment['is_special_offer'] == '1')
+                                          Container(
+                                            padding: const EdgeInsets.symmetric(
+                                                horizontal: 10, vertical: 4),
+                                            decoration: BoxDecoration(
+                                              gradient: const LinearGradient(
+                                                colors: [
+                                                  Color(0xFFEF4444),
+                                                  Color(0xFFF97316)
+                                                ],
+                                              ),
+                                              borderRadius:
+                                                  BorderRadius.circular(8),
+                                              boxShadow: [
+                                                BoxShadow(
+                                                  color: const Color(0xFFEF4444)
+                                                      .withValues(alpha: 0.3),
+                                                  blurRadius: 4,
+                                                ),
+                                              ],
+                                            ),
+                                            child: Row(
+                                              mainAxisSize: MainAxisSize.min,
+                                              children: [
+                                                const Icon(
+                                                    Icons.local_fire_department,
+                                                    color: Colors.white,
+                                                    size: 14),
+                                                const SizedBox(width: 3),
+                                                Text(
+                                                  LanguageService.currentLang
+                                                              .value ==
+                                                          'ar'
+                                                      ? "عرض خاص"
+                                                      : "Special Offer",
+                                                  style: const TextStyle(
+                                                      color: Colors.white,
+                                                      fontWeight:
+                                                          FontWeight.bold,
+                                                      fontSize: 12),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
                                         Container(
                                           padding: const EdgeInsets.symmetric(
                                             horizontal: 10, vertical: 4),

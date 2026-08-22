@@ -195,7 +195,7 @@ class _OffersScreenState extends State<OffersScreen> {
               centerTitle: true,
               iconTheme: const IconThemeData(color: Colors.white),
               title: Text(
-                LanguageService.tr('auto_trans_1200'),
+                isAr ? 'شقق' : 'Flats',
                 style: const TextStyle(
                   color: Colors.white,
                   fontWeight: FontWeight.bold,
@@ -536,16 +536,22 @@ class _OffersScreenState extends State<OffersScreen> {
         itemCount: apts.length,
         itemBuilder: (context, idx) {
           final apt = apts[idx];
-          final title = apt['title']?.toString() ?? 'شقة طلابية';
-          final price = apt['price']?.toString() ?? '0';
-          final district = apt['district']?.toString() ??
+          final bool isFeatured = (apt['is_featured'] == true ||
+              apt['is_featured'] == 1 ||
+              apt['is_featured'] == '1');
+          final bool isSpecialOffer = (apt['is_special_offer'] == true ||
+              apt['is_special_offer'] == 1 ||
+              apt['is_special_offer'] == '1');
+
+          final String price = apt['price']?.toString() ?? '0';
+          final String title = apt['title']?.toString() ?? 'شقة طلابية';
+          final String district = apt['district']?.toString() ??
               apt['location']?.toString() ??
               'تبليسي';
           final images = List<String>.from((apt['images'] as List?)
                   ?.map((e) => e.toString()) ??
               ['assets/images/apt1.png']);
           final firstImg = images.isNotEmpty ? images.first : 'assets/images/apt1.png';
-          final isFeatured = apt['is_featured'] == true || apt['is_featured'] == 1 || apt['is_featured'] == '1';
 
           return GestureDetector(
             onTap: () {
@@ -563,14 +569,21 @@ class _OffersScreenState extends State<OffersScreen> {
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(20),
-                border: isFeatured
-                    ? Border.all(color: const Color(0xFFF59E0B), width: 1.8)
-                    : null,
+                border: Border.all(
+                  color: isFeatured
+                      ? const Color(0xFFF59E0B).withValues(alpha: 0.5)
+                      : isSpecialOffer
+                          ? const Color(0xFFEF4444).withValues(alpha: 0.5)
+                          : Colors.grey.shade200,
+                  width: isFeatured || isSpecialOffer ? 1.5 : 1.0,
+                ),
                 boxShadow: [
                   BoxShadow(
                     color: isFeatured
                         ? const Color(0xFFF59E0B).withValues(alpha: 0.15)
-                        : Colors.black.withValues(alpha: 0.06),
+                        : isSpecialOffer
+                            ? const Color(0xFFEF4444).withValues(alpha: 0.15)
+                            : Colors.black.withValues(alpha: 0.06),
                     blurRadius: 15,
                     offset: const Offset(0, 5),
                   ),
@@ -609,6 +622,44 @@ class _OffersScreenState extends State<OffersScreen> {
                               children: [
                                 Text(
                                   '⭐ مميز',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 11,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      if (isSpecialOffer)
+                        PositionedDirectional(
+                          top: isFeatured ? 44 : 12,
+                          start: 12,
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 10, vertical: 5),
+                            decoration: BoxDecoration(
+                              gradient: const LinearGradient(
+                                colors: [Color(0xFFEF4444), Color(0xFFF97316)],
+                              ),
+                              borderRadius: BorderRadius.circular(10),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.red.withValues(alpha: 0.3),
+                                  blurRadius: 6,
+                                  offset: const Offset(0, 2),
+                                ),
+                              ],
+                            ),
+                            child: const Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(Icons.local_fire_department,
+                                    color: Colors.white, size: 13),
+                                SizedBox(width: 3),
+                                Text(
+                                  'عرض خاص',
                                   style: TextStyle(
                                     color: Colors.white,
                                     fontWeight: FontWeight.bold,

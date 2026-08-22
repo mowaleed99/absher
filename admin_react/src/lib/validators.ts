@@ -126,6 +126,7 @@ export function parseApartment(v: unknown): Apartment | null {
     is_available: toNumber(v.is_available) ?? 1,
     is_featured: toNumber(v.is_featured) ?? 0,
     featured_until: toString(v.featured_until) || null,
+    is_special_offer: toNumber(v.is_special_offer) ?? 0,
   };
 }
 

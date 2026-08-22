@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import { Apartment } from '../../../types/apartment';
 import { useI18n } from '../../../lib/i18n';
+import { useDistricts } from '../../../hooks/useDistricts';
 
 interface DistrictDistributionChartProps {
   apartments: Apartment[];
@@ -8,21 +9,56 @@ interface DistrictDistributionChartProps {
 
 export function DistrictDistributionChart({ apartments }: DistrictDistributionChartProps) {
   const { lang } = useI18n();
+  const { districts } = useDistricts();
   const isRtl = lang === 'ar';
 
   const districtData = useMemo(() => {
     const counts: Record<string, number> = {};
 
+    // Build lookup maps for fast matching
+    const districtById = new Map<number, string>();
+    const districtNames: Array<{ id: number; name: string; name_ar: string; name_en: string }> = [];
+
+    districts.forEach((d) => {
+      const displayName = isRtl ? (d.name_ar || d.name) : (d.name_en || d.name || d.name_ar);
+      districtById.set(d.id, displayName);
+      districtNames.push({
+        id: d.id,
+        name: d.name.toLowerCase().trim(),
+        name_ar: (d.name_ar || '').toLowerCase().trim(),
+        name_en: (d.name_en || '').toLowerCase().trim(),
+      });
+    });
+
     apartments.forEach((apt) => {
-      let loc = (isRtl ? apt.location_ar || apt.location : apt.location_en || apt.location) || '';
-      loc = loc.trim();
-      if (!loc) {
-        loc = isRtl ? 'تبليسي (أخرى)' : 'Tbilisi (Other)';
-      } else {
-        // Clean up common prefixes
-        loc = loc.split(',')[0].trim();
+      let resolvedDistrict: string | undefined;
+
+      // 1. Direct match by district_id
+      if (apt.district_id && districtById.has(Number(apt.district_id))) {
+        resolvedDistrict = districtById.get(Number(apt.district_id));
       }
-      counts[loc] = (counts[loc] || 0) + 1;
+
+      // 2. Match by location/district text against known districts
+      if (!resolvedDistrict) {
+        const rawLoc = `${apt.location || ''} ${apt.location_ar || ''} ${apt.location_en || ''}`.toLowerCase();
+        for (const d of districtNames) {
+          if (
+            (d.name_ar && rawLoc.includes(d.name_ar)) ||
+            (d.name_en && rawLoc.includes(d.name_en)) ||
+            (d.name && rawLoc.includes(d.name))
+          ) {
+            resolvedDistrict = districtById.get(d.id);
+            break;
+          }
+        }
+      }
+
+      // 3. Fallback
+      if (!resolvedDistrict) {
+        resolvedDistrict = isRtl ? 'تبليسي (أخرى)' : 'Tbilisi (Other)';
+      }
+
+      counts[resolvedDistrict] = (counts[resolvedDistrict] || 0) + 1;
     });
 
     const total = apartments.length || 1;
@@ -36,7 +72,7 @@ export function DistrictDistributionChart({ apartments }: DistrictDistributionCh
       .slice(0, 5); // Top 5 districts
 
     return sorted;
-  }, [apartments, isRtl]);
+  }, [apartments, districts, isRtl]);
 
   const maxCount = Math.max(...districtData.map((d) => d.count), 1);
 

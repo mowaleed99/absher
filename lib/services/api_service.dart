@@ -9,6 +9,7 @@ import 'language_service.dart';
 import '../models/housing_offer.dart';
 import '../models/student_request.dart';
 import '../models/wallet_transaction.dart';
+import 'push_notification_service.dart';
 
 class ApiService {
   static const _storage = FlutterSecureStorage();
@@ -26,10 +27,16 @@ class ApiService {
   static Future<void> saveAuthToken(String token) async {
     authToken = token;
     await _storage.write(key: _keyAuthToken, value: token);
+    try {
+      PushNotificationService.syncTokenWithBackend(customToken: token);
+    } catch (_) {}
   }
 
   /// Clear all tokens on logout.
   static Future<void> clearTokens() async {
+    try {
+      await PushNotificationService.unregisterToken();
+    } catch (_) {}
     authToken = null;
     await _storage.delete(key: _keyAuthToken);
   }
@@ -297,6 +304,9 @@ class ApiService {
                   a['is_featured'] == 1 ||
                   a['is_featured'] == '1',
               'featured_until': a['featured_until']?.toString(),
+              'is_special_offer': a['is_special_offer'] == true ||
+                  a['is_special_offer'] == 1 ||
+                  a['is_special_offer'] == '1',
               'images': imagesList,
               'features': featuresList,
               'universities': universitiesList,

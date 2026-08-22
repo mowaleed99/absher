@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "513829824383",
+    "project_id": "absher-app-7a743",
+    "storage_bucket": "absher-app-7a743.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:513829824383:android:a0d084b5b03b64232f9c4a",
+        "android_client_info": {
+          "package_name": "com.example.absher"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBy3OEqJLhDf6wLAWDWsQCCShAcDS5_Zsw"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

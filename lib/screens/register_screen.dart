@@ -28,8 +28,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
   );
   CountryCode _selectedPhoneCountry = CountryCode.defaultCountry;
 
-  final _customUniController = TextEditingController();
-
   String _selectedUni = '';
   List<String> _universities = [];
   bool _isLoadingUnis = true;
@@ -48,7 +46,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
     _emailController.dispose();
     _localPhoneController.dispose();
     _passwordController.dispose();
-    _customUniController.dispose();
     super.dispose();
   }
 
@@ -61,17 +58,27 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   Future<void> _loadUniversities() async {
     final unis = await ApiService.getUniversities();
+    final isEn = LanguageService.currentLang.value == 'en';
+    final othersLabel = isEn ? 'OTHERS' : 'أخرى';
+
     if (mounted) {
       setState(() {
         _isLoadingUnis = false;
         if (unis.isNotEmpty) {
           _universities = unis
-              .map((u) => (u['name'] ?? '').toString())
+              .map((u) => (isEn
+                      ? (u['name_en'] != null && u['name_en'].toString().isNotEmpty
+                          ? u['name_en']
+                          : u['name'])
+                      : (u['name_ar'] != null && u['name_ar'].toString().isNotEmpty
+                          ? u['name_ar']
+                          : u['name']))
+                  .toString())
               .where((n) => n.isNotEmpty)
               .toList();
-          _universities.add(LanguageService.tr('other_uni_manual'));
+          _universities.add(othersLabel);
         } else {
-          _universities = [LanguageService.tr('other_uni_manual')];
+          _universities = [othersLabel];
         }
         _selectedUni = _universities.first;
       });
@@ -128,9 +135,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
         nationality: LanguageService.currentLang.value == 'ar'
             ? _selectedNationality.nameAr
             : _selectedNationality.nameEn,
-        university: _selectedUni == LanguageService.tr('other_uni_manual')
-            ? _customUniController.text.trim()
-            : _selectedUni,
+        university: _selectedUni,
         password: _passwordController.text,
       );
 
@@ -549,27 +554,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                       setState(() => _selectedUni = val!),
                                 ),
                           const SizedBox(height: 16),
-
-                          if (_selectedUni ==
-                              LanguageService.tr('other_uni_manual')) ...[
-                            TextFormField(
-                              controller: _customUniController,
-                              decoration: InputDecoration(
-                                labelText:
-                                    LanguageService.tr('uni_and_district'),
-                                prefixIcon: const Icon(
-                                    Icons.edit_location_alt_outlined,
-                                    color: AppColors.primary),
-                                border: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(12)),
-                              ),
-                              validator: (value) => value == null ||
-                                      value.isEmpty
-                                  ? LanguageService.tr('please_enter_uni_dist')
-                                  : null,
-                            ),
-                            const SizedBox(height: 16),
-                          ],
 
                           // كلمة المرور
                           TextFormField(

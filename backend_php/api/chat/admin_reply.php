@@ -68,9 +68,12 @@ try {
     // Send targeted notification to the student who owns the chat
     if (!empty($chatRow['student_id'])) {
         $studentId = intval($chatRow['student_id']);
-        $notifTitle = "رد جديد من الدعم الفني";
-        $notifBody = "لديك رد جديد على استفسارك في الشات المباشر";
-        sendStudentNotification($studentId, $notifTitle, $notifBody);
+        $notifTitle = "💬 رسالة جديدة من خدمة العملاء";
+        $notifBody = !empty($content) ? (mb_strlen($content) > 80 ? mb_substr($content, 0, 77) . '...' : $content) : 'أرسلت خدمة العملاء مرفقاً';
+        sendStudentNotification($studentId, $notifTitle, $notifBody, 'chat', [
+            'type' => 'chat',
+            'chat_id' => (string)$chat_id
+        ]);
     }
 
     jsonResponse(true, "Message sent", 201, ['message_id' => (int)$messageId]);

@@ -215,7 +215,8 @@ try {
                    COALESCE(NULLIF(move_in_type_ar, ''), move_in_type) AS display_move_in_type,
                    COALESCE(NULLIF(move_in_date_ar, ''), move_in_date) AS display_move_in_date,
                    is_featured,
-                   featured_until
+                   featured_until,
+                   is_special_offer
             FROM apartments 
             ORDER BY (is_featured = 1 AND (featured_until IS NULL OR featured_until > NOW())) DESC, id DESC
         ")->fetchAll();
@@ -338,14 +339,27 @@ try {
 
         $is_featured = isset($data['is_featured']) ? (intval($data['is_featured']) ? 1 : 0) : 0;
         $featured_until = !empty($data['featured_until']) ? trim($data['featured_until']) : null;
+        $is_special_offer = isset($data['is_special_offer']) ? (intval($data['is_special_offer']) ? 1 : 0) : 0;
 
         if (!empty($title) && !empty($price)) {
-            $stmt = $conn->prepare("INSERT INTO apartments (title, price, location, proximity, universities, capacity, move_in_type, move_in_date, images, features, description, is_available, is_featured, featured_until, district_id, rental_type, rooms_count, roommate_reqs, roommate_facilities, owner_phone, title_ar, title_en, description_ar, description_en, location_ar, location_en, proximity_ar, proximity_en, capacity_ar, capacity_en, move_in_type_ar, move_in_type_en, move_in_date_ar, move_in_date_en, features_ar, features_en) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
-            $stmt->execute([$title, $price, $location, $proximity, $universities, $capacity, $move_in_type, $move_in_date, $images, $features, $description, $is_available, $is_featured, $featured_until, $district_id, $rental_type, $rooms_count, $roommate_reqs, $roommate_facilities, $owner_phone, $title_ar, $title_en, $description_ar, $description_en, $location_ar, $location_en, $proximity_ar, $proximity_en, $capacity_ar, $capacity_en, $move_in_type_ar, $move_in_type_en, $move_in_date_ar, $move_in_date_en, $features_ar, $features_en]);
+            $stmt = $conn->prepare("INSERT INTO apartments (title, price, location, proximity, universities, capacity, move_in_type, move_in_date, images, features, description, is_available, is_featured, featured_until, is_special_offer, district_id, rental_type, rooms_count, roommate_reqs, roommate_facilities, owner_phone, title_ar, title_en, description_ar, description_en, location_ar, location_en, proximity_ar, proximity_en, capacity_ar, capacity_en, move_in_type_ar, move_in_type_en, move_in_date_ar, move_in_date_en, features_ar, features_en) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+            $stmt->execute([$title, $price, $location, $proximity, $universities, $capacity, $move_in_type, $move_in_date, $images, $features, $description, $is_available, $is_featured, $featured_until, $is_special_offer, $district_id, $rental_type, $rooms_count, $roommate_reqs, $roommate_facilities, $owner_phone, $title_ar, $title_en, $description_ar, $description_en, $location_ar, $location_en, $proximity_ar, $proximity_en, $capacity_ar, $capacity_en, $move_in_type_ar, $move_in_type_en, $move_in_date_ar, $move_in_date_en, $features_ar, $features_en]);
             
+            $newAptId = (int)$conn->lastInsertId();
             // إضافة تنبيه تلقائي في الإشعارات
+            $notifTitle = "شقة سكنية جديدة معروضة للإيجار";
+            $notifBody = "تمت إضافة شقة سكنية جديدة للإيجار في حي: " . $location . " بسعر " . $price . ". تصفح شاشات السكن للاطلاع على الصور والتفاصيل كاملة.";
             $stmtNotif = $conn->prepare("INSERT INTO notifications (student_id, title, body, created_at) VALUES (0, ?, ?, NOW())");
-            $stmtNotif->execute(["شقة سكنية جديدة معروضة للإيجار","تمت إضافة شقة سكنية جديدة للإيجار في حي:". $location ."بسعر". $price .". تصفح شاشات السكن للاطلاع على الصور والتفاصيل كاملة."]);
+            $stmtNotif->execute([$notifTitle, $notifBody]);
+            try {
+                require_once __DIR__ . '/core/fcm_service.php';
+                FcmService::sendToAll($notifTitle, $notifBody, [
+                    'type' => 'apartment',
+                    'apartment_id' => (string)$newAptId
+                ]);
+            } catch (Throwable $e) {
+                error_log("FCM sendToAll apartment error: " . $e->getMessage());
+            }
             
             echo json_encode(["status"=>"success","message"=>"تم إضافة الشقة بنجاح"], JSON_UNESCAPED_UNICODE);
         } else {
@@ -416,21 +430,23 @@ try {
         $roommate_facilities = !empty($data['roommate_facilities']) ? trim($data['roommate_facilities']) : null;
         $owner_phone = !empty($data['owner_phone']) ? trim($data['owner_phone']) : null;
 
-        // Preserve existing is_featured and featured_until if not explicitly provided
-        if (!isset($data['is_featured'])) {
-            $currStmt = $conn->prepare("SELECT is_featured, featured_until FROM apartments WHERE id = ?");
+        // Preserve existing is_featured, featured_until, is_special_offer if not explicitly provided
+        if (!isset($data['is_featured']) || !isset($data['is_special_offer'])) {
+            $currStmt = $conn->prepare("SELECT is_featured, featured_until, is_special_offer FROM apartments WHERE id = ?");
             $currStmt->execute([$id]);
             $currApt = $currStmt->fetch(PDO::FETCH_ASSOC);
-            $is_featured = $currApt ? intval($currApt['is_featured']) : 0;
-            $featured_until = $currApt ? $currApt['featured_until'] : null;
+            $is_featured = isset($data['is_featured']) ? (intval($data['is_featured']) ? 1 : 0) : ($currApt ? intval($currApt['is_featured']) : 0);
+            $featured_until = isset($data['featured_until']) ? (!empty($data['featured_until']) ? trim($data['featured_until']) : null) : ($currApt ? $currApt['featured_until'] : null);
+            $is_special_offer = isset($data['is_special_offer']) ? (intval($data['is_special_offer']) ? 1 : 0) : ($currApt ? intval($currApt['is_special_offer']) : 0);
         } else {
             $is_featured = intval($data['is_featured']) ? 1 : 0;
             $featured_until = !empty($data['featured_until']) ? trim($data['featured_until']) : null;
+            $is_special_offer = intval($data['is_special_offer']) ? 1 : 0;
         }
 
         if ($id > 0 && !empty($title) && !empty($price)) {
-            $stmt = $conn->prepare("UPDATE apartments SET title=?, price=?, location=?, proximity=?, universities=?, capacity=?, move_in_type=?, move_in_date=?, images=?, features=?, description=?, is_available=?, is_featured=?, featured_until=?, district_id=?, rental_type=?, rooms_count=?, roommate_reqs=?, roommate_facilities=?, owner_phone=?, title_ar=?, title_en=?, description_ar=?, description_en=?, location_ar=?, location_en=?, proximity_ar=?, proximity_en=?, capacity_ar=?, capacity_en=?, move_in_type_ar=?, move_in_type_en=?, move_in_date_ar=?, move_in_date_en=?, features_ar=?, features_en=? WHERE id=?");
-            $stmt->execute([$title, $price, $location, $proximity, $universities, $capacity, $move_in_type, $move_in_date, $images, $features, $description, $is_available, $is_featured, $featured_until, $district_id, $rental_type, $rooms_count, $roommate_reqs, $roommate_facilities, $owner_phone, $title_ar, $title_en, $description_ar, $description_en, $location_ar, $location_en, $proximity_ar, $proximity_en, $capacity_ar, $capacity_en, $move_in_type_ar, $move_in_type_en, $move_in_date_ar, $move_in_date_en, $features_ar, $features_en, $id]);
+            $stmt = $conn->prepare("UPDATE apartments SET title=?, price=?, location=?, proximity=?, universities=?, capacity=?, move_in_type=?, move_in_date=?, images=?, features=?, description=?, is_available=?, is_featured=?, featured_until=?, is_special_offer=?, district_id=?, rental_type=?, rooms_count=?, roommate_reqs=?, roommate_facilities=?, owner_phone=?, title_ar=?, title_en=?, description_ar=?, description_en=?, location_ar=?, location_en=?, proximity_ar=?, proximity_en=?, capacity_ar=?, capacity_en=?, move_in_type_ar=?, move_in_type_en=?, move_in_date_ar=?, move_in_date_en=?, features_ar=?, features_en=? WHERE id=?");
+            $stmt->execute([$title, $price, $location, $proximity, $universities, $capacity, $move_in_type, $move_in_date, $images, $features, $description, $is_available, $is_featured, $featured_until, $is_special_offer, $district_id, $rental_type, $rooms_count, $roommate_reqs, $roommate_facilities, $owner_phone, $title_ar, $title_en, $description_ar, $description_en, $location_ar, $location_en, $proximity_ar, $proximity_en, $capacity_ar, $capacity_en, $move_in_type_ar, $move_in_type_en, $move_in_date_ar, $move_in_date_en, $features_ar, $features_en, $id]);
             echo json_encode(["status"=>"success","message"=>"تم تعديل الشقة بنجاح"], JSON_UNESCAPED_UNICODE);
         } else {
             echo json_encode(["status"=>"error","message"=>"معرف الشقة، العنوان، والسعر مطلوبان"], JSON_UNESCAPED_UNICODE);
@@ -473,6 +489,29 @@ try {
                 "id" => $id,
                 "is_featured" => $is_featured,
                 "featured_until" => $featured_until
+            ]
+        ], JSON_UNESCAPED_UNICODE);
+        exit();
+    }
+
+    if ($action === 'toggle_apartment_special_offer') {
+        $id = intval($data['id'] ?? 0);
+        if ($id <= 0) {
+            echo json_encode(["status" => "error", "message" => "معرف الشقة غير صالح"], JSON_UNESCAPED_UNICODE);
+            exit();
+        }
+
+        $is_special_offer = isset($data['is_special_offer']) ? (intval($data['is_special_offer']) ? 1 : 0) : 1;
+        $stmt = $conn->prepare("UPDATE apartments SET is_special_offer = ? WHERE id = ?");
+        $stmt->execute([$is_special_offer, $id]);
+
+        $msg = $is_special_offer === 1 ? "تم تعيين الشقة كعرض خاص بنجاح" : "تم إلغاء شارة العرض الخاص للشقة بنجاح";
+        echo json_encode([
+            "status" => "success",
+            "message" => $msg,
+            "data" => [
+                "id" => $id,
+                "is_special_offer" => $is_special_offer
             ]
         ], JSON_UNESCAPED_UNICODE);
         exit();
@@ -618,8 +657,16 @@ try {
             $stmt->execute([$title, $description, $image_url, $has_form, $price_points, $price_cash, $title_ar, $title_en, $description_ar, $description_en]);
             
             // إضافة تنبيه تلقائي في الإشعارات
+            $notifTitle = "خدمة طلابية جديدة متوفرة الآن";
+            $notifBody = "تمت إضافة خدمة طلابية جديدة: " . $title . ". تصفح قسم الخدمات للطلب والاستفسار مباشرة.";
             $stmtNotif = $conn->prepare("INSERT INTO notifications (student_id, title, body, created_at) VALUES (0, ?, ?, NOW())");
-            $stmtNotif->execute(["️ خدمة طلابية جديدة متوفرة الآن","تمت إضافة خدمة طلابية جديدة:". $title .". تصفح قسم الخدمات للطلب والاستفسار مباشرة."]);
+            $stmtNotif->execute([$notifTitle, $notifBody]);
+            try {
+                require_once __DIR__ . '/core/fcm_service.php';
+                FcmService::sendToAll($notifTitle, $notifBody, ['type' => 'new_service']);
+            } catch (Throwable $e) {
+                error_log("FCM sendToAll service error: " . $e->getMessage());
+            }
             
             echo json_encode(["status"=>"success","message"=>"تم إضافة الخدمة بنجاح"], JSON_UNESCAPED_UNICODE);
         } else {
@@ -750,6 +797,15 @@ try {
         if (!empty($title) && !empty($body)) {
             $stmt = $conn->prepare("INSERT INTO notifications (student_id, title, body, title_ar, title_en, body_ar, body_en) VALUES (0, ?, ?, ?, ?, ?, ?)");
             $stmt->execute([$title, $body, $title_ar, $title_en, $body_ar, $body_en]);
+
+            // Dispatch Broadcast Push Notification to all students via FCM
+            try {
+                require_once __DIR__ . '/core/fcm_service.php';
+                FcmService::sendToAll($title, $body, ['type' => 'broadcast_alert']);
+            } catch (Throwable $e) {
+                error_log("FCM Broadcast Error: " . $e->getMessage());
+            }
+
             echo json_encode(["status"=>"success","message"=>"تم نشر التنبيه والإشعار بنجاح"], JSON_UNESCAPED_UNICODE);
         } else {
             echo json_encode(["status"=>"error","message"=>"عنوان التنبيه والمحتوى مطلوبان"], JSON_UNESCAPED_UNICODE);

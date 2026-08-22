@@ -22,6 +22,7 @@ class Apartment {
   final String? rentalType;
   final bool isFeatured;
   final String? featuredUntil;
+  final bool isSpecialOffer;
 
   String get primaryImage => images.isNotEmpty ? images.first.imageUrl : '';
 
@@ -45,6 +46,7 @@ class Apartment {
     this.rentalType,
     this.isFeatured = false,
     this.featuredUntil,
+    this.isSpecialOffer = false,
   });
 
   factory Apartment.fromJson(Map<String, dynamic> json) {
@@ -111,6 +113,9 @@ class Apartment {
           json['is_featured'] == true ||
           json['is_featured'] == '1',
       featuredUntil: json['featured_until']?.toString(),
+      isSpecialOffer: json['is_special_offer'] == 1 ||
+          json['is_special_offer'] == true ||
+          json['is_special_offer'] == '1',
     );
   }
 
@@ -135,6 +140,7 @@ class Apartment {
       'rental_type': rentalType,
       'is_featured': isFeatured ? 1 : 0,
       'featured_until': featuredUntil,
+      'is_special_offer': isSpecialOffer ? 1 : 0,
     };
   }
 }

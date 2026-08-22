@@ -4,7 +4,6 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../theme/app_colors.dart';
 import '../services/language_service.dart';
 import '../services/realtime_sync_service.dart';
-import 'apartment_detail_screen.dart';
 import 'rent_flat_screen.dart';
 import 'services_screen.dart';
 import 'chat_screen.dart';
@@ -35,7 +34,6 @@ class _HomeScreenState extends State<HomeScreen>
   List<Map<String, dynamic>> _notificationsList = [];
   Set<String> _readNotificationIds = {};
   List<University> _universitiesList = [];
-  List<Map<String, dynamic>> _districtsList = [];
   List<Map<String, dynamic>> _myRequests = [];
   bool _myRequestsLoaded = false;
   bool _isRatingPromptShowing = false;
@@ -48,13 +46,10 @@ class _HomeScreenState extends State<HomeScreen>
   StreamSubscription? _reqSyncSub;
   StreamSubscription? _chatSyncSub;
   StreamSubscription? _profSyncSub;
+  StreamSubscription? _serviceSyncSub;
 
-  // Server-side filter state — null means "no filter" (show all)
-  List<String> _selectedUniversities = [];
-  int? _maxPriceFilter;
-  String? _rentalTypeFilter; // null | 'apartment' | 'room_shared' | 'studio'
-  int? _districtIdFilter; // null | district.id
-  int? _roomsCountFilter; // null | exact count
+  List<Map<String, dynamic>> _servicesList = [];
+  bool _isLoadingServices = false;
 
   final PageController _adController = PageController();
   final ValueNotifier<int> _currentAdPage = ValueNotifier<int>(0);
@@ -240,7 +235,7 @@ class _HomeScreenState extends State<HomeScreen>
     _loadNews();
     _loadNotifications();
     _loadUniversities();
-    _loadDistricts();
+    _loadServices();
     if (!widget.isGuest) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         _checkCompletedServiceRequestsForRating();
@@ -281,6 +276,10 @@ class _HomeScreenState extends State<HomeScreen>
 
     _notifSyncSub = sync.onNotificationsUpdated.listen((_) {
       if (mounted) _loadNotifications();
+    });
+
+    _serviceSyncSub = sync.onServicesUpdated.listen((_) {
+      if (mounted) _loadServices(silent: true);
     });
 
     _reqSyncSub = sync.onRequestsUpdated.listen((_) {
@@ -388,6 +387,7 @@ class _HomeScreenState extends State<HomeScreen>
     _reqSyncSub?.cancel();
     _chatSyncSub?.cancel();
     _profSyncSub?.cancel();
+    _serviceSyncSub?.cancel();
     LanguageService.currentLang.removeListener(_onLangChanged);
     super.dispose();
   }
@@ -399,7 +399,7 @@ class _HomeScreenState extends State<HomeScreen>
     _loadApartments();
     _loadNews();
     _loadUniversities();
-    _loadDistricts();
+    _loadServices(silent: true);
   }
 
   @override
@@ -709,15 +709,26 @@ class _HomeScreenState extends State<HomeScreen>
 
   Future<void> _loadApartments() async {
     final requestId = ++_activeRequestId;
-    final list = await ApiService.getApartments(
-      rentalType: _rentalTypeFilter,
-      roomsCount: _roomsCountFilter,
-      districtId: _districtIdFilter,
-    );
+    final list = await ApiService.getApartments();
     if (!mounted || requestId != _activeRequestId) return;
     setState(() {
       _apartments = list;
     });
+  }
+
+  Future<void> _loadServices({bool silent = false}) async {
+    if (!silent && mounted) setState(() => _isLoadingServices = true);
+    try {
+      final list = await ApiService.getServices();
+      if (mounted) {
+        setState(() {
+          _servicesList = list;
+          _isLoadingServices = false;
+        });
+      }
+    } catch (_) {
+      if (mounted) setState(() => _isLoadingServices = false);
+    }
   }
 
   Future<void> _loadNews() async {
@@ -793,15 +804,6 @@ class _HomeScreenState extends State<HomeScreen>
     return trimmed;
   }
 
-  Future<void> _loadDistricts() async {
-    final list = await ApiService.getDistricts();
-    if (mounted) {
-      setState(() {
-        _districtsList = List<Map<String, dynamic>>.from(list);
-      });
-    }
-  }
-
   Future<void> _loadCurrentUser() async {
     try {
       final freshUser = await ApiService.getCurrentUser();
@@ -852,343 +854,262 @@ class _HomeScreenState extends State<HomeScreen>
     }
   }
 
-  Widget _buildFilterChipDropdown({
-    required String label,
-    required String value,
-    required List<String> items,
-    required ValueChanged<String?> onChanged,
-  }) {
-    final isSelected =
-        value != 'all' && value != 'all_districts' && value != 'all_flats';
-    final bgColor = isSelected ? AppColors.primary : const Color(0xFFF8FAFC);
-    final borderColor =
-        isSelected ? AppColors.primary : const Color(0xFFE2E8F0);
-    final textColor = isSelected ? Colors.white : AppColors.textDark;
-    final iconColor = isSelected ? Colors.white : AppColors.textMuted;
+  Widget _buildHomeServicesSection(Student? usr) {
+    final isAr = LanguageService.currentLang.value == 'ar';
 
-    return Container(
-      height: 48,
-      padding: const EdgeInsets.symmetric(horizontal: 12),
-      decoration: BoxDecoration(
-        color: bgColor,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: borderColor, width: 1.2),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.03),
-            blurRadius: 4,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: DropdownButtonHideUnderline(
-        child: DropdownButton<String>(
-          value: value,
-          isExpanded: true,
-          icon: Icon(Icons.keyboard_arrow_down, size: 18, color: iconColor),
-          dropdownColor: Colors.white,
-          borderRadius: BorderRadius.circular(12),
-          selectedItemBuilder: (BuildContext context) {
-            return items.map((item) {
-              final bool isAllItem = item == 'all' ||
-                  item == 'all_flats' ||
-                  item == 'all_districts' ||
-                  item == LanguageService.tr('auto_trans_1139');
-              return Align(
-                alignment: AlignmentDirectional.centerStart,
-                child: Text(
-                  isAllItem ? label : LanguageService.tr(item),
-                  overflow: TextOverflow.ellipsis,
-                  maxLines: 1,
-                  style: TextStyle(
-                    color: textColor,
-                    fontSize: 12,
-                    fontWeight: isSelected ? FontWeight.bold : FontWeight.w600,
-                    fontFamily: 'Cairo',
-                  ),
-                ),
-              );
-            }).toList();
-          },
-          items: items.map((item) {
-            final bool isAllItem = item == 'all' ||
-                item == 'all_flats' ||
-                item == 'all_districts' ||
-                item == LanguageService.tr('auto_trans_1139');
-            return DropdownMenuItem(
-              value: item,
-              child: Text(
-                isAllItem ? label : LanguageService.tr(item),
-                overflow: TextOverflow.ellipsis,
-                style: const TextStyle(
-                  fontSize: 12,
-                  color: AppColors.textDark,
-                  fontWeight: FontWeight.w500,
-                  fontFamily: 'Cairo',
-                ),
-              ),
-            );
-          }).toList(),
-          onChanged: onChanged,
-        ),
-      ),
-    );
-  }
-
-  Widget _buildCustomFilterChip({
-    required String label,
-    required bool isSelected,
-    required VoidCallback onTap,
-  }) {
-    final bgColor = isSelected ? AppColors.primary : const Color(0xFFF8FAFC);
-    final borderColor =
-        isSelected ? AppColors.primary : const Color(0xFFE2E8F0);
-    final textColor = isSelected ? Colors.white : AppColors.textDark;
-    final iconColor = isSelected ? Colors.white : AppColors.textMuted;
-
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(12),
-      child: Container(
-        height: 48,
-        padding: const EdgeInsets.symmetric(horizontal: 12),
-        decoration: BoxDecoration(
-          color: bgColor,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: borderColor, width: 1.2),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.03),
-              blurRadius: 4,
-              offset: const Offset(0, 2),
-            ),
-          ],
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Expanded(
-              child: Text(
-                label,
-                overflow: TextOverflow.ellipsis,
-                maxLines: 1,
-                style: TextStyle(
-                  color: textColor,
-                  fontSize: 12,
-                  fontWeight: isSelected ? FontWeight.bold : FontWeight.w600,
-                  fontFamily: 'Cairo',
-                ),
-              ),
-            ),
-            const SizedBox(width: 4),
-            Icon(Icons.keyboard_arrow_down, size: 18, color: iconColor),
-          ],
-        ),
-      ),
-    );
-  }
-
-  void _showUniversitiesDialog() {
-    final allUnis = _universitiesList.map((u) => u.name).toList();
-    if (allUnis.isEmpty) {
-      _loadUniversities();
-    }
-    List<String> tempSelected = List.from(_selectedUniversities);
-    String searchQuery = '';
-
-    showDialog(
-      context: context,
-      builder: (ctx) {
-        return StatefulBuilder(
-          builder: (context, setDialogState) {
-            final filteredUnis = allUnis
-                .where((u) =>
-                    u.toLowerCase().contains(searchQuery.toLowerCase().trim()))
-                .toList();
-
-            return AlertDialog(
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(20)),
-              title: Row(
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Section Header
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Row(
                 children: [
-                  const Icon(Icons.school, color: AppColors.primary, size: 22),
+                  Container(
+                    width: 4,
+                    height: 18,
+                    decoration: BoxDecoration(
+                      color: AppColors.accent,
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
                   const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      LanguageService.tr('select_universities'),
-                      style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16,
-                        color: AppColors.primary,
-                      ),
+                  Text(
+                    isAr ? 'الخدمات الطلابية' : 'Student Services',
+                    style: const TextStyle(
+                      fontSize: 17,
+                      fontWeight: FontWeight.w900,
+                      color: AppColors.primaryDark,
                     ),
                   ),
                 ],
               ),
-              content: SizedBox(
-                width: double.maxFinite,
-                height: MediaQuery.of(context).size.height * 0.55,
-                child: Column(
-                  children: [
-                    if (allUnis.length > 5) ...[
-                      TextField(
-                        decoration: InputDecoration(
-                          hintText: LanguageService.currentLang.value == 'ar'
-                              ? 'ابحث عن الجامعة...'
-                              : 'Search university...',
-                          prefixIcon: const Icon(Icons.search, size: 20),
-                          isDense: true,
-                          contentPadding: const EdgeInsets.symmetric(
-                              horizontal: 12, vertical: 10),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(10),
-                            borderSide: BorderSide(color: Colors.grey.shade300),
-                          ),
+              InkWell(
+                onTap: () {
+                  setState(() => _currentIndex = 1);
+                },
+                borderRadius: BorderRadius.circular(8),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+                  child: Row(
+                    children: [
+                      Text(
+                        isAr ? 'عرض الكل' : 'View All',
+                        style: const TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.accent,
                         ),
-                        onChanged: (val) {
-                          setDialogState(() {
-                            searchQuery = val;
-                          });
-                        },
                       ),
-                      const SizedBox(height: 8),
+                      const SizedBox(width: 2),
+                      Icon(
+                        isAr ? Icons.arrow_back_ios : Icons.arrow_forward_ios,
+                        size: 12,
+                        color: AppColors.accent,
+                      ),
                     ],
-                    Expanded(
-                      child: filteredUnis.isEmpty
-                          ? Center(
-                              child: Text(
-                                LanguageService.tr('no_results'),
-                                style: const TextStyle(
-                                    color: AppColors.textMuted, fontSize: 13),
-                              ),
-                            )
-                          : ListView.separated(
-                              shrinkWrap: true,
-                              itemCount: filteredUnis.length,
-                              separatorBuilder: (_, __) =>
-                                  const Divider(height: 1),
-                              itemBuilder: (context, idx) {
-                                final uni = filteredUnis[idx];
-                                final isChecked = tempSelected.contains(uni);
-                                return CheckboxListTile(
-                                  contentPadding: const EdgeInsets.symmetric(
-                                      horizontal: 4),
-                                  title: Text(
-                                    uni,
-                                    style: const TextStyle(fontSize: 13),
-                                  ),
-                                  value: isChecked,
-                                  activeColor: AppColors.primary,
-                                  onChanged: (val) {
-                                    setDialogState(() {
-                                      if (val == true) {
-                                        tempSelected.add(uni);
-                                      } else {
-                                        tempSelected.remove(uni);
-                                      }
-                                    });
-                                  },
-                                );
-                              },
-                            ),
-                    ),
-                  ],
+                  ),
                 ),
               ),
-              actions: [
-                TextButton(
-                  onPressed: () {
-                    setState(() => _selectedUniversities = []);
-                    Navigator.pop(context);
-                  },
-                  child: Text(
-                    LanguageService.tr('clear_filter'),
-                    style: const TextStyle(color: AppColors.textMuted),
-                  ),
-                ),
-                ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primary,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                  ),
-                  onPressed: () {
-                    setState(() => _selectedUniversities = tempSelected);
-                    Navigator.pop(context);
-                  },
-                  child: Text(
-                    LanguageService.tr('apply'),
-                    style: const TextStyle(color: Colors.white),
-                  ),
-                ),
-              ],
-            );
-          },
-        );
-      },
-    );
-  }
+            ],
+          ),
+        ),
+        const SizedBox(height: 12),
 
-  void _showPriceDialog() {
-    final controller = TextEditingController(
-        text: _maxPriceFilter != null ? _maxPriceFilter.toString() : '');
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Text(LanguageService.tr('budget_title'),
-            style: const TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 16,
-                color: AppColors.primary)),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(LanguageService.tr('enter_budget_hint'),
-                style:
-                    const TextStyle(fontSize: 13, color: AppColors.textMuted)),
-            const SizedBox(height: 12),
-            TextField(
-              controller: controller,
-              keyboardType: TextInputType.number,
-              decoration: InputDecoration(
-                hintText: LanguageService.tr('search_flats'),
-                prefixIcon:
-                    const Icon(Icons.attach_money, color: AppColors.primary),
-                border:
-                    OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+        // Services Horizontal 2-Row Grid
+        if (_isLoadingServices && _servicesList.isEmpty)
+          const SizedBox(
+            height: 190,
+            child: Center(
+              child: CircularProgressIndicator(color: AppColors.primary),
+            ),
+          )
+        else if (_servicesList.isEmpty)
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            child: Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: Colors.grey.shade200),
+              ),
+              child: Center(
+                child: Text(
+                  isAr ? 'لا توجد خدمات متاحة حالياً' : 'No services available',
+                  style: const TextStyle(
+                    color: AppColors.textMuted,
+                    fontSize: 13,
+                  ),
+                ),
               ),
             ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () {
-              setState(() => _maxPriceFilter = null);
-              Navigator.pop(context);
-            },
-            child: Text(LanguageService.tr('cancel_filter'),
-                style: const TextStyle(color: AppColors.textMuted)),
+          )
+        else
+          SizedBox(
+            height: 200,
+            child: GridView.builder(
+              scrollDirection: Axis.horizontal,
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 2,
+                mainAxisSpacing: 10,
+                crossAxisSpacing: 10,
+                childAspectRatio: 0.38,
+              ),
+              itemCount: _servicesList.length,
+              itemBuilder: (context, idx) {
+                final s = _servicesList[idx];
+                final title = s['title']?.toString() ?? '';
+                final desc = s['desc']?.toString() ?? '';
+                final imgUrl = s['img']?.toString() ?? '';
+                final int points = (s['price_points'] as int?) ?? 0;
+                final double cash = ((s['price_cash'] as num?)?.toDouble()) ?? 0.0;
+
+                String priceTag = '';
+                if (cash > 0) {
+                  priceTag = cash.truncateToDouble() == cash ? '${cash.toInt()} \$' : '${cash.toStringAsFixed(2)} \$';
+                } else if (points > 0) {
+                  priceTag = '$points ${LanguageService.tr('points_unit')}';
+                } else {
+                  priceTag = isAr ? 'مجاناً' : 'Free';
+                }
+
+                return Material(
+                  color: Colors.transparent,
+                  child: InkWell(
+                    onTap: () {
+                      setState(() => _currentIndex = 1);
+                    },
+                    borderRadius: BorderRadius.circular(16),
+                    child: Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(
+                          color: AppColors.primary.withValues(alpha: 0.08),
+                          width: 1.2,
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.03),
+                            blurRadius: 6,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: Row(
+                        children: [
+                          // Service thumbnail
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(12),
+                            child: Container(
+                              width: 56,
+                              height: 56,
+                              color: AppColors.primaryDark,
+                              child: imgUrl.isNotEmpty
+                                  ? Image.network(
+                                      imgUrl,
+                                      fit: BoxFit.cover,
+                                      errorBuilder: (_, __, ___) => Container(
+                                        color: AppColors.primaryDark,
+                                        child: const Icon(
+                                          Icons.build_circle_rounded,
+                                          color: AppColors.accent,
+                                          size: 28,
+                                        ),
+                                      ),
+                                    )
+                                  : const Icon(
+                                      Icons.build_circle_rounded,
+                                      color: AppColors.accent,
+                                      size: 28,
+                                    ),
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+                          // Service details
+                          Expanded(
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  title,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: const TextStyle(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.bold,
+                                    color: AppColors.primaryDark,
+                                  ),
+                                ),
+                                const SizedBox(height: 3),
+                                if (desc.isNotEmpty) ...[
+                                  Text(
+                                    desc,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: const TextStyle(
+                                      fontSize: 10.5,
+                                      color: AppColors.textMuted,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 4),
+                                ],
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 6,
+                                    vertical: 2,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: cash > 0
+                                        ? const Color(0xFFECFDF5)
+                                        : (points > 0
+                                            ? const Color(0xFFEFF6FF)
+                                            : const Color(0xFFFEF3C7)),
+                                    borderRadius: BorderRadius.circular(6),
+                                  ),
+                                  child: Text(
+                                    priceTag,
+                                    style: TextStyle(
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.w800,
+                                      color: cash > 0
+                                          ? const Color(0xFF065F46)
+                                          : (points > 0
+                                              ? const Color(0xFF1E40AF)
+                                              : const Color(0xFF92400E)),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(width: 4),
+                          Icon(
+                            isAr ? Icons.chevron_left : Icons.chevron_right,
+                            color: AppColors.accent,
+                            size: 20,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                );
+              },
+            ),
           ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary),
-            onPressed: () {
-              final val = int.tryParse(controller.text.trim());
-              setState(() => _maxPriceFilter = val);
-              Navigator.pop(context);
-            },
-            child: Text(LanguageService.tr('apply'),
-                style: const TextStyle(color: Colors.white)),
-          ),
-        ],
-      ),
+      ],
     );
   }
 
   // محتوى التبويب الرئيسي (Home)
   Widget _buildHomeTab(Student? usr) {
-    List<Map<String, dynamic>> filteredApts = List.from(_apartments);
     final List<Map<String, dynamic>> carouselItems = _newsList.isNotEmpty
         ? _newsList
             .map((n) => {
@@ -1199,107 +1120,16 @@ class _HomeScreenState extends State<HomeScreen>
             .toList()
         : _adBanners.map((e) => Map<String, dynamic>.from(e)).toList();
 
-    // Server-side filters (rental_type, rooms_count, district_id) are applied via API.
-    // Only client-side filters remain: university (JSON array field), price (free-text string).
-
-    // University filter (Strict matching based on Dashboard assignments, ID, full name, or university code)
-    if (_selectedUniversities.isNotEmpty) {
-      filteredApts = filteredApts.where((a) {
-        final aptUnis = (a['universities'] as List?)
-                ?.map((e) => e.toString().trim())
-                .toList() ??
-            [];
-        final prox = (a['proximity'] ?? '').toString();
-        final aptUnisJoined = aptUnis.join(' ');
-        final uniContext = '$aptUnisJoined | $prox';
-
-        return _selectedUniversities.any((selected) {
-          final selLower = selected.toLowerCase().trim();
-
-          // 1. Direct match in universities array
-          if (aptUnis.any((u) => u.toLowerCase() == selLower)) {
-            return true;
-          }
-
-          // 2. Look up matching university object in _universitiesList
-          University? matchedUni;
-          for (final u in _universitiesList) {
-            if (u.name.toLowerCase() == selLower ||
-                u.nameAr.toLowerCase() == selLower ||
-                u.nameEn.toLowerCase() == selLower ||
-                u.id.toString() == selected) {
-              matchedUni = u;
-              break;
-            }
-          }
-
-          if (matchedUni != null) {
-            final idStr = matchedUni.id.toString();
-            // Match by ID in apt['universities']
-            if (aptUnis.contains(idStr)) return true;
-
-            final nameArLower = matchedUni.nameAr.toLowerCase().trim();
-            final nameEnLower = matchedUni.nameEn.toLowerCase().trim();
-
-            // Match full Arabic or English name in apt['universities']
-            if (aptUnis.any((u) {
-              final uLow = u.toLowerCase().trim();
-              return (nameArLower.isNotEmpty && (uLow == nameArLower || uLow.contains(nameArLower) || nameArLower.contains(uLow))) ||
-                     (nameEnLower.isNotEmpty && (uLow == nameEnLower || uLow.contains(nameEnLower) || nameEnLower.contains(uLow)));
-            })) {
-              return true;
-            }
-
-            // Match unique code in parentheses like (TSMU), (CIU), (SEU), (EU), (IBSU), (GRUNI), (TSU), (SSU), (ISU)
-            final match = RegExp(r'\(([A-Za-z0-9]+)\)')
-                .firstMatch("${matchedUni.nameAr} ${matchedUni.nameEn}");
-            if (match != null) {
-              final code = match.group(1)!;
-              final parenCode = '($code)'.toLowerCase();
-              if (uniContext.toLowerCase().contains(parenCode)) {
-                return true;
-              }
-            }
-
-            // Match full name in proximity string
-            if (nameArLower.isNotEmpty && prox.toLowerCase().contains(nameArLower)) {
-              return true;
-            }
-            if (nameEnLower.isNotEmpty && prox.toLowerCase().contains(nameEnLower)) {
-              return true;
-            }
-          }
-
-          return false;
-        });
-      }).toList();
-    }
-
-    // Price filter (client-side — price is a free-text string like "450 دولار")
-    if (_maxPriceFilter != null && _maxPriceFilter! > 0) {
-      filteredApts = filteredApts.where((a) {
-        final priceStr =
-            a['price'].toString().replaceAll(RegExp(r'[^0-9]'), '');
-        final p = int.tryParse(priceStr) ?? 0;
-        return p <= _maxPriceFilter!;
-      }).toList();
-    }
-
-    // Always sort featured / pinned apartments at the top / beginning of the list
-    filteredApts.sort((a, b) {
-      final bool aFeatured = (a['is_featured'] == true ||
-          a['is_featured'] == 1 ||
-          a['is_featured'] == '1');
-      final bool bFeatured = (b['is_featured'] == true ||
-          b['is_featured'] == 1 ||
-          b['is_featured'] == '1');
-      if (aFeatured && !bFeatured) return -1;
-      if (!aFeatured && bFeatured) return 1;
-      return 0;
-    });
-
     return RefreshIndicator(
-      onRefresh: _loadApartments,
+      onRefresh: () async {
+        await Future.wait([
+          _loadApartments(),
+          _loadNews(),
+          _loadServices(),
+          _loadUniversities(),
+          if (!widget.isGuest) _loadCurrentUser(),
+        ]);
+      },
       child: CustomScrollView(
         slivers: [
           SliverToBoxAdapter(
@@ -1745,529 +1575,14 @@ class _HomeScreenState extends State<HomeScreen>
                 ),
                 const SizedBox(height: 16),
 
-                // 5. الفلتر داخل كارت كبير
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 20),
-                  child: Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(20),
-                      border:
-                          Border.all(color: Colors.grey.shade300, width: 1.5),
-                      boxShadow: [
-                        BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.04),
-                            blurRadius: 10,
-                            offset: const Offset(0, 4))
-                      ],
-                    ),
-                    child: Column(
-                      children: [
-                        if (_selectedUniversities.isNotEmpty ||
-                            _maxPriceFilter != null ||
-                            _rentalTypeFilter != null ||
-                            _districtIdFilter != null ||
-                            _roomsCountFilter != null)
-                          Align(
-                            alignment: AlignmentDirectional.centerStart,
-                            child: InkWell(
-                              onTap: () {
-                                setState(() {
-                                  _selectedUniversities = [];
-                                  _maxPriceFilter = null;
-                                  _rentalTypeFilter = null;
-                                  _districtIdFilter = null;
-                                  _roomsCountFilter = null;
-                                });
-                                _loadApartments();
-                              },
-                              child: Padding(
-                                padding: const EdgeInsets.only(bottom: 12),
-                                child: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    const Icon(Icons.refresh,
-                                        size: 18, color: Colors.red),
-                                    const SizedBox(width: 4),
-                                    Text(LanguageService.tr('clear_filter'),
-                                        style: const TextStyle(
-                                            color: Colors.red,
-                                            fontSize: 13,
-                                            fontWeight: FontWeight.bold)),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          ),
-                        Row(
-                          children: [
-                            Expanded(
-                              child: _buildCustomFilterChip(
-                                label: _selectedUniversities.isEmpty
-                                    ? LanguageService.tr('auto_trans_1165')
-                                    : _selectedUniversities.join(" + "),
-                                isSelected: _selectedUniversities.isNotEmpty,
-                                onTap: _showUniversitiesDialog,
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: _buildCustomFilterChip(
-                                label: _maxPriceFilter == null
-                                    ? LanguageService.tr('auto_trans_1166')
-                                    : '${LanguageService.tr("up_to_price")} $_maxPriceFilter\$',
-                                isSelected: _maxPriceFilter != null,
-                                onTap: _showPriceDialog,
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 8),
-                        Row(
-                          children: [
-                            Expanded(
-                              child: _buildFilterChipDropdown(
-                                label: LanguageService.tr('auto_trans_1167'),
-                                value: _districtIdFilter != null
-                                    ? (_districtsList.firstWhere(
-                                        (d) =>
-                                            d['id']?.toString() ==
-                                            _districtIdFilter.toString(),
-                                        orElse: () => {'name': 'all_districts'},
-                                      )['name'] as String)
-                                    : 'all_districts',
-                                items: [
-                                  'all_districts',
-                                  ..._districtsList
-                                      .map((e) => e['name'].toString())
-                                ],
-                                onChanged: (val) {
-                                  if (val == null || val == 'all_districts') {
-                                    setState(() => _districtIdFilter = null);
-                                  } else {
-                                    final d = _districtsList.firstWhere(
-                                        (d) => d['name'].toString() == val,
-                                        orElse: () => {});
-                                    setState(() => _districtIdFilter =
-                                        d['id'] != null
-                                            ? int.tryParse(d['id'].toString())
-                                            : null);
-                                  }
-                                  _loadApartments();
-                                },
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: _buildFilterChipDropdown(
-                                label: LanguageService.tr('auto_trans_1171'),
-                                value: _rentalTypeFilter ?? 'all_flats',
-                                items: const [
-                                  'all_flats',
-                                  'apartment',
-                                  'room_shared',
-                                  'studio'
-                                ],
-                                onChanged: (val) {
-                                  setState(() => _rentalTypeFilter =
-                                      (val == null || val == 'all_flats')
-                                          ? null
-                                          : val);
-                                  _loadApartments();
-                                },
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 8),
-                        Row(
-                          children: [
-                            Expanded(
-                              child: _buildFilterChipDropdown(
-                                label: LanguageService.tr('auto_trans_1172'),
-                                value: _roomsCountFilter != null
-                                    ? _roomsCountFilter.toString()
-                                    : 'all',
-                                items: const ['all', '1', '2', '3', '4', '5'],
-                                onChanged: (val) {
-                                  setState(() => _roomsCountFilter =
-                                      (val == null || val == 'all')
-                                          ? null
-                                          : int.tryParse(val));
-                                  _loadApartments();
-                                },
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: InkWell(
-                                onTap: () {
-                                  setState(() {
-                                    _selectedUniversities = [];
-                                    _maxPriceFilter = null;
-                                    _rentalTypeFilter = null;
-                                    _districtIdFilter = null;
-                                    _roomsCountFilter = null;
-                                  });
-                                  _loadApartments();
-                                },
-                                borderRadius: BorderRadius.circular(12),
-                                child: Container(
-                                  height: 48,
-                                  padding: const EdgeInsets.symmetric(
-                                      horizontal: 12),
-                                  decoration: BoxDecoration(
-                                    color: (_selectedUniversities.isNotEmpty ||
-                                            _maxPriceFilter != null ||
-                                            _rentalTypeFilter != null ||
-                                            _districtIdFilter != null ||
-                                            _roomsCountFilter != null)
-                                        ? Colors.red.shade50
-                                        : const Color(0xFFF8FAFC),
-                                    borderRadius: BorderRadius.circular(12),
-                                    border: Border.all(
-                                      color: (_selectedUniversities.isNotEmpty ||
-                                              _maxPriceFilter != null ||
-                                              _rentalTypeFilter != null ||
-                                              _districtIdFilter != null ||
-                                              _roomsCountFilter != null)
-                                          ? Colors.red.shade200
-                                          : const Color(0xFFE2E8F0),
-                                      width: 1.2,
-                                    ),
-                                  ),
-                                  child: Row(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      Icon(
-                                        Icons.refresh_rounded,
-                                        size: 16,
-                                        color: (_selectedUniversities
-                                                    .isNotEmpty ||
-                                                _maxPriceFilter != null ||
-                                                _rentalTypeFilter != null ||
-                                                _districtIdFilter != null ||
-                                                _roomsCountFilter != null)
-                                            ? Colors.red.shade700
-                                            : AppColors.textMuted,
-                                      ),
-                                      const SizedBox(width: 6),
-                                      Text(
-                                        LanguageService.tr('clear_filter'),
-                                        style: TextStyle(
-                                          color: (_selectedUniversities
-                                                      .isNotEmpty ||
-                                                  _maxPriceFilter != null ||
-                                                  _rentalTypeFilter != null ||
-                                                  _districtIdFilter != null ||
-                                                  _roomsCountFilter != null)
-                                              ? Colors.red.shade700
-                                              : AppColors.textMuted,
-                                          fontSize: 12,
-                                          fontWeight: FontWeight.bold,
-                                          fontFamily: 'Cairo',
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 16),
+                const SizedBox(height: 8),
+
+                // 4. قسم الخدمات الطلابية (صفين بالتمرير الأفقي)
+                _buildHomeServicesSection(usr),
+                const SizedBox(height: 28),
               ],
             ),
           ),
-
-          // 6. قائمة الشقق
-          SliverPadding(
-            padding: const EdgeInsets.symmetric(horizontal: 20),
-            sliver: SliverList(
-              delegate: SliverChildBuilderDelegate(
-                (context, idx) {
-                  final apt = filteredApts[idx];
-                  final imagesList = List<String>.from(
-                      (apt['images'] as List?)?.map((e) => e.toString()) ??
-                          ['assets/images/apt1.png']);
-                  final firstImg = imagesList.isNotEmpty
-                      ? imagesList.first
-                      : 'assets/images/apt1.png';
-                  final moveInStr = apt['move_in_date']?.toString() ??
-                      LanguageService.tr('auto_trans_1177');
-                  final isScheduled = apt['move_in_type'] ==
-                          LanguageService.tr('auto_trans_1178') ||
-                      moveInStr
-                          .contains(LanguageService.tr('auto_trans_1179')) ||
-                      moveInStr.contains(LanguageService.tr('auto_trans_1180'));
-
-                  final isFeatured = apt['is_featured'] == true ||
-                      apt['is_featured'] == 1 ||
-                      apt['is_featured'] == '1';
-
-                  return GestureDetector(
-                    onTap: () => Navigator.of(context).push(MaterialPageRoute(
-                        builder: (_) =>
-                            ApartmentDetailScreen(apartment: apt, user: usr))),
-                    child: Container(
-                      margin: const EdgeInsets.only(bottom: 20),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(22),
-                        border: isFeatured
-                            ? Border.all(color: const Color(0xFFF59E0B), width: 1.6)
-                            : Border.all(color: Colors.transparent, width: 0),
-                        boxShadow: [
-                          if (isFeatured)
-                            BoxShadow(
-                              color: const Color(0xFFF59E0B).withValues(alpha: 0.18),
-                              blurRadius: 16,
-                              offset: const Offset(0, 4),
-                            ),
-                          BoxShadow(
-                              color: Colors.black.withValues(alpha: 0.06),
-                              blurRadius: 15,
-                              offset: const Offset(0, 5))
-                        ],
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Stack(
-                            children: [
-                              ClipRRect(
-                                borderRadius: const BorderRadius.vertical(
-                                    top: Radius.circular(21)),
-                                child: firstImg.startsWith('assets/')
-                                    ? Image.asset(
-                                        firstImg,
-                                        height: 200,
-                                        width: double.infinity,
-                                        fit: BoxFit.cover,
-                                        errorBuilder: (_, __, ___) => Image.asset(
-                                            'assets/images/apt1.png',
-                                            height: 200,
-                                            width: double.infinity,
-                                            fit: BoxFit.cover),
-                                      )
-                                    : Image.network(
-                                        ApiService.resolveImageUrl(firstImg),
-                                        cacheWidth: 800,
-                                        height: 200,
-                                        width: double.infinity,
-                                        fit: BoxFit.cover,
-                                        errorBuilder: (_, __, ___) => Image.asset(
-                                            'assets/images/apt1.png',
-                                            height: 200,
-                                            width: double.infinity,
-                                            fit: BoxFit.cover),
-                                      ),
-                              ),
-                              if (isFeatured)
-                                PositionedDirectional(
-                                  top: 12,
-                                  end: 12,
-                                  child: Container(
-                                    padding: const EdgeInsets.symmetric(
-                                        horizontal: 10, vertical: 5),
-                                    decoration: BoxDecoration(
-                                      gradient: const LinearGradient(
-                                        colors: [
-                                          Color(0xFFF59E0B),
-                                          Color(0xFFD97706)
-                                        ],
-                                      ),
-                                      borderRadius: BorderRadius.circular(20),
-                                      boxShadow: [
-                                        BoxShadow(
-                                          color: Colors.black
-                                              .withValues(alpha: 0.25),
-                                          blurRadius: 6,
-                                          offset: const Offset(0, 2),
-                                        ),
-                                      ],
-                                    ),
-                                    child: Row(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        const Icon(Icons.star_rounded,
-                                            color: Colors.white, size: 15),
-                                        const SizedBox(width: 4),
-                                        Text(
-                                          LanguageService.currentLang.value ==
-                                                  'ar'
-                                              ? "مميز"
-                                              : "Featured",
-                                          style: const TextStyle(
-                                            color: Colors.white,
-                                            fontSize: 11,
-                                            fontWeight: FontWeight.bold,
-                                            fontFamily: 'Cairo',
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ),
-                            ],
-                          ),
-                          Padding(
-                            padding: const EdgeInsets.all(18),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Wrap(
-                                  spacing: 8,
-                                  runSpacing: 8,
-                                  alignment: WrapAlignment.spaceBetween,
-                                  crossAxisAlignment: WrapCrossAlignment.center,
-                                  children: [
-                                    Row(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        Container(
-                                          padding: const EdgeInsets.symmetric(
-                                              horizontal: 14, vertical: 6),
-                                          decoration: BoxDecoration(
-                                              color: AppColors.primaryDark,
-                                              borderRadius:
-                                                  BorderRadius.circular(12)),
-                                          child: Text(apt['price'] as String,
-                                              style: const TextStyle(
-                                                  color: AppColors.accent,
-                                                  fontWeight: FontWeight.bold,
-                                                  fontSize: 15)),
-                                        ),
-                                        const SizedBox(width: 8),
-                                        Container(
-                                          padding: const EdgeInsets.symmetric(
-                                              horizontal: 10, vertical: 6),
-                                          decoration: BoxDecoration(
-                                            color: AppColors.accentLight,
-                                            borderRadius:
-                                                BorderRadius.circular(12),
-                                            border: Border.all(
-                                                color: AppColors.accent),
-                                          ),
-                                          child: Text(
-                                            LanguageService
-                                                .getLocalizedHousingType(
-                                                    apt['rental_type']
-                                                        ?.toString()),
-                                            style: const TextStyle(
-                                                color: AppColors.primary,
-                                                fontWeight: FontWeight.bold,
-                                                fontSize: 12),
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                    Container(
-                                      padding: const EdgeInsets.symmetric(
-                                          horizontal: 10, vertical: 4),
-                                      decoration: BoxDecoration(
-                                        color: isScheduled
-                                            ? const Color(0xFFFFF3E0)
-                                            : const Color(0xFFE8F5E9),
-                                        borderRadius: BorderRadius.circular(10),
-                                      ),
-                                      child: Text(
-                                        moveInStr,
-                                        style: TextStyle(
-                                          color: isScheduled
-                                              ? const Color(0xFFE65100)
-                                              : const Color(0xFF2E7D32),
-                                          fontWeight: FontWeight.bold,
-                                          fontSize: 12,
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                const SizedBox(height: 12),
-                                Text(apt['title'] as String,
-                                    style: const TextStyle(
-                                        fontSize: 18,
-                                        fontWeight: FontWeight.bold,
-                                        color: AppColors.textDark)),
-                                const SizedBox(height: 8),
-                                Row(
-                                  children: [
-                                    const Icon(Icons.location_on,
-                                        color: AppColors.accent, size: 18),
-                                    const SizedBox(width: 6),
-                                    Expanded(
-                                      child: Text(
-                                        apt['location'] as String,
-                                        style: const TextStyle(
-                                            fontSize: 13,
-                                            color: AppColors.textMuted),
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                const SizedBox(height: 6),
-                                Row(
-                                  children: [
-                                    const Icon(Icons.school,
-                                        color: AppColors.primary, size: 18),
-                                    const SizedBox(width: 6),
-                                    Expanded(
-                                      child: Text(
-                                        apt['proximity'] as String,
-                                        style: const TextStyle(
-                                            fontSize: 13,
-                                            color: AppColors.primary,
-                                            fontWeight: FontWeight.w600),
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                const Divider(height: 24),
-                                Row(
-                                  children: [
-                                    Expanded(
-                                      child: Text(
-                                        LanguageService.tr('auto_trans_1181'),
-                                        style: const TextStyle(
-                                            color: AppColors.accent,
-                                            fontWeight: FontWeight.bold,
-                                            fontSize: 13),
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis,
-                                      ),
-                                    ),
-                                    const SizedBox(width: 8),
-                                    Icon(
-                                        LanguageService.isRtl
-                                            ? Icons.arrow_back
-                                            : Icons.arrow_forward,
-                                        color: AppColors.primary,
-                                        size: 18),
-                                  ],
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  );
-                },
-                childCount: filteredApts.length,
-              ),
-            ),
-          ),
-          const SliverPadding(padding: EdgeInsets.only(bottom: 24)),
         ],
       ),
     );
@@ -2383,9 +1698,11 @@ class _HomeScreenState extends State<HomeScreen>
                       ),
                       label: LanguageService.tr('chat')),
                   BottomNavigationBarItem(
-                      icon: const Icon(Icons.local_offer_outlined),
-                      activeIcon: const Icon(Icons.local_offer),
-                      label: LanguageService.tr('offers')),
+                      icon: const Icon(Icons.apartment_outlined),
+                      activeIcon: const Icon(Icons.apartment),
+                      label: LanguageService.currentLang.value == 'ar'
+                          ? 'شقق'
+                          : 'Flats'),
                   BottomNavigationBarItem(
                       icon: const Icon(Icons.person_outline),
                       activeIcon: const Icon(Icons.person),

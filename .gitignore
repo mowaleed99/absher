@@ -75,3 +75,5 @@ test.php
 test2.php
 test_image.jpg
 fix_hygiene.py
+*firebase-adminsdk*.json
+credentials/

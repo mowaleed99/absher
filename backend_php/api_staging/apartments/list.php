@@ -63,7 +63,7 @@ try {
 
     $sql = "SELECT id, $titleCol AS title, $descCol AS description, price, $locCol AS location, $proxCol AS proximity,
                    universities, $capCol AS capacity, $mitCol AS move_in_type, $midCol AS move_in_date,
-                   images, $featsCol AS features, is_available, is_featured, featured_until, district_id,
+                   images, $featsCol AS features, is_available, is_featured, featured_until, is_special_offer, district_id,
                    rental_type, rooms_count
             FROM apartments
             WHERE " . implode(" AND ", $where) . "
@@ -106,26 +106,28 @@ try {
         }
 
         $isFeaturedActive = ($apt['is_featured'] == 1 && (empty($apt['featured_until']) || strtotime($apt['featured_until']) > time()));
+        $isSpecialOffer = ($apt['is_special_offer'] == 1 || $apt['is_special_offer'] == true);
 
         $result[] = [
-            'id'            => (int)$apt['id'],
-            'title'         => $apt['title'],
-            'description'   => $apt['description'],
-            'price'         => $apt['price'],
-            'location'      => $apt['location'],
-            'district_id'   => $apt['district_id'] !== null ? (int)$apt['district_id'] : null,
-            'proximity'     => $apt['proximity'],
-            'capacity'      => $apt['capacity'],
-            'rental_type'   => $apt['rental_type'],
-            'rooms_count'   => $apt['rooms_count'] !== null ? (int)$apt['rooms_count'] : null,
-            'move_in_type'  => $apt['move_in_type'],
-            'move_in_date'  => $apt['move_in_date'],
-            'is_available'  => (bool)$apt['is_available'],
-            'is_featured'   => $isFeaturedActive,
-            'featured_until'=> $apt['featured_until'],
-            'images'        => $images,
-            'features'      => $features,
-            'universities'  => $universities,
+            'id'              => (int)$apt['id'],
+            'title'           => $apt['title'],
+            'description'     => $apt['description'],
+            'price'           => $apt['price'],
+            'location'        => $apt['location'],
+            'district_id'     => $apt['district_id'] !== null ? (int)$apt['district_id'] : null,
+            'proximity'       => $apt['proximity'],
+            'capacity'        => $apt['capacity'],
+            'rental_type'     => $apt['rental_type'],
+            'rooms_count'     => $apt['rooms_count'] !== null ? (int)$apt['rooms_count'] : null,
+            'move_in_type'    => $apt['move_in_type'],
+            'move_in_date'    => $apt['move_in_date'],
+            'is_available'    => (bool)$apt['is_available'],
+            'is_featured'     => $isFeaturedActive,
+            'featured_until'  => $apt['featured_until'],
+            'is_special_offer'=> $isSpecialOffer,
+            'images'          => $images,
+            'features'        => $features,
+            'universities'    => $universities,
         ];
     }
 

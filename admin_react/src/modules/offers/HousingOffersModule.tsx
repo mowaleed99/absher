@@ -146,10 +146,10 @@ export function HousingOffersModule() {
           </div>
           <div>
             <h2 style={{ margin: 0, fontSize: '1.4rem', fontWeight: 800, color: 'var(--text-main)' }}>
-              عروض السكن الحصرية
+              إدارة الغرف المشتركة والسكن المشترك
             </h2>
             <p style={{ margin: '3px 0 0', fontSize: '0.84rem', color: 'var(--text-muted)' }}>
-              إدارة الخصومات والعروض الترويجية للشقق السكنية المتاحة للطلاب في تبليسي
+              إدارة الغرف المتاحة للحجز في الشقق المشتركة للطلاب في تبليسي
             </p>
           </div>
         </div>

@@ -32,6 +32,7 @@ class _ChatScreenState extends State<ChatScreen> {
   bool _isDisposed = false;
   int _currentChatId = 0;
   Map<String, dynamic>? _replyingToMsg;
+  Student? _currentUser;
 
   String _getAbsoluteUrl(String path) {
     if (path.isEmpty) return '';
@@ -111,6 +112,8 @@ class _ChatScreenState extends State<ChatScreen> {
   @override
   void initState() {
     super.initState();
+    _currentUser = widget.user;
+
     // رسالة ترحيبية آلية من الإدارة
     _messages.add({
       'text': LanguageService.tr('welcome_chat_msg'),
@@ -172,11 +175,15 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 
   Future<void> _initChat() async {
-    if (widget.user != null) {
-      int? chatId = await ApiService.createChat(widget.user!.id);
+    if (_currentUser == null) {
+      await ApiService.initTokens();
+      _currentUser = await ApiService.getCurrentUser();
+    }
+    if (_currentUser != null) {
+      int? chatId = await ApiService.createChat(_currentUser!.id);
       if (chatId != null && mounted) {
         setState(() => _currentChatId = chatId);
-        RealtimeSyncService().updateContext(studentId: widget.user!.id, chatId: chatId);
+        RealtimeSyncService().updateContext(studentId: _currentUser!.id, chatId: chatId);
         _loadMessages();
       }
     }
@@ -339,7 +346,11 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 
   Future<void> _sendMessage() async {
-    if (widget.user == null || _currentChatId == 0) {
+    if (_currentUser == null) {
+      await ApiService.initTokens();
+      _currentUser = await ApiService.getCurrentUser();
+    }
+    if (_currentUser == null || _currentChatId == 0) {
       _showGuestLoginDialog();
       return;
     }
