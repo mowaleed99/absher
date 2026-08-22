@@ -878,9 +878,9 @@ class _HomeScreenState extends State<HomeScreen>
                   ),
                   const SizedBox(width: 8),
                   Text(
-                    isAr ? 'الخدمات الطلابية' : 'Student Services',
+                    isAr ? 'الخدمات' : 'Services',
                     style: const TextStyle(
-                      fontSize: 17,
+                      fontSize: 18,
                       fontWeight: FontWeight.w900,
                       color: AppColors.primaryDark,
                     ),
@@ -958,7 +958,7 @@ class _HomeScreenState extends State<HomeScreen>
                 crossAxisCount: 2,
                 mainAxisSpacing: 10,
                 crossAxisSpacing: 10,
-                childAspectRatio: 0.38,
+                childAspectRatio: 0.36,
               ),
               itemCount: _servicesList.length,
               itemBuilder: (context, idx) {
@@ -971,7 +971,7 @@ class _HomeScreenState extends State<HomeScreen>
 
                 String priceTag = '';
                 if (cash > 0) {
-                  priceTag = cash.truncateToDouble() == cash ? '${cash.toInt()} \$' : '${cash.toStringAsFixed(2)} \$';
+                  priceTag = cash.truncateToDouble() == cash ? '\$ ${cash.toInt()}' : '\$ ${cash.toStringAsFixed(2)}';
                 } else if (points > 0) {
                   priceTag = '$points ${LanguageService.tr('points_unit')}';
                 } else {
@@ -982,56 +982,28 @@ class _HomeScreenState extends State<HomeScreen>
                   color: Colors.transparent,
                   child: InkWell(
                     onTap: () {
-                      setState(() => _currentIndex = 1);
+                      ServicesScreen.openServiceModal(context, s, usr, _servicesList);
                     },
-                    borderRadius: BorderRadius.circular(16),
+                    borderRadius: BorderRadius.circular(18),
                     child: Container(
-                      padding: const EdgeInsets.all(10),
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
                       decoration: BoxDecoration(
                         color: Colors.white,
-                        borderRadius: BorderRadius.circular(16),
+                        borderRadius: BorderRadius.circular(18),
                         border: Border.all(
-                          color: AppColors.primary.withValues(alpha: 0.08),
-                          width: 1.2,
+                          color: const Color(0xFFF1F5F9),
+                          width: 1.5,
                         ),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.03),
-                            blurRadius: 6,
-                            offset: const Offset(0, 2),
+                            color: Colors.black.withValues(alpha: 0.04),
+                            blurRadius: 10,
+                            offset: const Offset(0, 3),
                           ),
                         ],
                       ),
                       child: Row(
                         children: [
-                          // Service thumbnail
-                          ClipRRect(
-                            borderRadius: BorderRadius.circular(12),
-                            child: Container(
-                              width: 56,
-                              height: 56,
-                              color: AppColors.primaryDark,
-                              child: imgUrl.isNotEmpty
-                                  ? Image.network(
-                                      imgUrl,
-                                      fit: BoxFit.cover,
-                                      errorBuilder: (_, __, ___) => Container(
-                                        color: AppColors.primaryDark,
-                                        child: const Icon(
-                                          Icons.build_circle_rounded,
-                                          color: AppColors.accent,
-                                          size: 28,
-                                        ),
-                                      ),
-                                    )
-                                  : const Icon(
-                                      Icons.build_circle_rounded,
-                                      color: AppColors.accent,
-                                      size: 28,
-                                    ),
-                            ),
-                          ),
-                          const SizedBox(width: 10),
                           // Service details
                           Expanded(
                             child: Column(
@@ -1043,8 +1015,8 @@ class _HomeScreenState extends State<HomeScreen>
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
                                   style: const TextStyle(
-                                    fontSize: 13,
-                                    fontWeight: FontWeight.bold,
+                                    fontSize: 13.5,
+                                    fontWeight: FontWeight.w800,
                                     color: AppColors.primaryDark,
                                   ),
                                 ),
@@ -1055,46 +1027,69 @@ class _HomeScreenState extends State<HomeScreen>
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
                                     style: const TextStyle(
-                                      fontSize: 10.5,
+                                      fontSize: 11,
                                       color: AppColors.textMuted,
                                     ),
                                   ),
-                                  const SizedBox(height: 4),
+                                  const SizedBox(height: 5),
                                 ],
                                 Container(
                                   padding: const EdgeInsets.symmetric(
-                                    horizontal: 6,
-                                    vertical: 2,
+                                    horizontal: 8,
+                                    vertical: 2.5,
                                   ),
                                   decoration: BoxDecoration(
-                                    color: cash > 0
-                                        ? const Color(0xFFECFDF5)
-                                        : (points > 0
-                                            ? const Color(0xFFEFF6FF)
-                                            : const Color(0xFFFEF3C7)),
-                                    borderRadius: BorderRadius.circular(6),
+                                    color: const Color(0xFFE6F4EA),
+                                    borderRadius: BorderRadius.circular(8),
                                   ),
                                   child: Text(
                                     priceTag,
-                                    style: TextStyle(
-                                      fontSize: 10,
+                                    style: const TextStyle(
+                                      fontSize: 11,
                                       fontWeight: FontWeight.w800,
-                                      color: cash > 0
-                                          ? const Color(0xFF065F46)
-                                          : (points > 0
-                                              ? const Color(0xFF1E40AF)
-                                              : const Color(0xFF92400E)),
+                                      color: Color(0xFF137333),
                                     ),
                                   ),
                                 ),
                               ],
                             ),
                           ),
-                          const SizedBox(width: 4),
+                          const SizedBox(width: 6),
                           Icon(
                             isAr ? Icons.chevron_left : Icons.chevron_right,
                             color: AppColors.accent,
                             size: 20,
+                          ),
+                          const SizedBox(width: 8),
+                          // Service thumbnail
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(14),
+                            child: Container(
+                              width: 58,
+                              height: 58,
+                              color: const Color(0xFFF8FAFC),
+                              child: imgUrl.isNotEmpty
+                                  ? Image.network(
+                                      ApiService.resolveImageUrl(imgUrl),
+                                      fit: BoxFit.cover,
+                                      errorBuilder: (_, __, ___) => Container(
+                                        color: AppColors.primaryDark,
+                                        child: const Icon(
+                                          Icons.build_circle_rounded,
+                                          color: AppColors.accent,
+                                          size: 28,
+                                        ),
+                                      ),
+                                    )
+                                  : Container(
+                                      color: AppColors.primaryDark,
+                                      child: const Icon(
+                                        Icons.build_circle_rounded,
+                                        color: AppColors.accent,
+                                        size: 28,
+                                      ),
+                                    ),
+                            ),
                           ),
                         ],
                       ),

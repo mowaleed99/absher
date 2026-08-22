@@ -96,12 +96,6 @@ class ApiService {
     if (path.startsWith('assets/')) {
       return path;
     }
-    // Route local uploads through media CORS proxy to support local Flutter Web testing
-    if (path.contains('uploads/')) {
-      final idx = path.indexOf('uploads/');
-      final relPath = path.substring(idx + 'uploads/'.length);
-      return '$serverRoot/api/media.php?file=$relPath';
-    }
     // Remove leading slash if any
     final cleanPath = path.startsWith('/') ? path.substring(1) : path;
     return '$serverRoot/$cleanPath';

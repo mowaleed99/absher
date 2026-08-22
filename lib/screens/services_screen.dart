@@ -15,6 +15,17 @@ class ServicesScreen extends StatefulWidget {
   final Student? user;
   const ServicesScreen({super.key, required this.user});
 
+  static Widget buildImageWidget(String url) {
+    return _ServicesScreenState.buildImageWidget(url);
+  }
+
+  static Future<void> openServiceModal(
+      BuildContext context, Map<String, dynamic> service, Student? user,
+      [List<Map<String, dynamic>>? allServices]) {
+    return _ServicesScreenState.openServiceModal(
+        context, service, user, allServices);
+  }
+
   @override
   State<ServicesScreen> createState() => _ServicesScreenState();
 }
@@ -89,7 +100,7 @@ class _ServicesScreenState extends State<ServicesScreen> {
     }
   }
 
-  Widget _buildImageWidget(String url) {
+  static Widget buildImageWidget(String url) {
     if (url.startsWith('data:image/')) {
       try {
         final base64String = url.split(',').last;
@@ -111,34 +122,36 @@ class _ServicesScreenState extends State<ServicesScreen> {
       );
     }
     return Image.network(
-      url,
+      ApiService.resolveImageUrl(url),
       fit: BoxFit.cover,
       errorBuilder: (_, __, ___) => _buildFallbackIcon(),
     );
   }
 
-  Widget _buildFallbackIcon() {
+  static Widget _buildFallbackIcon() {
     return Container(
       color: AppColors.primaryDark,
       child: const Icon(Icons.handyman, color: AppColors.accent, size: 40),
     );
   }
 
-  Future<void> _handleServiceTap(Map<String, dynamic> service) async {
+  static Future<void> openServiceModal(
+      BuildContext context, Map<String, dynamic> service, Student? user,
+      [List<Map<String, dynamic>>? allServices]) async {
     final hasForm = service['has_form'] == true ||
         service['has_form'] == 1 ||
         service['has_form']?.toString() == '1';
 
     if (!hasForm) {
-      _showDirectServiceDialog(context, service);
+      _showDirectServiceDialog(context, service, user);
       return;
     }
 
-    final isGuest = widget.user == null ||
-        widget.user!.id == 0 ||
-        widget.user!.fullName.contains(LanguageService.tr('auto_trans_1277'));
+    final isGuest = user == null ||
+        user.id == 0 ||
+        user.fullName.contains(LanguageService.tr('auto_trans_1277'));
     if (isGuest) {
-      _showServiceForm(context, service);
+      _showServiceForm(context, service, user, allServices);
       return;
     }
 
@@ -149,25 +162,24 @@ class _ServicesScreenState extends State<ServicesScreen> {
     );
 
     try {
-      final balance = await ApiService.getWalletBalance(widget.user!.id);
-      if (mounted) {
-        setState(() {
-          _pointsBalance = balance;
-        });
-      }
+      await ApiService.getWalletBalance(user.id);
     } catch (e) {
       debugPrint("Error fetching wallet balance: $e");
     } finally {
-      if (mounted) Navigator.pop(context); // Pop loading indicator
+      if (context.mounted) Navigator.pop(context); // Pop loading indicator
     }
 
-    if (mounted) {
-      _showServiceForm(context, service);
+    if (context.mounted) {
+      _showServiceForm(context, service, user, allServices);
     }
   }
 
-  void _showDirectServiceDialog(
-      BuildContext context, Map<String, dynamic> service) {
+  Future<void> _handleServiceTap(Map<String, dynamic> service) async {
+    await openServiceModal(context, service, widget.user, _services);
+  }
+
+  static void _showDirectServiceDialog(
+      BuildContext context, Map<String, dynamic> service, Student? user) {
     final title = service['title']?.toString() ?? 'خدمة';
     final desc = service['description']?.toString() ?? '';
     final imageUrl = service['image_url']?.toString() ?? '';
@@ -220,7 +232,7 @@ class _ServicesScreenState extends State<ServicesScreen> {
                         ),
                         clipBehavior: Clip.antiAlias,
                         child: imageUrl.isNotEmpty
-                            ? _buildImageWidget(imageUrl)
+                            ? buildImageWidget(imageUrl)
                             : const Icon(Icons.handyman,
                                 color: AppColors.primary, size: 28),
                       ),
@@ -312,11 +324,10 @@ class _ServicesScreenState extends State<ServicesScreen> {
                     onPressed: isSubmitting
                         ? null
                         : () async {
-                            final isGuest =
-                                widget.user == null || widget.user!.id == 0;
+                            final isGuest = user == null || user.id == 0;
                             if (isGuest) {
                               Navigator.pop(ctx);
-                              _showServiceForm(context, service);
+                              _showServiceForm(context, service, user);
                               return;
                             }
                             setSheetState(() => isSubmitting = true);
@@ -327,10 +338,10 @@ class _ServicesScreenState extends State<ServicesScreen> {
                                     ? service['id'] as int
                                     : int.tryParse(
                                         service['id']?.toString() ?? ''),
-                                studentName: widget.user!.fullName,
-                                studentPhone: widget.user!.phone ?? '',
-                                studentUni: widget.user!.university ?? '',
-                                universityId: widget.user!.universityId,
+                                studentName: user.fullName,
+                                studentPhone: user.phone ?? '',
+                                studentUni: user.university ?? '',
+                                universityId: user.universityId,
                                 serviceTitle: title,
                                 details: notesCtrl.text.trim().isNotEmpty
                                     ? notesCtrl.text.trim()
@@ -436,7 +447,7 @@ class _ServicesScreenState extends State<ServicesScreen> {
                               context,
                               MaterialPageRoute(
                                 builder: (_) => ChatScreen(
-                                  user: widget.user,
+                                  user: user,
                                 ),
                               ),
                             );
@@ -463,10 +474,14 @@ class _ServicesScreenState extends State<ServicesScreen> {
     );
   }
 
-  void _showServiceForm(BuildContext context, Map<String, dynamic> service) {
-    final isGuest = widget.user == null ||
-        widget.user!.id == 0 ||
-        widget.user!.fullName.contains(LanguageService.tr('auto_trans_1277'));
+  Widget _buildImageWidget(String url) => buildImageWidget(url);
+
+  static void _showServiceForm(
+      BuildContext context, Map<String, dynamic> service, Student? user,
+      [List<Map<String, dynamic>>? allServices]) {
+    final isGuest = user == null ||
+        user.id == 0 ||
+        user.fullName.contains(LanguageService.tr('auto_trans_1277'));
     if (isGuest) {
       showDialog(
         context: context,
@@ -510,8 +525,8 @@ class _ServicesScreenState extends State<ServicesScreen> {
     final initialServiceId = service['id']?.toString();
     String? selectedServiceId = initialServiceId;
 
-    final nameCtrl = TextEditingController(text: widget.user?.fullName ?? '');
-    final phoneCtrl = TextEditingController(text: widget.user?.phone ?? '');
+    final nameCtrl = TextEditingController(text: user.fullName);
+    final phoneCtrl = TextEditingController(text: user.phone ?? '');
     final addressCtrl = TextEditingController();
     final dateCtrl = TextEditingController();
     final detailsCtrl = TextEditingController();
@@ -595,7 +610,7 @@ class _ServicesScreenState extends State<ServicesScreen> {
       barrierDismissible: false,
       builder: (_) => StatefulBuilder(
         builder: (context, setDialogState) {
-          final currentSvc = _services.firstWhere(
+          final currentSvc = (allServices ?? [service]).firstWhere(
               (s) => s['id']?.toString() == selectedServiceId,
               orElse: () => service);
           final currentTitle = currentSvc['title']?.toString() ?? '';
@@ -877,11 +892,11 @@ class _ServicesScreenState extends State<ServicesScreen> {
                               ),
                               subtitle: Text(
                                 LanguageService.formatCurrentBalance(
-                                    _pointsBalance ?? 0),
+                                    user.pointsBalance),
                                 style: TextStyle(
                                   fontSize: 11,
                                   fontWeight: FontWeight.bold,
-                                  color: (_pointsBalance ?? 0) >= effectivePrice
+                                  color: (user.pointsBalance) >= effectivePrice
                                       ? Colors.green
                                       : Colors.red,
                                 ),
@@ -1104,7 +1119,7 @@ class _ServicesScreenState extends State<ServicesScreen> {
                   ],
                   if (originalPrice > 0 &&
                       selectedPaymentMethod == 'wallet' &&
-                      (_pointsBalance ?? 0) < effectivePrice) ...[
+                      (user.pointsBalance) < effectivePrice) ...[
                     const SizedBox(height: 12),
                     Container(
                       width: double.infinity,
@@ -1138,8 +1153,8 @@ class _ServicesScreenState extends State<ServicesScreen> {
                                 const SizedBox(height: 2),
                                 Text(
                                   LanguageService.currentLang.value == 'ar'
-                                      ? "تكلفة الخدمة $effectivePrice نقطة ورصيدك الحالي ${_pointsBalance ?? 0} نقطة. يمكنك اختيار 'الدفع نقدًا' لإتمام الطلب."
-                                      : "Service cost is $effectivePrice points and your balance is ${_pointsBalance ?? 0} points. You can select 'Pay in cash'.",
+                                      ? "تكلفة الخدمة $effectivePrice نقطة ورصيدك الحالي ${user.pointsBalance} نقطة. يمكنك اختيار 'الدفع نقدًا' لإتمام الطلب."
+                                      : "Service cost is $effectivePrice points and your balance is ${user.pointsBalance} points. You can select 'Pay in cash'.",
                                   style: const TextStyle(
                                     color: Color(0xFFA8071A),
                                     fontSize: 11,
@@ -1163,7 +1178,7 @@ class _ServicesScreenState extends State<ServicesScreen> {
                       style: const TextStyle(color: AppColors.textMuted))),
               ElevatedButton(
                 onPressed: () {
-                  final finalSvc = _services.firstWhere(
+                  final finalSvc = (allServices ?? [service]).firstWhere(
                       (s) => s['id']?.toString() == selectedServiceId,
                       orElse: () => service);
                   final finalTitle = finalSvc['title']?.toString() ?? '';
@@ -1193,7 +1208,7 @@ class _ServicesScreenState extends State<ServicesScreen> {
                           : finalPrice;
 
                   if (finalPrice > 0 && paymentMethod == 'wallet') {
-                    if ((_pointsBalance ?? 0) < finalChargedPrice) {
+                    if ((user.pointsBalance) < finalChargedPrice) {
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
                             content: Text(LanguageService.currentLang.value ==
@@ -1277,12 +1292,12 @@ class _ServicesScreenState extends State<ServicesScreen> {
                       serviceId: finalServiceId,
                       studentName: nameCtrl.text.isNotEmpty
                           ? nameCtrl.text
-                          : (widget.user?.fullName ?? ''),
+                          : (user.fullName),
                       studentPhone: phoneCtrl.text.isNotEmpty
                           ? phoneCtrl.text
-                          : (widget.user?.phone ?? ''),
-                      studentUni: widget.user?.university ?? '',
-                      universityId: widget.user?.universityId,
+                          : (user.phone ?? ''),
+                      studentUni: user.university ?? '',
+                      universityId: user.universityId,
                       serviceTitle: finalTitle,
                       details: finalDetails,
                       payWithPoints: paymentMethod == 'wallet',
@@ -1294,17 +1309,7 @@ class _ServicesScreenState extends State<ServicesScreen> {
                       requestUuid: requestUuid,
                     );
 
-                    if (requestResult['status'] == 'success') {
-                      final dataPayload = requestResult['data'];
-                      if (dataPayload != null &&
-                          dataPayload['balance_after'] != null) {
-                        final newBalance =
-                            (dataPayload['balance_after'] as num).toInt();
-                        setState(() {
-                          _pointsBalance = newBalance;
-                        });
-                      }
-                    } else {
+                    if (requestResult['status'] != 'success') {
                       throw Exception(requestResult['message'] ??
                           LanguageService.tr('auto_trans_1288'));
                     }
@@ -1317,7 +1322,7 @@ class _ServicesScreenState extends State<ServicesScreen> {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (_) => ChatScreen(user: widget.user),
+                        builder: (_) => ChatScreen(user: user),
                       ),
                     );
                   }).catchError((e) {
