@@ -299,7 +299,7 @@ export function DashboardModule() {
               gap: '12px',
             }}
           >
-            {/* KPI 1: Apartments */}
+            {/* KPI 1: Residential Apartments */}
             <Link to="/apartments" style={{ textDecoration: 'none', color: 'inherit' }}>
               <div
                 className="dashboard-kpi-card"
@@ -318,7 +318,7 @@ export function DashboardModule() {
               >
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                   <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)', fontWeight: 600 }}>
-                    {t('dashboard.kpi_apartments')}
+                    {isRtl ? 'الشقق السكنية' : 'Residential Apartments'}
                   </span>
                   <div
                     style={{
@@ -339,17 +339,17 @@ export function DashboardModule() {
                 </div>
                 <div>
                   <strong style={{ fontSize: '1.45rem', color: 'var(--text-main)', fontWeight: 800, lineHeight: 1.2 }}>
-                    {stats.apartments.length}
+                    {stats.apartments.filter((a) => a.rental_type !== 'room_shared').length}
                   </strong>
                   <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', display: 'block', marginTop: '3px' }}>
-                    شقة مسجلة ومعتمدة
+                    {isRtl ? 'شقة واستوديو متاح' : 'Flats & studios available'}
                   </span>
                 </div>
               </div>
             </Link>
 
-            {/* KPI 2: Active Housing Offers */}
-            <Link to="/offers" style={{ textDecoration: 'none', color: 'inherit' }}>
+            {/* KPI 2: Shared Rooms */}
+            <Link to="/shared-rooms" style={{ textDecoration: 'none', color: 'inherit' }}>
               <div
                 className="dashboard-kpi-card"
                 style={{
@@ -367,7 +367,7 @@ export function DashboardModule() {
               >
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                   <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)', fontWeight: 600 }}>
-                    {isRtl ? 'عروض السكن النشطة' : 'Active Housing Offers'}
+                    {isRtl ? 'الغرف المشتركة' : 'Shared Rooms & Co-Living'}
                   </span>
                   <div
                     style={{
@@ -388,10 +388,10 @@ export function DashboardModule() {
                 </div>
                 <div>
                   <strong style={{ fontSize: '1.45rem', color: '#a855f7', fontWeight: 800, lineHeight: 1.2 }}>
-                    {stats.activeHousingOffersCount}
+                    {stats.apartments.filter((a) => a.rental_type === 'room_shared').length}
                   </strong>
                   <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', display: 'block', marginTop: '3px' }}>
-                    عرض سكن متاح حالياً
+                    {isRtl ? 'غرفة سكن مشترك مسجلة' : 'Shared rooms registered'}
                   </span>
                 </div>
               </div>
@@ -806,7 +806,7 @@ export function DashboardModule() {
               </Link>
 
               <Link
-                to="/offers"
+                to="/shared-rooms"
                 style={{
                   height: '36px',
                   padding: '0 14px',
@@ -826,7 +826,7 @@ export function DashboardModule() {
                 onMouseLeave={(e) => (e.currentTarget.style.background = '#0d1527')}
               >
                 <i className="fa-solid fa-house-circle-check" style={{ color: '#a855f7' }}></i>
-                <span>عروض السكن</span>
+                <span>{isRtl ? 'الغرف المشتركة' : 'Shared Rooms'}</span>
               </Link>
 
               <Link

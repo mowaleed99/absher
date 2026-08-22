@@ -33,7 +33,6 @@ export function SharedRoomsModule() {
   // Search & Filter State
   const [searchQuery, setSearchQuery] = useState('');
   const [districtFilter, setDistrictFilter] = useState('');
-  const [statusFilter, setStatusFilter] = useState<'all' | 'available' | 'special' | 'featured'>('all');
 
   // Modal State
   const [isAddOpen, setIsAddOpen] = useState(false);
@@ -45,25 +44,10 @@ export function SharedRoomsModule() {
     return apartments.filter((apt) => apt.rental_type === 'room_shared');
   }, [apartments]);
 
-  // Summary KPIs
-  const stats = useMemo(() => {
-    const total = sharedRooms.length;
-    const available = sharedRooms.filter((a) => Boolean(a.is_available)).length;
-    const special = sharedRooms.filter((a) => Boolean(a.is_special_offer)).length;
-    const featured = sharedRooms.filter((a) => Boolean(a.is_featured)).length;
-
-    return { total, available, special, featured };
-  }, [sharedRooms]);
-
   // Filtered shared rooms
   const filteredRooms = useMemo(() => {
     return sharedRooms.filter((apt) => {
-      // 1. Status Filter
-      if (statusFilter === 'available' && !apt.is_available) return false;
-      if (statusFilter === 'special' && !apt.is_special_offer) return false;
-      if (statusFilter === 'featured' && !apt.is_featured) return false;
-
-      // 2. District Filter
+      // 1. District Filter
       if (districtFilter !== '') {
         if (String(apt.district_id) !== String(districtFilter)) {
           return false;
@@ -98,7 +82,7 @@ export function SharedRoomsModule() {
 
       return true;
     });
-  }, [sharedRooms, statusFilter, districtFilter, searchQuery]);
+  }, [sharedRooms, districtFilter, searchQuery]);
 
   const handleDelete = async (id: number) => {
     const isConfirmed = await confirm({
@@ -166,172 +150,12 @@ export function SharedRoomsModule() {
         </div>
       </div>
 
-      {/* 2. KPI Summary Cards */}
+      {/* Search and Filters Bar */}
       <div
         style={{
+          margin: '0 0 24px 0',
           display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-          gap: '14px',
-        }}
-      >
-        {/* Total Rooms */}
-        <div
-          onClick={() => setStatusFilter('all')}
-          style={{
-            padding: '16px',
-            borderRadius: '16px',
-            background: 'var(--bg-card)',
-            border: `1px solid ${statusFilter === 'all' ? '#a855f7' : 'var(--border-color)'}`,
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '14px',
-            transition: 'all 0.2s ease',
-          }}
-        >
-          <div
-            style={{
-              width: '44px',
-              height: '44px',
-              borderRadius: '12px',
-              background: 'rgba(168, 85, 247, 0.15)',
-              color: '#a855f7',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              fontSize: '1.2rem',
-            }}
-          >
-            <i className="fa-solid fa-door-open"></i>
-          </div>
-          <div>
-            <div style={{ fontSize: '1.4rem', fontWeight: 800, color: 'var(--text-main)' }}>{stats.total}</div>
-            <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-              {t('shared_rooms.total')}
-            </div>
-          </div>
-        </div>
-
-        {/* Available Rooms */}
-        <div
-          onClick={() => setStatusFilter(statusFilter === 'available' ? 'all' : 'available')}
-          style={{
-            padding: '16px',
-            borderRadius: '16px',
-            background: 'var(--bg-card)',
-            border: `1px solid ${statusFilter === 'available' ? '#10b981' : 'var(--border-color)'}`,
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '14px',
-            transition: 'all 0.2s ease',
-          }}
-        >
-          <div
-            style={{
-              width: '44px',
-              height: '44px',
-              borderRadius: '12px',
-              background: 'rgba(16, 185, 129, 0.15)',
-              color: '#10b981',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              fontSize: '1.2rem',
-            }}
-          >
-            <i className="fa-solid fa-circle-check"></i>
-          </div>
-          <div>
-            <div style={{ fontSize: '1.4rem', fontWeight: 800, color: '#10b981' }}>{stats.available}</div>
-            <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-              {t('shared_rooms.available')}
-            </div>
-          </div>
-        </div>
-
-        {/* Special Offers */}
-        <div
-          onClick={() => setStatusFilter(statusFilter === 'special' ? 'all' : 'special')}
-          style={{
-            padding: '16px',
-            borderRadius: '16px',
-            background: 'var(--bg-card)',
-            border: `1px solid ${statusFilter === 'special' ? '#ef4444' : 'var(--border-color)'}`,
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '14px',
-            transition: 'all 0.2s ease',
-          }}
-        >
-          <div
-            style={{
-              width: '44px',
-              height: '44px',
-              borderRadius: '12px',
-              background: 'rgba(239, 68, 68, 0.15)',
-              color: '#ef4444',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              fontSize: '1.2rem',
-            }}
-          >
-            <i className="fa-solid fa-fire"></i>
-          </div>
-          <div>
-            <div style={{ fontSize: '1.4rem', fontWeight: 800, color: '#ef4444' }}>{stats.special}</div>
-            <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-              {t('shared_rooms.special_offers')}
-            </div>
-          </div>
-        </div>
-
-        {/* Featured / Pinned */}
-        <div
-          onClick={() => setStatusFilter(statusFilter === 'featured' ? 'all' : 'featured')}
-          style={{
-            padding: '16px',
-            borderRadius: '16px',
-            background: 'var(--bg-card)',
-            border: `1px solid ${statusFilter === 'featured' ? '#f59e0b' : 'var(--border-color)'}`,
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '14px',
-            transition: 'all 0.2s ease',
-          }}
-        >
-          <div
-            style={{
-              width: '44px',
-              height: '44px',
-              borderRadius: '12px',
-              background: 'rgba(245, 158, 11, 0.15)',
-              color: '#f59e0b',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              fontSize: '1.2rem',
-            }}
-          >
-            <i className="fa-solid fa-star"></i>
-          </div>
-          <div>
-            <div style={{ fontSize: '1.4rem', fontWeight: 800, color: '#f59e0b' }}>{stats.featured}</div>
-            <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-              {t('shared_rooms.featured')}
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* 3. Search and Filters Bar */}
-      <div
-        style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
           gap: '12px',
           alignItems: 'center',
         }}
@@ -358,8 +182,7 @@ export function SharedRoomsModule() {
               onClick={() => setSearchQuery('')}
               style={{
                 position: 'absolute',
-                left: lang === 'ar' ? '12px' : 'auto',
-                right: lang === 'en' ? '12px' : 'auto',
+                left: '12px',
                 top: '50%',
                 transform: 'translateY(-50%)',
                 background: 'none',
@@ -368,59 +191,37 @@ export function SharedRoomsModule() {
                 cursor: 'pointer',
               }}
             >
-              <i className="fa-solid fa-times"></i>
+              <i className="fa-solid fa-xmark"></i>
             </button>
           )}
         </div>
 
-        {/* Status Filter */}
-        <div>
-          <select
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value as 'all' | 'available' | 'special' | 'featured')}
-            style={{
-              width: '100%',
-              padding: '12px 18px',
-              borderRadius: '12px',
-              border: '1px solid var(--border-color)',
-              background: 'var(--bg-card)',
-              color: 'var(--text-main)',
-              fontSize: '0.95rem',
-            }}
-          >
-            <option value="all">{t('filter.all_statuses')}</option>
-            <option value="available">{t('filter.status_available')}</option>
-            <option value="special">{t('filter.status_special')}</option>
-            <option value="featured">{t('filter.status_featured')}</option>
-          </select>
-        </div>
-
         {/* District Filter */}
-        <div>
-          <select
-            value={districtFilter}
-            onChange={(e) => setDistrictFilter(e.target.value)}
-            style={{
-              width: '100%',
-              padding: '12px 18px',
-              borderRadius: '12px',
-              border: '1px solid var(--border-color)',
-              background: 'var(--bg-card)',
-              color: 'var(--text-main)',
-              fontSize: '0.95rem',
-            }}
-          >
-            <option value="">{t('filter.all_districts')}</option>
-            {districts.map((d) => (
-              <option key={d.id} value={d.id}>
-                {lang === 'ar' ? (d.name_ar || d.name) : (d.name_en || d.name)}
-              </option>
-            ))}
-          </select>
-        </div>
+        <select
+          value={districtFilter}
+          onChange={(e) => setDistrictFilter(e.target.value)}
+          style={{
+            padding: '12px 16px',
+            borderRadius: '12px',
+            border: '1px solid var(--border-color)',
+            background: 'var(--bg-card)',
+            color: 'var(--text-main)',
+            fontSize: '0.95rem',
+            fontWeight: 600,
+            cursor: 'pointer',
+            outline: 'none',
+          }}
+        >
+          <option value="">{t('filter.all_districts')}</option>
+          {districts.map((d) => (
+            <option key={d.id} value={d.id}>
+              {d.name_ar || d.name}
+            </option>
+          ))}
+        </select>
       </div>
 
-      {/* 4. Content Area */}
+      {/* Content Area */}
       {isLoading ? (
         <div style={{ textAlign: 'center', padding: '60px 20px', color: 'var(--text-muted)' }}>
           <i className="fa-solid fa-spinner fa-spin" style={{ fontSize: '2.5rem', marginBottom: '16px', color: '#a855f7' }}></i>
@@ -450,8 +251,8 @@ export function SharedRoomsModule() {
             {t('shared_rooms.empty_title')}
           </h3>
           <p style={{ maxWidth: '450px', margin: '0 auto 20px auto', fontSize: '0.9rem' }}>
-            {searchQuery || districtFilter || statusFilter !== 'all'
-              ? (lang === 'ar' ? 'جرب تغيير معايير البحث أو تصفية الحالة.' : 'Try changing your search or status filter criteria.')
+            {searchQuery || districtFilter
+              ? (lang === 'ar' ? 'جرب تغيير معايير البحث أو تصفية الحي.' : 'Try changing your search or district filter criteria.')
               : t('shared_rooms.empty_desc')}
           </p>
           <button
@@ -465,13 +266,7 @@ export function SharedRoomsModule() {
           </button>
         </div>
       ) : (
-        <div
-          style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))',
-            gap: '20px',
-          }}
-        >
+        <div className="grid-container" id="sharedRoomsList">
           {filteredRooms.map((room) => (
             <ApartmentCard
               key={room.id}
